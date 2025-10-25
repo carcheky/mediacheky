@@ -1,0 +1,59 @@
+version: '3.8'
+
+services:
+  mediacheky:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: mediacheky
+    restart: unless-stopped
+    
+    ports:
+      - "8080:8080"
+    
+    environment:
+      # Application
+      MEDIACHEKY_APP_ENVIRONMENT: production
+      MEDIACHEKY_APP_LOG_LEVEL: info
+      
+      # Server
+      MEDIACHEKY_SERVER_PORT: "8080"
+      MEDIACHEKY_SERVER_HOST: "0.0.0.0"
+      
+      # Database (SQLite)
+      MEDIACHEKY_DATABASE_TYPE: sqlite
+      MEDIACHEKY_DATABASE_PATH: /data/mediacheky.db
+    
+    volumes:
+      # Persistent data
+      - ./data:/data
+      
+      # Docker socket for managing containers (required)
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      
+      # Media paths (adjust to your setup)
+      - ./media:/media
+      - ./downloads:/downloads
+    
+    networks:
+      - mediacheky-network
+    
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 3s
+      start_period: 10s
+      retries: 3
+    
+    # Resource limits
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+        reservations:
+          memory: 128M
+
+networks:
+  mediacheky-network:
+    name: mediacheky-network
+    driver: bridge
