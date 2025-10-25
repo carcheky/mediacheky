@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"path/filepath"
 
 	"github.com/carcheky/mediacheky/internal/config"
 	"github.com/carcheky/mediacheky/internal/handler"
@@ -83,7 +84,8 @@ func main() {
 // initDatabase initializes the database connection and runs migrations
 func initDatabase(path string, lgr *zap.Logger) (*gorm.DB, error) {
 	// Ensure data directory exists
-	if err := os.MkdirAll("/data", 0755); err != nil && !os.IsExist(err) {
+	dir := filepath.Dir(path)
+	if err := os.MkdirAll(dir, 0755); err != nil && !os.IsExist(err) {
 		return nil, fmt.Errorf("failed to create data directory: %w", err)
 	}
 
