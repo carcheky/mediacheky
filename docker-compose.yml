@@ -1,5 +1,5 @@
 services:
-  # MediaCheky Application
+  # MediaCheky Application - Multimedia Server Management System
   mediacheky:
     build:
       context: .
@@ -14,34 +14,16 @@ services:
       - ./volumes/mediacheky-config:/app/config
       - ./logs:/app/logs  # Mount logs directory
       - ./volumes/media-library:/media-library:ro  # Read-only access to test media
+      # Docker socket for container management
+      - /var/run/docker.sock:/var/run/docker.sock
     environment:
       # Application configuration
-      - KEEPERCHEKY_APP_ENVIRONMENT=${KEEPERCHEKY_APP_ENVIRONMENT}
-      - KEEPERCHEKY_APP_LOG_LEVEL=${KEEPERCHEKY_APP_LOG_LEVEL}
-      - KEEPERCHEKY_APP_DRY_RUN=${KEEPERCHEKY_APP_DRY_RUN}
-      - KEEPERCHEKY_SERVER_PORT=${KEEPERCHEKY_SERVER_PORT}
-      - KEEPERCHEKY_DATABASE_TYPE=${KEEPERCHEKY_DATABASE_TYPE}
-      - KEEPERCHEKY_DATABASE_PATH=${KEEPERCHEKY_DATABASE_PATH}
-      # Clients configuration
-      - KEEPERCHEKY_CLIENTS_RADARR_ENABLED=${KEEPERCHEKY_CLIENTS_RADARR_ENABLED}
-      - KEEPERCHEKY_CLIENTS_RADARR_URL=${KEEPERCHEKY_CLIENTS_RADARR_URL}
-      - KEEPERCHEKY_CLIENTS_RADARR_API_KEY=${RADARR_API_KEY}
-      - KEEPERCHEKY_CLIENTS_SONARR_ENABLED=${KEEPERCHEKY_CLIENTS_SONARR_ENABLED}
-      - KEEPERCHEKY_CLIENTS_SONARR_URL=${KEEPERCHEKY_CLIENTS_SONARR_URL}
-      - KEEPERCHEKY_CLIENTS_SONARR_API_KEY=${SONARR_API_KEY}
-      - KEEPERCHEKY_CLIENTS_JELLYFIN_ENABLED=${KEEPERCHEKY_CLIENTS_JELLYFIN_ENABLED}
-      - KEEPERCHEKY_CLIENTS_JELLYFIN_URL=${KEEPERCHEKY_CLIENTS_JELLYFIN_URL}
-      - KEEPERCHEKY_CLIENTS_JELLYFIN_API_KEY=${JELLYFIN_API_KEY}
-      - KEEPERCHEKY_CLIENTS_JELLYSEERR_ENABLED=${KEEPERCHEKY_CLIENTS_JELLYSEERR_ENABLED}
-      - KEEPERCHEKY_CLIENTS_JELLYSEERR_URL=${KEEPERCHEKY_CLIENTS_JELLYSEERR_URL}
-      - KEEPERCHEKY_CLIENTS_JELLYSEERR_API_KEY=${JELLYSEERR_API_KEY}
-      - KEEPERCHEKY_CLIENTS_JELLYSTAT_ENABLED=${KEEPERCHEKY_CLIENTS_JELLYSTAT_ENABLED}
-      - KEEPERCHEKY_CLIENTS_JELLYSTAT_URL=${KEEPERCHEKY_CLIENTS_JELLYSTAT_URL}
-      - KEEPERCHEKY_CLIENTS_JELLYSTAT_API_KEY=${JELLYSTAT_API_KEY}
-      - KEEPERCHEKY_CLIENTS_QBITTORRENT_ENABLED=${KEEPERCHEKY_CLIENTS_QBITTORRENT_ENABLED}
-      - KEEPERCHEKY_CLIENTS_QBITTORRENT_URL=${KEEPERCHEKY_CLIENTS_QBITTORRENT_URL}
-      - KEEPERCHEKY_CLIENTS_QBITTORRENT_USERNAME=${QBITTORRENT_USERNAME}
-      - KEEPERCHEKY_CLIENTS_QBITTORRENT_PASSWORD=${QBITTORRENT_PASSWORD}
+      - MEDIACHEKY_APP_ENVIRONMENT=${MEDIACHEKY_APP_ENVIRONMENT:-development}
+      - MEDIACHEKY_APP_LOG_LEVEL=${MEDIACHEKY_APP_LOG_LEVEL:-info}
+      - MEDIACHEKY_APP_DRY_RUN=${MEDIACHEKY_APP_DRY_RUN:-false}
+      - MEDIACHEKY_SERVER_PORT=${MEDIACHEKY_SERVER_PORT:-8000}
+      - MEDIACHEKY_DATABASE_TYPE=${MEDIACHEKY_DATABASE_TYPE:-sqlite}
+      - MEDIACHEKY_DATABASE_PATH=${MEDIACHEKY_DATABASE_PATH:-/app/data/mediacheky.db}
     develop:
       watch:
         # Sync Go source code
@@ -65,157 +47,159 @@ services:
           action: rebuild
     networks:
       - mediacheky-net
-    depends_on:
-      - radarr
-      - sonarr
-      - jellyfin
-      - jellyseerr
-      - jellystat
     restart: unless-stopped
 
-  # Radarr - Movie Management
-  radarr:
-    image: linuxserver/radarr:latest
-    container_name: radarr-test
-    environment:
-      - PUID=1000
-      - PGID=1000
-      - TZ=Europe/Madrid
-    volumes:
-      - ./volumes/radarr-config:/config
-      - ./volumes/media-library:/media-library
-    ports:
-      - "7878:7878"
-    networks:
-      - mediacheky-net
-    restart: unless-stopped
+  # =============================================================================
+  # MULTIMEDIA SERVICES (Commented - Will be managed by MediaCheky)
+  # =============================================================================
+  # These services will be deployed and managed through the MediaCheky interface.
+  # Uncomment individual services below if you want to test them manually.
+  # =============================================================================
 
-  # Sonarr - TV Series Management
-  sonarr:
-    image: linuxserver/sonarr:latest
-    container_name: sonarr-test
-    environment:
-      - PUID=1000
-      - PGID=1000
-      - TZ=Europe/Madrid
-    volumes:
-      - ./volumes/sonarr-config:/config
-      - ./volumes/media-library:/media-library
-    ports:
-      - "8989:8989"
-    networks:
-      - mediacheky-net
-    restart: unless-stopped
+  # # Radarr - Movie Management
+  # radarr:
+  #   image: linuxserver/radarr:latest
+  #   container_name: radarr-test
+  #   environment:
+  #     - PUID=1000
+  #     - PGID=1000
+  #     - TZ=Europe/Madrid
+  #   volumes:
+  #     - ./volumes/radarr-config:/config
+  #     - ./volumes/media-library:/media-library
+  #   ports:
+  #     - "7878:7878"
+  #   networks:
+  #     - mediacheky-net
+  #   restart: unless-stopped
 
-  # Jellyfin - Media Server
-  jellyfin:
-    image: linuxserver/jellyfin:latest
-    container_name: jellyfin-test
-    environment:
-      - PUID=1000
-      - PGID=1000
-      - TZ=Europe/Madrid
-    volumes:
-      - ./volumes/jellyfin-config:/config
-      - ./volumes/media-library:/media-library:ro
-    ports:
-      - "8096:8096"
-    networks:
-      - mediacheky-net
-    restart: unless-stopped
+  # # Sonarr - TV Series Management
+  # sonarr:
+  #   image: linuxserver/sonarr:latest
+  #   container_name: sonarr-test
+  #   environment:
+  #     - PUID=1000
+  #     - PGID=1000
+  #     - TZ=Europe/Madrid
+  #   volumes:
+  #     - ./volumes/sonarr-config:/config
+  #     - ./volumes/media-library:/media-library
+  #   ports:
+  #     - "8989:8989"
+  #   networks:
+  #     - mediacheky-net
+  #   restart: unless-stopped
 
-  # Jellyseerr - Request Management
-  jellyseerr:
-    image: fallenbagel/jellyseerr:latest
-    container_name: jellyseerr-test
-    environment:
-      - PUID=1000
-      - PGID=1000
-      - TZ=Europe/Madrid
-    volumes:
-      - ./volumes/jellyseerr-config:/app/config
-    ports:
-      - "5055:5055"
-    networks:
-      - mediacheky-net
-    restart: unless-stopped
+  # # Jellyfin - Media Server
+  # jellyfin:
+  #   image: linuxserver/jellyfin:latest
+  #   container_name: jellyfin-test
+  #   environment:
+  #     - PUID=1000
+  #     - PGID=1000
+  #     - TZ=Europe/Madrid
+  #   volumes:
+  #     - ./volumes/jellyfin-config:/config
+  #     - ./volumes/media-library:/media-library:ro
+  #   ports:
+  #     - "8096:8096"
+  #   networks:
+  #     - mediacheky-net
+  #   restart: unless-stopped
 
-  # qBittorrent - Torrent Client (Seeding validation)
-  qbittorrent:
-    image: linuxserver/qbittorrent:latest
-    container_name: qbittorrent-test
-    environment:
-      - PUID=1000
-      - PGID=1000
-      - TZ=Europe/Madrid
-      - WEBUI_PORT=8080
-      - DOCKER_MODS=ghcr.io/vuetorrent/vuetorrent-lsio-mod:latest
-    volumes:
-      - ./volumes/qbittorrent-config:/config
-      - ./volumes/media-library:/media-library
-    ports:
-      - "8080:8080"
-      - "6881:6881"
-      - "6881:6881/udp"
-    networks:
-      - mediacheky-net
-    restart: unless-stopped
+  # # Jellyseerr - Request Management
+  # jellyseerr:
+  #   image: fallenbagel/jellyseerr:latest
+  #   container_name: jellyseerr-test
+  #   environment:
+  #     - PUID=1000
+  #     - PGID=1000
+  #     - TZ=Europe/Madrid
+  #   volumes:
+  #     - ./volumes/jellyseerr-config:/app/config
+  #   ports:
+  #     - "5055:5055"
+  #   networks:
+  #     - mediacheky-net
+  #   restart: unless-stopped
 
-  # Bazarr - Subtitle Management (Preserve subtitles before deletion)
-  bazarr:
-    image: linuxserver/bazarr:latest
-    container_name: bazarr-test
-    environment:
-      - PUID=1000
-      - PGID=1000
-      - TZ=Europe/Madrid
-    volumes:
-      - ./volumes/bazarr-config:/config
-      - ./volumes/media-library:/media-library
-    ports:
-      - "6767:6767"
-    networks:
-      - mediacheky-net
-    restart: unless-stopped
+  # # qBittorrent - Torrent Client
+  # qbittorrent:
+  #   image: linuxserver/qbittorrent:latest
+  #   container_name: qbittorrent-test
+  #   environment:
+  #     - PUID=1000
+  #     - PGID=1000
+  #     - TZ=Europe/Madrid
+  #     - WEBUI_PORT=8080
+  #     - DOCKER_MODS=ghcr.io/vuetorrent/vuetorrent-lsio-mod:latest
+  #   volumes:
+  #     - ./volumes/qbittorrent-config:/config
+  #     - ./volumes/media-library:/media-library
+  #   ports:
+  #     - "8080:8080"
+  #     - "6881:6881"
+  #     - "6881:6881/udp"
+  #   networks:
+  #     - mediacheky-net
+  #   restart: unless-stopped
 
-  # Jellystat - Jellyfin Statistics & Playback Tracking
-  jellystat-db:
-    image: postgres:15-alpine
-    container_name: jellystat-db
-    environment:
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=mediacheky-dev-password
-      - POSTGRES_DB=jfstat
-    volumes:
-      - jellystat-db:/var/lib/postgresql/data
-    networks:
-      - mediacheky-net
-    restart: unless-stopped
+  # # Bazarr - Subtitle Management
+  # bazarr:
+  #   image: linuxserver/bazarr:latest
+  #   container_name: bazarr-test
+  #   environment:
+  #     - PUID=1000
+  #     - PGID=1000
+  #     - TZ=Europe/Madrid
+  #   volumes:
+  #     - ./volumes/bazarr-config:/config
+  #     - ./volumes/media-library:/media-library
+  #   ports:
+  #     - "6767:6767"
+  #   networks:
+  #     - mediacheky-net
+  #   restart: unless-stopped
 
-  jellystat:
-    image: cyfershepard/jellystat:latest
-    container_name: jellystat-test
-    environment:
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=mediacheky-dev-password
-      - POSTGRES_IP=jellystat-db
-      - POSTGRES_PORT=5432
-      - POSTGRES_DB=jfstat
-      - JWT_SECRET=mediacheky-jellystat-secret-dev
-      - TZ=Europe/Madrid
-    volumes:
-      - ./volumes/jellystat-config:/app/backend/backup-data
-    ports:
-      - "3000:3000"
-    networks:
-      - mediacheky-net
-    depends_on:
-      - jellyfin
-      - jellystat-db
-    restart: unless-stopped
+  # # Jellystat Database
+  # jellystat-db:
+  #   image: postgres:15-alpine
+  #   container_name: jellystat-db
+  #   environment:
+  #     - POSTGRES_USER=postgres
+  #     - POSTGRES_PASSWORD=mediacheky-dev-password
+  #     - POSTGRES_DB=jfstat
+  #   volumes:
+  #     - jellystat-db:/var/lib/postgresql/data
+  #   networks:
+  #     - mediacheky-net
+  #   restart: unless-stopped
 
-volumes:
-  jellystat-db:
+  # # Jellystat - Jellyfin Statistics & Playback Tracking
+  # jellystat:
+  #   image: cyfershepard/jellystat:latest
+  #   container_name: jellystat-test
+  #   environment:
+  #     - POSTGRES_USER=postgres
+  #     - POSTGRES_PASSWORD=mediacheky-dev-password
+  #     - POSTGRES_IP=jellystat-db
+  #     - POSTGRES_PORT=5432
+  #     - POSTGRES_DB=jfstat
+  #     - JWT_SECRET=mediacheky-jellystat-secret-dev
+  #     - TZ=Europe/Madrid
+  #   volumes:
+  #     - ./volumes/jellystat-config:/app/backend/backup-data
+  #   ports:
+  #     - "3000:3000"
+  #   networks:
+  #     - mediacheky-net
+  #   depends_on:
+  #     - jellyfin
+  #     - jellystat-db
+  #   restart: unless-stopped
+
+# volumes:
+#   jellystat-db:
 
 networks:
   mediacheky-net:
