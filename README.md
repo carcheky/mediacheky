@@ -75,8 +75,20 @@ Ver [guía completa de instalación](quickstart/README.md).
 ```bash
 git clone https://github.com/carcheky/mediacheky.git
 cd mediacheky
-make init
 make dev
+# ¡Eso es todo! 🎉
+# Acceder a http://localhost:8000
+```
+
+El comando `make dev`:
+- ✅ Verifica que Docker y Docker Compose estén instalados
+- ✅ Crea automáticamente el archivo `.env` desde `.env.example`
+- ✅ Crea todos los directorios necesarios
+- ✅ Hace los scripts ejecutables
+- ✅ Inicia el servidor con hot-reload
+- ✅ Muestra instrucciones útiles
+
+Si falta alguna dependencia, te mostrará la URL oficial para instalarla.
 
 # Acceder a http://localhost:8000
 ```

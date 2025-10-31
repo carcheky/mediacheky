@@ -1,11 +1,11 @@
-.PHONY: help dev dev-watch build test clean docker-build docker-run shell logs stop
+.PHONY: help dev dev-watch build test clean docker-build docker-run shell logs stop check-deps
 
 # Default target
 help:
 	@echo "MediaCheky - Available commands:"
 	@echo ""
 	@echo "Development:"
-	@echo "  make dev          - Start development server with hot-reload"
+	@echo "  make dev          - Start development server (checks deps & sets up env)"
 	@echo "  make dev-watch    - Start with Docker Compose Watch (auto-rebuild)"
 	@echo "  make logs         - Show development logs"
 	@echo "  make shell        - Open shell in development container"
@@ -25,32 +25,87 @@ help:
 	@echo "  make clean        - Clean build artifacts"
 	@echo "  make fmt          - Format code"
 	@echo "  make lint         - Run linter"
+	@echo "  make check-deps   - Check required dependencies"
+	@echo ""
+
+# Check dependencies
+check-deps:
+	@echo "🔍 Checking dependencies..."
+	@command -v docker >/dev/null 2>&1 || { \
+		echo "❌ Docker is not installed"; \
+		echo "📥 Install from: https://docs.docker.com/get-docker/"; \
+		echo ""; \
+		exit 1; \
+	}
+	@echo "✅ Docker found: $$(docker --version)"
+	@docker compose version >/dev/null 2>&1 || { \
+		echo "❌ Docker Compose is not available"; \
+		echo "📥 Install Docker Desktop or Docker Compose plugin"; \
+		echo "   https://docs.docker.com/compose/install/"; \
+		echo ""; \
+		exit 1; \
+	}
+	@echo "✅ Docker Compose found: $$(docker compose version)"
+	@command -v go >/dev/null 2>&1 || { \
+		echo "⚠️  Go is not installed (optional for local development)"; \
+		echo "📥 Install from: https://golang.org/dl/"; \
+		echo "   Note: Docker will handle Go compilation, but local Go is useful for IDE support"; \
+		echo ""; \
+	}
+	@if command -v go >/dev/null 2>&1; then \
+		echo "✅ Go found: $$(go version)"; \
+	fi
+	@echo "✅ All required dependencies are installed"
+	@echo ""
+
+# Setup environment files and directories
+setup-env:
+	@echo "⚙️  Setting up environment..."
+	@if [ ! -f .env ]; then \
+		echo "📄 Creating .env from .env.example..."; \
+		cp .env.example .env; \
+		echo "✅ .env created - you can customize it if needed"; \
+	else \
+		echo "✅ .env already exists"; \
+	fi
+	@echo "📁 Creating required directories..."
+	@mkdir -p volumes/mediacheky-go-modules
+	@mkdir -p volumes/mediacheky-data
+	@mkdir -p volumes/mediacheky-config
+	@mkdir -p volumes/media-library/downloads
+	@mkdir -p volumes/media-library/library/movies
+	@mkdir -p volumes/media-library/library/tv
+	@mkdir -p logs
+	@mkdir -p data
+	@mkdir -p config
+	@echo "✅ All directories created"
+	@if [ -x scripts/log-with-rotation.sh ]; then \
+		echo "✅ Scripts are executable"; \
+	else \
+		echo "🔧 Making scripts executable..."; \
+		chmod +x scripts/*.sh 2>/dev/null || true; \
+		echo "✅ Scripts ready"; \
+	fi
 	@echo ""
 
 # Development with hot-reload (Air + Docker Compose Watch)
-dev:
-	@echo "🚀 Starting development server with hot-reload..."
-	@echo "📁 Creating volume directories..."
-	@mkdir -p volumes/mediacheky-go-modules
-	@mkdir -p volumes/radarr-config
-	@mkdir -p volumes/sonarr-config
-	@mkdir -p volumes/jellyfin-config
-	@mkdir -p volumes/jellyseerr-config
-	@mkdir -p volumes/qbittorrent-config
-	@mkdir -p volumes/bazarr-config
-	@mkdir -p volumes/jellystat-config
-	@mkdir -p volumes/media-library/downloads
-	@mkdir -p volumes/media-library/library
-	@mkdir -p logs
-	@echo "✅ Volume directories ready"
+dev: check-deps setup-env
+	@echo "🚀 Starting MediaCheky development server..."
 	@echo ""
-	@echo "💡 Tip: Run './scripts/create-mock-media.sh' to create test media files"
-	@echo "📝 Logs: logs/mediacheky-dev.log (auto-rotates at 1000 lines)"
+	@echo "📊 Status:"
+	@echo "  • Environment: Development"
+	@echo "  • URL: http://localhost:8000"
+	@echo "  • Logs: logs/mediacheky-dev.log"
+	@echo "  • Hot-reload: Enabled (via Docker Compose Watch)"
 	@echo ""
-	@chmod +x scripts/log-with-rotation.sh
-	@docker compose up --build --watch > /dev/null 2>&1 &
-	@sleep 5
-	@docker compose logs -f mediacheky 2>&1 | ./scripts/log-with-rotation.sh
+	@echo "💡 Tips:"
+	@echo "  • Press Ctrl+C to stop"
+	@echo "  • Run 'make logs' in another terminal to see logs"
+	@echo "  • Run 'make shell' to open a shell in the container"
+	@echo "  • Edit code and it will auto-reload"
+	@echo ""
+	@echo "Starting containers..."
+	@docker compose up --build --watch
 
 # Development with Docker Compose Watch (Docker 28+)
 dev-watch:
@@ -86,11 +141,23 @@ clean-media:
 # Build production binary
 build:
 	@echo "🔨 Building production binary..."
+	@command -v go >/dev/null 2>&1 || { \
+		echo "❌ Go is not installed"; \
+		echo "📥 Install from: https://golang.org/dl/"; \
+		exit 1; \
+	}
+	@mkdir -p bin
 	@CGO_ENABLED=1 go build -ldflags="-w -s" -o bin/mediacheky ./cmd/server
+	@echo "✅ Binary built: bin/mediacheky"
 
 # Build production Docker image
 docker-build:
 	@echo "🐳 Building production Docker image..."
+	@command -v docker >/dev/null 2>&1 || { \
+		echo "❌ Docker is not installed"; \
+		echo "📥 Install from: https://docs.docker.com/get-docker/"; \
+		exit 1; \
+	}
 	@docker build -t mediacheky:latest .
 	@echo "✅ Production image built successfully"
 	@echo "   - Uses multi-stage build with 'production' target (default)"
@@ -100,6 +167,11 @@ docker-build:
 # Build development Docker image (for testing)
 docker-build-dev:
 	@echo "🐳 Building development Docker image..."
+	@command -v docker >/dev/null 2>&1 || { \
+		echo "❌ Docker is not installed"; \
+		echo "📥 Install from: https://docs.docker.com/get-docker/"; \
+		exit 1; \
+	}
 	@docker build --target=development -t mediacheky:dev .
 	@echo "✅ Development image built successfully"
 	@echo "   - Uses 'development' target with hot-reload"
@@ -108,6 +180,12 @@ docker-build-dev:
 # Run production Docker image
 docker-run:
 	@echo "🚀 Running production Docker image..."
+	@command -v docker >/dev/null 2>&1 || { \
+		echo "❌ Docker is not installed"; \
+		echo "📥 Install from: https://docs.docker.com/get-docker/"; \
+		exit 1; \
+	}
+	@mkdir -p data config
 	@docker run -p 8000:8000 \
 		-v $(PWD)/data:/data \
 		-v $(PWD)/config:/config \
@@ -116,23 +194,47 @@ docker-run:
 # Run tests
 test:
 	@echo "🧪 Running tests..."
+	@command -v go >/dev/null 2>&1 || { \
+		echo "❌ Go is not installed"; \
+		echo "📥 Install from: https://golang.org/dl/"; \
+		exit 1; \
+	}
 	@go test -v ./...
 
 # Run tests with coverage
 test-coverage:
 	@echo "🧪 Running tests with coverage..."
+	@command -v go >/dev/null 2>&1 || { \
+		echo "❌ Go is not installed"; \
+		echo "📥 Install from: https://golang.org/dl/"; \
+		exit 1; \
+	}
 	@go test -v -coverprofile=coverage.out ./...
 	@go tool cover -html=coverage.out -o coverage.html
-	@echo "Coverage report: coverage.html"
+	@echo "✅ Coverage report: coverage.html"
 
 # Format code
 fmt:
 	@echo "✨ Formatting code..."
+	@command -v go >/dev/null 2>&1 || { \
+		echo "❌ Go is not installed"; \
+		echo "📥 Install from: https://golang.org/dl/"; \
+		exit 1; \
+	}
 	@go fmt ./...
 
 # Run linter
 lint:
 	@echo "🔍 Running linter..."
+	@command -v golangci-lint >/dev/null 2>&1 || { \
+		echo "❌ golangci-lint is not installed"; \
+		echo "📥 Install from: https://golangci-lint.run/usage/install/"; \
+		echo ""; \
+		echo "Quick install:"; \
+		echo "  curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b \$$(go env GOPATH)/bin"; \
+		echo ""; \
+		exit 1; \
+	}
 	@golangci-lint run ./...
 
 # Clean build artifacts
