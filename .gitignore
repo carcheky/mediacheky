@@ -1,0 +1,86 @@
+# Repositorios de referencia
+reference-repos/
+
+# Docker volumes (local bind mounts)
+volumes/
+!volumes/.gitkeep
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+# Logs
+logs/
+*.log
+
+# Binaries for programs and plugins
+bin/
+server
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual environments
+venv/
+ENV/
+env/
+
+# Node
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# IDEs
+.vscode/*
+!.vscode/copilot-commit-message-instructions.md
+!.vscode/settings.json
+!.vscode/extensions.json
+!.vscode/launch.json
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Docker
+*.log
+
+# Logs directory
+logs/
+tmp/
+
+# Environment variables
+.env
+.env.local
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+volumes-dev.zip
+
+# Test 1
+# Test 2

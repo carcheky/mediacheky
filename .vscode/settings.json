@@ -1,0 +1,56 @@
+{
+    "go.toolsManagement.autoUpdate": true,
+    "go.useLanguageServer": true,
+    "go.lintTool": "golangci-lint",
+    "go.lintOnSave": "workspace",
+    "go.formatTool": "goimports",
+    "editor.formatOnSave": false,
+    "editor.codeActionsOnSave": {
+        "source.organizeImports": "explicit"
+    },
+    "[go]": {
+        "editor.defaultFormatter": "golang.go",
+        "editor.tabSize": 4,
+        "editor.insertSpaces": false
+    },
+    "[html]": {
+        "editor.formatOnSave": false,
+        "editor.formatOnPaste": false,
+        "editor.formatOnType": false
+    },
+    "go.testFlags": [
+        "-v"
+    ],
+    "go.coverOnSave": false,
+    "go.buildTags": "",
+    "files.exclude": {
+        "**/.git": true,
+        "**/tmp": true,
+        "**/bin": true,
+        "**/.air": true
+    },
+    "files.watcherExclude": {
+        "**/tmp/**": true,
+        "**/bin/**": true,
+        "**/reference-repos/**": true
+    },
+    "html.format.templating": true,
+    "workbench.colorCustomizations": {
+        "activityBar.background": "#1F3218",
+        "titleBar.activeBackground": "#2B4721",
+        "titleBar.activeForeground": "#F9FCF8"
+    },
+    "chat.mcp.serverSampling": {
+        "keepercheky/.vscode/mcp.json: shell": {
+            "allowedDuringChat": true
+        }
+    },
+    "github-actions.workflows.pinned.workflows": [
+        ".github/workflows/release.yml"
+    ],
+    "github.copilot.chat.commitMessageGeneration.instructions": [
+        {
+            "file": ".vscode/copilot-commit-message-instructions.md"
+        }
+    ]
+}

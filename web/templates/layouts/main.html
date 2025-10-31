@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="es" class="dark">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{.Title}}</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        dark: {
+                            bg: '#0f172a',
+                            surface: '#1e293b',
+                            border: '#334155',
+                            text: '#e2e8f0',
+                            muted: '#94a3b8'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- Alpine.js Components - Load before Alpine.js initializes -->
+    <script src="/static/js/file-health-components.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+</head>
+
+<body class="bg-dark-bg dark:bg-dark-bg">
+    <nav class="bg-dark-surface dark:bg-dark-surface shadow-lg border-b border-dark-border">
+        <div class="max-w-7xl mx-auto px-4">
+            <div class="flex justify-between h-16">
+                <div class="flex">
+                    <div class="flex-shrink-0 flex items-center">
+                        <h1 class="text-xl font-bold text-dark-text dark:text-dark-text">MediaCheky</h1>
+                    </div>
+                    <div class="hidden sm:ml-6 sm:flex sm:space-x-8">
+                        <a href="/"
+                            class="border-transparent text-dark-muted hover:border-blue-500 hover:text-dark-text dark:text-dark-muted dark:hover:text-dark-text inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium transition-colors">
+                            Dashboard
+                        </a>
+                        <a href="/settings"
+                            class="border-transparent text-dark-muted hover:border-blue-500 hover:text-dark-text dark:text-dark-muted dark:hover:text-dark-text inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium transition-colors">
+                            Settings
+                        </a>
+                        <a href="/logs"
+                            class="border-transparent text-dark-muted hover:border-blue-500 hover:text-dark-text dark:text-dark-muted dark:hover:text-dark-text inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium transition-colors">
+                            Logs
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <main class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+        {{embed}}
+    </main>
+</body>
+
+</html>

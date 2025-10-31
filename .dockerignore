@@ -1,0 +1,62 @@
+# Archivos de desarrollo
+.git
+.gitignore
+.github
+.vscode
+.idea
+
+# Documentación
+*.md
+docs/
+
+# Archivos de configuración local
+.env
+.env.local
+config/*.yaml
+!config/config.example.yaml
+
+# Dependencias y cache
+node_modules/
+vendor/
+
+# Binarios compilados
+bin/
+*.exe
+*.dll
+*.so
+*.dylib
+
+# Archivos de test
+*_test.go
+**/*_test.go
+
+# Archivos temporales
+tmp/
+*.tmp
+*.log
+
+# Logs
+logs/
+
+# Volúmenes de Docker
+volumes/
+
+# Repositorios de referencia
+reference-repos/
+
+# Media library de desarrollo
+media-library/
+
+# Docker Compose files
+docker-compose*.yml
+!docker-compose.yml
+
+# Dockerfiles de desarrollo
+*.dev
+Dockerfile.dev
+
+# Scripts
+scripts/
+
+# Makefiles
+Makefile
