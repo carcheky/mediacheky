@@ -1,0 +1,157 @@
+name: Release
+
+on:
+  push:
+    branches:
+      - stable
+      - develop
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: write
+  packages: write
+  issues: write
+
+jobs:
+  semantic-release:
+    name: Semantic Release
+    runs-on: ubuntu-latest
+    # No ejecutar si el commit es de semantic-release
+    if: ${{ !startsWith(github.event.head_commit.message, 'chore(release):') }}
+    outputs:
+      new_release_published: ${{ steps.semantic.outputs.new_release_published }}
+      new_release_version: ${{ steps.semantic.outputs.new_release_version }}
+      new_release_git_tag: ${{ steps.semantic.outputs.new_release_git_tag }}
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: true
+          token: ${{ secrets.PAT_TOKEN || secrets.GITHUB_TOKEN }}
+
+      - name: Run semantic-release
+        id: semantic
+        uses: cycjimmy/semantic-release-action@v4
+        with:
+          extra_plugins: |
+            @semantic-release/changelog@6
+            @semantic-release/git@10
+            conventional-changelog-conventionalcommits@7
+        env:
+          GITHUB_TOKEN: ${{ secrets.PAT_TOKEN || secrets.GITHUB_TOKEN }}
+
+  build-and-push:
+    name: Build & Push Docker Images
+    needs: semantic-release
+    # Solo ejecutar si hubo una nueva release
+    if: needs.semantic-release.outputs.new_release_published == 'true'
+    runs-on: ubuntu-latest
+    
+    env:
+      REGISTRY: ghcr.io
+      IMAGE_NAME: ${{ github.repository }}
+      VERSION: ${{ needs.semantic-release.outputs.new_release_version }}
+      GIT_TAG: ${{ needs.semantic-release.outputs.new_release_git_tag }}
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.semantic-release.outputs.new_release_git_tag }}
+          fetch-depth: 0
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.repository_owner }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=semver,pattern={{version}},value=${{ env.GIT_TAG }}
+            type=semver,pattern={{major}}.{{minor}},value=${{ env.GIT_TAG }}
+            type=semver,pattern={{major}},value=${{ env.GIT_TAG }},enable=${{ !contains(env.VERSION, '-') }}
+            type=raw,value=develop,enable=${{ contains(env.VERSION, '-dev') }}
+            type=raw,value=latest,enable=${{ !contains(env.VERSION, '-') }}
+            type=raw,value=stable,enable=${{ !contains(env.VERSION, '-') }}
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./Dockerfile
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          build-args: |
+            VERSION=${{ env.VERSION }}
+            COMMIT_SHA=${{ github.sha }}
+
+      - name: Summary
+        run: |
+          echo "## 🚀 Release Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Version:** \`${{ env.VERSION }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "**Git Tag:** \`${{ env.GIT_TAG }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "**Branch:** \`${{ github.ref_name }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### 🐳 Docker Tags" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+          echo "${{ steps.meta.outputs.tags }}" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+
+  notify:
+    name: Notification
+    needs: [semantic-release, build-and-push]
+    if: always()
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Determine status
+        id: status
+        run: |
+          if [ "${{ needs.build-and-push.result }}" == "success" ]; then
+            echo "status=✅ Success" >> $GITHUB_OUTPUT
+            echo "color=3066993" >> $GITHUB_OUTPUT
+          elif [ "${{ needs.build-and-push.result }}" == "failure" ]; then
+            echo "status=❌ Failure" >> $GITHUB_OUTPUT
+            echo "color=15158332" >> $GITHUB_OUTPUT
+          elif [ "${{ needs.build-and-push.result }}" == "cancelled" ]; then
+            echo "status=🚫 Cancelled" >> $GITHUB_OUTPUT
+            echo "color=10181046" >> $GITHUB_OUTPUT
+          else
+            echo "status=⏭️ Skipped" >> $GITHUB_OUTPUT
+            echo "color=9807270" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Create summary
+        run: |
+          echo "## 📊 Release Workflow Status" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Semantic Release:** ${{ needs.semantic-release.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Docker Build:** ${{ needs.build-and-push.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          if [ "${{ needs.semantic-release.outputs.new_release_published }}" == "true" ]; then
+            echo "**New Version:** \`${{ needs.semantic-release.outputs.new_release_version }}\`" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "**No new release was published**" >> $GITHUB_STEP_SUMMARY
+          fi

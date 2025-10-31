@@ -1,0 +1,904 @@
+{{define "pages/files"}}
+<div x-data="filesPage()" class="container mx-auto px-4 py-8">
+    <!-- Header -->
+    <div class="mb-6">
+        <div class="flex justify-between items-center mb-4">
+            <div>
+                <h1 class="text-3xl font-bold text-dark-text mb-2">
+                    🏥 Salud del Almacenamiento
+                </h1>
+                <p class="text-dark-muted">
+                    Detecta y resuelve problemas en tus archivos de media
+                </p>
+            </div>
+
+            <!-- Sync Button -->
+            <div class="flex items-center gap-4">
+                <!-- Last Sync Info -->
+                <div x-show="lastSync" class="text-sm text-dark-muted">
+                    Última sincronización: <span x-text="formatLastSync(lastSync)" class="text-blue-400"></span>
+                </div>
+
+                <!-- Sync Progress Messages -->
+                <div x-show="syncMessage" x-transition :class="{
+                        'bg-green-50 border-green-200 text-green-800': syncMessageType === 'success',
+                        'bg-red-50 border-red-200 text-red-800': syncMessageType === 'error',
+                        'bg-blue-50 border-blue-200 text-blue-800': syncMessageType === 'info'
+                    }" class="px-4 py-2 rounded-lg border text-sm max-w-md">
+                    <p x-text="syncMessage" class="line-clamp-2"></p>
+                </div>
+
+                <!-- Sync Button -->
+                <button @click="syncFiles()" :disabled="syncing"
+                    class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 whitespace-nowrap">
+                    <svg x-show="!syncing" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15">
+                        </path>
+                    </svg>
+                    <svg x-show="syncing" class="animate-spin w-5 h-5" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor"
+                            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
+                        </path>
+                    </svg>
+                    <span x-text="syncing ? 'Sincronizando...' : 'Sincronizar'"></span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Rutas monitorizadas - Desplegable compacto -->
+        <div x-data="{ open: false }" class="mb-4">
+            <button @click="open = !open"
+                class="flex items-center justify-between w-full sm:w-auto px-4 py-2 bg-dark-surface border border-dark-border rounded-lg hover:bg-slate-700/50 transition-colors">
+                <div class="flex items-center space-x-2">
+                    <svg class="w-4 h-4 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"></path>
+                    </svg>
+                    <span class="text-sm font-medium text-dark-text">
+                        📂 Rutas monitorizadas
+                        {{if .Paths}}
+                        <span class="text-blue-400">({{len .Paths}})</span>
+                        {{else}}
+                        <span class="text-slate-500">(0)</span>
+                        {{end}}
+                    </span>
+                </div>
+                <svg class="w-4 h-4 text-dark-muted transition-transform"
+                    :class="{ 'rotate-180': open }" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                </svg>
+            </button>
+
+            <!-- Contenido desplegable -->
+            <div x-show="open" x-transition:enter="transition ease-out duration-200"
+                x-transition:enter-start="opacity-0 transform scale-95"
+                x-transition:enter-end="opacity-100 transform scale-100"
+                x-transition:leave="transition ease-in duration-150"
+                x-transition:leave-start="opacity-100 transform scale-100"
+                x-transition:leave-end="opacity-0 transform scale-95"
+                class="mt-2 bg-dark-surface border border-dark-border rounded-lg p-4 shadow-lg">
+                {{if .Paths}}
+                <div class="space-y-2">
+                    {{range .Paths}}
+                    <div class="bg-slate-800/50 rounded px-3 py-2 border border-slate-700">
+                        <div class="flex items-center justify-between">
+                            <div class="flex-1 min-w-0">
+                                <div class="text-sm font-medium text-blue-300 mb-0.5">
+                                    {{.Label}}
+                                </div>
+                                <div class="font-mono text-xs text-blue-200/80 truncate" title="{{.Path}}">
+                                    {{.Path}}
+                                </div>
+                            </div>
+                            <div class="ml-3 flex-shrink-0">
+                                {{if eq .Type "download"}}
+                                <span
+                                    class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-indigo-900/60 text-indigo-200 border border-indigo-700">
+                                    Origen
+                                </span>
+                                {{else}}
+                                <span
+                                    class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-900/60 text-green-200 border border-green-700">
+                                    Destino
+                                </span>
+                                {{end}}
+                            </div>
+                        </div>
+                    </div>
+                    {{end}}
+                </div>
+                <p class="text-xs text-blue-400/80 mt-3">
+                    💡 Rutas obtenidas directamente desde qBittorrent (origen) y Jellyfin (destino)
+                </p>
+                {{else}}
+                <p class="text-sm text-blue-300/80 italic">
+                    No se han detectado rutas. Ejecuta una sincronización para descubrirlas.
+                </p>
+                {{end}}
+            </div>
+        </div>
+    </div>
+
+    <!-- Stats Summary -->
+    <div class="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6">
+        <div class="bg-dark-surface border border-dark-border rounded-lg shadow-lg p-4">
+            <div class="flex items-center">
+                <div class="p-3 rounded-full bg-blue-900/60 border border-blue-700">
+                    <svg class="w-6 h-6 text-blue-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z">
+                        </path>
+                    </svg>
+                </div>
+                <div class="ml-4">
+                    <p class="text-sm text-dark-muted">Total Archivos</p>
+                    <p class="text-lg font-semibold text-dark-text" x-text="files.length">0</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-dark-surface border border-dark-border rounded-lg shadow-lg p-4">
+            <div class="flex items-center">
+                <div class="p-3 rounded-full bg-green-900/60 border border-green-700">
+                    <svg class="w-6 h-6 text-green-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1">
+                        </path>
+                    </svg>
+                </div>
+                <div class="ml-4">
+                    <p class="text-sm text-dark-muted">Con Hardlinks</p>
+                    <p class="text-lg font-semibold text-dark-text" x-text="files.filter(f => f.is_hardlink).length">0
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-dark-surface border border-dark-border rounded-lg shadow-lg p-4">
+            <div class="flex items-center">
+                <div class="p-3 rounded-full bg-purple-900/60 border border-purple-700">
+                    <svg class="w-6 h-6 text-purple-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M7 4v16M17 4v16M3 8h4m10 0h4M3 12h18M3 16h4m10 0h4M4 20h16a1 1 0 001-1V5a1 1 0 00-1-1H4a1 1 0 00-1 1v14a1 1 0 001 1z">
+                        </path>
+                    </svg>
+                </div>
+                <div class="ml-4">
+                    <p class="text-sm text-dark-muted">En Jellyfin</p>
+                    <p class="text-lg font-semibold text-dark-text" x-text="files.filter(f => f.in_jellyfin).length">0
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-dark-surface border border-dark-border rounded-lg shadow-lg p-4">
+            <div class="flex items-center">
+                <div class="p-3 rounded-full bg-yellow-900/60 border border-yellow-700">
+                    <svg class="w-6 h-6 text-yellow-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M7 4v16M17 4v16M3 8h4m10 0h4M3 12h18M3 16h4m10 0h4M4 20h16a1 1 0 001-1V5a1 1 0 00-1-1H4a1 1 0 00-1 1v14a1 1 0 001 1z">
+                        </path>
+                    </svg>
+                </div>
+                <div class="ml-4">
+                    <p class="text-sm text-dark-muted">En Radarr/Sonarr</p>
+                    <p class="text-lg font-semibold text-dark-text"
+                        x-text="files.filter(f => f.in_radarr || f.in_sonarr).length">0</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-dark-surface border border-dark-border rounded-lg shadow-lg p-4">
+            <div class="flex items-center">
+                <div class="p-3 rounded-full bg-indigo-900/60 border border-indigo-700">
+                    <svg class="w-6 h-6 text-indigo-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12">
+                        </path>
+                    </svg>
+                </div>
+                <div class="ml-4">
+                    <p class="text-sm text-dark-muted">En qBittorrent</p>
+                    <p class="text-lg font-semibold text-dark-text" x-text="files.filter(f => f.in_qbittorrent).length">
+                        0</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filter Tabs -->
+    <div class="bg-dark-surface border border-dark-border rounded-lg shadow-lg mb-6">
+        <div class="border-b border-dark-border">
+            <nav class="flex -mb-px">
+                <button @click="selectedTab = 'all'"
+                    :class="selectedTab === 'all' ? 'border-blue-500 text-blue-400' : 'border-transparent text-dark-muted hover:text-dark-text hover:border-slate-600'"
+                    class="px-6 py-3 text-sm font-medium border-b-2 transition-colors">
+                    Todos (<span x-text="files.length">0</span>)
+                </button>
+                <button @click="selectedTab = 'movies'"
+                    :class="selectedTab === 'movies' ? 'border-blue-500 text-blue-400' : 'border-transparent text-dark-muted hover:text-dark-text hover:border-slate-600'"
+                    class="px-6 py-3 text-sm font-medium border-b-2 transition-colors">
+                    🎬 Películas (<span x-text="groupedFiles.movies.length">0</span>)
+                </button>
+                <button @click="selectedTab = 'series'"
+                    :class="selectedTab === 'series' ? 'border-blue-500 text-blue-400' : 'border-transparent text-dark-muted hover:text-dark-text hover:border-slate-600'"
+                    class="px-6 py-3 text-sm font-medium border-b-2 transition-colors">
+                    📺 Series (<span x-text="groupedFiles.series.length">0</span>)
+                </button>
+                <button @click="selectedTab = 'orphan'"
+                    :class="selectedTab === 'orphan' ? 'border-blue-500 text-blue-400' : 'border-transparent text-dark-muted hover:text-dark-text hover:border-slate-600'"
+                    class="px-6 py-3 text-sm font-medium border-b-2 transition-colors">
+                    ❓ Sin clasificar (<span x-text="groupedFiles.orphan.length">0</span>)
+                </button>
+            </nav>
+        </div>
+    </div>
+
+    <!-- Movies Grouped View -->
+    <div x-show="selectedTab === 'movies'" class="space-y-4">
+        <template x-for="(files, movieTitle) in groupedMovies" :key="movieTitle">
+            <div class="bg-dark-surface border border-dark-border rounded-lg shadow-lg overflow-hidden">
+                <!-- Movie Header -->
+                <div class="bg-slate-800/50 px-6 py-3 border-b border-dark-border">
+                    <h3 class="text-lg font-medium text-dark-text">
+                        🎬 <span x-text="movieTitle"></span>
+                    </h3>
+                    <p class="text-xs text-dark-muted mt-1">
+                        <span x-text="files.length"></span> archivo<span x-text="files.length > 1 ? 's' : ''"></span>
+                    </p>
+                </div>
+                
+                <!-- Movie Files -->
+                <div class="divide-y divide-dark-border">
+                    <template x-for="file in files" :key="file.id">
+                        <div class="px-6 py-4 hover:bg-slate-700/30 transition-colors">
+                            <div class="flex justify-between items-center">
+                                <div class="flex-1">
+                                    <!-- Primary path -->
+                                    <div class="text-sm font-mono text-slate-300 mb-2" x-text="file.file_path"></div>
+                                    
+                                    <div class="flex gap-2 text-xs mt-2 flex-wrap">
+                                        <span class="text-dark-muted">
+                                            💾 <span x-text="formatBytes(file.size)"></span>
+                                        </span>
+                                        <!-- Hardlink badge with tooltip -->
+                                        <span x-show="file.is_hardlink" class="relative" x-data="{ showTooltip: false }"
+                                            @mouseenter="showTooltip = true" @mouseleave="showTooltip = false">
+                                            <span class="text-green-400 cursor-help">
+                                                🔗 Hardlink (<span x-text="(file.hardlink_paths || '').split('|').filter(p => p.trim()).length"></span>)
+                                            </span>
+                                            <!-- Tooltip with all hardlink paths -->
+                                            <div x-show="showTooltip" 
+                                                class="absolute z-50 bg-slate-900 border border-green-500/50 text-slate-200 text-xs rounded-lg p-3 shadow-xl w-96 bottom-full mb-2 left-0"
+                                                style="display: none;">
+                                                <div class="font-semibold text-green-400 mb-2">🔗 Rutas enlazadas:</div>
+                                                <div class="space-y-1 max-h-48 overflow-y-auto">
+                                                    <template x-for="(path, idx) in (file.hardlink_paths || '').split('|').filter(p => p.trim())" :key="idx">
+                                                        <div class="font-mono text-xs break-all" 
+                                                            :class="path === file.file_path ? 'text-green-300 font-semibold' : 'text-slate-400'"
+                                                            x-text="(path === file.file_path ? '➜ ' : '  ') + path"></div>
+                                                    </template>
+                                                </div>
+                                            </div>
+                                        </span>
+                                        
+                                        <!-- Service badges -->
+                                        <span x-show="file.in_radarr" class="px-2 py-0.5 rounded bg-yellow-900/40 border border-yellow-600/50 text-yellow-300">
+                                            🎬 Radarr
+                                        </span>
+                                        <span x-show="file.in_sonarr" class="px-2 py-0.5 rounded bg-blue-900/40 border border-blue-600/50 text-blue-300">
+                                            📺 Sonarr
+                                        </span>
+                                        <span x-show="file.in_jellyfin" class="px-2 py-0.5 rounded bg-purple-900/40 border border-purple-600/50 text-purple-300">
+                                            🎥 Jellyfin
+                                        </span>
+                                        <span x-show="file.in_jellyseerr" class="px-2 py-0.5 rounded bg-pink-900/40 border border-pink-600/50 text-pink-300">
+                                            📝 Jellyseerr
+                                        </span>
+                                        <span x-show="file.in_jellystat" class="px-2 py-0.5 rounded bg-cyan-900/40 border border-cyan-600/50 text-cyan-300">
+                                            📊 Jellystat
+                                        </span>
+                                        <span x-show="file.in_qbittorrent" class="px-2 py-0.5 rounded bg-indigo-900/40 border border-indigo-600/50 text-indigo-300" x-data="{ showTooltip: false }" @mouseenter="showTooltip = true" @mouseleave="showTooltip = false">
+                                            🧲 qBittorrent
+                                            <div x-show="showTooltip" class="absolute z-50 bg-slate-900 border border-indigo-500/50 text-slate-200 text-xs rounded-lg p-3 shadow-xl w-64 bottom-full mb-2 left-0" style="display: none;">
+                                                <div class="space-y-1">
+                                                    <div x-show="file.torrent_state"><span class="text-indigo-400">Estado:</span> <span x-text="file.torrent_state"></span></div>
+                                                    <div x-show="file.torrent_category"><span class="text-indigo-400">Categoría:</span> <span x-text="file.torrent_category"></span></div>
+                                                    <div x-show="file.seed_ratio !== undefined"><span class="text-indigo-400">Ratio:</span> <span x-text="file.seed_ratio ? file.seed_ratio.toFixed(2) : '0.00'"></span></div>
+                                                    <div x-show="file.torrent_tags"><span class="text-indigo-400">Tags:</span> <span x-text="file.torrent_tags"></span></div>
+                                                    <div x-show="file.is_seeding"><span class="text-green-400">⬆️ Seedeando</span></div>
+                                                </div>
+                                            </div>
+                                        </span>
+                                        
+                                        <!-- Quality badge -->
+                                        <span x-show="file.quality" class="px-2 py-0.5 rounded bg-emerald-900/40 border border-emerald-600/50 text-emerald-300" x-text="file.quality"></span>
+                                        
+                                        <!-- Tags -->
+                                        <template x-if="file.tags && file.tags.length > 0">
+                                            <span class="px-2 py-0.5 rounded bg-slate-700/60 border border-slate-500/50 text-slate-300">
+                                                🏷️ <span x-text="file.tags.join(', ')"></span>
+                                            </span>
+                                        </template>
+                                        
+                                        <!-- Watched status -->
+                                        <span x-show="file.has_been_watched" class="px-2 py-0.5 rounded bg-green-900/40 border border-green-600/50 text-green-300">
+                                            ✅ Visto
+                                        </span>
+
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </template>
+                </div>
+            </div>
+        </template>
+    </div>
+
+    <!-- Series Grouped View (by series > seasons) -->
+    <div x-show="selectedTab === 'series'" class="space-y-4">
+        <template x-for="(seasons, seriesTitle) in groupedSeries" :key="seriesTitle">
+            <div class="bg-dark-surface border border-dark-border rounded-lg shadow-lg overflow-hidden">
+                <!-- Series Header -->
+                <div class="bg-slate-800/50 px-6 py-3 border-b border-dark-border">
+                    <h3 class="text-lg font-medium text-dark-text">
+                        📺 <span x-text="seriesTitle"></span>
+                    </h3>
+                    <p class="text-xs text-dark-muted mt-1">
+                        <span x-text="Object.keys(seasons).length"></span> temporada<span x-text="Object.keys(seasons).length > 1 ? 's' : ''"></span>
+                    </p>
+                </div>
+                
+                <!-- Seasons -->
+                <div class="divide-y divide-dark-border">
+                    <template x-for="(episodes, seasonName) in seasons" :key="seasonName">
+                        <div x-data="{ expanded: false }" class="border-b border-slate-700/50 last:border-b-0">
+                            <!-- Season Header (Collapsible) -->
+                            <button @click="expanded = !expanded" 
+                                class="w-full px-6 py-3 bg-slate-800/30 hover:bg-slate-700/30 flex justify-between items-center transition-colors">
+                                <div class="flex items-center gap-3">
+                                    <svg class="w-4 h-4 text-dark-muted transition-transform" 
+                                        :class="{ 'rotate-90': expanded }" 
+                                        fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                                    </svg>
+                                    <span class="text-sm font-medium text-dark-text" x-text="seasonName"></span>
+                                </div>
+                                <span class="text-xs text-dark-muted">
+                                    <span x-text="episodes.length"></span> episodio<span x-text="episodes.length > 1 ? 's' : ''"></span>
+                                </span>
+                            </button>
+                            
+                            <!-- Episodes (Collapsed by default) -->
+                            <div x-show="expanded" x-transition class="bg-slate-900/20">
+                                <template x-for="file in episodes" :key="file.id">
+                                    <div class="px-8 py-3 border-t border-slate-700/30 hover:bg-slate-700/20 transition-colors">
+                                        <!-- Primary path -->
+                                        <div class="text-sm font-mono text-slate-300 mb-2" x-text="file.file_path"></div>
+                                        
+                                        <div class="flex gap-2 text-xs mt-2 flex-wrap">
+                                            <span class="text-dark-muted">
+                                                💾 <span x-text="formatBytes(file.size)"></span>
+                                            </span>
+                                            <!-- Hardlink badge with tooltip -->
+                                            <span x-show="file.is_hardlink" class="relative" x-data="{ showTooltip: false }"
+                                                @mouseenter="showTooltip = true" @mouseleave="showTooltip = false">
+                                                <span class="text-green-400 cursor-help">
+                                                    🔗 Hardlink (<span x-text="(file.hardlink_paths || '').split('|').filter(p => p.trim()).length"></span>)
+                                                </span>
+                                                <!-- Tooltip with all hardlink paths -->
+                                                <div x-show="showTooltip" 
+                                                    class="absolute z-50 bg-slate-900 border border-green-500/50 text-slate-200 text-xs rounded-lg p-3 shadow-xl w-96 bottom-full mb-2 left-0"
+                                                    style="display: none;">
+                                                    <div class="font-semibold text-green-400 mb-2">🔗 Rutas enlazadas:</div>
+                                                    <div class="space-y-1 max-h-48 overflow-y-auto">
+                                                        <template x-for="(path, idx) in (file.hardlink_paths || '').split('|').filter(p => p.trim())" :key="idx">
+                                                            <div class="font-mono text-xs break-all" 
+                                                                :class="path === file.file_path ? 'text-green-300 font-semibold' : 'text-slate-400'"
+                                                                x-text="(path === file.file_path ? '➜ ' : '  ') + path"></div>
+                                                        </template>
+                                                    </div>
+                                                </div>
+                                            </span>
+                                            
+                                            <!-- Service badges -->
+                                            <span x-show="file.in_radarr" class="px-2 py-0.5 rounded bg-yellow-900/40 border border-yellow-600/50 text-yellow-300">
+                                                🎬 Radarr
+                                            </span>
+                                            <span x-show="file.in_sonarr" class="px-2 py-0.5 rounded bg-blue-900/40 border border-blue-600/50 text-blue-300">
+                                                📺 Sonarr
+                                            </span>
+                                            <span x-show="file.in_jellyfin" class="px-2 py-0.5 rounded bg-purple-900/40 border border-purple-600/50 text-purple-300">
+                                                🎥 Jellyfin
+                                            </span>
+                                            <span x-show="file.in_jellyseerr" class="px-2 py-0.5 rounded bg-pink-900/40 border border-pink-600/50 text-pink-300">
+                                                📝 Jellyseerr
+                                            </span>
+                                            <span x-show="file.in_jellystat" class="px-2 py-0.5 rounded bg-cyan-900/40 border border-cyan-600/50 text-cyan-300">
+                                                📊 Jellystat
+                                            </span>
+                                            <span x-show="file.in_qbittorrent" class="px-2 py-0.5 rounded bg-indigo-900/40 border border-indigo-600/50 text-indigo-300" x-data="{ showTooltip: false }" @mouseenter="showTooltip = true" @mouseleave="showTooltip = false">
+                                                🧲 qBittorrent
+                                                <div x-show="showTooltip" class="absolute z-50 bg-slate-900 border border-indigo-500/50 text-slate-200 text-xs rounded-lg p-3 shadow-xl w-64 bottom-full mb-2 left-0" style="display: none;">
+                                                    <div class="space-y-1">
+                                                        <div x-show="file.torrent_state"><span class="text-indigo-400">Estado:</span> <span x-text="file.torrent_state"></span></div>
+                                                        <div x-show="file.torrent_category"><span class="text-indigo-400">Categoría:</span> <span x-text="file.torrent_category"></span></div>
+                                                        <div x-show="file.seed_ratio !== undefined"><span class="text-indigo-400">Ratio:</span> <span x-text="file.seed_ratio ? file.seed_ratio.toFixed(2) : '0.00'"></span></div>
+                                                        <div x-show="file.torrent_tags"><span class="text-indigo-400">Tags:</span> <span x-text="file.torrent_tags"></span></div>
+                                                        <div x-show="file.is_seeding"><span class="text-green-400">⬆️ Seedeando</span></div>
+                                                    </div>
+                                                </div>
+                                            </span>
+                                            
+                                            <!-- Quality badge -->
+                                            <span x-show="file.quality" class="px-2 py-0.5 rounded bg-emerald-900/40 border border-emerald-600/50 text-emerald-300" x-text="file.quality"></span>
+                                            
+                                            <!-- Tags -->
+                                            <template x-if="file.tags && file.tags.length > 0">
+                                                <span class="px-2 py-0.5 rounded bg-slate-700/60 border border-slate-500/50 text-slate-300">
+                                                    🏷️ <span x-text="file.tags.join(', ')"></span>
+                                                </span>
+                                            </template>
+                                            
+                                            <!-- Watched status -->
+                                            <span x-show="file.has_been_watched" class="px-2 py-0.5 rounded bg-green-900/40 border border-green-600/50 text-green-300">
+                                                ✅ Visto
+                                            </span>
+                                        </div>
+                                    </div>
+                                </template>
+                            </div>
+                        </div>
+                    </template>
+                </div>
+            </div>
+        </template>
+    </div>
+
+    <!-- All / Orphan - Files Table (flat view) -->
+    <div x-show="selectedTab === 'all' || selectedTab === 'orphan'" class="bg-dark-surface border border-dark-border rounded-lg shadow-lg overflow-hidden">
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-dark-border">
+                <thead class="bg-slate-800/50">
+                    <tr>
+                        <th scope="col"
+                            class="px-6 py-3 text-left text-xs font-medium text-dark-muted uppercase tracking-wider">
+                            Archivo
+                        </th>
+                        <th scope="col"
+                            class="px-6 py-3 text-center text-xs font-medium text-dark-muted uppercase tracking-wider">
+                            Hardlink
+                        </th>
+                        <th scope="col"
+                            class="px-6 py-3 text-center text-xs font-medium text-dark-muted uppercase tracking-wider">
+                            Jellyfin
+                        </th>
+                        <th scope="col"
+                            class="px-6 py-3 text-center text-xs font-medium text-dark-muted uppercase tracking-wider">
+                            Radarr/Sonarr
+                        </th>
+                        <th scope="col"
+                            class="px-6 py-3 text-center text-xs font-medium text-dark-muted uppercase tracking-wider">
+                            qBittorrent
+                        </th>
+                        <th scope="col"
+                            class="px-6 py-3 text-right text-xs font-medium text-dark-muted uppercase tracking-wider">
+                            Tamaño
+                        </th>
+                    </tr>
+                </thead>
+                <tbody class="bg-dark-surface divide-y divide-dark-border">
+                    <template x-for="file in filteredFiles" :key="file.id">
+                        <tr class="hover:bg-slate-700/50 transition-colors">
+                            <!-- File Info -->
+                            <td class="px-6 py-4">
+                                <div class="flex items-center">
+                                    <div class="flex-shrink-0 h-12 w-12">
+                                        <!-- Icon only - no poster URLs to avoid 404s -->
+                                        <div
+                                            class="h-12 w-12 rounded bg-dark-surface dark:bg-dark-surface flex items-center justify-center border border-dark-border">
+                                            <svg class="w-6 h-6 text-dark-muted" fill="none" stroke="currentColor"
+                                                viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round"
+                                                    stroke-width="2"
+                                                    d="M7 4v16M17 4v16M3 8h4m10 0h4M3 12h18M3 16h4m10 0h4M4 20h16a1 1 0 001-1V5a1 1 0 00-1-1H4a1 1 0 00-1 1v14a1 1 0 001 1z">
+                                                </path>
+                                            </svg>
+                                        </div>
+                                    </div>
+                                    <div class="ml-4">
+                                        <div class="text-sm font-medium text-dark-text"
+                                            x-text="file.title || file.file_path.split('/').pop()"></div>
+                                        <div class="text-xs text-dark-muted mt-1">
+                                            <div class="font-semibold text-blue-400">📁 Ruta
+                                                completa:</div>
+                                            <div class="font-mono text-xs bg-slate-800/50 border border-slate-600 px-2 py-1 rounded mt-1 break-all text-slate-300"
+                                                x-text="file.file_path"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </td>
+
+                            <!-- Hardlink Status -->
+                            <td class="px-6 py-4 text-center">
+                                <template x-if="file.is_hardlink">
+                                    <div class="inline-flex items-center" x-data="{ showTooltip: false }"
+                                        @mouseenter="showTooltip = true" @mouseleave="showTooltip = false">
+                                        <svg class="w-6 h-6 text-green-400" fill="currentColor" viewBox="0 0 20 20">
+                                            <path fill-rule="evenodd"
+                                                d="M12.586 4.586a2 2 0 112.828 2.828l-3 3a2 2 0 01-2.828 0 1 1 0 00-1.414 1.414 4 4 0 005.656 0l3-3a4 4 0 00-5.656-5.656l-1.5 1.5a1 1 0 101.414 1.414l1.5-1.5zm-5 5a2 2 0 012.828 0 1 1 0 101.414-1.414 4 4 0 00-5.656 0l-3 3a4 4 0 105.656 5.656l1.5-1.5a1 1 0 10-1.414-1.414l-1.5 1.5a2 2 0 11-2.828-2.828l3-3z"
+                                                clip-rule="evenodd"></path>
+                                        </svg>
+                                        <div x-show="showTooltip"
+                                            class="absolute z-10 bg-slate-900 border border-dark-border text-dark-text text-xs rounded py-1 px-2 -mt-20"
+                                            style="display: none;">
+                                            <template
+                                                x-for="path in (file.hardlink_paths || '').split(',').filter(p => p.trim())"
+                                                :key="path">
+                                                <div x-text="path" class="whitespace-nowrap"></div>
+                                            </template>
+                                        </div>
+                                    </div>
+                                </template>
+                                <template x-if="!file.is_hardlink">
+                                    <svg class="w-6 h-6 text-slate-600 mx-auto" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd"
+                                            d="M12.586 4.586a2 2 0 112.828 2.828l-3 3a2 2 0 01-2.828 0 1 1 0 00-1.414 1.414 4 4 0 005.656 0l3-3a4 4 0 00-5.656-5.656l-1.5 1.5a1 1 0 101.414 1.414l1.5-1.5zm-5 5a2 2 0 012.828 0 1 1 0 101.414-1.414 4 4 0 00-5.656 0l-3 3a4 4 0 105.656 5.656l1.5-1.5a1 1 0 10-1.414-1.414l-1.5 1.5a2 2 0 11-2.828-2.828l3-3z"
+                                            clip-rule="evenodd"></path>
+                                    </svg>
+                                </template>
+                            </td>
+
+                            <!-- Jellyfin Status -->
+                            <td class="px-6 py-4 text-center">
+                                <template x-if="file.in_jellyfin">
+                                    <svg class="w-6 h-6 text-purple-400 mx-auto" fill="currentColor"
+                                        viewBox="0 0 20 20">
+                                        <path
+                                            d="M2 6a2 2 0 012-2h6a2 2 0 012 2v8a2 2 0 01-2 2H4a2 2 0 01-2-2V6zM14.553 7.106A1 1 0 0014 8v4a1 1 0 00.553.894l2 1A1 1 0 0018 13V7a1 1 0 00-1.447-.894l-2 1z">
+                                        </path>
+                                    </svg>
+                                </template>
+                                <template x-if="!file.in_jellyfin">
+                                    <svg class="w-6 h-6 text-slate-600 mx-auto" fill="currentColor" viewBox="0 0 20 20">
+                                        <path
+                                            d="M2 6a2 2 0 012-2h6a2 2 0 012 2v8a2 2 0 01-2 2H4a2 2 0 01-2-2V6zM14.553 7.106A1 1 0 0014 8v4a1 1 0 00.553.894l2 1A1 1 0 0018 13V7a1 1 0 00-1.447-.894l-2 1z">
+                                        </path>
+                                    </svg>
+                                </template>
+                            </td>
+
+                            <!-- Radarr/Sonarr Status -->
+                            <td class="px-6 py-4 text-center">
+                                <div class="flex items-center justify-center space-x-2">
+                                    <!-- Radarr -->
+                                    <template x-if="file.in_radarr">
+                                        <span class="text-xs font-semibold px-2 py-1 rounded bg-yellow-600 text-white"
+                                            title="Radarr">🎬</span>
+                                    </template>
+                                    <template x-if="!file.in_radarr && file.type === 'movie'">
+                                        <span
+                                            class="text-xs font-semibold px-2 py-1 rounded bg-slate-700 text-slate-400"
+                                            title="No en Radarr">🎬</span>
+                                    </template>
+
+                                    <!-- Sonarr -->
+                                    <template x-if="file.in_sonarr">
+                                        <span class="text-xs font-semibold px-2 py-1 rounded bg-blue-600 text-white"
+                                            title="Sonarr">📺</span>
+                                    </template>
+                                    <template x-if="!file.in_sonarr && file.type === 'series'">
+                                        <span
+                                            class="text-xs font-semibold px-2 py-1 rounded bg-slate-700 text-slate-400"
+                                            title="No en Sonarr">📺</span>
+                                    </template>
+                                </div>
+                            </td>
+
+                            <!-- qBittorrent Status -->
+                            <td class="px-6 py-4 text-center">
+                                <template x-if="file.in_qbittorrent">
+                                    <div class="inline-flex items-center" x-data="{ showTooltip: false }"
+                                        @mouseenter="showTooltip = true" @mouseleave="showTooltip = false">
+                                        <svg class="w-6 h-6 text-indigo-400" fill="currentColor" viewBox="0 0 20 20">
+                                            <path fill-rule="evenodd"
+                                                d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z"
+                                                clip-rule="evenodd"></path>
+                                        </svg>
+                                        <div x-show="showTooltip"
+                                            class="absolute z-10 bg-slate-900 border border-dark-border text-dark-text text-xs rounded py-2 px-3 -mt-24 w-48"
+                                            style="display: none;">
+                                            <div><strong>Estado:</strong> <span x-text="file.torrent_state"></span>
+                                            </div>
+                                            <div><strong>Ratio:</strong> <span
+                                                    x-text="file.seed_ratio ? file.seed_ratio.toFixed(2) : '0.00'"></span>
+                                            </div>
+                                            <div x-show="file.torrent_category"><strong>Cat:</strong> <span
+                                                    x-text="file.torrent_category"></span></div>
+                                        </div>
+                                    </div>
+                                </template>
+                                <template x-if="!file.in_qbittorrent">
+                                    <svg class="w-6 h-6 text-slate-600 mx-auto" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd"
+                                            d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z"
+                                            clip-rule="evenodd"></path>
+                                    </svg>
+                                </template>
+                            </td>
+
+                            <!-- Size -->
+                            <td class="px-6 py-4 text-right text-sm text-dark-text" x-text="formatBytes(file.size)">
+                            </td>
+                        </tr>
+                    </template>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Empty State -->
+        <div x-show="filteredFiles.length === 0" class="text-center py-12">
+            <svg class="mx-auto h-12 w-12 text-dark-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z">
+                </path>
+            </svg>
+            <h3 class="mt-2 text-sm font-medium text-dark-text">No hay archivos</h3>
+            <p class="mt-1 text-sm text-dark-muted">
+                <span x-show="selectedTab === 'all'">Ejecuta una sincronización para cargar archivos.</span>
+                <span x-show="selectedTab !== 'all'">No hay archivos en esta categoría.</span>
+            </p>
+        </div>
+    </div>
+</div>
+
+<script>
+    function filesPage() {
+        return {
+            files: [],
+            lastSync: '',
+            selectedTab: 'all',
+            syncing: false,
+            syncMessage: '',
+            syncMessageType: 'info',
+            syncMessageTimeout: null,
+
+            // Initialize - load files from database if available
+            async init() {
+                await this.loadFiles();
+            },
+
+            // Agrupa archivos por tipo
+            get groupedFiles() {
+                return {
+                    movies: this.files.filter(f => f.type === 'movie'),
+                    series: this.files.filter(f => f.type === 'series' || f.type === 'episode'),
+                    orphan: this.files.filter(f => !f.type || (f.type !== 'movie' && f.type !== 'series' && f.type !== 'episode'))
+                };
+            },
+
+            // Agrupa películas por título (deduplicando hardlinks)
+            get groupedMovies() {
+                const movies = this.groupedFiles.movies;
+                const grouped = {};
+                const seenPrimaryPaths = new Set();
+                
+                movies.forEach(file => {
+                    // Si es hardlink, usar primary_path para deduplicar
+                    // Si no es hardlink, usar file_path
+                    const uniqueKey = file.is_hardlink && file.primary_path 
+                        ? file.primary_path 
+                        : file.file_path;
+                    
+                    // Skip si ya vimos este archivo (mismo inode)
+                    if (seenPrimaryPaths.has(uniqueKey)) {
+                        return;
+                    }
+                    seenPrimaryPaths.add(uniqueKey);
+                    
+                    const title = file.title || file.file_path.split('/').pop();
+                    if (!grouped[title]) {
+                        grouped[title] = [];
+                    }
+                    grouped[title].push(file);
+                });
+                
+                return grouped;
+            },
+
+            // Agrupa series por título > temporada (deduplicando hardlinks)
+            get groupedSeries() {
+                const series = this.groupedFiles.series;
+                const grouped = {};
+                const seenPrimaryPaths = new Set();
+                
+                series.forEach(file => {
+                    // Si es hardlink, usar primary_path para deduplicar
+                    const uniqueKey = file.is_hardlink && file.primary_path 
+                        ? file.primary_path 
+                        : file.file_path;
+                    
+                    // Skip si ya vimos este archivo (mismo inode)
+                    if (seenPrimaryPaths.has(uniqueKey)) {
+                        return;
+                    }
+                    seenPrimaryPaths.add(uniqueKey);
+                    
+                    // Extraer nombre de serie y temporada del path
+                    const pathParts = file.file_path.split('/');
+                    const seriesName = pathParts[pathParts.length - 3] || file.title || 'Serie Desconocida';
+                    const seasonFolder = pathParts[pathParts.length - 2] || 'Temporada Desconocida';
+                    
+                    // Limpiar nombre de temporada (e.g., "Season 01" -> "Temporada 1")
+                    const seasonMatch = seasonFolder.match(/[Ss]eason\s*(\d+)|[Tt]emporada\s*(\d+)/);
+                    const seasonNumber = seasonMatch ? (seasonMatch[1] || seasonMatch[2]) : seasonFolder;
+                    const seasonName = `Temporada ${seasonNumber}`;
+                    
+                    if (!grouped[seriesName]) {
+                        grouped[seriesName] = {};
+                    }
+                    if (!grouped[seriesName][seasonName]) {
+                        grouped[seriesName][seasonName] = [];
+                    }
+                    
+                    grouped[seriesName][seasonName].push(file);
+                });
+                
+                return grouped;
+            },
+
+            // Filtra archivos según la pestaña seleccionada
+            get filteredFiles() {
+                if (this.selectedTab === 'all') {
+                    return this.files;
+                } else if (this.selectedTab === 'movies') {
+                    return this.groupedFiles.movies;
+                } else if (this.selectedTab === 'series') {
+                    return this.groupedFiles.series;
+                } else if (this.selectedTab === 'orphan') {
+                    return this.groupedFiles.orphan;
+                }
+                return this.files;
+            },
+
+            formatBytes(bytes) {
+                if (bytes === 0) return '0 B';
+                const k = 1024;
+                const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
+                const i = Math.floor(Math.log(bytes) / Math.log(k));
+                return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+            },
+
+            formatLastSync(isoString) {
+                if (!isoString) return '';
+                try {
+                    const date = new Date(isoString);
+                    const now = new Date();
+                    const diffMs = now - date;
+                    const diffMins = Math.floor(diffMs / 60000);
+                    const diffHours = Math.floor(diffMs / 3600000);
+                    const diffDays = Math.floor(diffMs / 86400000);
+
+                    if (diffMins < 1) return 'hace un momento';
+                    if (diffMins < 60) return `hace ${diffMins} minuto${diffMins > 1 ? 's' : ''}`;
+                    if (diffHours < 24) return `hace ${diffHours} hora${diffHours > 1 ? 's' : ''}`;
+                    if (diffDays < 7) return `hace ${diffDays} día${diffDays > 1 ? 's' : ''}`;
+                    
+                    return date.toLocaleString('es-ES', { 
+                        year: 'numeric', 
+                        month: 'short', 
+                        day: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                    });
+                } catch (e) {
+                    return isoString;
+                }
+            },
+
+            async loadFiles() {
+                try {
+                    const response = await fetch('/api/files');
+                    if (!response.ok) {
+                        throw new Error(`HTTP ${response.status}`);
+                    }
+                    const data = await response.json();
+                    this.files = data.files || [];
+                    this.lastSync = data.last_sync || '';
+                    console.log('✅ Loaded files:', this.files.length, 'Last sync:', this.lastSync);
+                } catch (error) {
+                    console.error('Error loading files:', error);
+                    this.showSyncMessage('Error al cargar archivos', 'error');
+                }
+            },
+
+            async syncFiles() {
+                this.syncing = true;
+                this.syncMessage = '';
+                let completed = false;
+
+                try {
+                    // Create EventSource for Server-Sent Events
+                    const eventSource = new EventSource('/api/sync/files');
+
+                    eventSource.onmessage = (event) => {
+                        try {
+                            const progress = JSON.parse(event.data);
+                            console.log('📥 SSE received:', progress);
+
+                            // Determine message type based on status
+                            let msgType = 'info';  // Default: blue for processing
+                            if (progress.status === 'error') {
+                                msgType = 'error';  // Red for errors
+                            } else if (progress.step === 'complete' || progress.message.includes('✅')) {
+                                msgType = 'success';  // Green for success/complete
+                            }
+
+                            // Show progress message - persist during sync (no timeout)
+                            const persist = progress.step !== 'complete' && progress.status !== 'error';
+                            this.showSyncMessage(progress.message, msgType, persist);
+
+                            // If complete or error, close connection and reload data
+                            if (progress.step === 'complete') {
+                                console.log('✅ Sync complete, closing connection');
+                                completed = true;
+                                eventSource.close();
+                                this.syncing = false;
+                                // Reload files after successful sync
+                                setTimeout(async () => {
+                                    await this.loadFiles();
+                                }, 500);
+                            } else if (progress.status === 'error') {
+                                console.log('❌ Sync error, closing connection');
+                                completed = true;
+                                eventSource.close();
+                                this.syncing = false;
+                            }
+                        } catch (err) {
+                            console.error('Error parsing SSE data:', err);
+                        }
+                    };
+
+                    eventSource.onerror = (error) => {
+                        eventSource.close();
+                        this.syncing = false;
+
+                        // Only show error if sync didn't complete successfully
+                        if (!completed) {
+                            console.error('SSE error:', error);
+                            this.showSyncMessage('Error durante sincronización', 'error');
+                        }
+                    };
+
+                } catch (error) {
+                    console.error('Error syncing files:', error);
+                    this.showSyncMessage('Failed to sync files', 'error');
+                    this.syncing = false;
+                }
+            },
+
+            showSyncMessage(msg, type = 'info', persist = false) {
+                // Clear any existing timeout
+                if (this.syncMessageTimeout) {
+                    clearTimeout(this.syncMessageTimeout);
+                    this.syncMessageTimeout = null;
+                }
+
+                this.syncMessage = msg;
+                this.syncMessageType = type;
+
+                // Only set timeout if not persisting (e.g., during sync)
+                if (!persist) {
+                    this.syncMessageTimeout = setTimeout(() => {
+                        this.syncMessage = '';
+                        this.syncMessageTimeout = null;
+                    }, 5000);
+                }
+            }
+        }
+    }
+</script>
+{{end}}

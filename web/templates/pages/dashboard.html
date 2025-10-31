@@ -1,0 +1,1023 @@
+<div x-data="dashboard()" x-init="init()" class="space-y-6">
+    <!-- Header with Sync Button -->
+    <div class="flex justify-between items-center">
+        <h1 class="text-3xl font-bold text-dark-text dark:text-dark-text">Dashboard</h1>
+        <button @click="syncNow()" :disabled="syncing"
+            class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2">
+            <svg x-show="!syncing" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15">
+                </path>
+            </svg>
+            <svg x-show="syncing" class="animate-spin w-5 h-5" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4">
+                </circle>
+                <path class="opacity-75" fill="currentColor"
+                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
+                </path>
+            </svg>
+            <span x-text="syncing ? 'Syncing...' : 'Sync Now'"></span>
+        </button>
+    </div>
+
+    <!-- Stats Cards -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <!-- Total Media -->
+        <div class="bg-dark-surface dark:bg-dark-surface rounded-lg shadow-lg border border-dark-border p-6">
+            <div class="flex items-center">
+                <div class="flex-1">
+                    <p class="text-sm font-medium text-dark-muted">Total Media</p>
+                    <p class="text-3xl font-bold text-dark-text" x-text="stats.total_media || 0"></p>
+                    <p class="text-xs text-dark-muted mt-1">
+                        <span x-text="stats.total_movies || 0"></span> movies,
+                        <span x-text="stats.total_series || 0"></span> series
+                    </p>
+                </div>
+                <div class="ml-4">
+                    <svg class="w-12 h-12 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M7 4v16M17 4v16M3 8h4m10 0h4M3 12h18M3 16h4m10 0h4M4 20h16a1 1 0 001-1V5a1 1 0 00-1-1H4a1 1 0 00-1 1v14a1 1 0 001 1z">
+                        </path>
+                    </svg>
+                </div>
+            </div>
+        </div>
+
+        <!-- Total Size -->
+        <div class="bg-dark-surface dark:bg-dark-surface rounded-lg shadow-lg border border-dark-border p-6">
+            <div class="flex items-center">
+                <div class="flex-1">
+                    <p class="text-sm font-medium text-dark-muted">Total Size</p>
+                    <p class="text-3xl font-bold text-dark-text" x-text="formatBytes(stats.total_size || 0)"></p>
+                    <p class="text-xs text-dark-muted mt-1">Across all media</p>
+                </div>
+                <div class="ml-4">
+                    <svg class="w-12 h-12 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4">
+                        </path>
+                    </svg>
+                </div>
+            </div>
+        </div>
+
+        <!-- To Delete -->
+        <div class="bg-dark-surface dark:bg-dark-surface rounded-lg shadow-lg border border-dark-border p-6">
+            <div class="flex items-center">
+                <div class="flex-1">
+                    <p class="text-sm font-medium text-dark-muted">To Delete</p>
+                    <p class="text-3xl font-bold text-dark-text" x-text="stats.to_delete || 0"></p>
+                    <p class="text-xs text-dark-muted mt-1">Based on rules</p>
+                </div>
+                <div class="ml-4">
+                    <svg class="w-12 h-12 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16">
+                        </path>
+                    </svg>
+                </div>
+            </div>
+        </div>
+
+        <!-- Leaving Soon -->
+        <div class="bg-dark-surface dark:bg-dark-surface rounded-lg shadow-lg border border-dark-border p-6">
+            <div class="flex items-center">
+                <div class="flex-1">
+                    <p class="text-sm font-medium text-dark-muted">Leaving Soon</p>
+                    <p class="text-3xl font-bold text-dark-text" x-text="stats.leaving_soon || 0"></p>
+                    <p class="text-xs text-dark-muted mt-1">In collection</p>
+                </div>
+                <div class="ml-4">
+                    <svg class="w-12 h-12 text-yellow-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Radarr Queue (if enabled) -->
+    <div x-data="radarrQueue()" x-init="init()" x-show="queueItems && queueItems.length > 0" 
+         class="bg-dark-surface dark:bg-dark-surface rounded-lg shadow-lg border border-dark-border p-6">
+        <div class="flex justify-between items-center mb-4">
+            <h2 class="text-xl font-semibold text-dark-text">📥 Radarr Download Queue</h2>
+            <button @click="loadQueue()" :disabled="loading" 
+                    class="px-3 py-1 text-sm bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50">
+                <span x-show="!loading">Refresh</span>
+                <span x-show="loading">Loading...</span>
+            </button>
+        </div>
+        
+        <div class="space-y-3">
+            <template x-for="item in queueItems" :key="item.id">
+                <div class="bg-dark-bg rounded-lg p-4 border border-dark-border">
+                    <div class="flex items-center justify-between mb-2">
+                        <h3 class="font-semibold text-dark-text" x-text="item.title"></h3>
+                        <span class="text-xs px-2 py-1 rounded" 
+                              :class="item.status === 'downloading' ? 'bg-blue-600 text-white' : 'bg-gray-600 text-white'"
+                              x-text="item.status"></span>
+                    </div>
+                    
+                    <!-- Progress bar -->
+                    <div class="mb-2">
+                        <div class="flex justify-between text-xs text-dark-muted mb-1">
+                            <span x-text="formatBytes(item.size - item.size_left) + ' / ' + formatBytes(item.size)"></span>
+                            <span x-text="(item.progress || 0).toFixed(1) + '%'"></span>
+                        </div>
+                        <div class="w-full bg-gray-700 rounded-full h-2">
+                            <div class="bg-blue-600 h-2 rounded-full transition-all" 
+                                 :style="'width: ' + (item.progress || 0) + '%'"></div>
+                        </div>
+                    </div>
+                    
+                    <!-- Details -->
+                    <div class="flex flex-wrap gap-3 text-xs text-dark-muted">
+                        <span x-show="item.download_client">
+                            <strong>Client:</strong> <span x-text="item.download_client"></span>
+                        </span>
+                        <span x-show="item.protocol">
+                            <strong>Protocol:</strong> <span x-text="item.protocol"></span>
+                        </span>
+                        <span x-show="item.indexer">
+                            <strong>Indexer:</strong> <span x-text="item.indexer"></span>
+                        </span>
+                    </div>
+                </div>
+            </template>
+        </div>
+    </div>
+
+    <!-- Sonarr Queue (if enabled) -->
+    <div x-data="sonarrQueue()" x-init="init()" x-show="queueItems && queueItems.length > 0" 
+         class="bg-dark-surface dark:bg-dark-surface rounded-lg shadow-lg border border-dark-border p-6">
+        <div class="flex justify-between items-center mb-4">
+            <h2 class="text-xl font-semibold text-dark-text">📺 Sonarr Download Queue</h2>
+            <button @click="loadQueue()" :disabled="loading" 
+                    class="px-3 py-1 text-sm bg-purple-600 text-white rounded hover:bg-purple-700 disabled:opacity-50">
+                <span x-show="!loading">Refresh</span>
+                <span x-show="loading">Loading...</span>
+            </button>
+        </div>
+        
+        <div class="space-y-3">
+            <template x-for="item in queueItems" :key="item.id">
+                <div class="bg-dark-bg rounded-lg p-4 border border-dark-border">
+                    <div class="flex items-center justify-between mb-2">
+                        <h3 class="font-semibold text-dark-text" x-text="item.title"></h3>
+                        <span class="text-xs px-2 py-1 rounded" 
+                              :class="item.status === 'downloading' ? 'bg-purple-600 text-white' : 'bg-gray-600 text-white'"
+                              x-text="item.status"></span>
+                    </div>
+                    
+                    <!-- Progress bar -->
+                    <div class="mb-2">
+                        <div class="flex justify-between text-xs text-dark-muted mb-1">
+                            <span x-text="formatBytes(item.size - item.size_left) + ' / ' + formatBytes(item.size)"></span>
+                            <span x-text="(item.progress || 0).toFixed(1) + '%'"></span>
+                        </div>
+                        <div class="w-full bg-gray-700 rounded-full h-2">
+                            <div class="bg-purple-600 h-2 rounded-full transition-all" 
+                                 :style="'width: ' + (item.progress || 0) + '%'"></div>
+                        </div>
+                    </div>
+                    
+                    <!-- Details -->
+                    <div class="flex flex-wrap gap-3 text-xs text-dark-muted">
+                        <span x-show="item.download_client">
+                            <strong>Client:</strong> <span x-text="item.download_client"></span>
+                        </span>
+                        <span x-show="item.protocol">
+                            <strong>Protocol:</strong> <span x-text="item.protocol"></span>
+                        </span>
+                        <span x-show="item.indexer">
+                            <strong>Indexer:</strong> <span x-text="item.indexer"></span>
+                        </span>
+                    </div>
+                </div>
+            </template>
+        </div>
+    </div>
+
+    <!-- Jellyfin Active Sessions (if enabled) -->
+    <div x-data="jellyfinSessions()" x-init="init()" x-show="sessions && sessions.length > 0" 
+         class="bg-dark-surface dark:bg-dark-surface rounded-lg shadow-lg border border-dark-border p-6">
+        <div class="flex justify-between items-center mb-4">
+            <h2 class="text-xl font-semibold text-dark-text">🎬 Jellyfin - Sesiones Activas</h2>
+            <button @click="loadSessions()" :disabled="loading" 
+                    class="px-3 py-1 text-sm bg-purple-600 text-white rounded hover:bg-purple-700 disabled:opacity-50">
+                <span x-show="!loading">Actualizar</span>
+                <span x-show="loading">Cargando...</span>
+            </button>
+        </div>
+        
+        <div class="space-y-3">
+            <template x-for="session in sessions" :key="session.Id">
+                <div class="bg-dark-bg rounded-lg p-4 border border-dark-border">
+                    <div class="flex items-center justify-between mb-2">
+                        <div>
+                            <h3 class="font-semibold text-dark-text" x-text="session.UserName"></h3>
+                            <p class="text-sm text-dark-muted">
+                                <span x-text="session.Client"></span> - <span x-text="session.DeviceName"></span>
+                            </p>
+                        </div>
+                        <span x-show="session.NowPlayingItem" class="text-xs px-2 py-1 rounded bg-green-600 text-white">
+                            En reproducción
+                        </span>
+                    </div>
+                    
+                    <!-- Now Playing Info -->
+                    <div x-show="session.NowPlayingItem" class="mt-2 p-3 bg-slate-800/50 rounded">
+                        <p class="text-sm font-medium text-dark-text" x-text="session.NowPlayingItem?.Name"></p>
+                        <p class="text-xs text-dark-muted" x-text="session.NowPlayingItem?.Type"></p>
+                        
+                        <!-- Playback progress -->
+                        <div x-show="session.PlayState" class="mt-2">
+                            <div class="flex justify-between text-xs text-dark-muted mb-1">
+                                <span x-text="formatTicks(session.PlayState?.PositionTicks)"></span>
+                                <span x-show="session.PlayState?.IsPaused" class="text-yellow-400">⏸ Pausado</span>
+                                <span x-show="!session.PlayState?.IsPaused" class="text-green-400">▶ Reproduciendo</span>
+                            </div>
+                        </div>
+                        
+                        <!-- Transcoding info -->
+                        <div x-show="session.TranscodingInfo" class="mt-2 text-xs">
+                            <span x-show="session.PlayState?.PlayMethod === 'Transcode'" class="px-2 py-1 bg-orange-600 rounded text-white">
+                                🔄 Transcodificando
+                            </span>
+                            <span x-show="session.PlayState?.PlayMethod === 'DirectPlay'" class="px-2 py-1 bg-blue-600 rounded text-white">
+                                ⚡ Direct Play
+                            </span>
+                            <span x-show="session.PlayState?.PlayMethod === 'DirectStream'" class="px-2 py-1 bg-cyan-600 rounded text-white">
+                                🌊 Direct Stream
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </template>
+        </div>
+    </div>
+
+    <!-- Jellyfin Recently Added (if enabled) -->
+    <div x-data="jellyfinRecentlyAdded()" x-init="init()" x-show="items && items.length > 0" 
+         class="bg-dark-surface dark:bg-dark-surface rounded-lg shadow-lg border border-dark-border p-6">
+        <div class="flex justify-between items-center mb-4">
+            <h2 class="text-xl font-semibold text-dark-text">📺 Jellyfin - Agregados Recientemente</h2>
+            <button @click="loadItems()" :disabled="loading" 
+                    class="px-3 py-1 text-sm bg-purple-600 text-white rounded hover:bg-purple-700 disabled:opacity-50">
+                <span x-show="!loading">Actualizar</span>
+                <span x-show="loading">Cargando...</span>
+            </button>
+        </div>
+        
+        <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+            <template x-for="item in items.slice(0, 12)" :key="item.id">
+                <div class="bg-dark-bg rounded-lg overflow-hidden border border-dark-border hover:border-purple-500 transition">
+                    <div class="aspect-[2/3] bg-slate-700 relative">
+                        <img x-show="item.poster_url" :src="item.poster_url" :alt="item.name" 
+                             class="w-full h-full object-cover">
+                        <div x-show="!item.poster_url" class="w-full h-full flex items-center justify-center text-4xl">
+                            <span x-text="item.type === 'Movie' ? '🎬' : '📺'"></span>
+                        </div>
+                    </div>
+                    <div class="p-2">
+                        <p class="text-sm font-medium text-dark-text truncate" x-text="item.name"></p>
+                        <p class="text-xs text-dark-muted" x-text="formatDate(item.date_created)"></p>
+                    </div>
+                </div>
+            </template>
+        </div>
+    </div>
+
+    <!-- qBittorrent Stats and Active Torrents (if enabled) -->
+    <div x-data="qbittorrentDashboard()" x-init="init()" x-show="enabled" 
+         class="bg-dark-surface dark:bg-dark-surface rounded-lg shadow-lg border border-dark-border p-6">
+        <div class="flex justify-between items-center mb-4">
+            <h2 class="text-xl font-semibold text-dark-text">📡 qBittorrent</h2>
+            <button @click="refresh()" :disabled="loading" 
+                    class="px-3 py-1 text-sm bg-teal-600 text-white rounded hover:bg-teal-700 disabled:opacity-50">
+                <span x-show="!loading">Actualizar</span>
+                <span x-show="loading">Cargando...</span>
+            </button>
+        </div>
+
+        <!-- Transfer Stats -->
+        <div x-show="state" class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+            <div class="bg-dark-bg rounded-lg p-4 border border-dark-border">
+                <div class="flex items-center gap-2 mb-2">
+                    <span class="text-2xl">⬇️</span>
+                    <div>
+                        <p class="text-xs text-dark-muted">Velocidad Descarga</p>
+                        <p class="text-lg font-bold text-blue-400" x-text="formatSpeed(state?.dl_info_speed || 0)"></p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-dark-bg rounded-lg p-4 border border-dark-border">
+                <div class="flex items-center gap-2 mb-2">
+                    <span class="text-2xl">⬆️</span>
+                    <div>
+                        <p class="text-xs text-dark-muted">Velocidad Subida</p>
+                        <p class="text-lg font-bold text-green-400" x-text="formatSpeed(state?.up_info_speed || 0)"></p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-dark-bg rounded-lg p-4 border border-dark-border">
+                <div class="flex items-center gap-2 mb-2">
+                    <span class="text-2xl">🌐</span>
+                    <div>
+                        <p class="text-xs text-dark-muted">Nodos DHT</p>
+                        <p class="text-lg font-bold text-purple-400" x-text="state?.dht_nodes || 0"></p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-dark-bg rounded-lg p-4 border border-dark-border">
+                <div class="flex items-center gap-2 mb-2">
+                    <span class="text-2xl" x-text="state?.connection_status === 'connected' ? '✅' : '❌'"></span>
+                    <div>
+                        <p class="text-xs text-dark-muted">Estado</p>
+                        <p class="text-sm font-semibold" 
+                           :class="state?.connection_status === 'connected' ? 'text-green-400' : 'text-red-400'"
+                           x-text="state?.connection_status || 'Desconocido'"></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Active Torrents -->
+        <div x-show="activeTorrents.length > 0" class="mt-4">
+            <h3 class="text-lg font-semibold text-dark-text mb-3">Torrents Activos</h3>
+            <div class="space-y-3">
+                <template x-for="torrent in activeTorrents.slice(0, 5)" :key="torrent.hash">
+                    <div class="bg-dark-bg rounded-lg p-4 border border-dark-border">
+                        <div class="flex items-center justify-between mb-2">
+                            <h4 class="font-semibold text-dark-text truncate flex-1" x-text="torrent.name"></h4>
+                            <span class="text-xs px-2 py-1 rounded ml-2" 
+                                  :class="{
+                                      'bg-blue-600 text-white': torrent.state === 'downloading',
+                                      'bg-green-600 text-white': torrent.is_seeding,
+                                      'bg-gray-600 text-white': !torrent.is_seeding && torrent.state !== 'downloading'
+                                  }"
+                                  x-text="torrent.state"></span>
+                        </div>
+                        
+                        <!-- Progress bar -->
+                        <div class="mb-2">
+                            <div class="flex justify-between text-xs text-dark-muted mb-1">
+                                <span x-text="(torrent.progress * 100).toFixed(1) + '%'"></span>
+                                <span x-show="torrent.eta > 0" x-text="'ETA: ' + formatETA(torrent.eta)"></span>
+                            </div>
+                            <div class="w-full bg-gray-700 rounded-full h-2">
+                                <div class="h-2 rounded-full transition-all" 
+                                     :class="torrent.state === 'downloading' ? 'bg-blue-600' : 'bg-green-600'"
+                                     :style="'width: ' + (torrent.progress * 100) + '%'"></div>
+                            </div>
+                        </div>
+                        
+                        <!-- Details -->
+                        <div class="flex flex-wrap gap-3 text-xs text-dark-muted">
+                            <span x-show="torrent.dlspeed > 0">
+                                <strong>⬇️</strong> <span x-text="formatSpeed(torrent.dlspeed)"></span>
+                            </span>
+                            <span x-show="torrent.upspeed > 0">
+                                <strong>⬆️</strong> <span x-text="formatSpeed(torrent.upspeed)"></span>
+                            </span>
+                            <span x-show="torrent.ratio">
+                                <strong>Ratio:</strong> <span x-text="torrent.ratio.toFixed(2)"></span>
+                            </span>
+                            <span x-show="torrent.num_seeds >= 0">
+                                <strong>Seeds:</strong> <span x-text="torrent.num_seeds"></span>
+                            </span>
+                            <span x-show="torrent.num_peers >= 0">
+                                <strong>Peers:</strong> <span x-text="torrent.num_peers"></span>
+                            </span>
+                            <span x-show="torrent.category">
+                                <strong>Cat:</strong> <span x-text="torrent.category"></span>
+                            </span>
+                        </div>
+                    </div>
+                </template>
+            </div>
+            <div x-show="activeTorrents.length > 5" class="mt-3 text-center">
+                <p class="text-xs text-dark-muted">
+                    Mostrando 5 de <span x-text="activeTorrents.length"></span> torrents activos
+                </p>
+            </div>
+        </div>
+
+        <div x-show="activeTorrents.length === 0 && !loading" class="text-center py-4">
+            <p class="text-dark-muted">No hay torrents activos</p>
+        </div>
+    </div>
+
+    <!-- Jellyseerr Requests (if enabled) -->
+    <div x-data="jellyseerrRequests()" x-init="init()" x-show="enabled" 
+         class="bg-dark-surface dark:bg-dark-surface rounded-lg shadow-lg border border-dark-border p-6">
+        <div class="flex justify-between items-center mb-4">
+            <h2 class="text-xl font-semibold text-dark-text">📋 Jellyseerr - Solicitudes</h2>
+            <button @click="refresh()" :disabled="loading" 
+                    class="px-3 py-1 text-sm bg-indigo-600 text-white rounded hover:bg-indigo-700 disabled:opacity-50">
+                <span x-show="!loading">Actualizar</span>
+                <span x-show="loading">Cargando...</span>
+            </button>
+        </div>
+
+        <!-- Stats Cards -->
+        <div x-show="stats" class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
+            <div class="bg-dark-bg rounded-lg p-3 border border-dark-border">
+                <p class="text-xs text-dark-muted">Total</p>
+                <p class="text-2xl font-bold text-dark-text" x-text="stats?.total_requests || 0"></p>
+            </div>
+            <div class="bg-dark-bg rounded-lg p-3 border border-yellow-700/50">
+                <p class="text-xs text-yellow-400">Pendientes</p>
+                <p class="text-2xl font-bold text-yellow-400" x-text="stats?.pending_requests || 0"></p>
+            </div>
+            <div class="bg-dark-bg rounded-lg p-3 border border-green-700/50">
+                <p class="text-xs text-green-400">Aprobadas</p>
+                <p class="text-2xl font-bold text-green-400" x-text="stats?.approved_requests || 0"></p>
+            </div>
+            <div class="bg-dark-bg rounded-lg p-3 border border-blue-700/50">
+                <p class="text-xs text-blue-400">Disponibles</p>
+                <p class="text-2xl font-bold text-blue-400" x-text="stats?.available_requests || 0"></p>
+            </div>
+        </div>
+
+        <!-- Recent Requests -->
+        <div x-show="requests && requests.length > 0" class="space-y-2">
+            <h3 class="text-sm font-semibold text-dark-muted mb-2">Solicitudes Recientes</h3>
+            <template x-for="request in requests.slice(0, 5)" :key="request.id">
+                <div class="bg-dark-bg rounded-lg p-3 border border-dark-border flex items-center justify-between">
+                    <div class="flex-1">
+                        <p class="text-sm font-medium text-dark-text" x-text="request.media_title"></p>
+                        <div class="flex items-center gap-2 mt-1">
+                            <span class="text-xs px-2 py-0.5 rounded" 
+                                  :class="{
+                                      'bg-yellow-600 text-white': request.status === 'pending',
+                                      'bg-green-600 text-white': request.status === 'approved',
+                                      'bg-blue-600 text-white': request.status === 'available',
+                                      'bg-red-600 text-white': request.status === 'denied'
+                                  }"
+                                  x-text="request.status"></span>
+                            <span class="text-xs text-dark-muted" x-text="request.media_type === 'movie' ? '🎬 Película' : '📺 Serie'"></span>
+                            <span class="text-xs text-dark-muted" x-text="'Por: ' + request.requested_by"></span>
+                        </div>
+                    </div>
+                    <span class="text-xs text-dark-muted" x-text="formatDate(request.requested_at)"></span>
+                </div>
+            </template>
+            <div x-show="requests.length > 5" class="text-center mt-2">
+                <p class="text-xs text-dark-muted">
+                    Mostrando 5 de <span x-text="requests.length"></span> solicitudes
+                </p>
+            </div>
+        </div>
+
+        <div x-show="!stats && !loading" class="text-center py-4">
+            <p class="text-dark-muted">No hay estadísticas disponibles</p>
+        </div>
+    </div>
+
+    <!-- Jellystat Statistics (if enabled) -->
+    <div x-data="jellystatStats()" x-init="init()" x-show="enabled" 
+         class="bg-dark-surface dark:bg-dark-surface rounded-lg shadow-lg border border-dark-border p-6">
+        <div class="flex justify-between items-center mb-4">
+            <h2 class="text-xl font-semibold text-dark-text">📊 Jellystat - Estadísticas de Uso</h2>
+            <button @click="refresh()" :disabled="loading" 
+                    class="px-3 py-1 text-sm bg-cyan-600 text-white rounded hover:bg-cyan-700 disabled:opacity-50">
+                <span x-show="!loading">Actualizar</span>
+                <span x-show="loading">Cargando...</span>
+            </button>
+        </div>
+
+        <!-- Stats Cards -->
+        <div x-show="stats" class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
+            <div class="bg-dark-bg rounded-lg p-3 border border-dark-border">
+                <p class="text-xs text-dark-muted">Total Reproducciones</p>
+                <p class="text-2xl font-bold text-dark-text" x-text="stats?.total ?? 0"></p>
+                <p class="text-xs text-dark-muted mt-1">Últimos 7 días</p>
+            </div>
+            <div class="bg-dark-bg rounded-lg p-3 border border-purple-700/50">
+                <p class="text-xs text-purple-400">🎬 Películas</p>
+                <p class="text-2xl font-bold text-purple-400" x-text="stats?.movies || 0"></p>
+            </div>
+            <div class="bg-dark-bg rounded-lg p-3 border border-cyan-700/50">
+                <p class="text-xs text-cyan-400">📺 Episodios</p>
+                <p class="text-2xl font-bold text-cyan-400" x-text="stats?.episodes || 0"></p>
+            </div>
+            <div class="bg-dark-bg rounded-lg p-3 border border-orange-700/50">
+                <p class="text-xs text-orange-400">🎵 Canciones</p>
+                <p class="text-2xl font-bold text-orange-400" x-text="stats?.songs || 0"></p>
+            </div>
+        </div>
+
+        <!-- Views by Type Chart -->
+        <div x-show="viewsByType" class="space-y-3 mt-4">
+            <h3 class="text-sm font-semibold text-dark-muted mb-2">Visualizaciones por Tipo</h3>
+            <div class="space-y-2">
+                <div class="bg-dark-bg rounded-lg p-3 border border-purple-700/50">
+                    <div class="flex justify-between items-center">
+                        <span class="text-sm text-purple-300">🎬 Películas</span>
+                        <span class="text-lg font-bold text-purple-300" x-text="viewsByType?.movie || 0"></span>
+                    </div>
+                </div>
+                <div class="bg-dark-bg rounded-lg p-3 border border-cyan-700/50">
+                    <div class="flex justify-between items-center">
+                        <span class="text-sm text-cyan-300">📺 Episodios</span>
+                        <span class="text-lg font-bold text-cyan-300" x-text="viewsByType?.episode || 0"></span>
+                    </div>
+                </div>
+                <div class="bg-dark-bg rounded-lg p-3 border border-orange-700/50">
+                    <div class="flex justify-between items-center">
+                        <span class="text-sm text-orange-300">🎵 Música</span>
+                        <span class="text-lg font-bold text-orange-300" x-text="viewsByType?.music || 0"></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div x-show="!stats && !loading" class="text-center py-4">
+            <p class="text-dark-muted">No hay estadísticas disponibles</p>
+        </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="bg-dark-surface dark:bg-dark-surface rounded-lg shadow-lg border border-dark-border p-6">
+        <h2 class="text-xl font-semibold text-dark-text mb-4">Quick Actions</h2>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <a href="/media" class="block p-4 border-2 border-dark-border rounded-lg hover:border-blue-500 transition bg-dark-bg hover:bg-slate-700/30">
+                <h3 class="font-semibold text-dark-text">View Media</h3>
+                <p class="text-sm text-dark-muted mt-1">Browse and manage your media library</p>
+            </a>
+            <a href="/settings" class="block p-4 border-2 border-dark-border rounded-lg hover:border-blue-500 transition bg-dark-bg hover:bg-slate-700/30">
+                <h3 class="font-semibold text-dark-text">Configure Services</h3>
+                <p class="text-sm text-dark-muted mt-1">Set up Radarr, Sonarr, Jellyfin, etc.</p>
+            </a>
+            <a href="/schedules" class="block p-4 border-2 border-dark-border rounded-lg hover:border-blue-500 transition bg-dark-bg hover:bg-slate-700/30">
+                <h3 class="font-semibold text-dark-text">Manage Schedules</h3>
+                <p class="text-sm text-dark-muted mt-1">Configure cleanup schedules</p>
+            </a>
+        </div>
+    </div>
+
+    <!-- Status Messages -->
+    <div x-show="message" x-transition :class="{
+             'bg-green-900/20 border-green-700/50 text-green-300': messageType === 'success',
+             'bg-red-900/20 border-red-700/50 text-red-300': messageType === 'error'
+         }" class="p-4 rounded-lg border">
+        <p x-text="message"></p>
+    </div>
+</div>
+
+<script>
+    // Shared utility functions
+    function formatBytes(bytes) {
+        if (bytes === 0) return '0 B';
+        const k = 1024;
+        const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
+        const i = Math.floor(Math.log(bytes) / Math.log(k));
+        return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+    }
+
+    function formatDate(dateStr) {
+        if (!dateStr) return '';
+        const date = new Date(dateStr);
+        const now = new Date();
+        const diffTime = Math.abs(now - date);
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        
+        if (diffDays === 0) return 'Hoy';
+        if (diffDays === 1) return 'Ayer';
+        if (diffDays < 7) return `Hace ${diffDays} días`;
+        if (diffDays < 30) return `Hace ${Math.floor(diffDays / 7)} semanas`;
+        return date.toLocaleDateString('es-ES', { month: 'short', day: 'numeric' });
+    }
+
+    function dashboard() {
+        return {
+            stats: {},
+            syncing: false,
+            message: '',
+            messageType: 'success',
+
+            async init() {
+                await this.loadStats();
+                // Refresh stats every 30 seconds
+                setInterval(() => this.loadStats(), 30000);
+            },
+
+            async loadStats() {
+                try {
+                    const response = await fetch('/api/stats');
+                    if (!response.ok) throw new Error('Failed to load stats');
+                    this.stats = await response.json();
+                } catch (error) {
+                    console.error('Error loading stats:', error);
+                }
+            },
+
+            async syncNow() {
+                this.syncing = true;
+                this.message = '';
+
+                try {
+                    const response = await fetch('/api/sync', {
+                        method: 'POST',
+                    });
+
+                    const data = await response.json();
+
+                    if (response.ok) {
+                        this.showMessage('Sync completed successfully!', 'success');
+                        await this.loadStats();
+                    } else {
+                        this.showMessage(data.message || 'Sync failed', 'error');
+                    }
+                } catch (error) {
+                    this.showMessage('Error: ' + error.message, 'error');
+                } finally {
+                    this.syncing = false;
+                }
+            },
+
+            showMessage(msg, type = 'success') {
+                this.message = msg;
+                this.messageType = type;
+                setTimeout(() => {
+                    this.message = '';
+                }, 5000);
+            },
+
+            formatBytes
+        }
+    }
+
+    function radarrQueue() {
+        return {
+            queueItems: [],
+            loading: false,
+            intervalId: null,
+
+            async init() {
+                await this.loadQueue();
+                // Setup interval with proper cleanup using Alpine's effect
+                this.$watch('queueItems', () => {
+                    // Clear existing interval if any
+                    if (this.intervalId) {
+                        clearInterval(this.intervalId);
+                    }
+                });
+                
+                // Start interval
+                this.intervalId = setInterval(() => this.loadQueue(), 30000);
+                
+                // Cleanup interval when component is destroyed
+                this.$cleanup(() => {
+                    if (this.intervalId) {
+                        clearInterval(this.intervalId);
+                        this.intervalId = null;
+                    }
+                });
+            },
+
+            async loadQueue() {
+                this.loading = true;
+                try {
+                    const response = await fetch('/api/radarr/queue');
+                    if (!response.ok) {
+                        // If Radarr is not configured, just hide the section
+                        if (response.status === 503) {
+                            this.queueItems = [];
+                            return;
+                        }
+                        throw new Error('Failed to load queue');
+                    }
+                    const data = await response.json();
+                    this.queueItems = data.items || [];
+                } catch (error) {
+                    console.error('Error loading Radarr queue:', error);
+                    this.queueItems = [];
+                } finally {
+                    this.loading = false;
+                }
+            },
+
+            formatBytes
+        }
+    }
+
+    function sonarrQueue() {
+        return {
+            queueItems: [],
+            loading: false,
+            intervalId: null,
+
+            async init() {
+                await this.loadQueue();
+                // Setup interval with proper cleanup using Alpine's effect
+                this.$watch('queueItems', () => {
+                    // Clear existing interval if any
+                    if (this.intervalId) {
+                        clearInterval(this.intervalId);
+                    }
+                });
+                
+                // Start interval
+                this.intervalId = setInterval(() => this.loadQueue(), 30000);
+                
+                // Cleanup interval when component is destroyed
+                this.$cleanup(() => {
+                    if (this.intervalId) {
+                        clearInterval(this.intervalId);
+                        this.intervalId = null;
+                    }
+                });
+            },
+
+            async loadQueue() {
+                this.loading = true;
+                try {
+                    const response = await fetch('/api/sonarr/queue');
+                    if (!response.ok) {
+                        // If Sonarr is not configured, just hide the section
+                        if (response.status === 503) {
+                            this.queueItems = [];
+                            return;
+                        }
+                        throw new Error('Failed to load queue');
+                    }
+                    const data = await response.json();
+                    this.queueItems = data.items || [];
+                } catch (error) {
+                    console.error('Error loading Sonarr queue:', error);
+                    this.queueItems = [];
+                } finally {
+                    this.loading = false;
+                }
+            },
+
+            formatBytes
+        }
+    }
+
+    function jellyfinSessions() {
+        return {
+            sessions: [],
+            loading: false,
+            intervalId: null,
+            REFRESH_INTERVAL_MS: 15000, // 15 seconds
+            JELLYFIN_TICKS_PER_SECOND: 10000000, // Jellyfin uses 100-nanosecond intervals
+
+            async init() {
+                await this.loadSessions();
+                
+                // Refresh every REFRESH_INTERVAL_MS milliseconds
+                this.intervalId = setInterval(() => this.loadSessions(), this.REFRESH_INTERVAL_MS);
+                
+                // Cleanup interval when component is destroyed
+                this.$cleanup(() => {
+                    if (this.intervalId) {
+                        clearInterval(this.intervalId);
+                        this.intervalId = null;
+                    }
+                });
+            },
+
+            async loadSessions() {
+                this.loading = true;
+                try {
+                    const response = await fetch('/api/jellyfin/sessions');
+                    if (!response.ok) {
+                        // If Jellyfin is not configured, just hide the section
+                        if (response.status === 500 || response.status === 503) {
+                            this.sessions = [];
+                            return;
+                        }
+                        throw new Error('Failed to load Jellyfin sessions');
+                    }
+                    const data = await response.json();
+                    this.sessions = data.sessions || [];
+                } catch (error) {
+                    console.error('Error loading Jellyfin sessions:', error);
+                    this.sessions = [];
+                } finally {
+                    this.loading = false;
+                }
+            },
+
+            formatTicks(ticks) {
+                if (!ticks) return '0:00';
+                // Convert Jellyfin ticks to seconds
+                const seconds = Math.floor(ticks / this.JELLYFIN_TICKS_PER_SECOND);
+                const hours = Math.floor(seconds / 3600);
+                const minutes = Math.floor((seconds % 3600) / 60);
+                const secs = seconds % 60;
+                
+                if (hours > 0) {
+                    return `${hours}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+                }
+                return `${minutes}:${secs.toString().padStart(2, '0')}`;
+            }
+        }
+    }
+
+    function jellyfinRecentlyAdded() {
+        return {
+            items: [],
+            loading: false,
+
+            async init() {
+                await this.loadItems();
+            },
+
+            async loadItems() {
+                this.loading = true;
+                try {
+                    const response = await fetch('/api/jellyfin/recently-added?limit=12');
+                    if (!response.ok) {
+                        // If Jellyfin is not configured, just hide the section
+                        if (response.status === 500 || response.status === 503) {
+                            this.items = [];
+                            return;
+                        }
+                        throw new Error('Failed to load recently added items');
+                    }
+                    const data = await response.json();
+                    this.items = data.items || [];
+                } catch (error) {
+                    console.error('Error loading recently added items:', error);
+                    this.items = [];
+                } finally {
+                    this.loading = false;
+                }
+            }
+        }
+    }
+
+    function jellyseerrRequests() {
+        return {
+            enabled: false,
+            stats: null,
+            requests: [],
+            loading: false,
+
+            async init() {
+                await this.refresh();
+            },
+
+            async refresh() {
+                this.loading = true;
+                try {
+                    // Load stats
+                    const statsResponse = await fetch('/api/jellyseerr/stats');
+                    if (statsResponse.ok) {
+                        this.stats = await statsResponse.json();
+                        this.enabled = true;
+                    } else {
+                        // If Jellyseerr is not configured, disable the section
+                        this.enabled = false;
+                        this.loading = false;
+                        return;
+                    }
+
+                    // Load requests
+                    const requestsResponse = await fetch('/api/jellyseerr/requests');
+                    if (requestsResponse.ok) {
+                        const data = await requestsResponse.json();
+                        this.requests = data.requests || [];
+                    }
+                } catch (error) {
+                    console.error('Error loading Jellyseerr data:', error);
+                    this.enabled = false;
+                } finally {
+                    this.loading = false;
+                }
+            }
+        }
+    }
+
+    function jellystatStats() {
+        return {
+            enabled: false,
+            stats: null,
+            viewsByType: null,
+            loading: false,
+
+            async init() {
+                await this.refresh();
+            },
+
+            async refresh() {
+                this.loading = true;
+                try {
+                    // Load general stats (last 7 days for dashboard)
+                    const statsResponse = await fetch('/api/jellystat/dashboard/stats?days=7');
+                    if (statsResponse.ok) {
+                        this.stats = await statsResponse.json();
+                        this.enabled = true;
+                    } else {
+                        // If Jellystat is not configured, disable the section
+                        this.enabled = false;
+                        return;
+                    }
+
+                    // Load views by type
+                    const viewsResponse = await fetch('/api/jellystat/dashboard/views-by-type?days=7');
+                    if (viewsResponse.ok) {
+                        this.viewsByType = await viewsResponse.json();
+                    }
+                } catch (error) {
+                    console.error('Error loading Jellystat data:', error);
+                    this.enabled = false;
+                } finally {
+                    this.loading = false;
+                }
+            }
+        }
+    }
+
+    function qbittorrentDashboard() {
+        // qBittorrent API constants
+        const QB_INFINITE_ETA = 8640000; // qBittorrent uses 8640000 (100 days in seconds) as sentinel value for infinite/unknown ETA
+        const REFRESH_INTERVAL_MS = 30000; // 30 seconds - balance between freshness and server load
+
+        return {
+            enabled: false,
+            state: null,
+            activeTorrents: [],
+            loading: false,
+            intervalId: null,
+
+            async init() {
+                await this.refresh();
+                
+                // Only enable auto-refresh if qBittorrent is configured
+                if (this.enabled) {
+                    this.intervalId = setInterval(() => this.refresh(), REFRESH_INTERVAL_MS);
+                    
+                    // Cleanup interval when component is destroyed
+                    this.$cleanup(() => {
+                        if (this.intervalId) {
+                            clearInterval(this.intervalId);
+                            this.intervalId = null;
+                        }
+                    });
+                }
+            },
+
+            async refresh() {
+                this.loading = true;
+                try {
+                    // Try to fetch server state first to check if qBittorrent is enabled
+                    const stateResponse = await fetch('/api/qbittorrent/state');
+                    if (stateResponse.ok) {
+                        this.enabled = true;
+                        this.state = await stateResponse.json();
+                        
+                        // Also fetch active torrents
+                        const torrentsResponse = await fetch('/api/qbittorrent/active');
+                        if (torrentsResponse.ok) {
+                            const data = await torrentsResponse.json();
+                            this.activeTorrents = data.items || [];
+                        }
+                    } else if (stateResponse.status === 503) {
+                        // qBittorrent not configured
+                        this.enabled = false;
+                        this.state = null;
+                        this.activeTorrents = [];
+                    }
+                } catch (error) {
+                    console.error('Error loading qBittorrent data:', error);
+                    this.enabled = false;
+                } finally {
+                    this.loading = false;
+                }
+            },
+
+            formatSpeed(bytesPerSec) {
+                if (bytesPerSec === 0) return '0 B/s';
+                const k = 1024;
+                const sizes = ['B/s', 'KB/s', 'MB/s', 'GB/s'];
+                const i = Math.floor(Math.log(bytesPerSec) / Math.log(k));
+                return parseFloat((bytesPerSec / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+            },
+
+            formatETA(seconds) {
+                if (seconds === QB_INFINITE_ETA || seconds <= 0) return '∞';
+                
+                const hours = Math.floor(seconds / 3600);
+                const minutes = Math.floor((seconds % 3600) / 60);
+                
+                if (hours > 24) {
+                    const days = Math.floor(hours / 24);
+                    return `${days}d ${hours % 24}h`;
+                }
+                if (hours > 0) {
+                    return `${hours}h ${minutes}m`;
+                }
+                return `${minutes}m`;
+            }
+        }
+    }
+</script>

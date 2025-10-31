@@ -1,233 +1,407 @@
-# MediaCheky - Guía de Desarrollo
+# KeeperCheky Development Guide
 
-## Requisitos
+> **Estado Actual**: v1.0.0-dev.17 - Desarrollo activo con la mayoría de features implementadas
 
-- Go 1.22 o superior
-- Docker y Docker Compose
-- Git
+## 🚀 Quick Start
 
-## Inicio Rápido
+## ✅ What's Implemented
 
-### 1. Clonar el Repositorio
+### Backend Services (Go)
+- ✅ **Core Application** - Fiber v2 web server con hot-reload
+- ✅ **Database** - GORM v2 con SQLite/PostgreSQL
+- ✅ **Configuration** - Sistema de config con Viper (YAML + env vars)
+- ✅ **Logging** - Structured logging con niveles configurables
 
-```bash
-git clone https://github.com/carcheky/mediacheky.git
-cd mediacheky
-```
+### Service Integrations
+- ✅ **Radarr** - System info, queue, history, calendar, quality profiles
+- ✅ **Sonarr** - System info, queue, history, calendar, quality profiles
+- ✅ **Jellyfin** - Stats, sessions, recently added, activity
+- ✅ **Jellyseerr** - Request statistics and management
+- ✅ **Jellystst** - User activity, library stats, dashboard widgets
+- ✅ **Bazarr** - Subtitle management, history, wanted lists
+- ✅ **qBittorrent** - Transfer info, server state, active torrents, torrent properties
 
-### 2. Instalar Dependencias
-
-```bash
-go mod download
-```
-
-### 3. Ejecutar en Desarrollo
-
-```bash
-# Opción 1: Usar go run
-MEDIACHEKY_APP_ENVIRONMENT=development go run ./cmd/server
-
-# Opción 2: Compilar y ejecutar
-make build
-./bin/mediacheky
-
-# Opción 3: Usar Make
-make run
-```
-
-La aplicación estará disponible en `http://localhost:8080`
-
-### 4. Ejecutar con Docker
-
-```bash
-# Construir la imagen
-docker build -t mediacheky:latest .
-
-# O usar docker-compose
-docker-compose up -d
-```
-
-## Estructura del Proyecto
-
-```
-mediacheky/
-├── cmd/
-│   └── server/          # Punto de entrada principal
-│       └── main.go
-├── internal/
-│   ├── config/          # Gestión de configuración
-│   │   └── config.go
-│   ├── handler/         # Manejadores HTTP
-│   │   └── handler.go
-│   ├── models/          # Modelos de datos (GORM)
-│   │   └── service.go
-│   └── service/         # Lógica de negocio
-│       └── service.go
-├── pkg/
-│   └── logger/          # Logger compartido
-│       └── logger.go
-├── web/
-│   └── templates/       # Plantillas HTML
-│       ├── layout.html
-│       ├── index.html
-│       └── services.html
-├── config/
-│   └── config.example.yml  # Ejemplo de configuración
-├── Dockerfile           # Dockerfile de producción
-├── docker-compose.yml   # Configuración de Docker Compose
-├── Makefile            # Comandos de desarrollo
-└── README.md           # Documentación principal
-```
-
-## Comandos de Make
-
-```bash
-make help           # Mostrar ayuda
-make build          # Compilar la aplicación
-make run            # Ejecutar la aplicación
-make test           # Ejecutar tests
-make clean          # Limpiar artefactos
-make docker-build   # Construir imagen Docker
-make docker-run     # Ejecutar con Docker Compose
-make fmt            # Formatear código
-make deps           # Descargar dependencias
-make tidy           # Limpiar dependencias
-```
-
-## Variables de Entorno
-
-### Aplicación
-- `MEDIACHEKY_APP_ENVIRONMENT`: Entorno (production/development)
-- `MEDIACHEKY_APP_LOG_LEVEL`: Nivel de log (debug/info/warn/error)
-
-### Servidor
-- `MEDIACHEKY_SERVER_HOST`: Host del servidor (default: 0.0.0.0)
-- `MEDIACHEKY_SERVER_PORT`: Puerto del servidor (default: 8080)
-
-### Base de Datos
-- `MEDIACHEKY_DATABASE_TYPE`: Tipo de BD (default: sqlite)
-- `MEDIACHEKY_DATABASE_PATH`: Ruta de la BD (default: /data/mediacheky.db)
-
-## Desarrollo
-
-### Agregar un Nuevo Servicio
-
-1. Actualizar `internal/service/service.go`:
-   ```go
-   {
-       Name:        "nuevo-servicio",
-       DisplayName: "Nuevo Servicio",
-       Image:       "imagen/del-servicio:latest",
-       Port:        "puerto",
-       WebPort:     "puerto",
-       Enabled:     false,
-   }
-   ```
-
-2. Actualizar `internal/config/config.go` si es necesario
-
-3. La UI se actualizará automáticamente
-
-### Modificar Templates
-
-Los templates están en `web/templates/`:
-- `layout.html`: Layout base
-- `index.html`: Página principal
-- `services.html`: Gestión de servicios
+### Frontend (Alpine.js + Tailwind)
+- ✅ **Dashboard** - Real-time stats, service health, activity timeline
+- ✅ **Files/Health** - Storage health analysis, orphan detection, bulk actions
+- ✅ **Media** - Library browser, filters, bulk delete, detailed views
+- ✅ **Settings** - Service configuration, connection testing, two-tab layout
+- 🚧 **Schedules** - Template ready, logic pending
+- 🚧 **Logs** - Template ready, real-time streaming pending
 
 ### API Endpoints
+- ✅ `/api/media` - Media CRUD operations
+- ✅ `/api/files` - File operations and health analysis
+- ✅ `/api/stats` - Dashboard statistics
+- ✅ `/api/config` - Settings management
+- ✅ `/api/sync` - Media library synchronization
+- ✅ `/api/{service}/system` - Service system info for all integrations
+- ✅ `/health` - Application health check
 
-- `GET /`: Página principal
-- `GET /services`: Gestión de servicios
-- `POST /api/services/:name/toggle`: Activar/desactivar servicio
-- `GET /api/docker-compose`: Obtener configuración
-- `GET /docker-compose/download`: Descargar docker-compose.yml
-- `GET /health`: Health check
+### Features
+- ✅ Dry-run mode (safe testing)
+- ✅ Exclusion tags
+- ✅ File health analysis
+- ✅ Bulk operations
+- ✅ Service health monitoring
+- ✅ Real-time statistics
+- 🚧 Scheduled cleanups (in progress)
+- 🚧 Leaving Soon collections (in progress)
 
-## Testing
 
-### Manual
+### Prerequisites
 
-1. Iniciar la aplicación
-2. Navegar a `http://localhost:8080`
-3. Activar/desactivar servicios
-4. Descargar docker-compose.yml
+- Docker 28.5+ installed
+- Docker Compose V2
+- 2GB RAM available
+- ~500MB disk space
 
-### Verificar la Configuración Generada
+### First-Time Setup
 
-```bash
-curl http://localhost:8080/api/docker-compose
-```
+1. **Clone the repository**
+   ```bash
+   git clone https://github.com/carcheky/keepercheky.git
+   cd keepercheky
+   ```
 
-## Debugging
+2. **Initialize development environment**
+   ```bash
+   make init
+   ```
 
-### Habilitar Logs de Debug
+3. **Start development server**
+   ```bash
+   make dev
+   ```
 
-```bash
-MEDIACHEKY_APP_LOG_LEVEL=debug go run ./cmd/server
-```
+4. **Access the application**
+   - Open http://localhost:8000
+   - You should see the KeeperCheky dashboard
 
-### Ver Base de Datos
+## 🛠️ Development Workflow
 
-```bash
-sqlite3 data/mediacheky.db "SELECT * FROM services;"
-```
+### Using Hot-Reload (Recommended)
 
-## Docker
-
-### Desarrollo con Docker
-
-```bash
-# Construir
-docker build -t mediacheky:dev .
-
-# Ejecutar
-docker run -p 8080:8080 \
-  -v $(pwd)/data:/data \
-  mediacheky:dev
-```
-
-### Producción
-
-```bash
-docker-compose up -d
-```
-
-## Solución de Problemas
-
-### La aplicación no inicia
-
-1. Verificar que el puerto 8080 esté disponible
-2. Comprobar que Go 1.22+ esté instalado
-3. Verificar permisos del directorio de datos
-
-### Error de base de datos
+The development environment uses [Air](https://github.com/cosmtrek/air) for automatic hot-reload:
 
 ```bash
-# Eliminar la base de datos y reiniciar
-rm -rf data/
-mkdir data
+# Start with hot-reload
+make dev
+
+# The server will automatically restart when you edit:
+# - Go files (*.go)
+# - Templates (*.html)
+# - Config files (*.yaml)
 ```
 
-### Templates no se cargan
+### Using Docker Compose Watch (Docker 28+)
 
-Verificar que el directorio `web/templates` exista y contenga los archivos.
+Docker 28+ includes a `watch` feature that syncs file changes:
 
-## Contribuir
+```bash
+# Start with compose watch
+make dev-watch
+```
 
-1. Fork el proyecto
-2. Crear una rama para tu feature
-3. Hacer commit de los cambios
-4. Push a la rama
-5. Crear un Pull Request
+**What gets synced:**
+- `./cmd` → Real-time sync
+- `./internal` → Real-time sync
+- `./pkg` → Real-time sync
+- `./web` → Real-time sync
+- `go.mod/go.sum` → Triggers rebuild
 
-## Recursos
+### Useful Commands
 
-- [Documentación de Fiber](https://docs.gofiber.io/)
-- [Documentación de GORM](https://gorm.io/)
-- [Alpine.js](https://alpinejs.dev/)
-- [Tailwind CSS](https://tailwindcss.com/)
+```bash
+# View logs
+make logs
 
-## Licencia
+# Open shell in container
+make shell
 
-MIT License - Ver [LICENSE](LICENSE) para más detalles
+# Run tests
+make test
+
+# Format code
+make fmt
+
+# Stop server
+make stop
+
+# Clean everything
+make clean
+```
+
+## 📁 Project Structure
+
+```
+keepercheky/
+├── cmd/
+│   └── server/
+│       └── main.go              # Application entry point
+├── internal/                     # Private application code
+│   ├── config/                   # Configuration management
+│   │   └── config.go
+│   ├── models/                   # Database models (GORM)
+│   │   └── models.go
+│   ├── repository/               # Data access layer
+│   │   └── repository.go
+│   ├── service/                  # Business logic
+│   │   ├── clients/              # External service clients
+│   │   ├── cleanup/              # Cleanup strategies
+│   │   └── scheduler/            # Job scheduling
+│   ├── handler/                  # HTTP handlers (Fiber)
+│   │   ├── handler.go
+│   │   ├── dashboard.go
+│   │   ├── media.go
+│   │   └── ...
+│   └── middleware/               # HTTP middleware
+│       └── middleware.go
+├── web/
+│   ├── templates/                # Go html/template files
+│   │   ├── layouts/
+│   │   │   └── main.html
+│   │   └── pages/
+│   │       ├── dashboard.html
+│   │       └── ...
+│   └── static/                   # CSS, JS, images
+│       ├── css/
+│       ├── js/
+│       └── images/
+├── pkg/                          # Public/shared packages
+│   ├── logger/
+│   │   └── logger.go
+│   └── utils/
+├── data/                         # Runtime data (gitignored)
+│   └── dev.db                    # SQLite database
+├── config/                       # Configuration files
+│   └── config.example.yaml
+├── .air.toml                     # Air configuration
+├── docker-compose.yml        # Development compose file
+├── Dockerfile.dev                # Development Dockerfile
+├── Makefile                      # Development commands
+└── README.md
+```
+
+## 🔧 Configuration
+
+### Environment Variables
+
+The application uses environment variables with the prefix `KEEPERCHEKY_`:
+
+```bash
+# App
+KEEPERCHEKY_APP_ENVIRONMENT=development
+KEEPERCHEKY_APP_LOG_LEVEL=debug
+KEEPERCHEKY_APP_DRY_RUN=true
+KEEPERCHEKY_APP_LEAVING_SOON_DAYS=7
+
+# Server
+KEEPERCHEKY_SERVER_PORT=8000
+KEEPERCHEKY_SERVER_HOST=0.0.0.0
+
+# Database
+KEEPERCHEKY_DATABASE_TYPE=sqlite
+KEEPERCHEKY_DATABASE_PATH=./data/dev.db
+```
+
+### Configuration File
+
+Alternatively, create `config/config.yaml`:
+
+```yaml
+app:
+  environment: development
+  log_level: debug
+  dry_run: true
+  leaving_soon_days: 7
+  scheduler_enabled: false
+
+server:
+  port: "8000"
+  host: "0.0.0.0"
+
+database:
+  type: sqlite
+  path: ./data/dev.db
+
+clients:
+  radarr:
+    enabled: false
+    url: "http://radarr:7878"
+    api_key: ""
+  
+  sonarr:
+    enabled: false
+    url: "http://sonarr:8989"
+    api_key: ""
+  
+  jellyfin:
+    enabled: false
+    url: "http://jellyfin:8096"
+    api_key: ""
+    username: ""
+    password: ""
+```
+
+## 🧪 Testing
+
+### Running Tests
+
+```bash
+# All tests
+make test
+
+# With coverage
+make test-coverage
+
+# Specific package
+go test -v ./internal/service/...
+```
+
+### Writing Tests
+
+Follow the standard Go testing conventions:
+
+```go
+// internal/repository/repository_test.go
+package repository
+
+import (
+    "testing"
+    "github.com/stretchr/testify/assert"
+)
+
+func TestMediaRepository_GetAll(t *testing.T) {
+    // Setup
+    db := setupTestDB(t)
+    defer db.Close()
+    
+    repo := NewMediaRepository(db)
+    
+    // Test
+    media, err := repo.GetAll()
+    
+    // Assert
+    assert.NoError(t, err)
+    assert.NotNil(t, media)
+}
+```
+
+## 🎨 Frontend Development
+
+### Alpine.js Components
+
+Create reactive components in templates:
+
+```html
+<div x-data="mediaList()" x-init="init()">
+    <template x-for="item in media" :key="item.id">
+        <div x-text="item.title"></div>
+    </template>
+</div>
+
+<script>
+function mediaList() {
+    return {
+        media: [],
+        
+        async init() {
+            this.media = await this.fetchMedia();
+        },
+        
+        async fetchMedia() {
+            const response = await fetch('/api/media');
+            return await response.json();
+        }
+    }
+}
+</script>
+```
+
+### Tailwind CSS
+
+Use Tailwind utility classes directly in templates:
+
+```html
+<div class="bg-white shadow rounded-lg p-6">
+    <h2 class="text-2xl font-bold text-gray-900">Title</h2>
+</div>
+```
+
+## 🐛 Debugging
+
+### VS Code Debugging
+
+1. Install the Go extension for VS Code
+2. Set breakpoints in your code
+3. Press `F5` to start debugging
+4. Or use the "Launch Package" configuration
+
+### Docker Debugging
+
+```bash
+# View container logs
+make logs
+
+# Open shell in container
+make shell
+
+# Inside container, you can:
+go run ./cmd/server
+```
+
+### Common Issues
+
+**Port already in use:**
+```bash
+# Find and kill process using port 8000
+lsof -ti:8000 | xargs kill -9
+
+# Or use a different port
+KEEPERCHEKY_SERVER_PORT=8001 make dev
+```
+
+**Database locked:**
+```bash
+# Stop all containers and clean
+make clean
+make init
+make dev
+```
+
+## 📚 Additional Resources
+
+- [Fiber Documentation](https://docs.gofiber.io/)
+- [GORM Documentation](https://gorm.io/docs/)
+- [Alpine.js Documentation](https://alpinejs.dev/)
+- [Tailwind CSS Documentation](https://tailwindcss.com/docs)
+- [Air Documentation](https://github.com/cosmtrek/air)
+
+## 🤝 Contributing
+
+1. Create a new branch: `git checkout -b feature/my-feature`
+2. Make your changes
+3. Run tests: `make test`
+4. Format code: `make fmt`
+5. Commit: `git commit -m "feat: add my feature"`
+6. Push: `git push origin feature/my-feature`
+7. Create Pull Request
+
+## 📝 Coding Guidelines
+
+See [.github/copilot-instructions.md](../.github/copilot-instructions.md) for detailed coding standards.
+
+**Key principles:**
+- ✅ ALWAYS handle errors explicitly
+- ✅ Use structured logging
+- ✅ Follow Repository Pattern
+- ✅ Write tests for new features
+- ✅ Document exported functions
+- ✅ Use context for cancellation
+
+---
+
+**Happy coding!** 🚀
+
+If you encounter any issues, check the [main documentation](../docs/README.md) or open an issue on GitHub.

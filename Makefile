@@ -1,84 +1,194 @@
-.PHONY: help build run test clean docker-build docker-run dev
+.PHONY: help dev dev-watch build test clean docker-build docker-run shell logs stop
 
 # Default target
 help:
-	@echo "MediaCheky - Makefile commands:"
-	@echo "  make build         - Build the application"
-	@echo "  make run           - Run the application"
-	@echo "  make test          - Run tests"
-	@echo "  make clean         - Clean build artifacts"
-	@echo "  make docker-build  - Build Docker image"
-	@echo "  make docker-run    - Run Docker container"
-	@echo "  make dev           - Run in development mode"
+	@echo "KeeperCheky - Available commands:"
+	@echo ""
+	@echo "Development:"
+	@echo "  make dev          - Start development server with hot-reload"
+	@echo "  make dev-watch    - Start with Docker Compose Watch (auto-rebuild)"
+	@echo "  make logs         - Show development logs"
+	@echo "  make shell        - Open shell in development container"
+	@echo "  make stop         - Stop development server"
+	@echo "  make clean-media  - Clean and recreate mock media library"
+	@echo ""
+	@echo "Build:"
+	@echo "  make build        - Build production binary"
+	@echo "  make docker-build - Build production Docker image (default: production target)"
+	@echo "  make docker-build-dev - Build development Docker image (with hot-reload)"
+	@echo ""
+	@echo "Testing:"
+	@echo "  make test         - Run all tests"
+	@echo "  make test-coverage - Run tests with coverage"
+	@echo ""
+	@echo "Utilities:"
+	@echo "  make clean        - Clean build artifacts"
+	@echo "  make fmt          - Format code"
+	@echo "  make lint         - Run linter"
+	@echo ""
 
-# Build the application
+# Development with hot-reload (Air + Docker Compose Watch)
+dev:
+	@echo "🚀 Starting development server with hot-reload..."
+	@echo "📁 Creating volume directories..."
+	@mkdir -p volumes/keepercheky-go-modules
+	@mkdir -p volumes/radarr-config
+	@mkdir -p volumes/sonarr-config
+	@mkdir -p volumes/jellyfin-config
+	@mkdir -p volumes/jellyseerr-config
+	@mkdir -p volumes/qbittorrent-config
+	@mkdir -p volumes/bazarr-config
+	@mkdir -p volumes/jellystat-config
+	@mkdir -p volumes/media-library/downloads
+	@mkdir -p volumes/media-library/library
+	@mkdir -p logs
+	@echo "✅ Volume directories ready"
+	@echo ""
+	@echo "💡 Tip: Run './scripts/create-mock-media.sh' to create test media files"
+	@echo "📝 Logs: logs/keepercheky-dev.log (auto-rotates at 1000 lines)"
+	@echo ""
+	@chmod +x scripts/log-with-rotation.sh
+	@docker compose up --build --watch > /dev/null 2>&1 &
+	@sleep 5
+	@docker compose logs -f keepercheky 2>&1 | ./scripts/log-with-rotation.sh
+
+# Development with Docker Compose Watch (Docker 28+)
+dev-watch:
+	@echo "🚀 Starting development server with Docker Compose Watch..."
+	@docker compose watch
+
+# Show development logs
+logs:
+	@docker compose logs -f keepercheky
+
+# Open shell in development container
+shell:
+	@docker compose exec keepercheky sh
+
+# Stop development server
+stop:
+	@docker compose down
+
+# Stop and remove volumes
+stop-clean:
+	@echo "🧹 Stopping and cleaning volumes..."
+	@docker compose down -v
+	@echo "✅ Containers and volumes removed"
+
+# Clean mock media library
+clean-media:
+	@echo "🧹 Cleaning mock media library..."
+	@rm -rf volumes/media-library/downloads
+	@rm -rf volumes/media-library/library
+	@echo "✅ Media library cleaned"
+	@echo "   Run './scripts/create-mock-media.sh' or 'make dev' to recreate it"
+
+# Build production binary
 build:
-	@echo "Building MediaCheky..."
-	go build -ldflags="-w -s" -o bin/mediacheky ./cmd/server
-	@echo "Build complete: bin/mediacheky"
+	@echo "🔨 Building production binary..."
+	@CGO_ENABLED=1 go build -ldflags="-w -s" -o bin/keepercheky ./cmd/server
 
-# Run the application
-run:
-	@echo "Running MediaCheky..."
-	go run ./cmd/server
+# Build production Docker image
+docker-build:
+	@echo "🐳 Building production Docker image..."
+	@docker build -t keepercheky:latest .
+	@echo "✅ Production image built successfully"
+	@echo "   - Uses multi-stage build with 'production' target (default)"
+	@echo "   - Final image based on scratch (~25MB)"
+	@echo "   - To run: make docker-run"
+
+# Build development Docker image (for testing)
+docker-build-dev:
+	@echo "🐳 Building development Docker image..."
+	@docker build --target=development -t keepercheky:dev .
+	@echo "✅ Development image built successfully"
+	@echo "   - Uses 'development' target with hot-reload"
+	@echo "   - Based on golang:alpine with Air installed"
+
+# Run production Docker image
+docker-run:
+	@echo "🚀 Running production Docker image..."
+	@docker run -p 8000:8000 \
+		-v $(PWD)/data:/data \
+		-v $(PWD)/config:/config \
+		keepercheky:latest
 
 # Run tests
 test:
-	@echo "Running tests..."
-	go test -v ./...
+	@echo "🧪 Running tests..."
+	@go test -v ./...
 
-# Clean build artifacts
-clean:
-	@echo "Cleaning build artifacts..."
-	rm -rf bin/
-	rm -f mediacheky
-	@echo "Clean complete"
-
-# Build Docker image
-docker-build:
-	@echo "Building Docker image..."
-	docker build -t mediacheky:latest .
-	@echo "Docker image built: mediacheky:latest"
-
-# Run Docker container
-docker-run:
-	@echo "Running Docker container..."
-	docker-compose up -d
-	@echo "Container started. Access http://localhost:8080"
-
-# Run in development mode with live reload
-dev:
-	@echo "Running in development mode..."
-	@echo "Make sure you have 'air' installed: go install github.com/cosmtrek/air@latest"
-	air
-
-# Download dependencies
-deps:
-	@echo "Downloading dependencies..."
-	go mod download
-	go mod verify
-	@echo "Dependencies downloaded"
-
-# Tidy dependencies
-tidy:
-	@echo "Tidying dependencies..."
-	go mod tidy
-	@echo "Dependencies tidied"
+# Run tests with coverage
+test-coverage:
+	@echo "🧪 Running tests with coverage..."
+	@go test -v -coverprofile=coverage.out ./...
+	@go tool cover -html=coverage.out -o coverage.html
+	@echo "Coverage report: coverage.html"
 
 # Format code
 fmt:
-	@echo "Formatting code..."
-	go fmt ./...
-	@echo "Code formatted"
+	@echo "✨ Formatting code..."
+	@go fmt ./...
 
-# Lint code (requires golangci-lint)
+# Run linter
 lint:
-	@echo "Linting code..."
-	golangci-lint run ./...
-	@echo "Linting complete"
+	@echo "🔍 Running linter..."
+	@golangci-lint run ./...
 
-# Install development tools
-install-tools:
-	@echo "Installing development tools..."
-	go install github.com/cosmtrek/air@latest
-	@echo "Tools installed"
+# Clean build artifacts
+clean:
+	@echo "🧹 Cleaning build artifacts..."
+	@rm -rf bin/ tmp/ coverage.out coverage.html
+	@echo "⚠️  Note: Docker volumes in ./volumes/ are NOT deleted"
+	@echo "   Run 'make clean-all' to also remove volume data"
+	@echo "✅ Clean complete"
+
+# Clean everything including volumes
+clean-all:
+	@echo "🧹 Cleaning everything (including volumes)..."
+	@rm -rf bin/ tmp/ coverage.out coverage.html
+	@docker compose down -v
+	@rm -rf volumes/
+	@echo "✅ Complete cleanup done"
+
+# Initialize development environment
+init:
+	@echo "🔧 Initializing development environment..."
+	@mkdir -p data config
+	@mkdir -p volumes/keepercheky-go-modules
+	@mkdir -p volumes/radarr-config
+	@mkdir -p volumes/sonarr-config
+	@mkdir -p volumes/jellyfin-config
+	@mkdir -p volumes/jellyseerr-config
+	@mkdir -p volumes/qbittorrent-config
+	@mkdir -p volumes/bazarr-config
+	@mkdir -p volumes/jellystat-config
+	@mkdir -p volumes/media-library/library/movies
+	@mkdir -p volumes/media-library/library/tv
+	@mkdir -p volumes/media-library/downloads
+	@echo "✅ Development environment initialized"
+	@echo "🎬 Creating mock media library..."
+	@./scripts/create-mock-media.sh
+	@echo ""
+	@echo "📁 Directory structure:"
+	@echo "  ├── data/              (app data & database)"
+	@echo "  ├── config/            (configuration files)"
+	@echo "  └── volumes/           (Docker volume mounts)"
+	@echo "      ├── keepercheky-go-modules/"
+	@echo "      ├── radarr-config/"
+	@echo "      ├── sonarr-config/"
+	@echo "      ├── jellyfin-config/"
+	@echo "      ├── jellyseerr-config/"
+	@echo "      ├── qbittorrent-config/"
+	@echo "      ├── bazarr-config/"
+	@echo "      ├── jellystat-config/"
+	@echo "      └── media-library/"
+	@echo "          ├── library/"
+	@echo "          │   ├── movies/"
+	@echo "          │   └── tv/"
+	@echo "          └── downloads/"
+	@echo ""
+	@echo "Next steps:"
+	@echo "  1. Run 'make dev' to start the development server"
+	@echo "  2. Visit http://localhost:8000"
+	@echo "  3. Check the documentation in docs/DEVELOPMENT.md"

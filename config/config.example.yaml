@@ -1,0 +1,87 @@
+# KeeperCheky Configuration Example
+# Copy this file to /app/config/config.yaml (or ./volumes/keepercheky-config/config.yaml)
+# and adjust values for your setup
+
+# Application Settings
+app:
+  # Environment: development, production
+  environment: development
+
+  # Log level: debug, info, warn, error
+  log_level: info
+
+  # Enable scheduled cleanup jobs
+  scheduler_enabled: false
+
+# Server Configuration
+server:
+  # Port to listen on
+  port: "8000"
+
+  # Host to bind to (0.0.0.0 for all interfaces)
+  host: "0.0.0.0"
+
+# Database Configuration
+database:
+  # Database type: sqlite, postgres
+  type: sqlite
+
+  # SQLite specific
+  path: ./data/keepercheky.db
+
+  # PostgreSQL specific (uncomment and configure if using postgres)
+  # host: localhost
+  # port: 5432
+  # user: keepercheky
+  # password: your_password_here
+  # name: keepercheky
+
+# External Service Clients
+clients:
+  # Radarr (Movies Management)
+  radarr:
+    enabled: false
+    url: "http://radarr:7878"
+    api_key: "your_radarr_api_key_here"
+
+  # Sonarr (TV Shows Management)
+  sonarr:
+    enabled: false
+    url: "http://sonarr:8989"
+    api_key: "your_sonarr_api_key_here"
+
+  # Jellyfin (Media Server)
+  jellyfin:
+    enabled: false
+    url: "http://jellyfin:8096"
+    api_key: "your_jellyfin_api_key_here"
+
+  # Jellyseerr (Request Management)
+  jellyseerr:
+    enabled: false
+    url: "http://jellyseerr:5055"
+    api_key: "your_jellyseerr_api_key_here"
+
+  # qBittorrent (Torrent Client - Seeding Validation)
+  qbittorrent:
+    enabled: false
+    url: "http://qbittorrent:8080"
+    username: "admin"
+    password: "adminadmin"
+
+# Cleanup Rules Configuration
+cleanup:
+  # Dry run mode: if true, no media will actually be deleted
+  dry_run: true
+
+  # Delete media older than X days (0 = disabled)
+  days_to_keep: 90
+
+  # Days before deletion to add to "Leaving Soon" collection
+  leaving_soon_days: 7
+
+  # Tags to exclude from cleanup (comma-separated)
+  exclusion_tags: []
+
+  # Delete unmonitored media (not tracked in Radarr/Sonarr)
+  delete_unmonitored: false

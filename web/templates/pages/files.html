@@ -1,0 +1,1667 @@
+{{define "pages/files"}}
+<div x-data="filesPage()" class="container mx-auto px-4 py-8">
+    <!-- Header -->
+    <div class="mb-6">
+        <div class="flex justify-between items-center mb-4">
+            <div>
+                <h1 class="text-3xl font-bold text-dark-text mb-2">
+                    🏥 Salud del Almacenamiento
+                </h1>
+                <p class="text-dark-muted">
+                    Detecta y resuelve problemas en tus archivos de media
+                </p>
+            </div>
+
+            <!-- Sync Button -->
+            <div class="flex items-center gap-4">
+                <div x-show="lastSync" class="text-sm text-dark-muted">
+                    Última sincronización: <span x-text="formatLastSync(lastSync)" class="text-blue-400"></span>
+                </div>
+
+                <div x-show="syncMessage" x-transition :class="{
+                        'bg-green-50 border-green-200 text-green-800': syncMessageType === 'success',
+                        'bg-red-50 border-red-200 text-red-800': syncMessageType === 'error',
+                        'bg-blue-50 border-blue-200 text-blue-800': syncMessageType === 'info'
+                    }" class="px-4 py-2 rounded-lg border text-sm max-w-md">
+                    <p x-text="syncMessage" class="line-clamp-2"></p>
+                </div>
+
+                <button @click="syncFiles()" :disabled="syncing"
+                    class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 whitespace-nowrap">
+                    <svg x-show="!syncing" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15">
+                        </path>
+                    </svg>
+                    <svg x-show="syncing" class="animate-spin w-5 h-5" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor"
+                            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
+                        </path>
+                    </svg>
+                    <span x-text="syncing ? 'Sincronizando...' : 'Sincronizar'"></span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Health Statistics Cards -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
+        <!-- Archivos Saludables -->
+        <div @click="switchTab('healthy')"
+            class="rounded-lg shadow-lg p-4 cursor-pointer transition-all border bg-green-900/20 border-green-600/30 hover:bg-green-900/30">
+            <div class="flex items-center justify-between mb-2">
+                <span class="text-3xl">✅</span>
+                <span class="text-2xl font-bold text-dark-text" x-text="healthyFiles.length"></span>
+            </div>
+            <h3 class="text-sm font-semibold text-dark-text mb-1">Archivos Saludables</h3>
+            <p class="text-xs text-dark-muted">Todo funcionando bien</p>
+        </div>
+
+        <!-- Huérfanos en Descargas -->
+        <div @click="switchTab('attention')"
+            class="rounded-lg shadow-lg p-4 cursor-pointer transition-all border bg-yellow-900/20 border-yellow-600/30 hover:bg-yellow-900/30">
+            <div class="flex items-center justify-between mb-2">
+                <span class="text-3xl">⚠️</span>
+                <span class="text-2xl font-bold text-dark-text" x-text="orphanDownloads.length"></span>
+            </div>
+            <h3 class="text-sm font-semibold text-dark-text mb-1">Huérfanos en Descargas</h3>
+            <p class="text-xs text-dark-muted">En qBT pero no en biblioteca</p>
+        </div>
+
+        <!-- Solo Hardlinks -->
+        <div @click="switchTab('hardlinks')"
+            class="rounded-lg shadow-lg p-4 cursor-pointer transition-all border bg-blue-900/20 border-blue-600/30 hover:bg-blue-900/30">
+            <div class="flex items-center justify-between mb-2">
+                <span class="text-3xl">🔗</span>
+                <span class="text-2xl font-bold text-dark-text" x-text="hardlinkFiles.length"></span>
+            </div>
+            <h3 class="text-sm font-semibold text-dark-text mb-1">Solo Hardlinks</h3>
+            <p class="text-xs text-dark-muted">Hardlinks sin torrent</p>
+        </div>
+
+        <!-- Torrents Muertos -->
+        <div @click="switchTab('critical')"
+            class="rounded-lg shadow-lg p-4 cursor-pointer transition-all border bg-red-900/20 border-red-600/30 hover:bg-red-900/30">
+            <div class="flex items-center justify-between mb-2">
+                <span class="text-3xl">💀</span>
+                <span class="text-2xl font-bold text-dark-text" x-text="deadTorrents.length"></span>
+            </div>
+            <h3 class="text-sm font-semibold text-dark-text mb-1">Torrents Muertos</h3>
+            <p class="text-xs text-dark-muted">Sin seeds activos</p>
+        </div>
+
+        <!-- Sin Reproducir -->
+        <div @click="switchTab('unwatched')"
+            class="rounded-lg shadow-lg p-4 cursor-pointer transition-all border bg-yellow-900/20 border-yellow-600/30 hover:bg-yellow-900/30">
+            <div class="flex items-center justify-between mb-2">
+                <span class="text-3xl">👁️</span>
+                <span class="text-2xl font-bold text-dark-text" x-text="unwatchedFiles.length"></span>
+            </div>
+            <h3 class="text-sm font-semibold text-dark-text mb-1">Sin Reproducir</h3>
+            <p class="text-xs text-dark-muted">Nunca vistos en Jellyfin</p>
+        </div>
+    </div>
+
+    <!-- Filtros Avanzados - Solo búsqueda (otros filtros incompatibles con paginación del servidor) -->
+    <div x-data="{ filtersOpen: false }" 
+        class="mb-6">
+        
+        <button @click="filtersOpen = !filtersOpen"
+            class="flex items-center gap-2 px-4 py-2 bg-dark-surface border border-dark-border rounded-lg hover:bg-slate-700/50 transition-colors">
+            <svg class="w-4 h-4 transition-transform" :class="{ 'rotate-90': filtersOpen }" 
+                fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+            </svg>
+            <span class="text-dark-text font-medium">Búsqueda</span>
+            <span x-show="filterSearch" 
+                class="px-2 py-0.5 bg-blue-900/40 border border-blue-600/50 text-blue-300 rounded text-xs">
+                activa
+            </span>
+        </button>
+        
+        <div x-show="filtersOpen" 
+            x-transition
+            class="mt-2 bg-dark-surface border border-dark-border rounded-lg p-6">
+            
+            <div class="flex items-center gap-4">
+                <input type="text" x-model="filterSearch" @input="applyFilters()" 
+                    placeholder="Buscar por título o ruta en la página actual..."
+                    class="flex-1 px-4 py-2 bg-dark-bg border border-dark-border rounded-lg text-dark-text">
+                
+                <button @click="clearFilters()"
+                    :class="filterSearch ? 'bg-gray-600 hover:bg-gray-700' : 'bg-gray-800 cursor-not-allowed opacity-50'"
+                    :disabled="!filterSearch"
+                    class="px-4 py-2 text-white rounded-lg transition-colors">
+                    Limpiar
+                </button>
+            </div>
+            
+            <div class="mt-3 text-xs text-dark-muted">
+                <p>💡 La búsqueda filtra solo los resultados de la página actual.</p>
+                <p>Usa las pestañas (OK, Atención, Críticos, etc.) para filtrar por categoría.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tabs por Severidad -->
+    <div class="bg-dark-surface border border-dark-border rounded-lg shadow-lg mb-6">
+        <div class="border-b border-dark-border">
+            <nav class="flex -mb-px overflow-x-auto">
+                <button @click="switchTab('healthy')"
+                    :class="selectedTab === 'healthy' ? 'border-green-500 text-green-400' : 'border-transparent text-dark-muted hover:text-dark-text hover:border-slate-600'"
+                    class="px-6 py-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap">
+                    🟢 OK (<span x-text="healthyFiles.length">0</span>)
+                </button>
+                <button @click="switchTab('attention')"
+                    :class="selectedTab === 'attention' ? 'border-yellow-500 text-yellow-400' : 'border-transparent text-dark-muted hover:text-dark-text hover:border-slate-600'"
+                    class="px-6 py-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap">
+                    🟡 Atención (<span x-text="orphanDownloads.length">0</span>)
+                </button>
+                <button @click="switchTab('critical')"
+                    :class="selectedTab === 'critical' ? 'border-red-500 text-red-400' : 'border-transparent text-dark-muted hover:text-dark-text hover:border-slate-600'"
+                    class="px-6 py-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap">
+                    🔴 Críticos (<span x-text="deadTorrents.length">0</span>)
+                </button>
+                <button @click="switchTab('hardlinks')"
+                    :class="selectedTab === 'hardlinks' ? 'border-blue-500 text-blue-400' : 'border-transparent text-dark-muted hover:text-dark-text hover:border-slate-600'"
+                    class="px-6 py-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap">
+                    🔗 Hardlinks (<span x-text="hardlinkFiles.length">0</span>)
+                </button>
+                <button @click="switchTab('unwatched')"
+                    :class="selectedTab === 'unwatched' ? 'border-purple-500 text-purple-400' : 'border-transparent text-dark-muted hover:text-dark-text hover:border-slate-600'"
+                    class="px-6 py-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap">
+                    👁️ Sin Ver (<span x-text="unwatchedFiles.length">0</span>)
+                </button>
+            </nav>
+        </div>
+    </div>
+
+    <!-- Acciones Masivas -->
+    <div x-show="filteredFiles.length > 0" class="bg-dark-surface border border-dark-border rounded-lg shadow-lg p-4 mb-4">
+        <div class="flex items-center justify-between gap-4">
+            <div class="flex items-center gap-3">
+                <label class="flex items-center gap-2 cursor-pointer">
+                    <input type="checkbox" 
+                        :checked="allSelected" 
+                        @change="toggleSelectAll()"
+                        class="w-4 h-4 rounded border-dark-border bg-dark-bg text-blue-600 focus:ring-blue-500 focus:ring-offset-dark-bg">
+                    <span class="text-sm text-dark-text font-medium">Seleccionar página actual</span>
+                </label>
+                <span x-show="selectedFiles.length > 0" class="text-sm text-dark-muted">
+                    (<span x-text="selectedFiles.length"></span> seleccionado<span x-text="selectedFiles.length !== 1 ? 's' : ''"></span>)
+                </span>
+            </div>
+            
+            <div x-show="selectedFiles.length > 0" class="relative" x-data="{ bulkActionsOpen: false }">
+                <button @click="bulkActionsOpen = !bulkActionsOpen"
+                    class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors flex items-center gap-2">
+                    <span>Acciones</span>
+                    <svg class="w-4 h-4 transition-transform" :class="{ 'rotate-180': bulkActionsOpen }" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                    </svg>
+                </button>
+                
+                <div x-show="bulkActionsOpen" 
+                    @click.away="bulkActionsOpen = false"
+                    x-transition
+                    class="absolute right-0 mt-2 w-56 bg-dark-surface border border-dark-border rounded-lg shadow-xl z-50">
+                    <div class="py-1">
+                        <button @click="bulkImportToRadarr()" 
+                            class="w-full px-4 py-2 text-left text-sm text-dark-text hover:bg-slate-700/50 flex items-center gap-2">
+                            <span>🎬</span>
+                            <span>Importar a Radarr</span>
+                        </button>
+                        <button @click="bulkImportToSonarr()" 
+                            class="w-full px-4 py-2 text-left text-sm text-dark-text hover:bg-slate-700/50 flex items-center gap-2">
+                            <span>📺</span>
+                            <span>Importar a Sonarr</span>
+                        </button>
+                        <button @click="bulkTag()" 
+                            class="w-full px-4 py-2 text-left text-sm text-dark-text hover:bg-slate-700/50 flex items-center gap-2">
+                            <span>🏷️</span>
+                            <span>Etiquetar "No eliminar"</span>
+                        </button>
+                        <button @click="bulkCleanHardlinks()" 
+                            class="w-full px-4 py-2 text-left text-sm text-dark-text hover:bg-slate-700/50 flex items-center gap-2">
+                            <span>🔗</span>
+                            <span>Limpiar hardlinks</span>
+                        </button>
+                        <button @click="bulkPauseTorrents()" 
+                            class="w-full px-4 py-2 text-left text-sm text-dark-text hover:bg-slate-700/50 flex items-center gap-2">
+                            <span>⏸️</span>
+                            <span>Pausar torrents</span>
+                        </button>
+                        <div class="border-t border-dark-border my-1"></div>
+                        <button @click="bulkDelete()" 
+                            class="w-full px-4 py-2 text-left text-sm text-red-400 hover:bg-red-900/20 flex items-center gap-2">
+                            <span>🗑️</span>
+                            <span>Eliminar seleccionados</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Paginación Info -->
+    <div x-show="totalCount > 0" class="flex items-center justify-between mb-4 px-2">
+        <div class="text-sm text-dark-muted">
+            Mostrando <span x-text="paginationStart"></span> - <span x-text="paginationEnd"></span> de <span x-text="totalCount"></span> archivo(s)
+        </div>
+        <div class="flex items-center gap-2">
+            <label class="text-sm text-dark-muted">Por página:</label>
+            <select x-model.number="itemsPerPage"
+                class="px-3 py-1 bg-dark-bg border border-dark-border rounded-lg text-dark-text text-sm">
+                <option value="10">10</option>
+                <option value="25">25</option>
+                <option value="50">50</option>
+                <option value="100">100</option>
+            </select>
+        </div>
+    </div>
+
+    <!-- Lista de Archivos -->
+    <div class="space-y-3">
+        <!-- Loading indicator -->
+        <div x-show="loading" class="flex items-center justify-center py-12">
+            <svg class="animate-spin h-8 w-8 text-blue-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+            <span class="ml-3 text-dark-text">Cargando archivos...</span>
+        </div>
+        
+        <!-- Files list -->
+        <template x-show="!loading" x-for="file in paginatedFiles" :key="file.id || file.file_path">
+            <div class="bg-dark-surface border border-dark-border rounded-lg shadow-lg p-4 hover:border-slate-600 transition-colors"
+                :class="{ 'ring-2 ring-blue-500': isFileSelected(file) }">
+                
+                <!-- Header con Checkbox, Título y Status Badge -->
+                <div class="flex items-start gap-3 mb-1.5">
+                    <!-- Checkbox para selección -->
+                    <label class="flex items-center mt-1">
+                        <input type="checkbox" 
+                            :checked="isFileSelected(file)"
+                            @change="toggleFileSelection(file)"
+                            class="w-4 h-4 rounded border-dark-border bg-dark-bg text-blue-600 focus:ring-blue-500 focus:ring-offset-dark-bg cursor-pointer">
+                    </label>
+                    
+                    <!-- Título del Archivo -->
+                    <h3 class="flex-1 text-base font-semibold text-dark-text" x-text="file.title || file.file_path.split('/').pop()"></h3>
+                    
+                    <!-- Status Badge alineado a la derecha -->
+                    <div class="flex-shrink-0">
+                        <span x-data="healthStatusBadge(getFileHealthStatus(file), getFileSeverity(file), 'md')" 
+                            :class="[colorClasses, sizeClasses]"
+                            class="inline-flex items-center gap-1 rounded border">
+                            <span x-text="icon"></span>
+                            <span x-text="label"></span>
+                        </span>
+                    </div>
+                </div>
+                
+                <!-- Ruta (Colapsable) y Tamaño en la misma línea -->
+                <div class="flex items-center justify-between mb-2">
+                    <div x-data="{ showPath: false }" class="flex-1">
+                        <button @click="showPath = !showPath" class="flex items-center gap-1.5 text-xs text-blue-400 hover:text-blue-300">
+                            <svg class="w-3 h-3 transition-transform" :class="{ 'rotate-90': showPath }" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                            </svg>
+                            <span>📁 Ruta</span>
+                        </button>
+                        <div x-show="showPath" x-transition class="mt-1.5 p-2 bg-slate-800/50 border border-slate-600 rounded-lg">
+                            <p class="text-xs font-mono text-slate-300 break-all" x-text="file.file_path"></p>
+                        </div>
+                    </div>
+                    
+                    <!-- Tamaño -->
+                    <div class="flex items-center gap-1 text-xs text-dark-muted">
+                        <span>💾</span>
+                        <span x-text="formatBytes(file.size)" class="font-medium"></span>
+                    </div>
+                </div>
+                
+                <!-- Servicios (usando serviceStatusIndicator) -->
+                <div class="grid grid-cols-3 md:grid-cols-6 gap-1.5 mb-3">
+                    <div x-data="serviceStatusIndicator('qbittorrent', file.in_qbittorrent, { 
+                        state: file.torrent_state, 
+                        ratio: file.seed_ratio,
+                        category: file.torrent_category,
+                        tags: file.torrent_tags,
+                        seeding: file.is_seeding
+                    })" 
+                    @mouseenter="showTooltip = true"
+                    @mouseleave="showTooltip = false"
+                    class="relative">
+                        <span :class="colorClasses"
+                            class="px-2 py-1 rounded border inline-flex items-center justify-center text-xs cursor-help w-full"
+                            role="button"
+                            :aria-label="label + ': ' + (file.in_qbittorrent ? 'Presente' : 'No presente')"
+                            :title="label"
+                            tabindex="0">
+                            <span x-text="icon"></span>
+                        </span>
+                        
+                        <div x-show="showTooltip && hasDetails" 
+                            role="tooltip"
+                            aria-live="polite"
+                            class="absolute z-50 bg-slate-900 border border-indigo-500/50 text-slate-200 text-xs rounded-lg p-3 shadow-xl w-64 bottom-full mb-2 left-0"
+                            style="display: none;">
+                            <div class="font-semibold text-indigo-400 mb-2">🧲 qBittorrent</div>
+                            <div class="space-y-1">
+                                <div x-show="details.state"><span class="text-indigo-400 font-medium">Estado:</span> <span x-text="details.state" class="font-mono"></span></div>
+                                <div x-show="details.ratio !== undefined"><span class="text-indigo-400 font-medium">Ratio:</span> <span x-text="details.ratio.toFixed(2)" class="font-mono"></span></div>
+                                <div x-show="details.category"><span class="text-indigo-400 font-medium">Categoría:</span> <span x-text="details.category"></span></div>
+                                <div x-show="details.seeding" class="text-green-400 font-medium">⬆️ Seedeando activamente</div>
+                                <div x-show="!details.seeding && details.state && ['downloading', 'uploading', 'stalledUP', 'stalledDL'].includes(details.state)" class="text-yellow-400 font-medium">⏸️ No seedeando</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div x-data="serviceStatusIndicator('radarr', file.in_radarr, { 
+                        id: file.radarr_id,
+                        type: file.type
+                    })"
+                    @mouseenter="showTooltip = true"
+                    @mouseleave="showTooltip = false"
+                    class="relative">
+                        <span :class="colorClasses"
+                            class="px-2 py-1 rounded border inline-flex items-center justify-center text-xs cursor-help w-full"
+                            role="button"
+                            :aria-label="label + ': ' + (file.in_radarr ? 'Gestionado' : 'No gestionado')"
+                            :title="label"
+                            tabindex="0">
+                            <span x-text="icon"></span>
+                        </span>
+                        
+                        <div x-show="showTooltip && hasDetails" 
+                            role="tooltip"
+                            aria-live="polite"
+                            class="absolute z-50 bg-slate-900 border border-blue-500/50 text-slate-200 text-xs rounded-lg p-3 shadow-xl w-64 bottom-full mb-2 left-0"
+                            style="display: none;">
+                            <div class="font-semibold text-blue-400 mb-2">🎬 Radarr</div>
+                            <div class="space-y-1">
+                                <div class="text-green-400 font-medium">✅ Gestionado en Radarr</div>
+                                <div x-show="details.id !== undefined && details.id !== null"><span class="text-blue-400 font-medium">ID Radarr:</span> <span x-text="details.id" class="font-mono"></span></div>
+                                <div x-show="details.type"><span class="text-blue-400 font-medium">Tipo:</span> <span x-text="details.type === 'movie' ? 'Película' : (details.type === 'series' ? 'Serie' : details.type)"></span></div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div x-data="serviceStatusIndicator('sonarr', file.in_sonarr, { 
+                        id: file.sonarr_id,
+                        type: file.type
+                    })"
+                    @mouseenter="showTooltip = true"
+                    @mouseleave="showTooltip = false"
+                    class="relative">
+                        <span :class="colorClasses"
+                            class="px-2 py-1 rounded border inline-flex items-center justify-center text-xs cursor-help w-full"
+                            role="button"
+                            :aria-label="label + ': ' + (file.in_sonarr ? 'Gestionado' : 'No gestionado')"
+                            :title="label"
+                            tabindex="0">
+                            <span x-text="icon"></span>
+                        </span>
+                        
+                        <div x-show="showTooltip && hasDetails" 
+                            role="tooltip"
+                            aria-live="polite"
+                            class="absolute z-50 bg-slate-900 border border-purple-500/50 text-slate-200 text-xs rounded-lg p-3 shadow-xl w-64 bottom-full mb-2 left-0"
+                            style="display: none;">
+                            <div class="font-semibold text-purple-400 mb-2">📺 Sonarr</div>
+                            <div class="space-y-1">
+                                <div class="text-green-400 font-medium">✅ Gestionado en Sonarr</div>
+                                <div x-show="details.id !== undefined && details.id !== null"><span class="text-purple-400 font-medium">ID Sonarr:</span> <span x-text="details.id" class="font-mono"></span></div>
+                                <div x-show="details.type"><span class="text-purple-400 font-medium">Tipo:</span> <span x-text="details.type === 'series' ? 'Serie' : (details.type === 'episode' ? 'Episodio' : details.type)"></span></div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div x-data="serviceStatusIndicator('jellyfin', file.in_jellyfin, { 
+                        id: file.jellyfin_id,
+                        watched: file.has_been_watched,
+                        playCount: file.total_play_count
+                    })"
+                    @mouseenter="showTooltip = true"
+                    @mouseleave="showTooltip = false"
+                    class="relative">
+                        <span :class="colorClasses"
+                            class="px-2 py-1 rounded border inline-flex items-center justify-center text-xs cursor-help w-full"
+                            role="button"
+                            :aria-label="label + ': ' + (file.in_jellyfin ? 'En biblioteca' : 'No en biblioteca')"
+                            :title="label"
+                            tabindex="0">
+                            <span x-text="icon"></span>
+                        </span>
+                        
+                        <div x-show="showTooltip && hasDetails" 
+                            role="tooltip"
+                            aria-live="polite"
+                            class="absolute z-50 bg-slate-900 border border-emerald-500/50 text-slate-200 text-xs rounded-lg p-3 shadow-xl w-64 bottom-full mb-2 left-0"
+                            style="display: none;">
+                            <div class="font-semibold text-emerald-400 mb-2">🍿 Jellyfin</div>
+                            <div class="space-y-1">
+                                <div class="text-green-400 font-medium">✅ En biblioteca de Jellyfin</div>
+                                <div x-show="details.id !== undefined && details.id !== null"><span class="text-emerald-400 font-medium">ID Jellyfin:</span> <span x-text="details.id" class="font-mono text-xs break-all"></span></div>
+                                <div x-show="details.watched !== undefined">
+                                    <span x-show="details.watched" class="text-green-400 font-medium">✅ Reproducido</span>
+                                    <span x-show="!details.watched" class="text-yellow-400 font-medium">👁️ Sin reproducir</span>
+                                </div>
+                                <div x-show="details.playCount !== undefined && details.playCount > 0"><span class="text-emerald-400 font-medium">Reproducciones:</span> <span x-text="details.playCount" class="font-mono"></span></div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div x-data="serviceStatusIndicator('jellyseerr', file.in_jellyseerr, { 
+                        id: file.jellyseerr_id,
+                        type: file.type
+                    })"
+                    @mouseenter="showTooltip = true"
+                    @mouseleave="showTooltip = false"
+                    class="relative">
+                        <span :class="colorClasses"
+                            class="px-2 py-1 rounded border inline-flex items-center justify-center text-xs cursor-help w-full"
+                            role="button"
+                            :aria-label="label + ': ' + (file.in_jellyseerr ? 'Solicitado' : 'No solicitado')"
+                            :title="label"
+                            tabindex="0">
+                            <span x-text="icon"></span>
+                        </span>
+                        
+                        <div x-show="showTooltip && hasDetails" 
+                            role="tooltip"
+                            aria-live="polite"
+                            class="absolute z-50 bg-slate-900 border border-teal-500/50 text-slate-200 text-xs rounded-lg p-3 shadow-xl w-64 bottom-full mb-2 left-0"
+                            style="display: none;">
+                            <div class="font-semibold text-teal-400 mb-2">🎫 Jellyseerr</div>
+                            <div class="space-y-1">
+                                <div class="text-green-400 font-medium">✅ Solicitado en Jellyseerr</div>
+                                <div x-show="details.id !== undefined && details.id !== null"><span class="text-teal-400 font-medium">ID Jellyseerr:</span> <span x-text="details.id" class="font-mono"></span></div>
+                                <div x-show="details.type"><span class="text-teal-400 font-medium">Tipo:</span> <span x-text="details.type === 'movie' ? 'Película' : (details.type === 'series' ? 'Serie' : details.type)"></span></div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div x-data="serviceStatusIndicator('jellystat', file.in_jellystat, { 
+                        playCount: file.total_play_count,
+                        id: file.jellystat_id
+                    })"
+                    @mouseenter="showTooltip = true"
+                    @mouseleave="showTooltip = false"
+                    class="relative">
+                        <span :class="colorClasses"
+                            class="px-2 py-1 rounded border inline-flex items-center justify-center text-xs cursor-help w-full"
+                            role="button"
+                            :aria-label="label + ': ' + (file.in_jellystat ? 'Con estadísticas' : 'Sin estadísticas')"
+                            :title="label"
+                            tabindex="0">
+                            <span x-text="icon"></span>
+                        </span>
+                        
+                        <div x-show="showTooltip && hasDetails" 
+                            role="tooltip"
+                            aria-live="polite"
+                            class="absolute z-50 bg-slate-900 border border-cyan-500/50 text-slate-200 text-xs rounded-lg p-3 shadow-xl w-64 bottom-full mb-2 left-0"
+                            style="display: none;">
+                            <div class="font-semibold text-cyan-400 mb-2">📊 Jellystat</div>
+                            <div class="space-y-1">
+                                <div class="text-green-400 font-medium">✅ Con estadísticas en Jellystat</div>
+                                <div x-show="details.id !== undefined && details.id !== null"><span class="text-cyan-400 font-medium">ID Jellystat:</span> <span x-text="details.id" class="font-mono text-xs break-all"></span></div>
+                                <div x-show="details.playCount !== undefined && details.playCount > 0"><span class="text-cyan-400 font-medium">Reproducciones:</span> <span x-text="details.playCount" class="font-mono"></span></div>
+                                <div x-show="!details.playCount || details.playCount === 0" class="text-yellow-400 font-medium">⚠️ Sin datos de reproducción</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Hardlinks Info -->
+                <div x-show="file.is_hardlink" class="mb-2">
+                    <div x-data="{ showLinks: false }" @mouseenter="showLinks = true" @mouseleave="showLinks = false" class="relative inline-block">
+                        <span class="px-2 py-1 rounded bg-green-900/30 border border-green-600/50 text-green-300 text-xs font-medium cursor-help inline-flex items-center gap-1.5"
+                            role="button"
+                            aria-label="Hardlink - Ver rutas enlazadas"
+                            tabindex="0">
+                            🔗 Hardlink
+                            <span class="px-1 py-0.5 bg-green-700/50 rounded text-xs" 
+                                x-text="(file.hardlink_paths || '').split('|').filter(p => p.trim()).length"
+                                :aria-label="'Número de hardlinks: ' + (file.hardlink_paths || '').split('|').filter(p => p.trim()).length"></span>
+                        </span>
+                        
+                        <div x-show="showLinks" 
+                            role="tooltip"
+                            aria-live="polite"
+                            class="absolute z-50 bg-slate-900 border-2 border-green-500/50 text-slate-200 text-xs rounded-lg p-3 shadow-2xl w-96 bottom-full mb-2 left-0" 
+                            style="display: none;">
+                            <div class="font-semibold text-green-400 mb-2 text-sm">🔗 Rutas enlazadas:</div>
+                            <div class="space-y-1.5 max-h-64 overflow-y-auto">
+                                <template x-for="(path, idx) in (file.hardlink_paths || '').split('|').filter(p => p.trim())">
+                                    <div class="p-1.5 rounded font-mono break-all text-xs"
+                                        :class="path === file.file_path ? 'bg-green-900/40 border border-green-600/50 text-green-300 font-semibold' : 'bg-slate-800/50 border border-slate-600 text-slate-400'"
+                                        :aria-label="path === file.file_path ? 'Ruta primaria: ' + path : 'Ruta enlazada: ' + path"
+                                        x-text="(path === file.file_path ? '➜ ' : '  ') + path"></div>
+                                </template>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Badges adicionales -->
+                <div class="flex flex-wrap gap-1.5 mb-3">
+                    <span x-show="file.quality" class="px-2 py-0.5 rounded bg-emerald-900/40 border border-emerald-600/50 text-emerald-300 text-xs font-medium" x-text="file.quality"></span>
+                </div>
+                
+                <!-- Sugerencia -->
+                <div x-show="getFileSuggestion(file)" class="p-2 bg-blue-900/20 border border-blue-600/30 rounded-lg mb-2">
+                    <div class="flex items-start gap-1.5">
+                        <svg class="w-4 h-4 text-blue-400 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path>
+                        </svg>
+                        <div>
+                            <p class="text-xs font-semibold text-blue-300 mb-0.5">💡 Sugerencia</p>
+                            <p class="text-xs text-blue-200/90" x-text="getFileSuggestion(file)"></p>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Botones de Acción -->
+                <div class="flex flex-wrap gap-2">
+                    <!-- Importar a Radarr -->
+                    <button x-show="canImportToRadarr(file)" 
+                        @click="importToRadarr(file)"
+                        class="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors flex items-center gap-1.5"
+                        title="Importar a Radarr">
+                        <span>🎬</span>
+                        <span>Importar a Radarr</span>
+                    </button>
+                    
+                    <!-- Importar a Sonarr -->
+                    <button x-show="canImportToSonarr(file)" 
+                        @click="importToSonarr(file)"
+                        class="px-3 py-1.5 bg-purple-600 hover:bg-purple-700 text-white rounded-lg text-sm font-medium transition-colors flex items-center gap-1.5"
+                        title="Importar a Sonarr">
+                        <span>📺</span>
+                        <span>Importar a Sonarr</span>
+                    </button>
+                    
+                    <!-- Limpiar Hardlink -->
+                    <button x-show="canCleanHardlink(file)" 
+                        @click="cleanHardlink(file)"
+                        class="px-3 py-1.5 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm font-medium transition-colors flex items-center gap-1.5"
+                        title="Limpiar hardlink de descargas">
+                        <span>🧹</span>
+                        <span>Limpiar hardlink</span>
+                    </button>
+                    
+                    <!-- Ignorar -->
+                    <button @click="ignoreFile(file)"
+                        class="px-3 py-1.5 bg-gray-600 hover:bg-gray-700 text-white rounded-lg text-sm font-medium transition-colors flex items-center gap-1.5"
+                        title="Marcar como ignorado">
+                        <span>👁️</span>
+                        <span>Ignorar</span>
+                    </button>
+                    
+                    <!-- Eliminar -->
+                    <button @click="deleteFile(file)"
+                        class="px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm font-medium transition-colors flex items-center gap-1.5"
+                        title="Eliminar archivo">
+                        <span>🗑️</span>
+                        <span>Eliminar</span>
+                    </button>
+                </div>
+            </div>
+        </template>
+    </div>
+
+    <!-- Paginación -->
+    <div x-show="totalCount > 0" class="mt-6 flex items-center justify-between border-t border-dark-border pt-4">
+        <div class="text-sm text-dark-muted">
+            Mostrando <span x-text="paginationStart"></span> - <span x-text="paginationEnd"></span> de <span x-text="totalCount"></span>
+        </div>
+        
+        <div class="flex items-center gap-2">
+            <button @click="currentPage = 1" :disabled="currentPage === 1"
+                class="px-3 py-1 rounded border border-dark-border bg-dark-surface text-dark-text disabled:opacity-50 disabled:cursor-not-allowed hover:bg-slate-700/50">
+                Primera
+            </button>
+            <button @click="currentPage--" :disabled="currentPage === 1"
+                class="px-3 py-1 rounded border border-dark-border bg-dark-surface text-dark-text disabled:opacity-50 disabled:cursor-not-allowed hover:bg-slate-700/50">
+                Anterior
+            </button>
+            
+            <div class="flex items-center gap-1">
+                <template x-for="page in visiblePages" :key="page">
+                    <template x-if="typeof page === 'number'">
+                        <button @click="currentPage = page" 
+                            :class="currentPage === page ? 'bg-blue-600 text-white border-blue-600' : 'bg-dark-surface text-dark-text border-dark-border hover:bg-slate-700/50'"
+                            class="px-3 py-1 rounded border min-w-[2.5rem]"
+                            x-text="page"></button>
+                    </template>
+                    <template x-if="page === '...'">
+                        <span class="px-3 py-1 rounded min-w-[2.5rem] text-dark-muted select-none">...</span>
+                    </template>
+                </template>
+            </div>
+            
+            <button @click="currentPage++" :disabled="currentPage === totalPages"
+                class="px-3 py-1 rounded border border-dark-border bg-dark-surface text-dark-text disabled:opacity-50 disabled:cursor-not-allowed hover:bg-slate-700/50">
+                Siguiente
+            </button>
+            <button @click="currentPage = totalPages" :disabled="currentPage === totalPages"
+                class="px-3 py-1 rounded border border-dark-border bg-dark-surface text-dark-text disabled:opacity-50 disabled:cursor-not-allowed hover:bg-slate-700/50">
+                Última
+            </button>
+        </div>
+    </div>
+
+    <!-- Empty State -->
+    <div x-show="!loading && totalCount === 0" class="text-center py-16 px-4">
+        <svg class="mx-auto h-16 w-16 text-dark-muted mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z">
+            </path>
+        </svg>
+        <h3 class="text-lg font-medium text-dark-text mb-2">No hay archivos en esta categoría</h3>
+        <p class="text-sm text-dark-muted mb-6">
+            <span x-show="selectedTab === 'healthy'">No se encontraron archivos saludables.</span>
+            <span x-show="selectedTab === 'attention'">No hay archivos que necesiten atención.</span>
+            <span x-show="selectedTab === 'critical'">No hay problemas críticos. ¡Todo bien!</span>
+            <span x-show="selectedTab === 'hardlinks'">No hay archivos con hardlinks.</span>
+            <span x-show="selectedTab === 'unwatched'">Todos los archivos han sido reproducidos.</span>
+        </p>
+        <button @click="syncFiles()" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors">
+            🔄 Sincronizar archivos
+        </button>
+    </div>
+</div>
+
+<script>
+// Alpine.js Component: Health Card
+function healthCard(status, count, severity, clickHandler) {
+    const statusConfig = {
+        ok: {
+            icon: '✅',
+            title: 'Archivos Saludables',
+            description: 'Todo en orden'
+        },
+        orphan_download: {
+            icon: '📥',
+            title: 'Huérfanos en Descargas',
+            description: 'En descargas pero no en biblioteca'
+        },
+        only_hardlink: {
+            icon: '🔗',
+            title: 'Solo Hardlinks',
+            description: 'Archivos enlazados'
+        },
+        not_seeding: {
+            icon: '💀',
+            title: 'Torrents Muertos',
+            description: 'Sin seeds activos'
+        },
+        missing_metadata: {
+            icon: '👁️',
+            title: 'Sin Reproducir',
+            description: 'Nunca vistos en Jellyfin'
+        }
+    };
+
+    const severityColors = {
+        ok: 'bg-green-900/20 border-green-600/30 hover:bg-green-900/30',
+        info: 'bg-blue-900/20 border-blue-600/30 hover:bg-blue-900/30',
+        warning: 'bg-yellow-900/20 border-yellow-600/30 hover:bg-yellow-900/30',
+        critical: 'bg-red-900/20 border-red-600/30 hover:bg-red-900/30'
+    };
+
+    const config = statusConfig[status] || statusConfig.ok;
+
+    return {
+        icon: config.icon,
+        title: config.title,
+        description: config.description,
+        count: count,
+        bgColorClasses: severityColors[severity] || severityColors.ok,
+        filterByStatus: clickHandler
+    };
+}
+
+// Alpine.js Component: Service Status Indicator
+function serviceStatusIndicator(serviceName, isPresent, details = {}) {
+    // Service configuration
+    const serviceConfig = {
+        qbittorrent: { 
+            icon: '🧲', 
+            name: 'qBittorrent',
+            presentColor: 'bg-indigo-900/40 border-indigo-600/50 text-indigo-300',
+            absentColor: 'bg-slate-800/40 border-slate-600/50 text-slate-500'
+        },
+        radarr: { 
+            icon: '🎬', 
+            name: 'Radarr',
+            presentColor: 'bg-blue-900/40 border-blue-600/50 text-blue-300',
+            absentColor: 'bg-slate-800/40 border-slate-600/50 text-slate-500'
+        },
+        sonarr: { 
+            icon: '📺', 
+            name: 'Sonarr',
+            presentColor: 'bg-purple-900/40 border-purple-600/50 text-purple-300',
+            absentColor: 'bg-slate-800/40 border-slate-600/50 text-slate-500'
+        },
+        jellyfin: { 
+            icon: '🍿', 
+            name: 'Jellyfin',
+            presentColor: 'bg-emerald-900/40 border-emerald-600/50 text-emerald-300',
+            absentColor: 'bg-slate-800/40 border-slate-600/50 text-slate-500'
+        },
+        jellyseerr: { 
+            icon: '🎫', 
+            name: 'Jellyseerr',
+            presentColor: 'bg-teal-900/40 border-teal-600/50 text-teal-300',
+            absentColor: 'bg-slate-800/40 border-slate-600/50 text-slate-500'
+        },
+        jellystat: { 
+            icon: '📊', 
+            name: 'JellyStat',
+            presentColor: 'bg-cyan-900/40 border-cyan-600/50 text-cyan-300',
+            absentColor: 'bg-slate-800/40 border-slate-600/50 text-slate-500'
+        }
+    };
+
+    const config = serviceConfig[serviceName] || { 
+        icon: '❓', 
+        name: serviceName.charAt(0).toUpperCase() + serviceName.slice(1),
+        presentColor: 'bg-indigo-900/40 border-indigo-600/50 text-indigo-300',
+        absentColor: 'bg-slate-800/40 border-slate-600/50 text-slate-500'
+    };
+    
+    return {
+        serviceName,
+        isPresent,
+        details,
+        config,
+        showTooltip: false,
+
+        get icon() {
+            return config.icon;
+        },
+
+        get label() {
+            return config.name;
+        },
+
+        get colorClasses() {
+            if (!this.isPresent) {
+                return config.absentColor;
+            }
+
+            // Special handling for qBittorrent based on torrent state
+            if (serviceName === 'qbittorrent' && this.details.state) {
+                const state = this.details.state.toLowerCase();
+                
+                // Error states
+                if (state === 'error' || state === 'missingfiles') {
+                    return 'bg-red-900/30 border-red-600/50 text-red-300';
+                }
+                
+                // Seeding/uploading states
+                if (state === 'uploading' || state === 'seeding' || (state === 'stalledUP' && this.details.seeding)) {
+                    return 'bg-green-900/30 border-green-600/50 text-green-300';
+                }
+                
+                // Downloading states
+                if (state === 'downloading' || state === 'stalledDL') {
+                    return 'bg-blue-900/30 border-blue-600/50 text-blue-300';
+                }
+                
+                // Paused states
+                if (state === 'pausedUP' || state === 'pausedDL') {
+                    return 'bg-yellow-900/30 border-yellow-600/50 text-yellow-300';
+                }
+                
+                // Completed/stalled
+                return 'bg-indigo-900/30 border-indigo-600/50 text-indigo-300';
+            }
+
+            // Default present state - use config colors
+            return config.presentColor;
+        },
+
+        get hasDetails() {
+            return this.isPresent && Object.values(this.details).some(v => v !== null && v !== undefined && v !== '');
+        }
+    };
+}
+
+// Alpine.js Component: Health Status Badge
+function healthStatusBadge(status, severity, size = 'md') {
+    const statusConfig = {
+        ok: {
+            icon: '✅',
+            label: 'OK'
+        },
+        orphan_download: {
+            icon: '📥',
+            label: 'Huérfano en Descargas'
+        },
+        only_hardlink: {
+            icon: '🔗',
+            label: 'Solo Hardlink'
+        },
+        not_seeding: {
+            icon: '💀',
+            label: 'Torrent Muerto'
+        },
+        missing_metadata: {
+            icon: '👁️',
+            label: 'Sin Reproducir'
+        },
+        critical: {
+            icon: '🔴',
+            label: 'Crítico'
+        }
+    };
+
+    const severityColors = {
+        ok: 'bg-green-900/40 border-green-600/50 text-green-300',
+        info: 'bg-blue-900/40 border-blue-600/50 text-blue-300',
+        warning: 'bg-yellow-900/40 border-yellow-600/50 text-yellow-300',
+        critical: 'bg-red-900/40 border-red-600/50 text-red-300'
+    };
+
+    const sizeClasses = {
+        sm: 'px-2 py-0.5 text-xs',
+        md: 'px-3 py-1 text-sm',
+        lg: 'px-4 py-2 text-base'
+    };
+
+    const config = statusConfig[status] || statusConfig.ok;
+
+    return {
+        icon: config.icon,
+        label: config.label,
+        colorClasses: severityColors[severity] || severityColors.ok,
+        sizeClasses: sizeClasses[size] || sizeClasses.md
+    };
+}
+
+// Alpine.js Component: Health Filters
+function healthFilters() {
+    return {
+        selectedProblem: 'all',
+        selectedService: 'all',
+        selectedSize: 'all',
+        selectedAge: 'all',
+        searchQuery: '',
+
+        problemOptions: [
+            { value: 'all', label: 'Todos los problemas' },
+            { value: 'orphan', label: 'Huérfanos' },
+            { value: 'dead_torrent', label: 'Torrents muertos' },
+            { value: 'unwatched', label: 'Sin reproducir' },
+            { value: 'hardlink_only', label: 'Solo hardlinks' }
+        ],
+
+        serviceOptions: [
+            { value: 'all', label: 'Todos los servicios' },
+            { value: 'qbittorrent', label: 'qBittorrent' },
+            { value: 'radarr', label: 'Radarr' },
+            { value: 'sonarr', label: 'Sonarr' },
+            { value: 'jellyfin', label: 'Jellyfin' },
+            { value: 'jellyseerr', label: 'Jellyseerr' },
+            { value: 'jellystat', label: 'Jellystat' }
+        ],
+
+        sizeOptions: [
+            { value: 'all', label: 'Todos los tamaños' },
+            { value: 'small', label: '< 1 GB' },
+            { value: 'medium', label: '1-10 GB' },
+            { value: 'large', label: '10-50 GB' },
+            { value: 'huge', label: '> 50 GB' }
+        ],
+
+        ageOptions: [
+            { value: 'all', label: 'Todas las edades' },
+            { value: 'recent', label: '< 1 mes' },
+            { value: 'moderate', label: '1-6 meses' },
+            { value: 'old', label: '6-12 meses' },
+            { value: 'ancient', label: '> 1 año' }
+        ],
+
+        get hasActiveFilters() {
+            return this.selectedProblem !== 'all' ||
+                   this.selectedService !== 'all' ||
+                   this.selectedSize !== 'all' ||
+                   this.selectedAge !== 'all' ||
+                   this.searchQuery.trim() !== '';
+        },
+
+        get activeFilterCount() {
+            let count = 0;
+            if (this.selectedProblem !== 'all') count++;
+            if (this.selectedService !== 'all') count++;
+            if (this.selectedSize !== 'all') count++;
+            if (this.selectedAge !== 'all') count++;
+            if (this.searchQuery.trim() !== '') count++;
+            return count;
+        },
+
+        applyFilters() {
+            this.$dispatch('filters-changed', {
+                problem: this.selectedProblem,
+                service: this.selectedService,
+                size: this.selectedSize,
+                age: this.selectedAge,
+                search: this.searchQuery
+            });
+        },
+
+        clearFilters() {
+            if (!this.hasActiveFilters) return;
+            
+            this.selectedProblem = 'all';
+            this.selectedService = 'all';
+            this.selectedSize = 'all';
+            this.selectedAge = 'all';
+            this.searchQuery = '';
+            this.applyFilters();
+        }
+    };
+}
+
+function filesPage() {
+    // Constants
+    const DEAD_TORRENT_RATIO_THRESHOLD = 0.5;
+    
+    return {
+        files: [],
+        lastSync: '',
+        selectedTab: 'healthy',
+        syncing: false,
+        syncMessage: '',
+        syncMessageType: 'info',
+        syncMessageTimeout: null,
+        loading: false,
+        
+        // Server-side pagination properties
+        currentPage: 1,
+        itemsPerPage: 25,
+        totalCount: 0,
+        totalPages: 0,
+        
+        // Category counts from server
+        counts: {
+            healthy: 0,
+            attention: 0,
+            critical: 0,
+            hardlinks: 0,
+            unwatched: 0,
+            total: 0
+        },
+        
+        // Search filter property (only client-side filter that works with pagination)
+        filterSearch: '',
+        
+        // Selection properties
+        selectedFiles: [],
+
+        async init() {
+            await this.loadFiles();
+            
+            // Watch for page changes and reload files
+            this.$watch('currentPage', () => {
+                this.loadFiles();
+            });
+            
+            // Watch for items per page changes and reload files
+            this.$watch('itemsPerPage', () => {
+                this.currentPage = 1; // Reset to first page
+                this.loadFiles();
+            });
+        },
+        get healthyFiles() {
+            // For display in summary cards and tabs
+            if (this.selectedTab === 'healthy' && this.files.length > 0) {
+                return this.files;
+            }
+            return { length: this.counts.healthy || 0 };
+        },
+
+        get orphanDownloads() {
+            if (this.selectedTab === 'attention' && this.files.length > 0) {
+                return this.files;
+            }
+            return { length: this.counts.attention || 0 };
+        },
+
+        get hardlinkFiles() {
+            if (this.selectedTab === 'hardlinks' && this.files.length > 0) {
+                return this.files;
+            }
+            return { length: this.counts.hardlinks || 0 };
+        },
+
+        get deadTorrents() {
+            if (this.selectedTab === 'critical' && this.files.length > 0) {
+                return this.files;
+            }
+            return { length: this.counts.critical || 0 };
+        },
+
+        get unwatchedFiles() {
+            // With server-side pagination, return server data or count
+            if (this.selectedTab === 'unwatched' && this.files.length > 0) {
+                return this.files;
+            }
+            return { length: this.counts.unwatched || 0 };
+        },
+
+        get filteredFiles() {
+            // With server-side pagination, files are already filtered by the server
+            // Only apply client-side search filter if it's set
+            if (this.filterSearch) {
+                const search = this.filterSearch.toLowerCase();
+                return this.files.filter(f => {
+                    const title = (f.title || '').toLowerCase();
+                    const path = (f.file_path || '').toLowerCase();
+                    return title.includes(search) || path.includes(search);
+                });
+            }
+            return this.files;
+        },
+        
+        get paginationStart() {
+            if (this.totalCount === 0) return 0;
+            return ((this.currentPage - 1) * this.itemsPerPage) + 1;
+        },
+        
+        get paginationEnd() {
+            const end = this.currentPage * this.itemsPerPage;
+            return Math.min(end, this.totalCount);
+        },
+        
+        get paginatedFiles() {
+            // With server-side pagination, we display all files returned
+            // They're already paginated and filtered by the server
+            // Only apply client-side search if needed
+            return this.filteredFiles;
+        },
+        
+        get visiblePages() {
+            const total = this.totalPages;
+            const current = this.currentPage;
+            const delta = 2; // Pages to show on each side of current
+            
+            const pages = [];
+            const rangeStart = Math.max(2, current - delta);
+            const rangeEnd = Math.min(total - 1, current + delta);
+            
+            // Always show first page
+            pages.push(1);
+            
+            // Add ellipsis if there's a gap
+            if (rangeStart > 2) {
+                pages.push('...');
+            }
+            
+            // Add middle pages
+            for (let i = rangeStart; i <= rangeEnd; i++) {
+                pages.push(i);
+            }
+            
+            // Add ellipsis if there's a gap
+            if (rangeEnd < total - 1) {
+                pages.push('...');
+            }
+            
+            // Always show last page (if more than 1 page)
+            if (total > 1) {
+                pages.push(total);
+            }
+            
+            return pages;
+        },
+        
+        // Helper methods
+        switchTab(tabName) {
+            this.selectedTab = tabName;
+            this.currentPage = 1; // Reset to first page when switching tabs
+            this.loadFiles(); // Reload with new tab filter
+        },
+        
+        getFileIdentifier(file) {
+            return file.id || encodeURIComponent(file.file_path);
+        },
+        
+        // Selection methods
+        get allSelected() {
+            return this.paginatedFiles.length > 0 && 
+                   this.paginatedFiles.every(f => this.isFileSelected(f));
+        },
+        
+        toggleSelectAll() {
+            if (this.allSelected) {
+                // Deselect all files on current page
+                this.paginatedFiles.forEach(file => {
+                    const index = this.selectedFiles.findIndex(f => 
+                        (f.id && f.id === file.id) || f.file_path === file.file_path
+                    );
+                    if (index >= 0) {
+                        this.selectedFiles.splice(index, 1);
+                    }
+                });
+            } else {
+                // Select all files on current page (that aren't already selected)
+                this.paginatedFiles.forEach(file => {
+                    if (!this.isFileSelected(file)) {
+                        this.selectedFiles.push(file);
+                    }
+                });
+            }
+        },
+        
+        isFileSelected(file) {
+            return this.selectedFiles.some(f => 
+                (f.id && f.id === file.id) || f.file_path === file.file_path
+            );
+        },
+        
+        toggleFileSelection(file) {
+            const index = this.selectedFiles.findIndex(f => 
+                (f.id && f.id === file.id) || f.file_path === file.file_path
+            );
+            
+            if (index >= 0) {
+                this.selectedFiles.splice(index, 1);
+            } else {
+                this.selectedFiles.push(file);
+            }
+        },
+        
+        // Action condition methods
+        canImportToRadarr(file) {
+            return file.in_qbittorrent && !file.in_radarr && 
+                   (file.type === 'movie' || !file.type);
+        },
+        
+        canImportToSonarr(file) {
+            return file.in_qbittorrent && !file.in_sonarr && 
+                   (file.type === 'series' || file.type === 'episode');
+        },
+        
+        canCleanHardlink(file) {
+            return file.is_hardlink && !file.in_qbittorrent && file.in_jellyfin;
+        },
+        
+        // Individual file actions
+        async importToRadarr(file) {
+            if (!confirm(`¿Importar "${file.title}" a Radarr?`)) return;
+            
+            try {
+                const response = await fetch(`/api/files/${this.getFileIdentifier(file)}/import-radarr`, {
+                    method: 'POST'
+                });
+                
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                
+                this.showSyncMessage('✅ Archivo importado a Radarr', 'success');
+                await this.loadFiles();
+            } catch (error) {
+                console.error('Error importing to Radarr:', error);
+                this.showSyncMessage('❌ Error al importar a Radarr: ' + error.message, 'error');
+            }
+        },
+        
+        async importToSonarr(file) {
+            if (!confirm(`¿Importar "${file.title}" a Sonarr?`)) return;
+            
+            try {
+                const response = await fetch(`/api/files/${this.getFileIdentifier(file)}/import-sonarr`, {
+                    method: 'POST'
+                });
+                
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                
+                this.showSyncMessage('✅ Archivo importado a Sonarr', 'success');
+                await this.loadFiles();
+            } catch (error) {
+                console.error('Error importing to Sonarr:', error);
+                this.showSyncMessage('❌ Error al importar a Sonarr: ' + error.message, 'error');
+            }
+        },
+        
+        async cleanHardlink(file) {
+            if (!confirm(`¿Limpiar hardlink de "${file.title}"?\n\nEsto eliminará el hardlink de descargas sin afectar la biblioteca.`)) return;
+            
+            try {
+                const response = await fetch(`/api/files/${this.getFileIdentifier(file)}/clean-hardlink`, {
+                    method: 'POST'
+                });
+                
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                
+                this.showSyncMessage('✅ Hardlink limpiado', 'success');
+                await this.loadFiles();
+            } catch (error) {
+                console.error('Error cleaning hardlink:', error);
+                this.showSyncMessage('❌ Error al limpiar hardlink: ' + error.message, 'error');
+            }
+        },
+        
+        async ignoreFile(file) {
+            if (!confirm(`¿Marcar "${file.title}" como ignorado?`)) return;
+            
+            try {
+                const response = await fetch(`/api/files/${this.getFileIdentifier(file)}/ignore`, {
+                    method: 'POST'
+                });
+                
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                
+                this.showSyncMessage('✅ Archivo marcado como ignorado', 'success');
+                await this.loadFiles();
+            } catch (error) {
+                console.error('Error ignoring file:', error);
+                this.showSyncMessage('❌ Error al ignorar archivo: ' + error.message, 'error');
+            }
+        },
+        
+        async deleteFile(file) {
+            if (!confirm(`⚠️ ¿ELIMINAR "${file.title}"?\n\nEsta acción NO se puede deshacer.`)) return;
+            
+            try {
+                const response = await fetch(`/api/files/${this.getFileIdentifier(file)}`, {
+                    method: 'DELETE'
+                });
+                
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                
+                this.showSyncMessage('✅ Archivo eliminado', 'success');
+                await this.loadFiles();
+            } catch (error) {
+                console.error('Error deleting file:', error);
+                this.showSyncMessage('❌ Error al eliminar archivo: ' + error.message, 'error');
+            }
+        },
+        
+        // Bulk actions
+        async bulkImportToRadarr() {
+            const files = this.selectedFiles.filter(f => this.canImportToRadarr(f));
+            if (files.length === 0) {
+                alert('No hay archivos seleccionados que se puedan importar a Radarr');
+                return;
+            }
+            
+            if (!confirm(`¿Importar ${files.length} archivo(s) a Radarr?`)) return;
+            
+            try {
+                const response = await fetch('/api/files/bulk-import-radarr', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                        files: files.map(f => this.getFileIdentifier(f))
+                    })
+                });
+                
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                
+                this.showSyncMessage(`✅ ${files.length} archivo(s) importados a Radarr`, 'success');
+                this.selectedFiles = [];
+                await this.loadFiles();
+            } catch (error) {
+                console.error('Error in bulk import to Radarr:', error);
+                this.showSyncMessage('❌ Error en importación masiva: ' + error.message, 'error');
+            }
+        },
+        
+        async bulkImportToSonarr() {
+            const files = this.selectedFiles.filter(f => this.canImportToSonarr(f));
+            if (files.length === 0) {
+                alert('No hay archivos seleccionados que se puedan importar a Sonarr');
+                return;
+            }
+            
+            if (!confirm(`¿Importar ${files.length} archivo(s) a Sonarr?`)) return;
+            
+            try {
+                const response = await fetch('/api/files/bulk-import-sonarr', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                        files: files.map(f => this.getFileIdentifier(f))
+                    })
+                });
+                
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                
+                this.showSyncMessage(`✅ ${files.length} archivo(s) importados a Sonarr`, 'success');
+                this.selectedFiles = [];
+                await this.loadFiles();
+            } catch (error) {
+                console.error('Error in bulk import to Sonarr:', error);
+                this.showSyncMessage('❌ Error en importación masiva: ' + error.message, 'error');
+            }
+        },
+        
+        async bulkTag() {
+            if (this.selectedFiles.length === 0) {
+                alert('No hay archivos seleccionados');
+                return;
+            }
+            
+            if (!confirm(`¿Etiquetar ${this.selectedFiles.length} archivo(s) como "No eliminar"?`)) return;
+            
+            try {
+                const response = await fetch('/api/files/bulk-tag', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                        files: this.selectedFiles.map(f => this.getFileIdentifier(f)),
+                        tag: 'no-delete'
+                    })
+                });
+                
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                
+                this.showSyncMessage(`✅ ${this.selectedFiles.length} archivo(s) etiquetados`, 'success');
+                this.selectedFiles = [];
+                await this.loadFiles();
+            } catch (error) {
+                console.error('Error in bulk tagging:', error);
+                this.showSyncMessage('❌ Error al etiquetar: ' + error.message, 'error');
+            }
+        },
+        
+        async bulkCleanHardlinks() {
+            const files = this.selectedFiles.filter(f => this.canCleanHardlink(f));
+            if (files.length === 0) {
+                alert('No hay archivos seleccionados con hardlinks que limpiar');
+                return;
+            }
+            
+            if (!confirm(`¿Limpiar hardlinks de ${files.length} archivo(s)?`)) return;
+            
+            try {
+                const response = await fetch('/api/files/bulk-clean-hardlinks', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                        files: files.map(f => this.getFileIdentifier(f))
+                    })
+                });
+                
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                
+                this.showSyncMessage(`✅ Hardlinks limpiados en ${files.length} archivo(s)`, 'success');
+                this.selectedFiles = [];
+                await this.loadFiles();
+            } catch (error) {
+                console.error('Error in bulk clean hardlinks:', error);
+                this.showSyncMessage('❌ Error al limpiar hardlinks: ' + error.message, 'error');
+            }
+        },
+        
+        async bulkPauseTorrents() {
+            const files = this.selectedFiles.filter(f => f.in_qbittorrent);
+            if (files.length === 0) {
+                alert('No hay torrents seleccionados para pausar');
+                return;
+            }
+            
+            if (!confirm(`¿Pausar ${files.length} torrent(s)?`)) return;
+            
+            try {
+                const response = await fetch('/api/files/bulk-pause-torrents', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                        files: files.map(f => this.getFileIdentifier(f))
+                    })
+                });
+                
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                
+                this.showSyncMessage(`✅ ${files.length} torrent(s) pausados`, 'success');
+                this.selectedFiles = [];
+                await this.loadFiles();
+            } catch (error) {
+                console.error('Error in bulk pause torrents:', error);
+                this.showSyncMessage('❌ Error al pausar torrents: ' + error.message, 'error');
+            }
+        },
+        
+        async bulkDelete() {
+            if (this.selectedFiles.length === 0) {
+                alert('No hay archivos seleccionados');
+                return;
+            }
+            
+            // Improved confirmation with explicit count confirmation
+            const count = this.selectedFiles.length;
+            const confirmText = prompt(
+                `⚠️ ELIMINAR ${count} ARCHIVO(S) ⚠️\n\n` +
+                `Esta acción NO se puede deshacer.\n\n` +
+                `Para confirmar, escribe el número de archivos a eliminar (${count}):`
+            );
+            
+            if (confirmText === null) return; // User cancelled
+            
+            if (confirmText !== count.toString()) {
+                alert(`Confirmación incorrecta. Se esperaba "${count}" pero se recibió "${confirmText}".`);
+                return;
+            }
+            
+            try {
+                const response = await fetch('/api/files/bulk-delete', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        files: this.selectedFiles.map(f => this.getFileIdentifier(f))
+                    })
+                });
+                
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                
+                this.showSyncMessage(`✅ ${this.selectedFiles.length} archivo(s) eliminados`, 'success');
+                this.selectedFiles = [];
+                await this.loadFiles();
+            } catch (error) {
+                console.error('Error in bulk delete:', error);
+                this.showSyncMessage('❌ Error al eliminar archivos: ' + error.message, 'error');
+            }
+        },
+
+        getFileHealthStatus(file) {
+            if (file.torrent_state === 'error') return 'critical';
+            if (file.in_qbittorrent && !file.in_jellyfin) return 'orphan_download';
+            if (file.is_hardlink) return 'only_hardlink';
+            if (!file.has_been_watched && file.in_jellyfin) return 'missing_metadata';
+            return 'ok';
+        },
+
+        getFileSeverity(file) {
+            if (file.torrent_state === 'error' || file.torrent_state === 'missingFiles') return 'critical';
+            if (file.in_qbittorrent && !file.in_jellyfin) return 'warning';
+            if (!file.has_been_watched && file.in_jellyfin) return 'warning';
+            return 'ok';
+        },
+
+        getFileSuggestion(file) {
+            if (file.in_qbittorrent && !file.in_jellyfin && !file.in_radarr && !file.in_sonarr) {
+                return 'Este archivo está en descargas pero no en biblioteca. Considera importarlo a Radarr/Sonarr.';
+            }
+            if (file.torrent_state === 'error') {
+                return 'El torrent tiene errores. Verifica qBittorrent para más detalles.';
+            }
+            if (file.in_qbittorrent && file.in_jellyfin && !file.is_seeding && (file.seed_ratio || 0) < DEAD_TORRENT_RATIO_THRESHOLD) {
+                return 'Torrent muerto. Si ya está en Jellyfin, puedes eliminarlo de qBittorrent de forma segura.';
+            }
+            if (file.in_jellyfin && !file.has_been_watched) {
+                return 'Nunca reproducido. Si no te interesa, considera eliminarlo para liberar espacio.';
+            }
+            return '';
+        },
+
+        applyFilters() {
+            // Called when search filter changes - no action needed as filteredFiles is computed
+        },
+        
+        clearFilters() {
+            this.filterSearch = '';
+        },
+
+        async loadFiles() {
+            this.loading = true;
+            try {
+                // Build query parameters
+                const params = new URLSearchParams({
+                    page: this.currentPage.toString(),
+                    perPage: this.itemsPerPage.toString(),
+                });
+                
+                // Add tab filter if not on default
+                if (this.selectedTab && this.selectedTab !== '') {
+                    params.append('tab', this.selectedTab);
+                }
+                
+                const response = await fetch(`/api/files?${params.toString()}`);
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                
+                const data = await response.json();
+                this.files = data.files || [];
+                this.lastSync = data.last_sync || '';
+                this.totalCount = data.total || 0;
+                this.totalPages = data.totalPages || 1;
+                
+                // Update counts if provided (on first load without tab filter)
+                if (data.counts) {
+                    this.counts = data.counts;
+                }
+            } catch (error) {
+                console.error('Error loading files:', error);
+                this.showSyncMessage('Error al cargar archivos: ' + error.message, 'error');
+            } finally {
+                this.loading = false;
+            }
+        },
+
+        async syncFiles() {
+            this.syncing = true;
+            this.syncMessage = '';
+            let completed = false;
+
+            try {
+                // Create EventSource for Server-Sent Events
+                const eventSource = new EventSource('/api/sync/files');
+
+                eventSource.onmessage = (event) => {
+                    try {
+                        const progress = JSON.parse(event.data);
+                        console.log('📥 SSE received:', progress);
+
+                        // Determine message type based on status
+                        let msgType = 'info';  // Default: blue for processing
+                        if (progress.status === 'error') {
+                            msgType = 'error';  // Red for errors
+                        } else if (progress.step === 'complete' || progress.message.includes('✅')) {
+                            msgType = 'success';  // Green for success/complete
+                        }
+
+                        // Show progress message - persist during sync (no timeout)
+                        const persist = progress.step !== 'complete' && progress.status !== 'error';
+                        this.showSyncMessage(progress.message, msgType, persist);
+
+                        // If complete or error, close connection and reload data
+                        if (progress.step === 'complete') {
+                            console.log('✅ Sync complete, closing connection');
+                            completed = true;
+                            eventSource.close();
+                            this.syncing = false;
+                            // Reload files after successful sync
+                            setTimeout(async () => {
+                                await this.loadFiles();
+                            }, 500);
+                        } else if (progress.status === 'error') {
+                            console.log('❌ Sync error, closing connection');
+                            completed = true;
+                            eventSource.close();
+                            this.syncing = false;
+                        }
+                    } catch (err) {
+                        console.error('Error parsing SSE data:', err);
+                    }
+                };
+
+                eventSource.onerror = (error) => {
+                    eventSource.close();
+                    this.syncing = false;
+
+                    // Only show error if sync didn't complete successfully
+                    if (!completed) {
+                        console.error('SSE error:', error);
+                        this.showSyncMessage('Error durante sincronización', 'error');
+                    }
+                };
+
+            } catch (error) {
+                console.error('Error syncing files:', error);
+                this.showSyncMessage('Failed to sync files', 'error');
+                this.syncing = false;
+            }
+        },
+
+        showSyncMessage(msg, type = 'info', persist = false) {
+            // Clear any existing timeout
+            if (this.syncMessageTimeout) {
+                clearTimeout(this.syncMessageTimeout);
+                this.syncMessageTimeout = null;
+            }
+
+            this.syncMessage = msg;
+            this.syncMessageType = type;
+
+            // Only set timeout if not persisting (e.g., during sync)
+            if (!persist) {
+                this.syncMessageTimeout = setTimeout(() => {
+                    this.syncMessage = '';
+                    this.syncMessageTimeout = null;
+                }, 5000);
+            }
+        },
+
+        formatBytes(bytes) {
+            if (bytes === 0) return '0 B';
+            const k = 1024;
+            const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        },
+
+        formatLastSync(timestamp) {
+            if (!timestamp) return '';
+            try {
+                const date = new Date(timestamp);
+                const now = new Date();
+                const diffMs = now - date;
+                const diffMins = Math.floor(diffMs / 60000);
+                
+                if (diffMins < 1) return 'hace un momento';
+                if (diffMins < 60) return `hace ${diffMins} ${diffMins === 1 ? 'minuto' : 'minutos'}`;
+                
+                const diffHours = Math.floor(diffMs / 3600000);
+                if (diffHours < 24) return `hace ${diffHours}h`;
+                
+                return date.toLocaleString('es-ES', { 
+                    day: '2-digit', 
+                    month: '2-digit', 
+                    hour: '2-digit', 
+                    minute: '2-digit' 
+                });
+            } catch (e) {
+                return timestamp;
+            }
+        }
+    };
+}
+</script>
+{{end}}

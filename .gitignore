@@ -1,56 +1,86 @@
+# Repositorios de referencia
+reference-repos/
+
+# Docker volumes (local bind mounts)
+volumes/
+!volumes/.gitkeep
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+# Logs
+logs/
+*.log
+
 # Binaries for programs and plugins
+bin/
+server
 *.exe
 *.exe~
 *.dll
 *.so
 *.dylib
-bin/
+.Python
+build/
+develop-eggs/
 dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
 
-# Test binary, built with `go test -c`
-*.test
+# Virtual environments
+venv/
+ENV/
+env/
 
-# Output of the go coverage tool
-*.out
-coverage.txt
-coverage.html
+# Node
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
 
-# Dependency directories
-vendor/
-
-# Go workspace file
-go.work
-
-# IDE and Editor files
+# IDEs
+.vscode/*
+!.vscode/copilot-commit-message-instructions.md
+!.vscode/settings.json
+!.vscode/extensions.json
+!.vscode/launch.json
 .idea/
-.vscode/
 *.swp
 *.swo
 *~
-.DS_Store
 
-# Data and config
-data/
-config/config.yml
+# OS
+.DS_Store
+Thumbs.db
+
+# Docker
+*.log
+
+# Logs directory
+logs/
+tmp/
+
+# Environment variables
+.env
+.env.local
+
+# Database
 *.db
 *.sqlite
 *.sqlite3
+volumes-dev.zip
 
-# Logs
-*.log
-logs/
-
-# Air live reload
-tmp/
-.air.toml
-
-# Environment files
-.env
-.env.local
-.env.*.local
-
-# Docker
-docker-compose.override.yml
-
-# OS specific
-Thumbs.db
+# Test 1
+# Test 2

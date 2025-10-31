@@ -1,112 +1,89 @@
 package handler
 
 import (
-	"github.com/carcheky/mediacheky/internal/service"
-	"github.com/gofiber/fiber/v2"
-	"go.uber.org/zap"
+	"time"
+
+	"github.com/carcheky/keepercheky/internal/config"
+	"github.com/carcheky/keepercheky/internal/repository"
+	"github.com/carcheky/keepercheky/internal/service"
+	"github.com/carcheky/keepercheky/internal/service/cleanup"
+	"github.com/carcheky/keepercheky/pkg/cache"
+	"github.com/carcheky/keepercheky/pkg/logger"
+	"gorm.io/gorm"
 )
 
-// Handler holds all HTTP handlers
-type Handler struct {
-	serviceManager *service.ServiceManager
-	logger         *zap.Logger
+type Handlers struct {
+	Health      *HealthHandler
+	Dashboard   *DashboardHandler
+	Media       *MediaHandler
+	Schedule    *ScheduleHandler
+	Settings    *SettingsHandler
+	Logs        *LogsHandler
+	Sync        *SyncHandler
+	Files       *FilesHandler
+	FileActions *FileActionsHandler
+	Radarr      *RadarrHandler
+	Sonarr      *SonarrHandler
+	QBittorrent *QBittorrentHandler
+	Bazarr      *BazarrHandler
 }
 
-// New creates a new handler instance
-func New(serviceManager *service.ServiceManager, logger *zap.Logger) *Handler {
-	return &Handler{
-		serviceManager: serviceManager,
-		logger:         logger,
+func NewHandlers(db *gorm.DB, repos *repository.Repositories, logger *logger.Logger, cfg *config.Config) *Handlers {
+	// Initialize category counts cache with 30 second TTL
+	countsCache := cache.NewCountsCache(30 * time.Second)
+
+	// Initialize OLD SyncService (for client access and backward compatibility)
+	oldSyncService := service.NewSyncService(repos.Media, logger, cfg)
+
+	// Initialize NEW FilesystemSyncService (filesystem-first approach)
+	filesystemSyncService := service.NewFilesystemSyncService(
+		repos.Media,
+		repos.Settings,
+		oldSyncService.GetRadarrClient(),
+		oldSyncService.GetSonarrClient(),
+		oldSyncService.GetJellyfinClient(),
+		nil, // Jellyseerr not needed for filesystem sync
+		oldSyncService.GetQBittorrentClient(),
+		logger.Desugar(),
+		cfg,
+		countsCache,
+	)
+
+	// Initialize CleanupService
+	cleanupService := cleanup.NewCleanupService(
+		repos.Media,
+		repos.History,
+		oldSyncService.GetRadarrClient(),
+		oldSyncService.GetSonarrClient(),
+		oldSyncService.GetJellyfinClient(),
+		oldSyncService.GetQBittorrentClient(),
+		logger.Desugar(),
+	)
+
+	// Initialize HealthAnalyzer
+	healthAnalyzer := service.NewHealthAnalyzer(logger.Desugar())
+
+	return &Handlers{
+		Health:    NewHealthHandler(db, logger),
+		Dashboard: NewDashboardHandler(repos, logger, oldSyncService),
+		Media:     NewMediaHandler(repos, cleanupService, logger),
+		Schedule:  NewScheduleHandler(repos, logger),
+		Settings:  NewSettingsHandler(repos, logger, cfg, oldSyncService),
+		Logs:      NewLogsHandler(repos, logger),
+		Sync:      NewSyncHandler(filesystemSyncService, logger), // Use NEW filesystem-first sync
+		Files:     NewFilesHandler(repos.Media, cfg, oldSyncService, healthAnalyzer, logger.Desugar(), countsCache),
+		FileActions: NewFileActionsHandler(
+			repos.Media,
+			repos.History,
+			oldSyncService.GetRadarrClient(),
+			oldSyncService.GetSonarrClient(),
+			oldSyncService.GetQBittorrentClient(),
+			oldSyncService.GetJellyfinClient(),
+			logger.Desugar(),
+		),
+		Radarr:      NewRadarrHandler(cfg, logger),
+		Sonarr:      NewSonarrHandler(cfg, logger),
+		QBittorrent: NewQBittorrentHandler(cfg, logger),
+		Bazarr:      NewBazarrHandler(cfg, logger),
 	}
-}
-
-// Home renders the home page
-func (h *Handler) Home(c *fiber.Ctx) error {
-	services, err := h.serviceManager.GetAllServices()
-	if err != nil {
-		h.logger.Error("Failed to get services", zap.Error(err))
-		return c.Status(500).Render("error", fiber.Map{
-			"error": "Failed to load services",
-		})
-	}
-
-	return c.Render("index", fiber.Map{
-		"services": services,
-		"title":    "MediaCheky - Multimedia Server Manager",
-	})
-}
-
-// Services returns the services management page
-func (h *Handler) Services(c *fiber.Ctx) error {
-	services, err := h.serviceManager.GetAllServices()
-	if err != nil {
-		h.logger.Error("Failed to get services", zap.Error(err))
-		return c.Status(500).SendString("Failed to load services")
-	}
-
-	return c.Render("services", fiber.Map{
-		"services": services,
-		"title":    "Services - MediaCheky",
-	})
-}
-
-// ToggleService handles enabling/disabling a service
-func (h *Handler) ToggleService(c *fiber.Ctx) error {
-	serviceName := c.Params("name")
-	
-	type ToggleRequest struct {
-		Enabled bool `json:"enabled"`
-	}
-	
-	var req ToggleRequest
-	if err := c.BodyParser(&req); err != nil {
-		return c.Status(400).JSON(fiber.Map{
-			"error": "Invalid request",
-		})
-	}
-
-	if err := h.serviceManager.ToggleService(serviceName, req.Enabled); err != nil {
-		h.logger.Error("Failed to toggle service", 
-			zap.String("service", serviceName), 
-			zap.Error(err))
-		return c.Status(500).JSON(fiber.Map{
-			"error": "Failed to toggle service",
-		})
-	}
-
-	h.logger.Info("Service toggled", 
-		zap.String("service", serviceName), 
-		zap.Bool("enabled", req.Enabled))
-
-	return c.JSON(fiber.Map{
-		"success": true,
-		"enabled": req.Enabled,
-	})
-}
-
-// GetDockerCompose generates and returns docker-compose configuration
-func (h *Handler) GetDockerCompose(c *fiber.Ctx) error {
-	compose, err := h.serviceManager.GenerateDockerCompose()
-	if err != nil {
-		h.logger.Error("Failed to generate docker-compose", zap.Error(err))
-		return c.Status(500).JSON(fiber.Map{
-			"error": "Failed to generate configuration",
-		})
-	}
-
-	return c.SendString(compose)
-}
-
-// DownloadDockerCompose generates and downloads docker-compose.yml
-func (h *Handler) DownloadDockerCompose(c *fiber.Ctx) error {
-	compose, err := h.serviceManager.GenerateDockerCompose()
-	if err != nil {
-		h.logger.Error("Failed to generate docker-compose", zap.Error(err))
-		return c.Status(500).SendString("Failed to generate configuration")
-	}
-
-	c.Set("Content-Type", "application/x-yaml")
-	c.Set("Content-Disposition", "attachment; filename=docker-compose.yml")
-	
-	return c.SendString(compose)
 }

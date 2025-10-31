@@ -1,0 +1,20 @@
+# Environment files with secrets
+.env.local
+.env.*.local
+
+# Docker Compose override for local testing
+docker-compose.override.yml
+
+# Generated directories
+volumes/
+
+# Logs
+logs/
+
+# Backup files
+*.bak
+*.backup
+
+# Temporary files
+*.tmp
+*.log

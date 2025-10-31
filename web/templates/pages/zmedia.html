@@ -1,0 +1,430 @@
+{{template "layouts/main" .}}
+
+{{define "content"}}
+<div x-data="mediaManager()" x-init="init()" class="space-y-6">
+    <!-- Header -->
+    <div class="flex justify-between items-center">
+        <div>
+            <h1 class="text-3xl font-bold text-gray-900">Media Management</h1>
+            <p class="text-gray-600 mt-1">Browse and manage your media library</p>
+        </div>
+        <button @click="syncMedia()" :disabled="syncing"
+            class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2">
+            <svg x-show="!syncing" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15">
+                </path>
+            </svg>
+            <svg x-show="syncing" class="animate-spin w-5 h-5" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor"
+                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
+                </path>
+            </svg>
+            <span x-text="syncing ? 'Syncing...' : 'Sync Now'"></span>
+        </button>
+    </div>
+
+    <!-- Stats Cards -->
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div class="bg-white rounded-lg shadow p-6">
+            <div class="flex items-center">
+                <div class="flex-1">
+                    <p class="text-sm text-gray-600">Total Media</p>
+                    <p class="text-2xl font-bold text-gray-900" x-text="stats.total_media || 0"></p>
+                </div>
+                <svg class="w-10 h-10 text-blue-500" fill="currentColor" viewBox="0 0 20 20">
+                    <path
+                        d="M2 6a2 2 0 012-2h6a2 2 0 012 2v8a2 2 0 01-2 2H4a2 2 0 01-2-2V6zM14.553 7.106A1 1 0 0014 8v4a1 1 0 00.553.894l2 1A1 1 0 0018 13V7a1 1 0 00-1.447-.894l-2 1z" />
+                </svg>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-lg shadow p-6">
+            <div class="flex items-center">
+                <div class="flex-1">
+                    <p class="text-sm text-gray-600">Movies</p>
+                    <p class="text-2xl font-bold text-gray-900" x-text="stats.total_movies || 0"></p>
+                </div>
+                <svg class="w-10 h-10 text-purple-500" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd"
+                        d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z"
+                        clip-rule="evenodd" />
+                </svg>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-lg shadow p-6">
+            <div class="flex items-center">
+                <div class="flex-1">
+                    <p class="text-sm text-gray-600">TV Series</p>
+                    <p class="text-2xl font-bold text-gray-900" x-text="stats.total_series || 0"></p>
+                </div>
+                <svg class="w-10 h-10 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+                    <path
+                        d="M2 6a2 2 0 012-2h6a2 2 0 012 2v8a2 2 0 01-2 2H4a2 2 0 01-2-2V6zM14.553 7.106A1 1 0 0014 8v4a1 1 0 00.553.894l2 1A1 1 0 0018 13V7a1 1 0 00-1.447-.894l-2 1z" />
+                </svg>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-lg shadow p-6">
+            <div class="flex items-center">
+                <div class="flex-1">
+                    <p class="text-sm text-gray-600">Total Size</p>
+                    <p class="text-2xl font-bold text-gray-900" x-text="formatSize(stats.total_size || 0)"></p>
+                </div>
+                <svg class="w-10 h-10 text-orange-500" fill="currentColor" viewBox="0 0 20 20">
+                    <path d="M3 12v3c0 1.657 3.134 3 7 3s7-1.343 7-3v-3c0 1.657-3.134 3-7 3s-7-1.343-7-3z" />
+                    <path d="M3 7v3c0 1.657 3.134 3 7 3s7-1.343 7-3V7c0 1.657-3.134 3-7 3S3 8.657 3 7z" />
+                    <path d="M17 5c0 1.657-3.134 3-7 3S3 6.657 3 5s3.134-3 7-3 7 1.343 7 3z" />
+                </svg>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="bg-white rounded-lg shadow p-6">
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">Search</label>
+                <input type="text" x-model="filters.search" @input.debounce.500ms="loadMedia()"
+                    placeholder="Search by title..."
+                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">Type</label>
+                <select x-model="filters.type" @change="loadMedia()"
+                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <option value="all">All Types</option>
+                    <option value="movie">Movies</option>
+                    <option value="series">TV Series</option>
+                </select>
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">Items per page</label>
+                <select x-model="filters.pageSize" @change="loadMedia()"
+                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <option value="10">10</option>
+                    <option value="20">20</option>
+                    <option value="50">50</option>
+                    <option value="100">100</option>
+                </select>
+            </div>
+            <div class="flex items-end">
+                <button @click="resetFilters()"
+                    class="w-full px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300">
+                    Reset Filters
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Loading State -->
+    <div x-show="loading" class="flex justify-center items-center py-12">
+        <svg class="animate-spin h-10 w-10 text-blue-600" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+            <path class="opacity-75" fill="currentColor"
+                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
+            </path>
+        </svg>
+    </div>
+
+    <!-- Media List -->
+    <div x-show="!loading" class="bg-white rounded-lg shadow overflow-hidden">
+        <!-- Empty State -->
+        <div x-show="media.length === 0" class="text-center py-12">
+            <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M7 4v16M17 4v16M3 8h4m10 0h4M3 12h18M3 16h4m10 0h4M4 20h16a1 1 0 001-1V5a1 1 0 00-1-1H4a1 1 0 00-1 1v14a1 1 0 001 1z">
+                </path>
+            </svg>
+            <h3 class="mt-2 text-sm font-medium text-gray-900">No media found</h3>
+            <p class="mt-1 text-sm text-gray-500">Click "Sync Now" to import your media library.</p>
+        </div>
+
+        <!-- Media Table -->
+        <div x-show="media.length > 0">
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Title
+                        </th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Type
+                        </th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Size
+                        </th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Added
+                        </th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Status
+                        </th>
+                        <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Actions
+                        </th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-200">
+                    <template x-for="item in media" :key="item.id">
+                        <tr class="hover:bg-gray-50">
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <div class="flex items-center">
+                                    <div
+                                        class="flex-shrink-0 h-10 w-10 bg-gray-200 rounded flex items-center justify-center">
+                                        <svg class="h-6 w-6 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
+                                            <path
+                                                d="M2 6a2 2 0 012-2h6a2 2 0 012 2v8a2 2 0 01-2 2H4a2 2 0 01-2-2V6zM14.553 7.106A1 1 0 0014 8v4a1 1 0 00.553.894l2 1A1 1 0 0018 13V7a1 1 0 00-1.447-.894l-2 1z" />
+                                        </svg>
+                                    </div>
+                                    <div class="ml-4">
+                                        <div class="text-sm font-medium text-gray-900" x-text="item.title"></div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <span x-text="item.type === 'movie' ? '🎬 Movie' : '📺 Series'"
+                                    class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full"
+                                    :class="item.type === 'movie' ? 'bg-purple-100 text-purple-800' : 'bg-green-100 text-green-800'">
+                                </span>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                <span x-text="formatSize(item.size)"></span>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                <span x-text="formatDate(item.added_date)"></span>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <span x-show="item.excluded"
+                                    class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">
+                                    Excluded
+                                </span>
+                                <span x-show="!item.excluded"
+                                    class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+                                    Active
+                                </span>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                <button @click="toggleExclude(item)" class="text-blue-600 hover:text-blue-900 mr-3"
+                                    x-text="item.excluded ? 'Include' : 'Exclude'">
+                                </button>
+                                <button @click="deleteMedia(item)" class="text-red-600 hover:text-red-900">
+                                    Delete
+                                </button>
+                            </td>
+                        </tr>
+                    </template>
+                </tbody>
+            </table>
+
+            <!-- Pagination -->
+            <div class="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6">
+                <div class="flex-1 flex justify-between sm:hidden">
+                    <button @click="previousPage()" :disabled="currentPage === 1"
+                        class="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50">
+                        Previous
+                    </button>
+                    <button @click="nextPage()" :disabled="currentPage >= totalPages"
+                        class="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50">
+                        Next
+                    </button>
+                </div>
+                <div class="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+                    <div>
+                        <p class="text-sm text-gray-700">
+                            Showing
+                            <span class="font-medium" x-text="((currentPage-1)*filters.pageSize)+1"></span>
+                            to
+                            <span class="font-medium" x-text="Math.min(currentPage*filters.pageSize, total)"></span>
+                            of
+                            <span class="font-medium" x-text="total"></span>
+                            results
+                        </p>
+                    </div>
+                    <div>
+                        <nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px">
+                            <button @click="previousPage()" :disabled="currentPage === 1"
+                                class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50">
+                                Previous
+                            </button>
+                            <button @click="nextPage()" :disabled="currentPage >= totalPages"
+                                class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50">
+                                Next
+                            </button>
+                        </nav>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Success/Error Messages -->
+    <div x-show="message" x-transition :class="{
+            'bg-green-50 border-green-200 text-green-800': messageType === 'success',
+            'bg-red-50 border-red-200 text-red-800': messageType === 'error'
+        }" class="p-4 rounded-lg border">
+        <p x-text="message"></p>
+    </div>
+</div>
+
+<script>
+    function mediaManager() {
+        return {
+            media: [],
+            stats: {},
+            loading: false,
+            syncing: false,
+            message: '',
+            messageType: 'success',
+            currentPage: 1,
+            totalPages: 1,
+            total: 0,
+            filters: {
+                search: '',
+                type: 'all',
+                pageSize: 20
+            },
+
+            async init() {
+                await this.loadStats();
+                await this.loadMedia();
+            },
+
+            async loadStats() {
+                try {
+                    const response = await fetch('/api/media/stats');
+                    this.stats = await response.json();
+                } catch (error) {
+                    console.error('Error loading stats:', error);
+                }
+            },
+
+            async loadMedia() {
+                this.loading = true;
+                try {
+                    const params = new URLSearchParams({
+                        page: this.currentPage,
+                        pageSize: this.filters.pageSize,
+                        type: this.filters.type,
+                        search: this.filters.search
+                    });
+
+                    const response = await fetch(`/api/media?${params}`);
+                    const data = await response.json();
+
+                    this.media = data.data || [];
+                    this.total = data.total || 0;
+                    this.totalPages = data.pages || 1;
+                } catch (error) {
+                    console.error('Error loading media:', error);
+                    this.showMessage('Failed to load media', 'error');
+                } finally {
+                    this.loading = false;
+                }
+            },
+
+            async syncMedia() {
+                this.syncing = true;
+                try {
+                    const response = await fetch('/api/sync', { method: 'POST' });
+                    const data = await response.json();
+
+                    if (data.status === 'success') {
+                        this.showMessage('Media synced successfully!', 'success');
+                        await this.loadStats();
+                        await this.loadMedia();
+                    } else {
+                        this.showMessage(data.message || 'Sync failed', 'error');
+                    }
+                } catch (error) {
+                    console.error('Error syncing media:', error);
+                    this.showMessage('Failed to sync media', 'error');
+                } finally {
+                    this.syncing = false;
+                }
+            },
+
+            async toggleExclude(item) {
+                try {
+                    const response = await fetch(`/api/media/${item.id}/exclude`, { method: 'POST' });
+                    if (response.ok) {
+                        item.excluded = !item.excluded;
+                        this.showMessage(`Media ${item.excluded ? 'excluded' : 'included'}`, 'success');
+                    }
+                } catch (error) {
+                    console.error('Error toggling exclude:', error);
+                    this.showMessage('Failed to update media', 'error');
+                }
+            },
+
+            async deleteMedia(item) {
+                if (!confirm(`Delete "${item.title}"? This action cannot be undone.`)) return;
+
+                try {
+                    const response = await fetch(`/api/media/${item.id}`, { method: 'DELETE' });
+                    if (response.ok) {
+                        this.showMessage('Media deleted successfully', 'success');
+                        await this.loadMedia();
+                        await this.loadStats();
+                    }
+                } catch (error) {
+                    console.error('Error deleting media:', error);
+                    this.showMessage('Failed to delete media', 'error');
+                }
+            },
+
+            previousPage() {
+                if (this.currentPage > 1) {
+                    this.currentPage--;
+                    this.loadMedia();
+                }
+            },
+
+            nextPage() {
+                if (this.currentPage < this.totalPages) {
+                    this.currentPage++;
+                    this.loadMedia();
+                }
+            },
+
+            resetFilters() {
+                this.filters = {
+                    search: '',
+                    type: 'all',
+                    pageSize: 20
+                };
+                this.currentPage = 1;
+                this.loadMedia();
+            },
+
+            formatSize(bytes) {
+                if (!bytes || bytes === 0) return '0 B';
+                const k = 1024;
+                const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
+                const i = Math.floor(Math.log(bytes) / Math.log(k));
+                return Math.round((bytes / Math.pow(k, i)) * 100) / 100 + ' ' + sizes[i];
+            },
+
+            formatDate(dateString) {
+                if (!dateString) return 'N/A';
+                const date = new Date(dateString);
+                return date.toLocaleDateString('es-ES', {
+                    year: 'numeric',
+                    month: 'short',
+                    day: 'numeric'
+                });
+            },
+
+            showMessage(msg, type = 'success') {
+                this.message = msg;
+                this.messageType = type;
+                setTimeout(() => {
+                    this.message = '';
+                }, 5000);
+            }
+        }
+    }
+</script>
+{{end}}

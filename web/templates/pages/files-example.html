@@ -1,0 +1,524 @@
+{{define "pages/files-example"}}
+<div class="container mx-auto px-4 py-8">
+    <!-- Header -->
+    <div class="mb-8">
+        <h1 class="text-3xl font-bold text-dark-text mb-2">
+            🧩 Componentes Alpine.js - Demostración
+        </h1>
+        <p class="text-dark-muted">
+            Esta página demuestra todos los componentes reutilizables de Alpine.js para la gestión de salud de archivos.
+        </p>
+    </div>
+
+    <!-- SECTION 1: Health Cards -->
+    <section class="mb-12">
+        <h2 class="text-2xl font-bold text-dark-text mb-4">1. Health Cards</h2>
+        <p class="text-dark-muted mb-6">
+            Tarjetas de estado con iconos, colores semánticos y acciones.
+        </p>
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+            <!-- OK Card -->
+            <div x-data="healthCard('ok', 123, 'Todo funcionando bien')" 
+                @click="handleClick()"
+                :class="colors.border + ' ' + colors.bg + ' ' + colors.hoverBg"
+                class="rounded-lg shadow-lg p-4 cursor-pointer transition-all border">
+                <div class="flex items-center justify-between mb-2">
+                    <span class="text-3xl" x-text="icon"></span>
+                    <span class="text-2xl font-bold text-dark-text" x-text="count"></span>
+                </div>
+                <h3 class="text-sm font-semibold text-dark-text mb-1" x-text="label"></h3>
+                <p class="text-xs text-dark-muted" x-text="description"></p>
+            </div>
+
+            <!-- Orphan Download Card -->
+            <div x-data="healthCard('orphan_download', 45, 'En qBT pero no en biblioteca')" 
+                @click="handleClick()"
+                :class="colors.border + ' ' + colors.bg + ' ' + colors.hoverBg"
+                class="rounded-lg shadow-lg p-4 cursor-pointer transition-all border">
+                <div class="flex items-center justify-between mb-2">
+                    <span class="text-3xl" x-text="icon"></span>
+                    <span class="text-2xl font-bold text-dark-text" x-text="count"></span>
+                </div>
+                <h3 class="text-sm font-semibold text-dark-text mb-1" x-text="label"></h3>
+                <p class="text-xs text-dark-muted" x-text="description"></p>
+            </div>
+
+            <!-- Hardlink Card -->
+            <div x-data="healthCard('only_hardlink', 78, 'Hardlinks sin torrent')" 
+                @click="handleClick()"
+                :class="colors.border + ' ' + colors.bg + ' ' + colors.hoverBg"
+                class="rounded-lg shadow-lg p-4 cursor-pointer transition-all border">
+                <div class="flex items-center justify-between mb-2">
+                    <span class="text-3xl" x-text="icon"></span>
+                    <span class="text-2xl font-bold text-dark-text" x-text="count"></span>
+                </div>
+                <h3 class="text-sm font-semibold text-dark-text mb-1" x-text="label"></h3>
+                <p class="text-xs text-dark-muted" x-text="description"></p>
+            </div>
+
+            <!-- Dead Torrent Card -->
+            <div x-data="healthCard('dead_torrent', 12, 'Sin seeds activos')" 
+                @click="handleClick()"
+                :class="colors.border + ' ' + colors.bg + ' ' + colors.hoverBg"
+                class="rounded-lg shadow-lg p-4 cursor-pointer transition-all border">
+                <div class="flex items-center justify-between mb-2">
+                    <span class="text-3xl" x-text="icon"></span>
+                    <span class="text-2xl font-bold text-dark-text" x-text="count"></span>
+                </div>
+                <h3 class="text-sm font-semibold text-dark-text mb-1" x-text="label"></h3>
+                <p class="text-xs text-dark-muted" x-text="description"></p>
+            </div>
+
+            <!-- Unwatched Card -->
+            <div x-data="healthCard('never_watched', 234, 'Nunca reproducidos')" 
+                @click="handleClick()"
+                :class="colors.border + ' ' + colors.bg + ' ' + colors.hoverBg"
+                class="rounded-lg shadow-lg p-4 cursor-pointer transition-all border">
+                <div class="flex items-center justify-between mb-2">
+                    <span class="text-3xl" x-text="icon"></span>
+                    <span class="text-2xl font-bold text-dark-text" x-text="count"></span>
+                </div>
+                <h3 class="text-sm font-semibold text-dark-text mb-1" x-text="label"></h3>
+                <p class="text-xs text-dark-muted" x-text="description"></p>
+            </div>
+        </div>
+    </section>
+
+    <!-- SECTION 2: Health Status Badges -->
+    <section class="mb-12">
+        <h2 class="text-2xl font-bold text-dark-text mb-4">2. Health Status Badges</h2>
+        <p class="text-dark-muted mb-6">
+            Badges reutilizables para mostrar estado de salud con diferentes tamaños.
+        </p>
+        
+        <div class="space-y-4">
+            <!-- Small badges -->
+            <div class="flex items-center gap-2">
+                <span class="text-dark-muted">Pequeño (sm):</span>
+                <div x-data="healthStatusBadge('ok', 'ok', 'sm')" 
+                    :class="colors.badge + ' ' + sizeClasses"
+                    class="inline-flex items-center gap-1 border rounded">
+                    <span x-text="icon"></span>
+                    <span x-text="label"></span>
+                </div>
+                <div x-data="healthStatusBadge('orphan_download', 'warning', 'sm')" 
+                    :class="colors.badge + ' ' + sizeClasses"
+                    class="inline-flex items-center gap-1 border rounded">
+                    <span x-text="icon"></span>
+                    <span x-text="label"></span>
+                </div>
+                <div x-data="healthStatusBadge('dead_torrent', 'critical', 'sm')" 
+                    :class="colors.badge + ' ' + sizeClasses"
+                    class="inline-flex items-center gap-1 border rounded">
+                    <span x-text="icon"></span>
+                    <span x-text="label"></span>
+                </div>
+            </div>
+
+            <!-- Medium badges -->
+            <div class="flex items-center gap-2">
+                <span class="text-dark-muted">Mediano (md):</span>
+                <div x-data="healthStatusBadge('ok', 'ok', 'md')" 
+                    :class="colors.badge + ' ' + sizeClasses"
+                    class="inline-flex items-center gap-1 border rounded">
+                    <span x-text="icon"></span>
+                    <span x-text="label"></span>
+                </div>
+                <div x-data="healthStatusBadge('orphan_download', 'warning', 'md')" 
+                    :class="colors.badge + ' ' + sizeClasses"
+                    class="inline-flex items-center gap-1 border rounded">
+                    <span x-text="icon"></span>
+                    <span x-text="label"></span>
+                </div>
+                <div x-data="healthStatusBadge('dead_torrent', 'critical', 'md')" 
+                    :class="colors.badge + ' ' + sizeClasses"
+                    class="inline-flex items-center gap-1 border rounded">
+                    <span x-text="icon"></span>
+                    <span x-text="label"></span>
+                </div>
+            </div>
+
+            <!-- Large badges -->
+            <div class="flex items-center gap-2">
+                <span class="text-dark-muted">Grande (lg):</span>
+                <div x-data="healthStatusBadge('ok', 'ok', 'lg')" 
+                    :class="colors.badge + ' ' + sizeClasses"
+                    class="inline-flex items-center gap-1 border rounded">
+                    <span x-text="icon"></span>
+                    <span x-text="label"></span>
+                </div>
+                <div x-data="healthStatusBadge('orphan_download', 'warning', 'lg')" 
+                    :class="colors.badge + ' ' + sizeClasses"
+                    class="inline-flex items-center gap-1 border rounded">
+                    <span x-text="icon"></span>
+                    <span x-text="label"></span>
+                </div>
+                <div x-data="healthStatusBadge('dead_torrent', 'critical', 'lg')" 
+                    :class="colors.badge + ' ' + sizeClasses"
+                    class="inline-flex items-center gap-1 border rounded">
+                    <span x-text="icon"></span>
+                    <span x-text="label"></span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- SECTION 3: Service Status Indicators -->
+    <section class="mb-12">
+        <h2 class="text-2xl font-bold text-dark-text mb-4">3. Service Status Indicators</h2>
+        <p class="text-dark-muted mb-6">
+            Indicadores de estado de servicios individuales con tooltips.
+        </p>
+        
+        <div class="flex flex-wrap gap-3">
+            <div x-data="serviceStatusIndicator('radarr', true, {})" 
+                :class="statusColor"
+                class="inline-flex items-center gap-2 px-3 py-2 bg-dark-surface border border-dark-border rounded-lg"
+                :title="tooltip">
+                <span x-text="icon"></span>
+                <span x-text="label"></span>
+            </div>
+
+            <div x-data="serviceStatusIndicator('sonarr', false, {})" 
+                :class="statusColor"
+                class="inline-flex items-center gap-2 px-3 py-2 bg-dark-surface border border-dark-border rounded-lg"
+                :title="tooltip">
+                <span x-text="icon"></span>
+                <span x-text="label"></span>
+            </div>
+
+            <div x-data="serviceStatusIndicator('jellyfin', true, { has_been_watched: true })" 
+                :class="statusColor"
+                class="inline-flex items-center gap-2 px-3 py-2 bg-dark-surface border border-dark-border rounded-lg"
+                :title="tooltip">
+                <span x-text="icon"></span>
+                <span x-text="label"></span>
+            </div>
+
+            <div x-data="serviceStatusIndicator('qbittorrent', true, { torrent_state: 'seeding', seed_ratio: 2.5, is_seeding: true })" 
+                :class="statusColor"
+                class="inline-flex items-center gap-2 px-3 py-2 bg-dark-surface border border-dark-border rounded-lg"
+                :title="tooltip">
+                <span x-text="icon"></span>
+                <span x-text="label"></span>
+            </div>
+
+            <div x-data="serviceStatusIndicator('jellyseerr', false, {})" 
+                :class="statusColor"
+                class="inline-flex items-center gap-2 px-3 py-2 bg-dark-surface border border-dark-border rounded-lg"
+                :title="tooltip">
+                <span x-text="icon"></span>
+                <span x-text="label"></span>
+            </div>
+
+            <div x-data="serviceStatusIndicator('jellystat', true, {})" 
+                :class="statusColor"
+                class="inline-flex items-center gap-2 px-3 py-2 bg-dark-surface border border-dark-border rounded-lg"
+                :title="tooltip">
+                <span x-text="icon"></span>
+                <span x-text="label"></span>
+            </div>
+        </div>
+    </section>
+
+    <!-- SECTION 4: Health Filters -->
+    <section class="mb-12">
+        <h2 class="text-2xl font-bold text-dark-text mb-4">4. Health Filters</h2>
+        <p class="text-dark-muted mb-6">
+            Sistema de filtros inteligentes con contador de filtros activos.
+        </p>
+        
+        <div x-data="healthFilters()" class="bg-dark-surface border border-dark-border rounded-lg p-6">
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
+                <div>
+                    <label class="block text-sm font-medium text-dark-text mb-2">Tipo de Problema</label>
+                    <select x-model="selectedProblem" @change="applyFilters()"
+                        class="w-full px-3 py-2 bg-dark-bg border border-dark-border rounded-lg text-dark-text">
+                        <template x-for="option in problemOptions" :key="option.value">
+                            <option :value="option.value" x-text="option.label"></option>
+                        </template>
+                    </select>
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-dark-text mb-2">Servicio</label>
+                    <select x-model="selectedService" @change="applyFilters()"
+                        class="w-full px-3 py-2 bg-dark-bg border border-dark-border rounded-lg text-dark-text">
+                        <template x-for="option in serviceOptions" :key="option.value">
+                            <option :value="option.value" x-text="option.label"></option>
+                        </template>
+                    </select>
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-dark-text mb-2">Tamaño</label>
+                    <select x-model="selectedSize" @change="applyFilters()"
+                        class="w-full px-3 py-2 bg-dark-bg border border-dark-border rounded-lg text-dark-text">
+                        <template x-for="option in sizeOptions" :key="option.value">
+                            <option :value="option.value" x-text="option.label"></option>
+                        </template>
+                    </select>
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-dark-text mb-2">Antigüedad</label>
+                    <select x-model="selectedAge" @change="applyFilters()"
+                        class="w-full px-3 py-2 bg-dark-bg border border-dark-border rounded-lg text-dark-text">
+                        <template x-for="option in ageOptions" :key="option.value">
+                            <option :value="option.value" x-text="option.label"></option>
+                        </template>
+                    </select>
+                </div>
+            </div>
+            
+            <div class="flex items-center gap-4">
+                <input type="text" x-model="searchQuery" @input="applyFilters()" 
+                    placeholder="Buscar por título o ruta..."
+                    class="flex-1 px-4 py-2 bg-dark-bg border border-dark-border rounded-lg text-dark-text">
+                
+                <button @click="clearFilters()"
+                    :class="hasActiveFilters ? 'bg-gray-600 hover:bg-gray-700' : 'bg-gray-800 cursor-not-allowed opacity-50'"
+                    :disabled="!hasActiveFilters"
+                    class="px-4 py-2 text-white rounded-lg transition-colors">
+                    Limpiar Filtros
+                </button>
+            </div>
+            
+            <div x-show="hasActiveFilters" class="mt-4 flex items-center gap-2">
+                <span class="text-sm text-dark-muted">Filtros activos:</span>
+                <span class="px-3 py-1 bg-blue-900/40 border border-blue-600/50 text-blue-300 rounded text-sm">
+                    <span x-text="activeFilterCount"></span> filtro<span x-text="activeFilterCount > 1 ? 's' : ''"></span>
+                </span>
+            </div>
+        </div>
+    </section>
+
+    <!-- SECTION 5: File Health Card -->
+    <section class="mb-12">
+        <h2 class="text-2xl font-bold text-dark-text mb-4">5. File Health Card</h2>
+        <p class="text-dark-muted mb-6">
+            Card detallada de archivo con estado, servicios, sugerencias y acciones.
+        </p>
+        
+        <!-- Example: Orphan Download -->
+        <div x-data="fileHealthCard({
+                id: 1,
+                title: 'Inception (2010)',
+                type: 'movie',
+                file_path: '/downloads/Inception.2010.mkv',
+                size: 16318189568,
+                in_qbittorrent: true,
+                in_jellyfin: false,
+                in_radarr: false,
+                in_sonarr: false,
+                torrent_state: 'seeding',
+                seed_ratio: 2.5,
+                is_seeding: true
+            })"
+            @file-action-success.window="console.log('Action success:', $event.detail)"
+            @file-action-error.window="console.log('Action error:', $event.detail)"
+            :class="colors.border + ' ' + colors.bg"
+            class="bg-dark-surface border rounded-lg shadow-lg p-6 mb-4">
+            
+            <!-- Status Badge -->
+            <div class="flex items-start justify-between mb-4">
+                <div>
+                    <div class="flex items-center gap-2 mb-2">
+                        <span class="text-2xl" x-text="statusIcon"></span>
+                        <div :class="colors.badge" class="px-3 py-1 border rounded text-sm">
+                            <span x-text="statusLabel"></span>
+                        </div>
+                    </div>
+                    <h3 class="text-xl font-bold text-dark-text" x-text="file.title"></h3>
+                </div>
+                
+                <button @click="toggleDetails()"
+                    class="px-3 py-1 bg-dark-bg border border-dark-border rounded-lg text-dark-text hover:bg-slate-700/50 text-sm">
+                    <span x-text="expanded ? 'Ocultar detalles' : 'Ver detalles'"></span>
+                </button>
+            </div>
+            
+            <!-- File Path -->
+            <div class="mb-4">
+                <p class="text-sm text-dark-muted">
+                    📍 <span x-text="file.file_path"></span>
+                </p>
+                <p class="text-sm text-dark-muted">
+                    💾 <span x-text="formatSize(file.size)"></span>
+                </p>
+            </div>
+            
+            <!-- Services Grid -->
+            <div class="grid grid-cols-3 gap-2 mb-4">
+                <div x-data="serviceStatusIndicator('qbittorrent', file.in_qbittorrent, { torrent_state: file.torrent_state, seed_ratio: file.seed_ratio, is_seeding: file.is_seeding })"
+                    :class="statusColor"
+                    class="flex items-center gap-2 px-3 py-2 bg-dark-bg border border-dark-border rounded text-sm"
+                    :title="tooltip">
+                    <span x-text="icon"></span>
+                    <span x-text="label"></span>
+                </div>
+                <div x-data="serviceStatusIndicator('radarr', file.in_radarr, {})"
+                    :class="statusColor"
+                    class="flex items-center gap-2 px-3 py-2 bg-dark-bg border border-dark-border rounded text-sm"
+                    :title="tooltip">
+                    <span x-text="icon"></span>
+                    <span x-text="label"></span>
+                </div>
+                <div x-data="serviceStatusIndicator('jellyfin', file.in_jellyfin, {})"
+                    :class="statusColor"
+                    class="flex items-center gap-2 px-3 py-2 bg-dark-bg border border-dark-border rounded text-sm"
+                    :title="tooltip">
+                    <span x-text="icon"></span>
+                    <span x-text="label"></span>
+                </div>
+            </div>
+            
+            <!-- Issues & Suggestions -->
+            <template x-if="issues.length > 0 || suggestions.length > 0">
+                <div class="bg-dark-bg border border-dark-border rounded-lg p-4 mb-4">
+                    <template x-if="issues.length > 0">
+                        <div class="mb-3">
+                            <h4 class="text-sm font-semibold text-dark-text mb-2">⚠️ Problemas detectados:</h4>
+                            <ul class="list-disc list-inside text-sm text-dark-muted space-y-1">
+                                <template x-for="issue in issues" :key="issue">
+                                    <li x-text="issue"></li>
+                                </template>
+                            </ul>
+                        </div>
+                    </template>
+                    
+                    <template x-if="suggestions.length > 0">
+                        <div>
+                            <h4 class="text-sm font-semibold text-dark-text mb-2">💡 Sugerencias:</h4>
+                            <ul class="list-disc list-inside text-sm text-dark-muted space-y-1">
+                                <template x-for="suggestion in suggestions" :key="suggestion">
+                                    <li x-text="suggestion"></li>
+                                </template>
+                            </ul>
+                        </div>
+                    </template>
+                </div>
+            </template>
+            
+            <!-- Action Buttons -->
+            <div class="flex flex-wrap gap-2">
+                <template x-for="action in actions" :key="action">
+                    <button @click="executeAction(action)"
+                        :disabled="loading"
+                        :class="action === 'delete' ? 'bg-red-600 hover:bg-red-700' : 'bg-blue-600 hover:bg-blue-700'"
+                        class="px-4 py-2 text-white rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2">
+                        <svg x-show="loading && actionInProgress === action" 
+                            class="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor"
+                                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
+                            </path>
+                        </svg>
+                        <span x-text="action === 'import_radarr' ? 'Importar a Radarr' : 
+                                      action === 'import_sonarr' ? 'Importar a Sonarr' :
+                                      action === 'delete' ? 'Eliminar' :
+                                      action === 'ignore' ? 'Ignorar' :
+                                      action === 'clean_hardlink' ? 'Limpiar Hardlink' : action"></span>
+                    </button>
+                </template>
+            </div>
+        </div>
+    </section>
+
+    <!-- SECTION 6: Bulk Actions -->
+    <section class="mb-12">
+        <h2 class="text-2xl font-bold text-dark-text mb-4">6. Bulk Actions</h2>
+        <p class="text-dark-muted mb-6">
+            Gestión de selección múltiple y acciones masivas con barra de progreso.
+        </p>
+        
+        <div x-data="bulkActions([
+                { id: 1, title: 'Movie 1', file_path: '/path/1.mkv' },
+                { id: 2, title: 'Movie 2', file_path: '/path/2.mkv' }
+            ])"
+            @bulk-action-complete.window="alert($event.detail.message)"
+            class="bg-dark-surface border border-dark-border rounded-lg p-6">
+            
+            <div class="flex items-center justify-between mb-4">
+                <div class="flex items-center gap-3">
+                    <label class="flex items-center gap-2 cursor-pointer">
+                        <input type="checkbox" 
+                            :checked="selectedCount === 5" 
+                            @change="toggleSelectAll([
+                                { id: 1, title: 'Movie 1', file_path: '/path/1.mkv' },
+                                { id: 2, title: 'Movie 2', file_path: '/path/2.mkv' },
+                                { id: 3, title: 'Movie 3', file_path: '/path/3.mkv' },
+                                { id: 4, title: 'Movie 4', file_path: '/path/4.mkv' },
+                                { id: 5, title: 'Movie 5', file_path: '/path/5.mkv' }
+                            ])"
+                            class="w-4 h-4 rounded border-dark-border bg-dark-bg text-blue-600">
+                        <span class="text-sm text-dark-text font-medium">Seleccionar todos (5 archivos)</span>
+                    </label>
+                    <span x-show="hasSelection" class="text-sm text-dark-muted">
+                        (<span x-text="selectedCount"></span> seleccionado<span x-text="selectedCount !== 1 ? 's' : ''"></span>)
+                    </span>
+                </div>
+                
+                <button x-show="hasSelection" @click="executeBulkAction('delete')"
+                    :disabled="actionInProgress"
+                    class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors disabled:opacity-50">
+                    Eliminar Seleccionados
+                </button>
+            </div>
+            
+            <!-- Progress Bar -->
+            <div x-show="actionInProgress" class="mb-4">
+                <div class="flex items-center justify-between text-sm text-dark-muted mb-2">
+                    <span>Procesando archivos...</span>
+                    <span><span x-text="progressCurrent"></span> / <span x-text="progressTotal"></span></span>
+                </div>
+                <div class="w-full bg-dark-bg rounded-full h-2">
+                    <div class="bg-blue-600 h-2 rounded-full transition-all duration-300" 
+                        :style="'width: ' + progressPercent + '%'"></div>
+                </div>
+            </div>
+            
+            <!-- Selected Files List -->
+            <div x-show="hasSelection" class="mt-4">
+                <h4 class="text-sm font-semibold text-dark-text mb-2">Archivos seleccionados:</h4>
+                <ul class="space-y-1">
+                    <template x-for="file in selectedFiles" :key="file.id">
+                        <li class="text-sm text-dark-muted flex items-center gap-2">
+                            <span>📄</span>
+                            <span x-text="file.title"></span>
+                        </li>
+                    </template>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- SECTION 7: Helper Functions Demo -->
+    <section class="mb-12">
+        <h2 class="text-2xl font-bold text-dark-text mb-4">7. Helper Functions</h2>
+        <p class="text-dark-muted mb-6">
+            Funciones auxiliares para formateo y utilidades.
+        </p>
+        
+        <div class="bg-dark-surface border border-dark-border rounded-lg p-6 space-y-3">
+            <div class="flex items-center gap-4">
+                <span class="text-dark-muted w-40">formatBytes:</span>
+                <code class="text-green-400" x-text="formatBytes(16318189568)"></code>
+            </div>
+            <div class="flex items-center gap-4">
+                <span class="text-dark-muted w-40">formatDate:</span>
+                <code class="text-green-400" x-text="formatDate(new Date(Date.now() - 86400000 * 3))"></code>
+            </div>
+            <div class="flex items-center gap-4">
+                <span class="text-dark-muted w-40">getStatusIcon:</span>
+                <code class="text-green-400" x-text="getStatusIcon('orphan_download')"></code>
+            </div>
+            <div class="flex items-center gap-4">
+                <span class="text-dark-muted w-40">getStatusLabel:</span>
+                <code class="text-green-400" x-text="getStatusLabel('orphan_download')"></code>
+            </div>
+        </div>
+    </section>
+</div>
+{{end}}
