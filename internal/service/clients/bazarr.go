@@ -10,6 +10,20 @@ import (
 	"go.uber.org/zap"
 )
 
+const (
+	// bazarrDefaultFlagLimitation documents a known limitation in the Bazarr API.
+	// The Bazarr API does not provide a "default" flag for subtitles in its responses.
+	// As a result, we always set Default: false when converting Bazarr subtitle data.
+	// 
+	// Reference: This is a known limitation as of Bazarr API v1.x
+	// See: https://github.com/morpheus65535/bazarr/issues (for tracking future support)
+	// 
+	// TODO: Investigate if future Bazarr versions add support for the default flag.
+	// Implication: The application cannot determine which subtitle is marked as default in Bazarr,
+	// so UI and selection logic should not rely on this field for Bazarr-managed subtitles.
+	bazarrDefaultFlagLimitation = "Bazarr API limitation: default flag not supported"
+)
+
 // BazarrClient implements subtitle management client for Bazarr.
 type BazarrClient struct {
 	client  *resty.Client
@@ -265,11 +279,7 @@ func (c *BazarrClient) GetMovieSubtitles(ctx context.Context, radarrID int) ([]m
 					Language: sub.Language,
 					Path:     sub.Path,
 					Forced:   sub.Forced,
-					// Bazarr API does not provide a "default" flag for subtitles.
-					// As a result, we always set Default: false here.
-					// TODO: Investigate if future Bazarr versions add support for the default flag.
-					// Implication: The application cannot determine which subtitle is marked as default in Bazarr,
-					// so UI and selection logic should not rely on this field for Bazarr-managed subtitles.
+					// See bazarrDefaultFlagLimitation constant for details
 					Default: false,
 				})
 			}
@@ -320,11 +330,7 @@ func (c *BazarrClient) GetSeriesSubtitles(ctx context.Context, sonarrID int) ([]
 					Language: sub.Language,
 					Path:     sub.Path,
 					Forced:   sub.Forced,
-					// Bazarr API does not provide a "default" flag for subtitles.
-					// As a result, we always set Default: false here.
-					// TODO: Investigate if future Bazarr versions add support for the default flag.
-					// Implication: The application cannot determine which subtitle is marked as default in Bazarr,
-					// so UI and selection logic should not rely on this field for Bazarr-managed subtitles.
+					// See bazarrDefaultFlagLimitation constant for details
 					Default: false,
 				})
 			}
