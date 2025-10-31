@@ -1,8 +1,8 @@
-# 🚀 Release Workflow - KeeperCheky
+# 🚀 Release Workflow - MediaCheky
 
 ## Descripción General
 
-KeeperCheky utiliza un **workflow unificado** inspirado en [Jellyseerr](https://github.com/seerr-team/seerr), que combina semantic-release y construcción de imágenes Docker en un solo pipeline.
+MediaCheky utiliza un **workflow unificado** inspirado en [Jellyseerr](https://github.com/seerr-team/seerr), que combina semantic-release y construcción de imágenes Docker en un solo pipeline.
 
 ## 🔄 Flujo del Proceso
 
@@ -49,14 +49,14 @@ El workflow se activa en:
 - Push a GitHub Container Registry
 - **Tags generados:**
   - Para versión `1.0.0-dev.1`:
-    - `ghcr.io/carcheky/keepercheky:1.0.0-dev.1`
-    - `ghcr.io/carcheky/keepercheky:develop`
+    - `ghcr.io/carcheky/mediacheky:1.0.0-dev.1`
+    - `ghcr.io/carcheky/mediacheky:develop`
   - Para versión `1.0.0`:
-    - `ghcr.io/carcheky/keepercheky:1.0.0`
-    - `ghcr.io/carcheky/keepercheky:1.0`
-    - `ghcr.io/carcheky/keepercheky:1`
-    - `ghcr.io/carcheky/keepercheky:latest`
-    - `ghcr.io/carcheky/keepercheky:stable`
+    - `ghcr.io/carcheky/mediacheky:1.0.0`
+    - `ghcr.io/carcheky/mediacheky:1.0`
+    - `ghcr.io/carcheky/mediacheky:1`
+    - `ghcr.io/carcheky/mediacheky:latest`
+    - `ghcr.io/carcheky/mediacheky:stable`
 
 #### 3. **notify**
 - Siempre se ejecuta (incluso si fallan pasos anteriores)
@@ -171,7 +171,7 @@ git push origin develop
 **Resultado esperado:**
 - Nueva versión: `1.0.0-dev.1` (o siguiente)
 - Tag creado: `v1.0.0-dev.1`
-- Docker image: `ghcr.io/carcheky/keepercheky:1.0.0-dev.1` + `develop`
+- Docker image: `ghcr.io/carcheky/mediacheky:1.0.0-dev.1` + `develop`
 
 ### Escenario 2: Fix en develop
 ```bash
@@ -181,7 +181,7 @@ git push origin develop
 
 **Resultado esperado:**
 - Nueva versión: `1.0.0-dev.2` (incremento de prerelease)
-- Docker image: `ghcr.io/carcheky/keepercheky:1.0.0-dev.2` + `develop`
+- Docker image: `ghcr.io/carcheky/mediacheky:1.0.0-dev.2` + `develop`
 
 ### Escenario 3: Docs (sin release)
 ```bash
@@ -198,17 +198,17 @@ git push origin develop
 
 ### Ver workflow en ejecución:
 ```
-https://github.com/carcheky/keepercheky/actions
+https://github.com/carcheky/mediacheky/actions
 ```
 
 ### Ver releases:
 ```
-https://github.com/carcheky/keepercheky/releases
+https://github.com/carcheky/mediacheky/releases
 ```
 
 ### Ver imágenes Docker:
 ```
-https://github.com/carcheky/keepercheky/pkgs/container/keepercheky
+https://github.com/carcheky/mediacheky/pkgs/container/mediacheky
 ```
 
 ## 🐛 Troubleshooting

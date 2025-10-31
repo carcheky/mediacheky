@@ -3,7 +3,7 @@ package middleware
 import (
 	"time"
 
-	"github.com/carcheky/keepercheky/pkg/logger"
+	"github.com/carcheky/mediacheky/pkg/logger"
 	"github.com/gofiber/fiber/v2"
 	"github.com/google/uuid"
 )

@@ -1,18 +1,18 @@
 services:
-  keepercheky:
+  mediacheky:
     # build:
     #   context: ..
     #   dockerfile: Dockerfile
-    image: ghcr.io/carcheky/keepercheky:develop # or latest
-    container_name: keepercheky
+    image: ghcr.io/carcheky/mediacheky:develop # or latest
+    container_name: mediacheky
     user: "${PUID}:${PGID}"
     restart: unless-stopped
     ports:
       - "${KEEPERCHEKY_PORT:-8780}:8000"
     volumes:
-      - ./volumes/keepercheky-data:/app/data
-      - ./volumes/keepercheky-config:/app/config
-      - ./volumes/keepercheky-logs:/app/logs
+      - ./volumes/mediacheky-data:/app/data
+      - ./volumes/mediacheky-config:/app/config
+      - ./volumes/mediacheky-logs:/app/logs
       - ${RASPIMEDIA}:/BibliotecaMultimedia:rw
     environment:
       # System Configuration
@@ -25,7 +25,7 @@ services:
       
       # Database Configuration
       - KEEPERCHEKY_DATABASE_TYPE=${KEEPERCHEKY_DATABASE_TYPE:-sqlite}
-      - KEEPERCHEKY_DATABASE_PATH=${KEEPERCHEKY_DATABASE_PATH:-/app/data/keepercheky.db}
+      - KEEPERCHEKY_DATABASE_PATH=${KEEPERCHEKY_DATABASE_PATH:-/app/data/mediacheky.db}
       
       # Application Settings
       - KEEPERCHEKY_APP_ENVIRONMENT=${KEEPERCHEKY_APP_ENVIRONMENT:-development}

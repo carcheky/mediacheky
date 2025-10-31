@@ -4,9 +4,9 @@ import (
 	"context"
 	"time"
 
-	"github.com/carcheky/keepercheky/internal/repository"
-	"github.com/carcheky/keepercheky/internal/service"
-	"github.com/carcheky/keepercheky/pkg/logger"
+	"github.com/carcheky/mediacheky/internal/repository"
+	"github.com/carcheky/mediacheky/internal/service"
+	"github.com/carcheky/mediacheky/pkg/logger"
 	"github.com/gofiber/fiber/v2"
 )
 

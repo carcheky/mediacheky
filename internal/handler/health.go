@@ -3,7 +3,7 @@ package handler
 import (
 	"time"
 
-	"github.com/carcheky/keepercheky/pkg/logger"
+	"github.com/carcheky/mediacheky/pkg/logger"
 	"github.com/gofiber/fiber/v2"
 	"gorm.io/gorm"
 )

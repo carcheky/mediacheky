@@ -1,16 +1,16 @@
-# KeeperCheky
+# MediaCheky
 
 > Gestor moderno de limpieza para bibliotecas multimedia - Reescritura completa de Janitorr con interfaz web
 
-[![stable](https://img.shields.io/github/actions/workflow/status/carcheky/keepercheky/release.yml?branch=stable&label=stable&logo=github)](https://github.com/carcheky/keepercheky/actions/workflows/release.yml)
-[![stable version](https://img.shields.io/github/v/release/carcheky/keepercheky?label=stable)](https://github.com/carcheky/keepercheky/releases)
-[![develop](https://img.shields.io/github/actions/workflow/status/carcheky/keepercheky/release.yml?branch=develop&label=develop&logo=github)](https://github.com/carcheky/keepercheky/actions/workflows/release.yml)
-[![develop version](https://img.shields.io/github/v/release/carcheky/keepercheky?include_prereleases&label=develop&filter=*-dev*)](https://github.com/carcheky/keepercheky/releases)
-[![Docker Image](https://img.shields.io/badge/docker-ghcr.io-blue?logo=docker)](https://github.com/carcheky/keepercheky/pkgs/container/keepercheky)
+[![stable](https://img.shields.io/github/actions/workflow/status/carcheky/mediacheky/release.yml?branch=stable&label=stable&logo=github)](https://github.com/carcheky/mediacheky/actions/workflows/release.yml)
+[![stable version](https://img.shields.io/github/v/release/carcheky/mediacheky?label=stable)](https://github.com/carcheky/mediacheky/releases)
+[![develop](https://img.shields.io/github/actions/workflow/status/carcheky/mediacheky/release.yml?branch=develop&label=develop&logo=github)](https://github.com/carcheky/mediacheky/actions/workflows/release.yml)
+[![develop version](https://img.shields.io/github/v/release/carcheky/mediacheky?include_prereleases&label=develop&filter=*-dev*)](https://github.com/carcheky/mediacheky/releases)
+[![Docker Image](https://img.shields.io/badge/docker-ghcr.io-blue?logo=docker)](https://github.com/carcheky/mediacheky/pkgs/container/mediacheky)
 [![License](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
-[![Go Version](https://img.shields.io/github/go-mod/go-version/carcheky/keepercheky)](go.mod)
+[![Go Version](https://img.shields.io/github/go-mod/go-version/carcheky/mediacheky)](go.mod)
 
-**KeeperCheky** automatiza la limpieza de tu biblioteca multimedia eliminando contenido antiguo o no visto según reglas configurables. Es una reescritura completa de [Janitorr](https://github.com/Schaka/janitorr) con interfaz web moderna, optimizado para mínimo uso de recursos.
+**MediaCheky** automatiza la limpieza de tu biblioteca multimedia eliminando contenido antiguo o no visto según reglas configurables. Es una reescritura completa de [Janitorr](https://github.com/Schaka/janitorr) con interfaz web moderna, optimizado para mínimo uso de recursos.
 
 ## ✨ Características Principales
 
@@ -42,7 +42,7 @@
 - **[Desarrollo](DEVELOPMENT.md)** - Configuración del entorno de desarrollo
 - **[Guía para Agentes IA](AGENTS.md)** - Instrucciones para GitHub Copilot y otros asistentes
 - **[Resumen Ejecutivo](docs/RESUMEN_EJECUTIVO.md)** - Visión general del proyecto
-- **[Comparación](docs/RESUMEN_COMPARATIVO.md)** - Janitorr vs Maintainerr vs KeeperCheky
+- **[Comparación](docs/RESUMEN_COMPARATIVO.md)** - Janitorr vs Maintainerr vs MediaCheky
 - **[Propuestas Técnicas](docs/propuestas/)** - Análisis de 4 stacks diferentes
 
 ### Por qué Go + Alpine.js?
@@ -73,8 +73,8 @@ Ver [guía completa de instalación](quickstart/README.md).
 ### Opción 2: Desarrollo
 
 ```bash
-git clone https://github.com/carcheky/keepercheky.git
-cd keepercheky
+git clone https://github.com/carcheky/mediacheky.git
+cd mediacheky
 make init
 make dev
 
@@ -87,12 +87,12 @@ Ver [guía de desarrollo](DEVELOPMENT.md) para más detalles.
 
 ```bash
 docker run -d \
-  --name keepercheky \
+  --name mediacheky \
   -p 8000:8000 \
   -v ./config:/config \
   -v ./data:/data \
   -v /path/to/media:/media:ro \
-  ghcr.io/carcheky/keepercheky:latest
+  ghcr.io/carcheky/mediacheky:latest
 ```
 
 ## ⚙️ Configuración Básica

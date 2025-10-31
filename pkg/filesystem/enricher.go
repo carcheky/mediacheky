@@ -5,7 +5,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/carcheky/keepercheky/internal/models"
+	"github.com/carcheky/mediacheky/internal/models"
 	"go.uber.org/zap"
 )
 

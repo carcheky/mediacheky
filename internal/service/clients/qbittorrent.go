@@ -6,7 +6,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/carcheky/keepercheky/internal/models"
+	"github.com/carcheky/mediacheky/internal/models"
 	"github.com/go-resty/resty/v2"
 	"go.uber.org/zap"
 )

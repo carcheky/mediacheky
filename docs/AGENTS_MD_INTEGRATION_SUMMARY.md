@@ -1,8 +1,8 @@
-# Resumen: Integración de AGENTS.md en KeeperCheky
+# Resumen: Integración de AGENTS.md en MediaCheky
 
 ## ✅ Trabajo Completado
 
-He revisado los ejemplos de AGENTS.md del ecosistema GitHub/OpenAI y he integrado este patrón en nuestro proyecto KeeperCheky.
+He revisado los ejemplos de AGENTS.md del ecosistema GitHub/OpenAI y he integrado este patrón en nuestro proyecto MediaCheky.
 
 ### Archivos Creados
 
@@ -202,7 +202,7 @@ He revisado los ejemplos de AGENTS.md del ecosistema GitHub/OpenAI y he integrad
 
 ## 💡 Conclusión
 
-**AGENTS.md es una excelente adición a KeeperCheky** que complementa perfectamente las instrucciones existentes en `.github/copilot-instructions.md`.
+**AGENTS.md es una excelente adición a MediaCheky** que complementa perfectamente las instrucciones existentes en `.github/copilot-instructions.md`.
 
 **Beneficios principales:**
 

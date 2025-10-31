@@ -1,8 +1,8 @@
-# KeeperCheky - Índice de Documentación
+# MediaCheky - Índice de Documentación
 
 ## 📚 Guía de Navegación
 
-Bienvenido a la documentación completa del proyecto **KeeperCheky**, una reescritura moderna de Janitorr con interfaz gráfica web.
+Bienvenido a la documentación completa del proyecto **MediaCheky**, una reescritura moderna de Janitorr con interfaz gráfica web.
 
 **ACTUALIZACIÓN:** Se ha añadido análisis de Maintainerr v2.0.0 como referencia adicional de features y UI.
 
@@ -28,7 +28,7 @@ Visión general del proyecto, objetivos y recomendaciones.
 Evaluación técnica de Maintainerr v2.0.0 y comparación con nuestras propuestas.
 
 **Contenido:**
-- Comparación Janitorr vs Maintainerr vs KeeperCheky
+- Comparación Janitorr vs Maintainerr vs MediaCheky
 - Análisis de arquitectura (NestJS + Next.js)
 - Sistema de reglas avanzado
 - Features a adoptar y simplificar
@@ -311,6 +311,6 @@ Si tienes dudas sobre cualquier propuesta o necesitas ayuda para decidir, revisa
 
 ---
 
-**¡Éxito con tu proyecto KeeperCheky!** 🚀
+**¡Éxito con tu proyecto MediaCheky!** 🚀
 
 Si decides implementarlo, considera compartir el resultado con la comunidad. Muchos usuarios de Jellyfin/Emby estarán interesados en una herramienta así.

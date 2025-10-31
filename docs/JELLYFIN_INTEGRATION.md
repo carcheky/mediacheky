@@ -2,7 +2,7 @@
 
 ## Overview
 
-This document describes the new Jellyfin API integration features added to KeeperCheky, providing enhanced monitoring and statistics capabilities.
+This document describes the new Jellyfin API integration features added to MediaCheky, providing enhanced monitoring and statistics capabilities.
 
 ## New API Functions
 
@@ -406,7 +406,7 @@ Potential additions based on Jellyfin API capabilities:
 4. **Plugin Information**: Installed plugins and versions
 5. **Scheduled Tasks**: View and manage server tasks
 6. **Collection Management**: Create/update Jellyfin collections
-7. **Notification Integration**: Server events to KeeperCheky notifications
+7. **Notification Integration**: Server events to MediaCheky notifications
 
 ---
 
@@ -474,4 +474,4 @@ All endpoints return JSON and require Jellyfin to be configured in settings.
 
 **Last Updated**: January 2025
 **Version**: 1.0.0
-**Author**: KeeperCheky Development Team
+**Author**: MediaCheky Development Team

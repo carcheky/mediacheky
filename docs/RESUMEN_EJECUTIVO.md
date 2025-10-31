@@ -1,4 +1,4 @@
-# Resumen Ejecutivo - Proyecto KeeperCheky
+# Resumen Ejecutivo - Proyecto MediaCheky
 
 ## 🎯 Objetivo del Proyecto
 
@@ -160,17 +160,17 @@ Se han creado **4 propuestas completas** con diferentes stacks tecnológicos:
 5. **Escalabilidad**: Si crece, Go escala fácilmente
 
 **Comparación con Janitorr original:**
-- Janitorr: 256MB RAM (JVM) → KeeperCheky: 20-50MB RAM (Go)
-- Janitorr: Sin UI → KeeperCheky: UI moderna
-- Janitorr: Config YAML → KeeperCheky: UI de configuración
-- Janitorr: Solo logs → KeeperCheky: Dashboard + Logs + Gestión
+- Janitorr: 256MB RAM (JVM) → MediaCheky: 20-50MB RAM (Go)
+- Janitorr: Sin UI → MediaCheky: UI moderna
+- Janitorr: Config YAML → MediaCheky: UI de configuración
+- Janitorr: Solo logs → MediaCheky: Dashboard + Logs + Gestión
 
 ## 🗂️ Documentación Entregada
 
 ### Archivos Creados
 
 ```
-keepercheky/
+mediacheky/
 ├── docs/
 │   ├── propuestas/
 │   │   ├── PROPUESTA_1_STACK_MODERNO.md     (TypeScript)
@@ -295,7 +295,7 @@ R: No aún, pero cada propuesta tiene código de ejemplo completo.
 - Logs solo en archivos
 - Sin estadísticas visuales
 
-### Lecciones para KeeperCheky
+### Lecciones para MediaCheky
 
 1. **UX First**: Dashboard y visualización son clave
 2. **Safety**: Múltiples confirmaciones y dry-run
@@ -307,7 +307,7 @@ R: No aún, pero cada propuesta tiene código de ejemplo completo.
 
 ### Vs Janitorr Original
 
-| Característica | Janitorr | KeeperCheky |
+| Característica | Janitorr | MediaCheky |
 |----------------|----------|-------------|
 | Interfaz Web | ❌ | ✅ |
 | Dashboard | ❌ | ✅ |
@@ -323,7 +323,7 @@ R: No aún, pero cada propuesta tiene código de ejemplo completo.
 
 ### Vs Maintainerr (Competencia)
 
-Maintainerr es solo para Plex. KeeperCheky será para Jellyfin/Emby con features similares o mejores.
+Maintainerr es solo para Plex. MediaCheky será para Jellyfin/Emby con features similares o mejores.
 
 ## 🚀 Conclusión
 

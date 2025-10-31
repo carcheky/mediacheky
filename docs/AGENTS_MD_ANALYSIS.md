@@ -1,4 +1,4 @@
-# Análisis de AGENTS.md y Recomendaciones para KeeperCheky
+# Análisis de AGENTS.md y Recomendaciones para MediaCheky
 
 ## 📋 Resumen Ejecutivo
 
@@ -110,7 +110,7 @@ Basándose en la documentación de GitHub y ejemplos reales, un buen AGENTS.md d
 
 ---
 
-## 📝 Propuesta: AGENTS.md para KeeperCheky
+## 📝 Propuesta: AGENTS.md para MediaCheky
 
 ### Opción A: Archivo Único en la Raíz
 
@@ -169,7 +169,7 @@ Usar **ambos** archivos de forma complementaria:
 
 ---
 
-## ✅ Recomendación para KeeperCheky
+## ✅ Recomendación para MediaCheky
 
 ### **Recomiendo la Opción C: Complementar con AGENTS.md**
 
@@ -184,7 +184,7 @@ Usar **ambos** archivos de forma complementaria:
 ### Estructura Propuesta
 
 ```
-keepercheky/
+mediacheky/
 ├── .github/
 │   └── copilot-instructions.md       # YA EXISTE - Instrucciones generales
 ├── AGENTS.md                          # NUEVO - Instrucciones para Coding Agent
@@ -195,17 +195,17 @@ keepercheky/
 
 ## 🚀 Próximos Pasos
 
-### 1. Crear AGENTS.md para KeeperCheky
+### 1. Crear AGENTS.md para MediaCheky
 
 Basado en el contenido actual de `.github/copilot-instructions.md`, crear un AGENTS.md que incluya:
 
 **Secciones propuestas:**
 
 ```markdown
-# AGENTS Guidelines for KeeperCheky
+# AGENTS Guidelines for MediaCheky
 
 ## Project Overview
-[Breve descripción: qué es KeeperCheky, stack tecnológico]
+[Breve descripción: qué es MediaCheky, stack tecnológico]
 
 ## CRITICAL: Do NOT Start Services
 [Explicación de que NUNCA debe ejecutar make dev, docker-compose, etc.]
@@ -274,7 +274,7 @@ Basado en el contenido actual de `.github/copilot-instructions.md`, crear un AGE
 
 ## 💡 Conclusión
 
-**AGENTS.md es una excelente adición para KeeperCheky** porque:
+**AGENTS.md es una excelente adición para MediaCheky** porque:
 
 1. ✅ Proporciona instrucciones prácticas y accionables para Copilot Coding Agent
 2. ✅ Complementa (no reemplaza) las instrucciones existentes en `.github/copilot-instructions.md`

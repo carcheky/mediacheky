@@ -1,9 +1,9 @@
 package scheduler
 
 import (
-	"github.com/carcheky/keepercheky/internal/config"
-	"github.com/carcheky/keepercheky/internal/repository"
-	"github.com/carcheky/keepercheky/pkg/logger"
+	"github.com/carcheky/mediacheky/internal/config"
+	"github.com/carcheky/mediacheky/internal/repository"
+	"github.com/carcheky/mediacheky/pkg/logger"
 	"github.com/robfig/cron/v3"
 )
 

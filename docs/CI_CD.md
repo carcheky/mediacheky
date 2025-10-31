@@ -1,4 +1,4 @@
-# CI/CD Pipeline - KeeperCheky
+# CI/CD Pipeline - MediaCheky
 
 ## 🚀 Overview
 
@@ -82,19 +82,19 @@ Images are pushed to GitHub Container Registry (ghcr.io):
 
 **Example for a release on `main`:**
 ```
-ghcr.io/carcheky/keepercheky:latest
-ghcr.io/carcheky/keepercheky:main
-ghcr.io/carcheky/keepercheky:v1.2.3
-ghcr.io/carcheky/keepercheky:1.2
-ghcr.io/carcheky/keepercheky:1
-ghcr.io/carcheky/keepercheky:main-abc1234
+ghcr.io/carcheky/mediacheky:latest
+ghcr.io/carcheky/mediacheky:main
+ghcr.io/carcheky/mediacheky:v1.2.3
+ghcr.io/carcheky/mediacheky:1.2
+ghcr.io/carcheky/mediacheky:1
+ghcr.io/carcheky/mediacheky:main-abc1234
 ```
 
 **Example for a pre-release on `develop`:**
 ```
-ghcr.io/carcheky/keepercheky:develop
-ghcr.io/carcheky/keepercheky:develop-v1.2.3-dev.1
-ghcr.io/carcheky/keepercheky:develop-abc1234
+ghcr.io/carcheky/mediacheky:develop
+ghcr.io/carcheky/mediacheky:develop-v1.2.3-dev.1
+ghcr.io/carcheky/mediacheky:develop-abc1234
 ```
 
 ## 🔄 Pipeline Jobs
@@ -131,17 +131,17 @@ ghcr.io/carcheky/keepercheky:develop-abc1234
 
 **Pull latest stable release:**
 ```bash
-docker pull ghcr.io/carcheky/keepercheky:latest
+docker pull ghcr.io/carcheky/mediacheky:latest
 ```
 
 **Pull specific version:**
 ```bash
-docker pull ghcr.io/carcheky/keepercheky:v1.2.3
+docker pull ghcr.io/carcheky/mediacheky:v1.2.3
 ```
 
 **Pull development build:**
 ```bash
-docker pull ghcr.io/carcheky/keepercheky:develop
+docker pull ghcr.io/carcheky/mediacheky:develop
 ```
 
 **Run container:**
@@ -150,7 +150,7 @@ docker run -d \
   -p 8000:8000 \
   -v $(pwd)/config:/config \
   -v $(pwd)/data:/data \
-  ghcr.io/carcheky/keepercheky:latest
+  ghcr.io/carcheky/mediacheky:latest
 ```
 
 ## 🔑 Required Secrets

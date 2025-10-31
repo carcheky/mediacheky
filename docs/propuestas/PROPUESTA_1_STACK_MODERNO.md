@@ -33,7 +33,7 @@ Reescribir Janitorr como una aplicación web moderna con arquitectura de microse
 ## 📐 Estructura del Proyecto
 
 ```
-keepercheky/
+mediacheky/
 ├── apps/
 │   ├── web/                    # Next.js Frontend
 │   │   ├── app/
@@ -252,18 +252,18 @@ interface MediaClient {
 ```yaml
 services:
   # Frontend
-  keepercheky-web:
-    image: keepercheky/web:latest
+  mediacheky-web:
+    image: mediacheky/web:latest
     environment:
-      - NEXT_PUBLIC_API_URL=http://keepercheky-api:3001
+      - NEXT_PUBLIC_API_URL=http://mediacheky-api:3001
     ports:
       - "3000:3000"
     
   # Backend API
-  keepercheky-api:
-    image: keepercheky/api:latest
+  mediacheky-api:
+    image: mediacheky/api:latest
     environment:
-      - DATABASE_URL=postgresql://user:pass@postgres:5432/keepercheky
+      - DATABASE_URL=postgresql://user:pass@postgres:5432/mediacheky
       - REDIS_URL=redis://redis:6379
     depends_on:
       - postgres

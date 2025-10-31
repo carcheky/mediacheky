@@ -153,7 +153,7 @@ Los datos que existan en la base de datos se mostrarán correctamente con los nu
 
 ✅ Build exitoso sin errores de sintaxis:
 ```bash
-go build -o /tmp/keepercheky-test ./cmd/server
+go build -o /tmp/mediacheky-test ./cmd/server
 # Build completed successfully
 ```
 

@@ -1,4 +1,4 @@
-# Resumen Comparativo: Janitorr vs Maintainerr vs KeeperCheky
+# Resumen Comparativo: Janitorr vs Maintainerr vs MediaCheky
 
 **Fecha:** 25 de Octubre de 2025  
 **Propósito:** Comparación visual rápida de las tres soluciones
@@ -9,7 +9,7 @@
 
 ### Stack Tecnológico
 
-| Aspecto | Janitorr | Maintainerr | KeeperCheky |
+| Aspecto | Janitorr | Maintainerr | MediaCheky |
 |---------|----------|-------------|-------------|
 | **Backend** | Kotlin + Spring Boot 3.5.6 | TypeScript + NestJS 10.3 | **Go 1.22 + Fiber v2** |
 | **Frontend** | ❌ Sin UI | Next.js 14 + React 18 | **Alpine.js 3 + Templates** |
@@ -20,7 +20,7 @@
 
 ### Recursos y Rendimiento
 
-| Métrica | Janitorr | Maintainerr | KeeperCheky (Objetivo) |
+| Métrica | Janitorr | Maintainerr | MediaCheky (Objetivo) |
 |---------|----------|-------------|------------------------|
 | **Imagen Docker** | ~300MB | ~500MB | **15-25MB** ✅ |
 | **RAM en uso** | ~256MB | ~400-600MB | **20-50MB** ✅ |
@@ -31,7 +31,7 @@
 
 ### Features Funcionales
 
-| Feature | Janitorr | Maintainerr | KeeperCheky |
+| Feature | Janitorr | Maintainerr | MediaCheky |
 |---------|----------|-------------|-------------|
 | **Interfaz Web** | ❌ No | ✅ Completa | ✅ Completa |
 | **Sistema de reglas** | ⚠️ Código | ✅ GUI Builder | ✅ GUI Builder |
@@ -56,12 +56,12 @@
 |-----------|---------------|-------|
 | **Sin UI, solo funcional** | Janitorr | Ya cumple el objetivo |
 | **UI completa, no importa recursos** | Maintainerr | Stack maduro y probado |
-| **Balance UI + eficiencia** | **KeeperCheky** ✅ | Mejor de ambos mundos |
-| **Hardware limitado (<512MB RAM)** | **KeeperCheky** ✅ | 10x menos recursos |
-| **Jellyfin/Emby** | **KeeperCheky** ✅ | Maintainerr solo Plex |
+| **Balance UI + eficiencia** | **MediaCheky** ✅ | Mejor de ambos mundos |
+| **Hardware limitado (<512MB RAM)** | **MediaCheky** ✅ | 10x menos recursos |
+| **Jellyfin/Emby** | **MediaCheky** ✅ | Maintainerr solo Plex |
 | **Aprendizaje TypeScript** | Maintainerr | Código bien estructurado |
-| **Aprendizaje Go** | **KeeperCheky** ✅ | Stack moderno y simple |
-| **Deploy más simple** | **KeeperCheky** ✅ | Single binary |
+| **Aprendizaje Go** | **MediaCheky** ✅ | Stack moderno y simple |
+| **Deploy más simple** | **MediaCheky** ✅ | Single binary |
 
 ---
 
@@ -93,7 +93,7 @@
 └─────────────────────────────────────────┘
 ```
 
-### KeeperCheky
+### MediaCheky
 ```
 ┌─────────────────────────────────────────┐
 │  Alpine.js 3 + Go Templates + Tailwind  │
@@ -109,7 +109,7 @@
 └─────────────────────────────────────────┘
 ```
 
-**Conclusión UI:** Maintainerr y KeeperCheky tendrán features similares, pero KeeperCheky será 20x más ligero.
+**Conclusión UI:** Maintainerr y MediaCheky tendrán features similares, pero MediaCheky será 20x más ligero.
 
 ---
 
@@ -154,7 +154,7 @@ Docker Container (~500MB)
 └── RAM: ~400-600MB
 ```
 
-### KeeperCheky (Go Single Binary)
+### MediaCheky (Go Single Binary)
 ```
 Docker Container (~20MB)
 │
@@ -188,9 +188,9 @@ Asumiendo VPS con $0.01/GB RAM/mes:
 |----------|-----|-----------|-----------|
 | **Janitorr** | 256MB | $2.56 | $30.72 |
 | **Maintainerr** | 500MB | $5.00 | $60.00 |
-| **KeeperCheky** | 40MB | $0.40 | **$4.80** ✅ |
+| **MediaCheky** | 40MB | $0.40 | **$4.80** ✅ |
 
-**Ahorro con KeeperCheky:** ~$55/año vs Maintainerr
+**Ahorro con MediaCheky:** ~$55/año vs Maintainerr
 
 *Nota: Cálculo ilustrativo. Beneficio real: poder correr en hardware más limitado.*
 
@@ -198,7 +198,7 @@ Asumiendo VPS con $0.01/GB RAM/mes:
 
 ## 🚀 Velocidad de Desarrollo
 
-| Fase | Janitorr | Maintainerr | KeeperCheky |
+| Fase | Janitorr | Maintainerr | MediaCheky |
 |------|----------|-------------|-------------|
 | **Setup inicial** | 1h | 2-3h | 30min |
 | **Backend básico** | 1 semana | 2 semanas | 1 semana |
@@ -222,7 +222,7 @@ Asumiendo VPS con $0.01/GB RAM/mes:
 - ✅ Advanced rule builder (60+ propiedades)
 - ✅ TMDB metadata enrichment
 
-### KeeperCheky combina ambos
+### MediaCheky combina ambos
 - ✅ Jellyfin support (de Janitorr)
 - ✅ UI completa (inspirada en Maintainerr)
 - ✅ Leaving Soon con symlinks (mejor que colecciones)
@@ -245,7 +245,7 @@ Asumiendo VPS con $0.01/GB RAM/mes:
 - **Debugging:** Complejo (dual process)
 - **Complejidad:** ⭐⭐⭐⭐ (4/5)
 
-### KeeperCheky
+### MediaCheky
 - **Dependencias:** Go + libs mínimas
 - **Updates:** Low (Go stdlib muy estable)
 - **Debugging:** Panic traces claros, single process
@@ -255,7 +255,7 @@ Asumiendo VPS con $0.01/GB RAM/mes:
 
 ## 📈 Escalabilidad
 
-| Aspecto | Janitorr | Maintainerr | KeeperCheky |
+| Aspecto | Janitorr | Maintainerr | MediaCheky |
 |---------|----------|-------------|-------------|
 | **Concurrent requests** | ~100 | ~50 | **~500** ✅ |
 | **Max libraries** | ~10 | ~5 | **~20** ✅ |
@@ -265,7 +265,7 @@ Asumiendo VPS con $0.01/GB RAM/mes:
 
 ---
 
-## ✅ Decisión Final: ¿Por qué KeeperCheky?
+## ✅ Decisión Final: ¿Por qué MediaCheky?
 
 ### Ventajas sobre Janitorr
 1. ✅ **UI completa** - Dashboard, rule builder, logs viewer
@@ -327,7 +327,7 @@ Asumiendo VPS con $0.01/GB RAM/mes:
 - ❌ Alto consumo de recursos
 - ❌ Solo Plex (no Jellyfin)
 
-### Para KeeperCheky aplicamos:
+### Para MediaCheky aplicamos:
 1. ✅ Funcionalidad core de Janitorr
 2. ✅ UI/UX de Maintainerr
 3. ✅ Stack optimizado (Go)

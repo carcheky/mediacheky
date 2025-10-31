@@ -1,7 +1,7 @@
 package repository
 
 import (
-	"github.com/carcheky/keepercheky/internal/models"
+	"github.com/carcheky/mediacheky/internal/models"
 	"gorm.io/gorm"
 )
 

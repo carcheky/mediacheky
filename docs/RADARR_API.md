@@ -1,6 +1,6 @@
 # Radarr API Integration
 
-Este documento describe la integración completa con la API de Radarr v3 en KeeperCheky.
+Este documento describe la integración completa con la API de Radarr v3 en MediaCheky.
 
 ## Endpoints Disponibles
 

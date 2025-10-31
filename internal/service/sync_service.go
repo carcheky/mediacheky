@@ -7,11 +7,11 @@ import (
 	"strings"
 	"time"
 
-	"github.com/carcheky/keepercheky/internal/config"
-	"github.com/carcheky/keepercheky/internal/models"
-	"github.com/carcheky/keepercheky/internal/repository"
-	"github.com/carcheky/keepercheky/internal/service/clients"
-	"github.com/carcheky/keepercheky/pkg/logger"
+	"github.com/carcheky/mediacheky/internal/config"
+	"github.com/carcheky/mediacheky/internal/models"
+	"github.com/carcheky/mediacheky/internal/repository"
+	"github.com/carcheky/mediacheky/internal/service/clients"
+	"github.com/carcheky/mediacheky/pkg/logger"
 	"go.uber.org/zap"
 )
 

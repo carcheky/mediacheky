@@ -2,7 +2,7 @@
 
 ## Resumen
 
-Se ha implementado un sistema completo de eliminación en bulk y filtros avanzados para la gestión eficiente de medios en KeeperCheky.
+Se ha implementado un sistema completo de eliminación en bulk y filtros avanzados para la gestión eficiente de medios en MediaCheky.
 
 ## Características Implementadas
 

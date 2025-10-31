@@ -1,5 +1,5 @@
-# KeeperCheky Configuration Example
-# Copy this file to /app/config/config.yaml (or ./volumes/keepercheky-config/config.yaml)
+# MediaCheky Configuration Example
+# Copy this file to /app/config/config.yaml (or ./volumes/mediacheky-config/config.yaml)
 # and adjust values for your setup
 
 # Application Settings
@@ -27,14 +27,14 @@ database:
   type: sqlite
 
   # SQLite specific
-  path: ./data/keepercheky.db
+  path: ./data/mediacheky.db
 
   # PostgreSQL specific (uncomment and configure if using postgres)
   # host: localhost
   # port: 5432
-  # user: keepercheky
+  # user: mediacheky
   # password: your_password_here
-  # name: keepercheky
+  # name: mediacheky
 
 # External Service Clients
 clients:

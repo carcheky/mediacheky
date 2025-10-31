@@ -1,6 +1,6 @@
 # Alpine.js Components for File Health Management
 
-Este documento describe todos los componentes Alpine.js reutilizables creados para la gestión de salud de archivos en KeeperCheky.
+Este documento describe todos los componentes Alpine.js reutilizables creados para la gestión de salud de archivos en MediaCheky.
 
 ## 📁 Archivos
 
@@ -535,4 +535,4 @@ function componentName(params) {
 
 **Última actualización**: 30 de octubre de 2025  
 **Versión**: 1.0.0  
-**Autor**: KeeperCheky Development Team
+**Autor**: MediaCheky Development Team

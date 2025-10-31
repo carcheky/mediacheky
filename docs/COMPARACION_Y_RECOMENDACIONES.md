@@ -1,4 +1,4 @@
-# Comparación de Propuestas - KeeperCheky
+# Comparación de Propuestas - MediaCheky
 
 ## 📊 Tabla Comparativa Rápida
 
@@ -224,7 +224,7 @@ Semana 7: Testing + Optimization + Docker
 
 ## 🏆 Mi Recomendación Principal
 
-### Para KeeperCheky: **Propuesta 3 (Go + Alpine.js)** 🥇
+### Para MediaCheky: **Propuesta 3 (Go + Alpine.js)** 🥇
 
 #### Razones:
 

@@ -1,4 +1,4 @@
-module github.com/carcheky/keepercheky
+module github.com/carcheky/mediacheky
 
 go 1.25
 

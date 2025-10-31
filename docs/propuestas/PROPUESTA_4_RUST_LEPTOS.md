@@ -41,7 +41,7 @@ Reescribir Janitorr usando Rust con Leptos framework, aprovechando WebAssembly p
 ## 📐 Estructura del Proyecto
 
 ```plaintext
-keepercheky/
+mediacheky/
 ├── Cargo.toml              # Workspace root
 ├── Cargo.lock
 │
@@ -640,7 +640,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     tracing_subscriber::fmt::init();
     
     // Connect to database
-    let db = Database::connect("sqlite://data/keepercheky.db").await?;
+    let db = Database::connect("sqlite://data/mediacheky.db").await?;
     
     // Run migrations
     db::run_migrations(&db).await?;
@@ -864,7 +864,7 @@ COPY Cargo.toml Cargo.lock ./
 COPY crates/ ./crates/
 
 # Build server
-RUN cargo build --release --bin keepercheky-server
+RUN cargo build --release --bin mediacheky-server
 
 # Final image
 FROM alpine:latest
@@ -874,14 +874,14 @@ RUN apk add --no-cache ca-certificates
 WORKDIR /app
 
 # Copy binary
-COPY --from=backend-builder /app/target/release/keepercheky-server /app/keepercheky
+COPY --from=backend-builder /app/target/release/mediacheky-server /app/mediacheky
 
 # Copy frontend dist
 COPY --from=frontend-builder /app/crates/frontend/dist /app/frontend/dist
 
 EXPOSE 8000
 
-CMD ["/app/keepercheky"]
+CMD ["/app/mediacheky"]
 ```
 
 ## 🎯 Ventajas

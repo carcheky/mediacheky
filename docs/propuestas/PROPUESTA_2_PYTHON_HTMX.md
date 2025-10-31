@@ -32,7 +32,7 @@ Crear una aplicación web ligera y eficiente usando Python con FastAPI en el bac
 ## 📐 Estructura del Proyecto
 
 ```plaintext
-keepercheky/
+mediacheky/
 ├── app/
 │   ├── main.py                 # FastAPI app entry
 │   ├── config.py               # Pydantic settings
@@ -461,7 +461,7 @@ from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
-app = FastAPI(title="KeeperCheky")
+app = FastAPI(title="MediaCheky")
 
 # Montaje de archivos estáticos
 app.mount("/static", StaticFiles(directory="app/static"), name="static")
@@ -713,9 +713,9 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY app/ ./app/
 
 # Usuario no-root
-RUN useradd -m -u 1000 keepercheky && \
-    chown -R keepercheky:keepercheky /app
-USER keepercheky
+RUN useradd -m -u 1000 mediacheky && \
+    chown -R mediacheky:mediacheky /app
+USER mediacheky
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s \
@@ -734,13 +734,13 @@ CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
 version: '3.8'
 
 services:
-  keepercheky:
-    image: keepercheky:latest
-    container_name: keepercheky
+  mediacheky:
+    image: mediacheky:latest
+    container_name: mediacheky
     ports:
       - "8000:8000"
     environment:
-      - DATABASE_URL=sqlite:///data/keepercheky.db
+      - DATABASE_URL=sqlite:///data/mediacheky.db
       - LOG_LEVEL=INFO
     volumes:
       - ./data:/app/data

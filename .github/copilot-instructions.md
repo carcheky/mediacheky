@@ -1,14 +1,14 @@
-# GitHub Copilot Instructions - KeeperCheky Project
+# GitHub Copilot Instructions - MediaCheky Project
 
 USE MCP MEMORY SERVER AND SEQUENTIAL THINKING
 
-READ logs/keepercheky-dev.log AFTER CHANGES, VISIT URLS, AND READ logs/keepercheky-dev.log AND INSPECT FILES IF NEEDED
+READ logs/mediacheky-dev.log AFTER CHANGES, VISIT URLS, AND READ logs/mediacheky-dev.log AND INSPECT FILES IF NEEDED
 
 
 ⛔️ ⛔️ ⛔️ CRITICAL RULE - NEVER VIOLATE ⛔️ ⛔️ ⛔️
 
 **YOU MUST NEVER, UNDER ANY CIRCUMSTANCES:**
-- never print the log, always read directly logs/keepercheky-dev.log
+- never print the log, always read directly logs/mediacheky-dev.log
 - Run `make dev` or `make run` or ANY make command that starts services
 - Run `docker-compose up` or `docker-compose down` or `docker-compose restart` or `docker-compose stop`
 - Run `docker start` or `docker stop` or `docker restart` or `docker kill` or `docker rm`
@@ -32,7 +32,7 @@ READ logs/keepercheky-dev.log AFTER CHANGES, VISIT URLS, AND READ logs/keeperche
 
 ## 🎯 Project Overview
 
-**KeeperCheky** is a modern web-based media library cleanup manager - a complete rewrite of [Janitorr](https://github.com/Schaka/janitorr) with a beautiful UI.
+**MediaCheky** is a modern web-based media library cleanup manager - a complete rewrite of [Janitorr](https://github.com/Schaka/janitorr) with a beautiful UI.
 
 ### Core Technology Stack
 
@@ -52,7 +52,7 @@ READ logs/keepercheky-dev.log AFTER CHANGES, VISIT URLS, AND READ logs/keeperche
 **ALWAYS** follow this exact structure:
 
 ```
-keepercheky/
+mediacheky/
 ├── cmd/
 │   └── server/
 │       └── main.go                 # Application entry point
@@ -647,7 +647,7 @@ COPY . .
 # Build binary
 RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build \
     -ldflags="-w -s" \
-    -o /app/bin/keepercheky \
+    -o /app/bin/mediacheky \
     ./cmd/server
 
 # Final stage
@@ -658,7 +658,7 @@ COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
 COPY --from=builder /usr/share/zoneinfo /usr/share/zoneinfo
 
 # Copy binary
-COPY --from=builder /app/bin/keepercheky /keepercheky
+COPY --from=builder /app/bin/mediacheky /mediacheky
 
 # Copy web assets
 COPY --from=builder /app/web /web
@@ -667,7 +667,7 @@ COPY --from=builder /app/web /web
 EXPOSE 8000
 
 # Run
-ENTRYPOINT ["/keepercheky"]
+ENTRYPOINT ["/mediacheky"]
 ```
 
 ### Health Checks

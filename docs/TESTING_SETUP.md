@@ -6,7 +6,7 @@ Este documento describe cómo configurar y usar el entorno de desarrollo con ser
 
 El `docker-compose.yml` incluye los siguientes servicios de prueba:
 
-### KeeperCheky (Puerto 8000)
+### MediaCheky (Puerto 8000)
 - **URL**: http://localhost:8000
 - Dashboard de gestión
 - Configuración pre-cargada con todos los servicios
@@ -69,29 +69,29 @@ docker compose -f docker-compose.yml up -d
 2. Completa el wizard de configuración inicial
 3. Ve a **Settings → General**
 4. Copia la **API Key** generada
-5. **IMPORTANTE**: Reemplaza el API key en tu configuración de KeeperCheky
+5. **IMPORTANTE**: Reemplaza el API key en tu configuración de MediaCheky
 
 #### Sonarr (http://localhost:8989)
 1. Accede a la UI web
 2. Completa el wizard de configuración inicial
 3. Ve a **Settings → General**
 4. Copia la **API Key** generada
-5. **IMPORTANTE**: Reemplaza el API key en tu configuración de KeeperCheky
+5. **IMPORTANTE**: Reemplaza el API key en tu configuración de MediaCheky
 
 #### Jellyfin (http://localhost:8096)
 1. Accede a la UI web
 2. Completa el wizard de configuración inicial
 3. Crea un usuario administrador
 4. Ve a **Dashboard → API Keys**
-5. Crea una nueva API Key para "KeeperCheky"
-6. **IMPORTANTE**: Reemplaza el API key en tu configuración de KeeperCheky
+5. Crea una nueva API Key para "MediaCheky"
+6. **IMPORTANTE**: Reemplaza el API key en tu configuración de MediaCheky
 
 #### Jellyseerr (http://localhost:5055)
 1. Accede a la UI web
 2. Configura la conexión con Jellyfin
 3. Ve a **Settings → General → API Key**
 4. Copia la **API Key** generada
-5. **IMPORTANTE**: Reemplaza el API key en tu configuración de KeeperCheky
+5. **IMPORTANTE**: Reemplaza el API key en tu configuración de MediaCheky
 
 #### qBittorrent (http://localhost:8080)
 1. Accede a la UI web
@@ -99,14 +99,14 @@ docker compose -f docker-compose.yml up -d
 3. En el primer login, cambia la contraseña si lo deseas
 4. Ve a **Tools → Options → Web UI**
 5. Asegúrate que el puerto es **8080**
-6. **Nota**: KeeperCheky usa este servicio para validar si los archivos están en seeding
+6. **Nota**: MediaCheky usa este servicio para validar si los archivos están en seeding
 
 #### Bazarr (http://localhost:6767)
 1. Accede a la UI web
 2. Completa el wizard de configuración inicial
 3. Ve a **Settings → General**
 4. Copia la **API Key** generada
-5. **IMPORTANTE**: Reemplaza el API key en tu configuración de KeeperCheky
+5. **IMPORTANTE**: Reemplaza el API key en tu configuración de MediaCheky
 6. Conecta Bazarr con Radarr y Sonarr en **Settings → Sonarr/Radarr**
 
 #### Jellystat (http://localhost:3000)
@@ -115,10 +115,10 @@ docker compose -f docker-compose.yml up -d
 3. Conecta con tu instancia de Jellyfin
 4. Ve a **Settings → API Key**
 5. Copia la **API Key** generada
-6. **IMPORTANTE**: Reemplaza el API key en tu configuración de KeeperCheky
-7. **Nota**: KeeperCheky usa Jellystat para determinar qué media ha sido vista recientemente
+6. **IMPORTANTE**: Reemplaza el API key en tu configuración de MediaCheky
+7. **Nota**: MediaCheky usa Jellystat para determinar qué media ha sido vista recientemente
 
-### 3. Actualizar API Keys en KeeperCheky
+### 3. Actualizar API Keys en MediaCheky
 
 Hay dos formas de configurar las API keys reales:
 
@@ -210,7 +210,7 @@ Una vez configuradas las API keys:
 
 ## 🔍 Verificar Datos
 
-### Ver Media en KeeperCheky
+### Ver Media en MediaCheky
 
 ```bash
 # Ver todas las películas/series
@@ -270,7 +270,7 @@ docker compose -f docker-compose.yml down -v
    docker compose -f docker-compose.yml logs app
    ```
 
-### No aparecen medias en KeeperCheky
+### No aparecen medias en MediaCheky
 
 1. Asegúrate de haber configurado las API keys correctas
 2. Añade al menos una película en Radarr o serie en Sonarr
@@ -279,7 +279,7 @@ docker compose -f docker-compose.yml down -v
 
 ### Error "connection refused"
 
-1. Verifica que todos los servicios estén en la misma red (`keepercheky-net`)
+1. Verifica que todos los servicios estén en la misma red (`mediacheky-net`)
 2. Usa los nombres de contenedor (no `localhost`) en las URLs internas
 3. Ejemplo: `http://radarr:7878` (no `http://localhost:7878`)
 
@@ -293,7 +293,7 @@ docker compose -f docker-compose.yml down -v
 ## 🔗 Enlaces Rápidos
 
 ### Stack Principal
-- **KeeperCheky**: http://localhost:8000
+- **MediaCheky**: http://localhost:8000
 - **Radarr**: http://localhost:7878
 - **Sonarr**: http://localhost:8989
 - **Jellyfin**: http://localhost:8096

@@ -1,6 +1,6 @@
-# AGENTS Guidelines for KeeperCheky
+# AGENTS Guidelines for MediaCheky
 
-**KeeperCheky** is a modern web-based media library cleanup manager - a complete rewrite of Janitorr with a beautiful UI. Built with Go + Fiber backend and Alpine.js + Tailwind CSS frontend.
+**MediaCheky** is a modern web-based media library cleanup manager - a complete rewrite of Janitorr with a beautiful UI. Built with Go + Fiber backend and Alpine.js + Tailwind CSS frontend.
 
 **Stack:** Go 1.22+, Fiber v2, GORM v2, Alpine.js 3.x, Tailwind CSS, Docker
 
@@ -33,7 +33,7 @@
 ## 📂 Project Structure Quick Reference
 
 ```
-keepercheky/
+mediacheky/
 ├── cmd/server/main.go              # Application entry point
 ├── internal/                       # Private application code (NOT importable)
 │   ├── config/                     # Configuration management
@@ -81,7 +81,7 @@ keepercheky/
 
 ```bash
 # Clone and enter directory
-cd /home/user/projects/keepercheky
+cd /home/user/projects/mediacheky
 
 # Install Go dependencies
 go mod download
@@ -100,12 +100,12 @@ cp config/config.example.yaml config/config.yaml
 
 ```bash
 # Build for current OS
-go build -o bin/keepercheky ./cmd/server
+go build -o bin/mediacheky ./cmd/server
 
 # Build with optimizations (same as Dockerfile)
 CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build \
   -ldflags="-w -s" \
-  -o bin/keepercheky \
+  -o bin/mediacheky \
   ./cmd/server
 ```
 
@@ -148,19 +148,19 @@ go vet ./...
 
 ```bash
 # Read the entire log
-cat logs/keepercheky-dev.log
+cat logs/mediacheky-dev.log
 
 # Tail the last 100 lines
-tail -n 100 logs/keepercheky-dev.log
+tail -n 100 logs/mediacheky-dev.log
 
 # Follow logs in real-time
-tail -f logs/keepercheky-dev.log
+tail -f logs/mediacheky-dev.log
 
 # Search for errors
-grep -i error logs/keepercheky-dev.log
+grep -i error logs/mediacheky-dev.log
 
 # Search for specific patterns
-grep -i "media" logs/keepercheky-dev.log
+grep -i "media" logs/mediacheky-dev.log
 ```
 
 ### Inspect Running Containers
@@ -170,10 +170,10 @@ grep -i "media" logs/keepercheky-dev.log
 docker ps
 
 # View logs of a container
-docker logs keepercheky-app
+docker logs mediacheky-app
 
 # Execute commands inside a running container
-docker exec -it keepercheky-app sh
+docker exec -it mediacheky-app sh
 
 # Inside container, you can:
 ls -la /app
@@ -195,7 +195,7 @@ curl http://localhost:8000/api/media
 
 ```bash
 # Access SQLite database (development)
-docker exec -it keepercheky-app sqlite3 /app/data/keepercheky.db
+docker exec -it mediacheky-app sqlite3 /app/data/mediacheky.db
 
 # Inside SQLite:
 .tables                 # List tables
@@ -376,15 +376,15 @@ style(models): format code with gofmt
 
 | Task | Command | Notes |
 |------|---------|-------|
-| Build binary | `go build -o bin/keepercheky ./cmd/server` | Development build |
+| Build binary | `go build -o bin/mediacheky ./cmd/server` | Development build |
 | Run tests | `go test ./...` | All tests |
 | Format code | `gofmt -w .` | Before committing |
 | Vet code | `go vet ./...` | Static analysis |
-| Read logs | `cat logs/keepercheky-dev.log` | After changes |
-| Tail logs | `tail -f logs/keepercheky-dev.log` | Real-time |
+| Read logs | `cat logs/mediacheky-dev.log` | After changes |
+| Tail logs | `tail -f logs/mediacheky-dev.log` | Real-time |
 | Check health | `curl http://localhost:8000/health` | Service status |
 | List containers | `docker ps` | Running services |
-| Exec in container | `docker exec -it keepercheky-app sh` | Debug inside |
+| Exec in container | `docker exec -it mediacheky-app sh` | Debug inside |
 
 ---
 
@@ -404,7 +404,7 @@ style(models): format code with gofmt
 
 ```bash
 # Read files
-cat logs/keepercheky-dev.log
+cat logs/mediacheky-dev.log
 cat config/config.yaml
 
 # Search files
@@ -493,4 +493,4 @@ For more detailed guidelines, see:
 
 **Last Updated:** 2025-01-25  
 **Format:** AGENTS.md v1.0 (OpenAI standard)  
-**Project:** KeeperCheky - Media Library Cleanup Manager
+**Project:** MediaCheky - Media Library Cleanup Manager

@@ -2,13 +2,13 @@
 
 **Fecha:** 25 de Octubre de 2025  
 **Versión analizada:** Maintainerr stable (v2.0.0)  
-**Objetivo:** Evaluar arquitectura y decisiones técnicas para mejorar propuestas de KeeperCheky
+**Objetivo:** Evaluar arquitectura y decisiones técnicas para mejorar propuestas de MediaCheky
 
 ---
 
 ## 📊 Comparación Ejecutiva
 
-| Aspecto | Janitorr v1.9.0 | Maintainerr v2.0.0 | KeeperCheky (Objetivo) |
+| Aspecto | Janitorr v1.9.0 | Maintainerr v2.0.0 | MediaCheky (Objetivo) |
 |---------|-----------------|---------------------|------------------------|
 | **Stack Backend** | Kotlin + Spring Boot | TypeScript + NestJS | Go + Fiber |
 | **Stack Frontend** | Sin UI | Next.js 14 + React 18 | Alpine.js 3 + Go Templates |
@@ -98,7 +98,7 @@ export class RuleConstants {
 - Permite exclusiones manuales
 - Logs detallados de acciones
 
-**Lecciones para KeeperCheky:**
+**Lecciones para MediaCheky:**
 
 ✅ **Debemos implementar:**
 1. Sistema de reglas flexible con GUI builder
@@ -239,13 +239,13 @@ ENTRYPOINT ["/usr/bin/supervisord"]
 **Nuestra solución con Go:**
 ```dockerfile
 FROM golang:1.22-alpine AS builder
-RUN go build -ldflags="-w -s" -o /app/bin/keepercheky
+RUN go build -ldflags="-w -s" -o /app/bin/mediacheky
 
 FROM scratch
-COPY --from=builder /app/bin/keepercheky /keepercheky
+COPY --from=builder /app/bin/mediacheky /mediacheky
 COPY --from=builder /app/web /web
 EXPOSE 8000
-ENTRYPOINT ["/keepercheky"]
+ENTRYPOINT ["/mediacheky"]
 ```
 - **Total: 15-25MB** ✅
 
@@ -267,7 +267,7 @@ new DailyRotateFile({
 [maintainerr] | 25/10/2025 10:30:45 [INFO] [CollectionsService] Processing collection 'Movies to Delete'
 ```
 
-**Para KeeperCheky:**
+**Para MediaCheky:**
 - Usar `zap` logger (Go)
 - Misma estrategia de rotación
 - JSON logs para parsing fácil
@@ -349,7 +349,7 @@ func (c *PlexClient) GetLibraries(ctx context.Context) ([]*Library, error) {
 4. ❌ **Imagen Docker grande** - 500MB vs nuestros 15-25MB objetivo
 5. ❌ **Startup lento** - 15-25s vs <1s objetivo
 
-### Decisiones para KeeperCheky
+### Decisiones para MediaCheky
 
 #### ✅ Adoptar de Maintainerr:
 
@@ -428,7 +428,7 @@ func (c *PlexClient) GetLibraries(ctx context.Context) ([]*Library, error) {
 
 ---
 
-## 📋 Features Esenciales para KeeperCheky
+## 📋 Features Esenciales para MediaCheky
 
 ### Fase 1 - MVP (Semanas 1-4)
 
@@ -528,7 +528,7 @@ Características avanzadas inspiradas en Maintainerr:
 RAM: ~400-600MB | Size: ~500MB
 ```
 
-### KeeperCheky (Go Single Binary)
+### MediaCheky (Go Single Binary)
 
 ```
 ┌─────────────────────────────────────┐
@@ -620,7 +620,7 @@ RAM: ~20-50MB | Size: ~15-25MB
 
 ## 📊 Métricas de Rendimiento Objetivo
 
-| Métrica | Maintainerr | KeeperCheky Objetivo | Mejora |
+| Métrica | Maintainerr | MediaCheky Objetivo | Mejora |
 |---------|-------------|----------------------|--------|
 | **Docker Image** | 500MB | 15-25MB | **20x más pequeño** |
 | **RAM Usage** | 400-600MB | 20-50MB | **10x menos** |
@@ -648,7 +648,7 @@ Después de analizar Maintainerr, confirmamos que **Propuesta 3 es la mejor opci
 - ✅ Guía de sistema de reglas
 - ✅ Ejemplo de integraciones con *arr
 
-**Pero KeeperCheky será superior en:**
+**Pero MediaCheky será superior en:**
 - ✅ Eficiencia de recursos
 - ✅ Velocidad de ejecución
 - ✅ Simplicidad de deployment
@@ -672,7 +672,7 @@ Ahora tenemos **3 repositorios de referencia:**
    - Sistema de reglas avanzado
    - Features enterprise (exclusiones, logs, etc.)
 
-3. **KeeperCheky** (este proyecto)
+3. **MediaCheky** (este proyecto)
    - **Lo mejor de ambos mundos**
    - Funcionalidad de Janitorr + UI de Maintainerr
    - Stack optimizado (Go + Alpine.js)

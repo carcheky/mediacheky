@@ -2,7 +2,7 @@
 
 # Default target
 help:
-	@echo "KeeperCheky - Available commands:"
+	@echo "MediaCheky - Available commands:"
 	@echo ""
 	@echo "Development:"
 	@echo "  make dev          - Start development server with hot-reload"
@@ -31,7 +31,7 @@ help:
 dev:
 	@echo "🚀 Starting development server with hot-reload..."
 	@echo "📁 Creating volume directories..."
-	@mkdir -p volumes/keepercheky-go-modules
+	@mkdir -p volumes/mediacheky-go-modules
 	@mkdir -p volumes/radarr-config
 	@mkdir -p volumes/sonarr-config
 	@mkdir -p volumes/jellyfin-config
@@ -45,12 +45,12 @@ dev:
 	@echo "✅ Volume directories ready"
 	@echo ""
 	@echo "💡 Tip: Run './scripts/create-mock-media.sh' to create test media files"
-	@echo "📝 Logs: logs/keepercheky-dev.log (auto-rotates at 1000 lines)"
+	@echo "📝 Logs: logs/mediacheky-dev.log (auto-rotates at 1000 lines)"
 	@echo ""
 	@chmod +x scripts/log-with-rotation.sh
 	@docker compose up --build --watch > /dev/null 2>&1 &
 	@sleep 5
-	@docker compose logs -f keepercheky 2>&1 | ./scripts/log-with-rotation.sh
+	@docker compose logs -f mediacheky 2>&1 | ./scripts/log-with-rotation.sh
 
 # Development with Docker Compose Watch (Docker 28+)
 dev-watch:
@@ -59,11 +59,11 @@ dev-watch:
 
 # Show development logs
 logs:
-	@docker compose logs -f keepercheky
+	@docker compose logs -f mediacheky
 
 # Open shell in development container
 shell:
-	@docker compose exec keepercheky sh
+	@docker compose exec mediacheky sh
 
 # Stop development server
 stop:
@@ -86,12 +86,12 @@ clean-media:
 # Build production binary
 build:
 	@echo "🔨 Building production binary..."
-	@CGO_ENABLED=1 go build -ldflags="-w -s" -o bin/keepercheky ./cmd/server
+	@CGO_ENABLED=1 go build -ldflags="-w -s" -o bin/mediacheky ./cmd/server
 
 # Build production Docker image
 docker-build:
 	@echo "🐳 Building production Docker image..."
-	@docker build -t keepercheky:latest .
+	@docker build -t mediacheky:latest .
 	@echo "✅ Production image built successfully"
 	@echo "   - Uses multi-stage build with 'production' target (default)"
 	@echo "   - Final image based on scratch (~25MB)"
@@ -100,7 +100,7 @@ docker-build:
 # Build development Docker image (for testing)
 docker-build-dev:
 	@echo "🐳 Building development Docker image..."
-	@docker build --target=development -t keepercheky:dev .
+	@docker build --target=development -t mediacheky:dev .
 	@echo "✅ Development image built successfully"
 	@echo "   - Uses 'development' target with hot-reload"
 	@echo "   - Based on golang:alpine with Air installed"
@@ -111,7 +111,7 @@ docker-run:
 	@docker run -p 8000:8000 \
 		-v $(PWD)/data:/data \
 		-v $(PWD)/config:/config \
-		keepercheky:latest
+		mediacheky:latest
 
 # Run tests
 test:
@@ -155,7 +155,7 @@ clean-all:
 init:
 	@echo "🔧 Initializing development environment..."
 	@mkdir -p data config
-	@mkdir -p volumes/keepercheky-go-modules
+	@mkdir -p volumes/mediacheky-go-modules
 	@mkdir -p volumes/radarr-config
 	@mkdir -p volumes/sonarr-config
 	@mkdir -p volumes/jellyfin-config
@@ -174,7 +174,7 @@ init:
 	@echo "  ├── data/              (app data & database)"
 	@echo "  ├── config/            (configuration files)"
 	@echo "  └── volumes/           (Docker volume mounts)"
-	@echo "      ├── keepercheky-go-modules/"
+	@echo "      ├── mediacheky-go-modules/"
 	@echo "      ├── radarr-config/"
 	@echo "      ├── sonarr-config/"
 	@echo "      ├── jellyfin-config/"

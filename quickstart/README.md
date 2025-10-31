@@ -1,6 +1,6 @@
-# KeeperCheky Quickstart 🚀
+# MediaCheky Quickstart 🚀
 
-Quick and easy way to test the compiled KeeperCheky Docker image.
+Quick and easy way to test the compiled MediaCheky Docker image.
 
 ## 📋 Prerequisites
 
@@ -24,7 +24,7 @@ nano .env  # or your preferred editor
 - `RADARR_API_KEY`, `SONARR_API_KEY`, etc.: Your actual API keys
 - `APP_DRY_RUN`: Keep as `true` until you're confident!
 
-### 2. Start KeeperCheky
+### 2. Start MediaCheky
 
 ```bash
 docker-compose up -d
@@ -48,7 +48,7 @@ docker-compose logs -f
 docker-compose logs --tail=100
 ```
 
-### 5. Stop KeeperCheky
+### 5. Stop MediaCheky
 
 ```bash
 docker-compose down
@@ -80,7 +80,7 @@ Repeat for other services (Sonarr, Jellyfin, Jellyseerr, qBittorrent).
 **SQLite (Default - Recommended for testing):**
 ```env
 DB_TYPE=sqlite
-DB_PATH=/data/keepercheky.db
+DB_PATH=/data/mediacheky.db
 ```
 
 **PostgreSQL (For production):**
@@ -88,9 +88,9 @@ DB_PATH=/data/keepercheky.db
 DB_TYPE=postgres
 DB_HOST=postgres
 DB_PORT=5432
-DB_USER=keepercheky
+DB_USER=mediacheky
 DB_PASSWORD=your_secure_password
-DB_NAME=keepercheky
+DB_NAME=mediacheky
 ```
 
 ## 📁 Directory Structure
@@ -130,7 +130,7 @@ Protect specific media with tags:
 APP_EXCLUSION_TAGS=keep,favorite,archive
 ```
 
-Tag your media in Radarr/Sonarr, and KeeperCheky will skip them.
+Tag your media in Radarr/Sonarr, and MediaCheky will skip them.
 
 ## 🔍 Testing Workflow
 
@@ -138,11 +138,11 @@ Tag your media in Radarr/Sonarr, and KeeperCheky will skip them.
 
 ```bash
 # Terminal 1: Run dev environment
-cd /home/user/projects/keepercheky
+cd /home/user/projects/mediacheky
 make dev  # Runs on port 8000
 
 # Terminal 2: Run quickstart
-cd /home/user/projects/keepercheky/quickstart
+cd /home/user/projects/mediacheky/quickstart
 docker-compose up  # Runs on port 8780
 ```
 
@@ -192,7 +192,7 @@ KEEPERCHEKY_PORT=8081
 
 ```bash
 # Test network connectivity from container
-docker-compose exec keepercheky wget -O- http://radarr:7878/api/v3/system/status
+docker-compose exec mediacheky wget -O- http://radarr:7878/api/v3/system/status
 
 # Check if services are accessible from host
 curl http://your-radarr-host:7878/api/v3/system/status
@@ -213,7 +213,7 @@ sudo chown -R $USER:$USER ./data ./config ./logs
 ```bash
 # Reset database (WARNING: Deletes all data!)
 docker-compose down
-rm -rf ./data/keepercheky.db
+rm -rf ./data/mediacheky.db
 docker-compose up -d
 ```
 
@@ -232,7 +232,7 @@ docker-compose up -d --force-recreate
 ### View Resource Usage
 
 ```bash
-docker stats keepercheky-quickstart
+docker stats mediacheky-quickstart
 ```
 
 ### Check Disk Usage
@@ -279,15 +279,15 @@ docker-compose down
 ## 🆘 Need Help?
 
 - 📖 Full documentation: [/docs](../docs/)
-- 🐛 Report issues: [GitHub Issues](https://github.com/carcheky/keepercheky/issues)
-- 💬 Discussions: [GitHub Discussions](https://github.com/carcheky/keepercheky/discussions)
+- 🐛 Report issues: [GitHub Issues](https://github.com/carcheky/mediacheky/issues)
+- 💬 Discussions: [GitHub Discussions](https://github.com/carcheky/mediacheky/discussions)
 
 ## ⚡ Pro Tips
 
 1. **Use symlinks for media**: Mount media as read-only (`:ro`) for safety
-2. **Backup your database**: Copy `./data/keepercheky.db` before enabling deletions
+2. **Backup your database**: Copy `./data/mediacheky.db` before enabling deletions
 3. **Start conservative**: Use high thresholds initially, then adjust
-4. **Monitor logs**: Check `./logs/keepercheky.log` regularly
+4. **Monitor logs**: Check `./logs/mediacheky.log` regularly
 5. **Test incrementally**: Enable one service at a time
 
 ---

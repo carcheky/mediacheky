@@ -1,4 +1,4 @@
-# 📊 Progreso de Desarrollo - KeeperCheky
+# 📊 Progreso de Desarrollo - MediaCheky
 
 **Última actualización**: 25 de Octubre de 2025
 
@@ -241,5 +241,5 @@ golang.org/x/sys v0.28.0
 ---
 
 **Mantenido por**: GitHub Copilot  
-**Repositorio**: https://github.com/carcheky/keepercheky  
+**Repositorio**: https://github.com/carcheky/mediacheky  
 **Branch**: develop

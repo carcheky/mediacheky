@@ -2,7 +2,7 @@
 
 ## Objetivos Completados ✅
 
-Esta implementación agrega soporte completo para funciones avanzadas de la API de Radarr v3 en KeeperCheky.
+Esta implementación agrega soporte completo para funciones avanzadas de la API de Radarr v3 en MediaCheky.
 
 ## Funcionalidades Implementadas
 

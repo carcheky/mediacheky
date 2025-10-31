@@ -1,6 +1,6 @@
 # Configuration Directory
 
-This directory contains configuration examples for KeeperCheky.
+This directory contains configuration examples for MediaCheky.
 
 ## Files
 
@@ -13,7 +13,7 @@ This directory contains configuration examples for KeeperCheky.
 
 When running with Docker, your config is stored in:
 ```
-./volumes/keepercheky-config/config.yaml
+./volumes/mediacheky-config/config.yaml
 ```
 
 The container automatically:
@@ -37,7 +37,7 @@ The container automatically:
 
 ## Configuration Priority
 
-KeeperCheky uses [Viper](https://github.com/spf13/viper) for configuration management.
+MediaCheky uses [Viper](https://github.com/spf13/viper) for configuration management.
 
 **Order of precedence** (highest to lowest):
 1. Environment variables (e.g., `KEEPERCHEKY_CLIENTS_RADARR_API_KEY`)
@@ -76,7 +76,7 @@ KEEPERCHEKY_CLIENTS_RADARR_API_KEY=your_api_key_here
 1. Open Jellyfin Dashboard
 2. Go to **API Keys**
 3. Click **+** to create new key
-4. Name it "KeeperCheky"
+4. Name it "MediaCheky"
 5. Copy the generated key
 
 ### Jellyseerr

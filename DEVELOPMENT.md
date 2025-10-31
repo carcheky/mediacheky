@@ -1,4 +1,4 @@
-# KeeperCheky Development Guide
+# MediaCheky Development Guide
 
 > **Estado Actual**: v1.0.0-dev.17 - Desarrollo activo con la mayoría de features implementadas
 
@@ -60,8 +60,8 @@
 
 1. **Clone the repository**
    ```bash
-   git clone https://github.com/carcheky/keepercheky.git
-   cd keepercheky
+   git clone https://github.com/carcheky/mediacheky.git
+   cd mediacheky
    ```
 
 2. **Initialize development environment**
@@ -76,7 +76,7 @@
 
 4. **Access the application**
    - Open http://localhost:8000
-   - You should see the KeeperCheky dashboard
+   - You should see the MediaCheky dashboard
 
 ## 🛠️ Development Workflow
 
@@ -135,7 +135,7 @@ make clean
 ## 📁 Project Structure
 
 ```
-keepercheky/
+mediacheky/
 ├── cmd/
 │   └── server/
 │       └── main.go              # Application entry point

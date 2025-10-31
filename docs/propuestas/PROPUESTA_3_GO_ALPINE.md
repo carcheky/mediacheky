@@ -35,7 +35,7 @@ Crear una aplicación ultra-eficiente usando Go en el backend con Alpine.js en e
 ## 📐 Estructura del Proyecto
 
 ```plaintext
-keepercheky/
+mediacheky/
 ├── cmd/
 │   └── server/
 │       └── main.go            # Entry point
@@ -640,10 +640,10 @@ import (
     "github.com/gofiber/fiber/v2"
     "github.com/gofiber/template/html/v2"
     
-    "keepercheky/internal/config"
-    "keepercheky/internal/handler"
-    "keepercheky/internal/repository"
-    "keepercheky/internal/service"
+    "mediacheky/internal/config"
+    "mediacheky/internal/handler"
+    "mediacheky/internal/repository"
+    "mediacheky/internal/service"
 )
 
 func main() {
@@ -747,8 +747,8 @@ package handler
 import (
     "github.com/gofiber/fiber/v2"
     
-    "keepercheky/internal/repository"
-    "keepercheky/internal/service"
+    "mediacheky/internal/repository"
+    "mediacheky/internal/service"
 )
 
 type MediaHandler struct {
@@ -837,10 +837,10 @@ package service
 import (
     "time"
     
-    "keepercheky/internal/models"
-    "keepercheky/internal/repository"
-    "keepercheky/internal/service/clients"
-    "keepercheky/pkg/filesystem"
+    "mediacheky/internal/models"
+    "mediacheky/internal/repository"
+    "mediacheky/internal/service/clients"
+    "mediacheky/pkg/filesystem"
 )
 
 type CleanupService struct {
@@ -967,7 +967,7 @@ func (s *CleanupService) DeleteMedia(media *models.Media) error {
 // internal/service/clients/client.go
 package clients
 
-import "keepercheky/internal/models"
+import "mediacheky/internal/models"
 
 type MediaClient interface {
     TestConnection() error
@@ -981,7 +981,7 @@ package clients
 import (
     "github.com/go-resty/resty/v2"
     
-    "keepercheky/internal/models"
+    "mediacheky/internal/models"
 )
 
 type RadarrClient struct {
@@ -1068,13 +1068,13 @@ RUN go mod download
 COPY . .
 
 # Build static binary
-RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -ldflags="-w -s" -o keepercheky ./cmd/server
+RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -ldflags="-w -s" -o mediacheky ./cmd/server
 
 # Final stage
 FROM scratch
 
 # Copy binary
-COPY --from=builder /app/keepercheky /keepercheky
+COPY --from=builder /app/mediacheky /mediacheky
 
 # Copy templates and static files
 COPY --from=builder /app/web /web
@@ -1086,7 +1086,7 @@ COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
 EXPOSE 8000
 
 # Run
-ENTRYPOINT ["/keepercheky"]
+ENTRYPOINT ["/mediacheky"]
 ```
 
 ### docker-compose.yml
@@ -1095,13 +1095,13 @@ ENTRYPOINT ["/keepercheky"]
 version: '3.8'
 
 services:
-  keepercheky:
-    image: keepercheky:latest
-    container_name: keepercheky
+  mediacheky:
+    image: mediacheky:latest
+    container_name: mediacheky
     ports:
       - "8000:8000"
     environment:
-      - DATABASE_URL=sqlite:///data/keepercheky.db
+      - DATABASE_URL=sqlite:///data/mediacheky.db
       - LOG_LEVEL=INFO
       - DRY_RUN=true
     volumes:

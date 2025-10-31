@@ -3,7 +3,7 @@ package mocks
 import (
 	"context"
 
-	"github.com/carcheky/keepercheky/internal/models"
+	"github.com/carcheky/mediacheky/internal/models"
 	"github.com/stretchr/testify/mock"
 )
 

@@ -77,11 +77,11 @@ COPY web/ ./web/
 RUN CGO_ENABLED=1 GOOS=${TARGETOS} GOARCH=${TARGETARCH} go build \
     -ldflags="-w -s -linkmode external -extldflags '-static' -X main.Version=${VERSION} -X main.CommitSHA=${COMMIT_SHA}" \
     -trimpath \
-    -o /app/bin/keepercheky \
+    -o /app/bin/mediacheky \
     ./cmd/server
 
 # Verify binary exists and is executable
-RUN ls -lh /app/bin/keepercheky
+RUN ls -lh /app/bin/mediacheky
 
 # ============================================================================
 # Production stage - Minimal final image (default)
@@ -102,7 +102,7 @@ RUN mkdir -p /app/data /app/config /app/logs && \
 WORKDIR /app
 
 # Copy binary
-COPY --from=builder /app/bin/keepercheky /app/keepercheky
+COPY --from=builder /app/bin/mediacheky /app/mediacheky
 
 # Copy web assets
 COPY --from=builder /app/web /app/web
@@ -119,4 +119,4 @@ ENV KEEPERCHEKY_APP_ENVIRONMENT=production \
     KEEPERCHEKY_SERVER_HOST=0.0.0.0
 
 # Run
-ENTRYPOINT ["/app/keepercheky"]
+ENTRYPOINT ["/app/mediacheky"]

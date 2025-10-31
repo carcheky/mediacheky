@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/carcheky/keepercheky/internal/models"
-	"github.com/carcheky/keepercheky/internal/repository"
-	"github.com/carcheky/keepercheky/internal/service/clients"
+	"github.com/carcheky/mediacheky/internal/models"
+	"github.com/carcheky/mediacheky/internal/repository"
+	"github.com/carcheky/mediacheky/internal/service/clients"
 	"go.uber.org/zap"
 )
 
