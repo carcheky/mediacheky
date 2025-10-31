@@ -380,13 +380,55 @@ make dev
 
 ## 🤝 Contributing
 
-1. Create a new branch: `git checkout -b feature/my-feature`
-2. Make your changes
-3. Run tests: `make test`
-4. Format code: `make fmt`
-5. Commit: `git commit -m "feat: add my feature"`
-6. Push: `git push origin feature/my-feature`
-7. Create Pull Request
+### Estrategia de Ramas
+
+Este proyecto sigue una estrategia de branching con dos ramas principales:
+
+- **`main`** - Rama de producción estable
+- **`develop`** - Rama de integración para desarrollo
+
+Ver [docs/BRANCH_STRATEGY.md](docs/BRANCH_STRATEGY.md) para documentación completa.
+
+### Workflow para Contribuir
+
+1. Crear una feature branch desde `develop`:
+   ```bash
+   git checkout develop
+   git pull origin develop
+   git checkout -b feature/my-feature
+   ```
+
+2. Hacer tus cambios y commits siguiendo [Conventional Commits](https://www.conventionalcommits.org/):
+   ```bash
+   git commit -m "feat: add my feature"
+   git commit -m "fix: correct bug in feature"
+   ```
+
+3. Ejecutar tests y formatear código:
+   ```bash
+   make test
+   make fmt
+   ```
+
+4. Push y crear Pull Request hacia `develop`:
+   ```bash
+   git push origin feature/my-feature
+   # Crear PR en GitHub hacia develop
+   ```
+
+5. Una vez aprobado, tu PR será merged a `develop`
+
+6. Periódicamente, `develop` se mergeará a `main` para releases
+
+### Tipos de Ramas
+
+- **`feature/*`** - Nuevas funcionalidades (desde `develop`)
+- **`fix/*`** - Corrección de bugs (desde `develop`)
+- **`hotfix/*`** - Fixes críticos en producción (desde `main`)
+- **`docs/*`** - Solo documentación (desde `develop`)
+- **`refactor/*`** - Refactorización sin cambio de funcionalidad (desde `develop`)
+
+Ver [docs/BRANCH_STRATEGY.md](docs/BRANCH_STRATEGY.md) para más detalles.
 
 ## 📝 Coding Guidelines
 
