@@ -2,7 +2,6 @@
 
 > Gestor moderno de limpieza para bibliotecas multimedia - Reescritura completa de Janitorr con interfaz web
 
-[![CI](https://img.shields.io/github/actions/workflow/status/carcheky/mediacheky/ci.yml?branch=develop&label=CI&logo=github)](https://github.com/carcheky/mediacheky/actions/workflows/ci.yml)
 [![stable](https://img.shields.io/github/actions/workflow/status/carcheky/mediacheky/release.yml?branch=stable&label=stable&logo=github)](https://github.com/carcheky/mediacheky/actions/workflows/release.yml)
 [![stable version](https://img.shields.io/github/v/release/carcheky/mediacheky?label=stable)](https://github.com/carcheky/mediacheky/releases)
 [![develop](https://img.shields.io/github/actions/workflow/status/carcheky/mediacheky/release.yml?branch=develop&label=develop&logo=github)](https://github.com/carcheky/mediacheky/actions/workflows/release.yml)
