@@ -4,12 +4,6 @@ on:
   push:
     tags:
       - 'v*'
-    branches:
-      - 'copilot/**'
-  pull_request:
-    branches:
-      - stable
-      - develop
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
