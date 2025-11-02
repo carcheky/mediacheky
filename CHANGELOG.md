@@ -1,3 +1,19 @@
+# 1.0.0 (2025-11-02)
+
+
+### Bug Fixes
+
+* alinea versión de Go a 1.23 en CI para coincidir con go.mod ([b532045](https://github.com/carcheky/mediacheky/commit/b5320454a99cd4122196fe75c67480d2c3a0ac9b))
+* añade fallbacks en CI summary para branch/base refs ([7ff1dcd](https://github.com/carcheky/mediacheky/commit/7ff1dcd77f7ed369efe794e5a261577da110738e))
+* configura Docker build en develop sin necesidad de release ([e42ad84](https://github.com/carcheky/mediacheky/commit/e42ad84f7936de325fc3a5798cbaf4e60f16bd77))
+* corrige alias de import en main.go para evitar conflicto v2 ([805f157](https://github.com/carcheky/mediacheky/commit/805f15754060115c1d63297a7cfef924658cda8b))
+* corrige tests de Bazarr y versión de Go en CI ([282ce09](https://github.com/carcheky/mediacheky/commit/282ce099170e7b7f3cc033e39a1162d4eba80605))
+
+
+### Features
+
+* **ci:** add CI/CD workflows and dependabot configuration ([45d7b0b](https://github.com/carcheky/mediacheky/commit/45d7b0bb1e9c8e83bef789f12d9a3f54b3ca119f))
+
 # [1.0.0-dev.21](https://github.com/carcheky/mediacheky/compare/v1.0.0-dev.20...v1.0.0-dev.21) (2025-10-31)
 
 
