@@ -48,21 +48,23 @@ jobs:
   build-and-push:
     name: Build & Push Docker Images
     needs: semantic-release
-    # Solo ejecutar si hubo una nueva release
-    if: needs.semantic-release.outputs.new_release_published == 'true'
+    # Ejecutar si hubo una nueva release O si estamos en develop (para builds continuos)
+    if: |
+      needs.semantic-release.outputs.new_release_published == 'true' ||
+      github.ref == 'refs/heads/develop'
     runs-on: ubuntu-latest
     
     env:
       REGISTRY: ghcr.io
       IMAGE_NAME: ${{ github.repository }}
-      VERSION: ${{ needs.semantic-release.outputs.new_release_version }}
-      GIT_TAG: ${{ needs.semantic-release.outputs.new_release_git_tag }}
+      VERSION: ${{ needs.semantic-release.outputs.new_release_version || 'dev-latest' }}
+      GIT_TAG: ${{ needs.semantic-release.outputs.new_release_git_tag || github.sha }}
     
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
-          ref: ${{ needs.semantic-release.outputs.new_release_git_tag }}
+          ref: ${{ needs.semantic-release.outputs.new_release_git_tag || github.sha }}
           fetch-depth: 0
 
       - name: Set up QEMU
@@ -84,12 +86,13 @@ jobs:
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
           tags: |
-            type=semver,pattern={{version}},value=${{ env.GIT_TAG }}
-            type=semver,pattern={{major}}.{{minor}},value=${{ env.GIT_TAG }}
-            type=semver,pattern={{major}},value=${{ env.GIT_TAG }},enable=${{ !contains(env.VERSION, '-') }}
-            type=raw,value=develop,enable=${{ contains(env.VERSION, '-dev') }}
-            type=raw,value=latest,enable=${{ !contains(env.VERSION, '-') }}
-            type=raw,value=stable,enable=${{ !contains(env.VERSION, '-') }}
+            type=semver,pattern={{version}},value=${{ env.GIT_TAG }},enable=${{ needs.semantic-release.outputs.new_release_published == 'true' }}
+            type=semver,pattern={{major}}.{{minor}},value=${{ env.GIT_TAG }},enable=${{ needs.semantic-release.outputs.new_release_published == 'true' }}
+            type=semver,pattern={{major}},value=${{ env.GIT_TAG }},enable=${{ needs.semantic-release.outputs.new_release_published == 'true' && !contains(env.VERSION, '-') }}
+            type=raw,value=develop,enable=${{ github.ref == 'refs/heads/develop' }}
+            type=raw,value=latest,enable=${{ needs.semantic-release.outputs.new_release_published == 'true' && !contains(env.VERSION, '-') }}
+            type=raw,value=stable,enable=${{ needs.semantic-release.outputs.new_release_published == 'true' && !contains(env.VERSION, '-') }}
+            type=sha,prefix=dev-,enable=${{ github.ref == 'refs/heads/develop' && needs.semantic-release.outputs.new_release_published != 'true' }}
 
       - name: Build and push Docker image
         uses: docker/build-push-action@v5
