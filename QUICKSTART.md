@@ -38,7 +38,7 @@ El comando `make dev` automáticamente:
 Una vez iniciado, abre tu navegador en:
 
 ```
-http://localhost:8000
+http://localhost:7369
 ```
 
 Verás el dashboard de MediaCheky con tres páginas principales:
@@ -137,7 +137,7 @@ El archivo `.env` se crea automáticamente desde `.env.example` la primera vez q
 # Configuración de la aplicación
 MEDIACHEKY_APP_ENVIRONMENT=development
 MEDIACHEKY_APP_LOG_LEVEL=debug
-MEDIACHEKY_SERVER_PORT=8000
+MEDIACHEKY_SERVER_PORT=7369
 
 # Base de datos
 MEDIACHEKY_DATABASE_TYPE=sqlite
@@ -185,16 +185,16 @@ $ make dev
 - **Mac/Windows**: Instala Docker Desktop (incluye Compose)
 - **Linux**: Instala el plugin de Docker Compose
 
-### Puerto 8000 ya en uso
+### Puerto 7369 ya en uso
 
 Si ves un error como "port is already allocated":
 
 ```bash
-# Opción 1: Detener el proceso que usa el puerto 8000
-lsof -ti:8000 | xargs kill -9
+# Opción 1: Detener el proceso que usa el puerto 7369
+lsof -ti:7369 | xargs kill -9
 
 # Opción 2: Cambiar el puerto en .env
-MEDIACHEKY_SERVER_PORT=8001
+MEDIACHEKY_SERVER_PORT=7370
 ```
 
 ### El contenedor no inicia
@@ -221,7 +221,7 @@ sudo chown -R $USER:$USER volumes/ logs/ data/
 
 Una vez que tengas MediaCheky ejecutándose:
 
-1. **Explora la interfaz**: Abre http://localhost:8000
+1. **Explora la interfaz**: Abre http://localhost:7369
 2. **Lee la documentación**: Revisa [DEVELOPMENT.md](DEVELOPMENT.md) para entender la arquitectura
 3. **Configura servicios**: Ve a Settings para conectar servicios multimedia
 4. **Revisa el código**: El hot-reload está activado, ¡haz cambios y obsérvalos en acción!

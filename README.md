@@ -1,165 +1,181 @@
 # MediaCheky
 
-> Gestor moderno de limpieza para bibliotecas multimedia - Reescritura completa de Janitorr con interfaz web
+> Panel de control centralizado para servicios multimedia *arr
 
 [![stable](https://img.shields.io/github/actions/workflow/status/carcheky/mediacheky/release.yml?branch=stable&label=stable&logo=github)](https://github.com/carcheky/mediacheky/actions/workflows/release.yml)
-[![stable version](https://img.shields.io/github/v/release/carcheky/mediacheky?label=stable)](https://github.com/carcheky/mediacheky/releases)
 [![develop](https://img.shields.io/github/actions/workflow/status/carcheky/mediacheky/release.yml?branch=develop&label=develop&logo=github)](https://github.com/carcheky/mediacheky/actions/workflows/release.yml)
-[![develop version](https://img.shields.io/github/v/release/carcheky/mediacheky?include_prereleases&label=develop&filter=*-dev*)](https://github.com/carcheky/mediacheky/releases)
 [![Docker Image](https://img.shields.io/badge/docker-ghcr.io-blue?logo=docker)](https://github.com/carcheky/mediacheky/pkgs/container/mediacheky)
 [![License](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
 [![Go Version](https://img.shields.io/github/go-mod/go-version/carcheky/mediacheky)](go.mod)
 
-**MediaCheky** automatiza la limpieza de tu biblioteca multimedia eliminando contenido antiguo o no visto según reglas configurables. Es una reescritura completa de [Janitorr](https://github.com/Schaka/janitorr) con interfaz web moderna, optimizado para mínimo uso de recursos.
+**MediaCheky** es un panel de control web unificado para gestionar, configurar y monitorear toda tu suite de servicios multimedia desde un único lugar. Piensa en ello como un *Portainer* específico para el ecosistema *arr y servicios relacionados.
 
-## ✨ Características Principales
+## ✨ ¿Qué hace MediaCheky?
 
-- 🎨 **Interfaz Web Moderna** - Dashboard intuitivo accesible desde cualquier navegador
-- 🧹 **Limpieza Automatizada** - Eliminación inteligente basada en edad y espacio en disco
-- 🏷️ **Reglas por Tags** - Programación personalizada usando tags de Radarr/Sonarr
-- 📺 **Gestión de Series** - Manejo especial para shows semanales/diarios
-- ⏰ **Próximos a Eliminar** - Vista previa en Jellyfin/Emby antes de borrar
-- 🔗 **Integración Completa** - Compatible con Radarr, Sonarr, Jellyfin, Jellyseerr, qBittorrent, Bazarr
-- 🐳 **Docker Ready** - Despliegue sencillo con Docker Compose
-- 🔒 **Modo Seguro** - Dry-run por defecto para prevenir accidentes
+En lugar de configurar cada servicio por separado, MediaCheky te proporciona:
 
-## 🚀 Estado del Proyecto
+- 📊 **Dashboard centralizado** - Vista general del estado de todos los servicios
+- ⚙️ **Configuración unificada** - Activa, desactiva y configura servicios desde una interfaz
+- 🔌 **Gestión de servicios** - Levanta/para contenedores Docker automáticamente
+- 🌐 **Variables globales** - Comparte configuración común entre servicios (timezone, PUID/PGID, rutas, etc.)
+- 🎯 **Panel por servicio** - Configuración específica para cada servicio con formularios intuitivos
 
-**Fase Actual**: Desarrollo Activo - v1.0.0-dev.17
+## 🎬 Servicios Soportados
 
-✅ **90% completado** - La mayoría de características implementadas  
-🏗️ **Stack**: Go + Alpine.js para máximo rendimiento y mínimos recursos  
-📦 **Docker**: ~25MB imagen, ~30-60MB RAM  
-⚡ **Startup**: <2 segundos
+### Actualmente
+- **Jellyfin** - Servidor multimedia
+- **Sonarr** - Gestión de series
+- **Radarr** - Gestión de películas
+- **Prowlarr** - Gestión de indexadores
+- **qBittorrent** - Cliente torrent
+- **Jellyseerr** - Sistema de peticiones
+- **Bazarr** - Gestión de subtítulos
+- **Jellystat** - Estadísticas de Jellyfin
 
-## 📚 Documentación
+### Próximamente
+- Lidarr (música)
+- Readarr (libros)
+- Overseerr (alternativa a Jellyseerr)
+- Tautulli (estadísticas Plex)
+- Y más...
 
-**[👉 Comenzar aquí: Índice de Documentación](docs/README.md)**
+## � Inicio Rápido
 
-### Enlaces Rápidos
+### Requisitos
+- Docker
+- Docker Compose
 
-- **[Instalación y Uso](quickstart/README.md)** - Guía de inicio rápido
-- **[Desarrollo](DEVELOPMENT.md)** - Configuración del entorno de desarrollo
-- **[Guía para Agentes IA](AGENTS.md)** - Instrucciones para GitHub Copilot y otros asistentes
-- **[Resumen Ejecutivo](docs/RESUMEN_EJECUTIVO.md)** - Visión general del proyecto
-- **[Comparación](docs/RESUMEN_COMPARATIVO.md)** - Janitorr vs Maintainerr vs MediaCheky
-- **[Propuestas Técnicas](docs/propuestas/)** - Análisis de 4 stacks diferentes
-
-### Por qué Go + Alpine.js?
-
-**Propuesta 3** seleccionada por balance óptimo:
-- ✅ Rendimiento extremo (~30-60MB RAM)
-- ✅ Imagen Docker tiny (~25MB)
-- ✅ Binario único, sin dependencias
-- ✅ Startup instantáneo (<2s)
-
-Ver [análisis completo](docs/COMPARACION_Y_RECOMENDACIONES.md) de las 4 propuestas evaluadas.
-
-## 📦 Instalación Rápida
-
-### Opción 1: Docker Compose (Recomendado)
-
-```bash
-cd quickstart
-cp .env.example .env
-# Editar .env con tus configuraciones
-docker-compose up -d
-
-# Acceder a http://localhost:8780
-```
-
-Ver [guía completa de instalación](quickstart/README.md).
-
-### Opción 2: Desarrollo
+### Instalación
 
 ```bash
 git clone https://github.com/carcheky/mediacheky.git
 cd mediacheky
 make dev
-# ¡Eso es todo! 🎉
-# Acceder a http://localhost:8000
 ```
 
-El comando `make dev`:
-- ✅ Verifica que Docker y Docker Compose estén instalados
-- ✅ Crea automáticamente el archivo `.env` desde `.env.example`
-- ✅ Crea todos los directorios necesarios
-- ✅ Hace los scripts ejecutables
-- ✅ Inicia el servidor con hot-reload
-- ✅ Muestra instrucciones útiles
+Accede a: **http://localhost:7369**
 
-Si falta alguna dependencia, te mostrará la URL oficial para instalarla.
-
-# Acceder a http://localhost:8000
-```
-
-Ver [guía de desarrollo](DEVELOPMENT.md) para más detalles.
-
-### Opción 3: Docker Manual
+### Con Docker
 
 ```bash
 docker run -d \
   --name mediacheky \
-  -p 8000:8000 \
-  -v ./config:/config \
-  -v ./data:/data \
-  -v /path/to/media:/media:ro \
+  -p 7369:7369 \
+  -v /var/run/docker.sock:/var/run/docker.sock \
+  -v ./config:/app/config \
+  -v ./data:/app/data \
+  -v ./services:/app/services \
   ghcr.io/carcheky/mediacheky:latest
 ```
 
-## ⚙️ Configuración Básica
+**⚠️ Importante:** MediaCheky necesita acceso al socket de Docker (`/var/run/docker.sock`) para gestionar contenedores.
 
-```yaml
-# config/config.yaml
-app:
-  dry_run: true              # ⚠️ Mantener en true hasta estar seguro
-  leaving_soon_days: 14
-  scheduler_enabled: false
+## 🎨 Interfaz de Usuario
 
-clients:
-  radarr:
-    enabled: true
-    url: "http://radarr:7878"
-    api_key: "tu-api-key"
-  
-  jellyfin:
-    enabled: true
-    url: "http://jellyfin:8096"
-    api_key: "tu-api-key"
+MediaCheky ofrece 4 pestañas principales:
+
+### 1. � Dashboard
+Vista general del estado de todos los servicios:
+- ✅ Servicios activos y funcionando
+- ⚠️ Servicios con problemas
+- 📴 Servicios desactivados
+- Estadísticas rápidas
+
+### 2. ⚙️ Settings
+Habilitar/deshabilitar servicios de forma global:
+- Toggle para cada servicio
+- Estado actual (activo/inactivo)
+- Acciones rápidas (iniciar/detener)
+
+### 3. 🔧 Services
+Panel de configuración individual por servicio:
+- Formularios específicos para cada servicio
+- Configuración de puertos, rutas, API keys
+- Templates predefinidos
+- Validación de configuración
+
+### 4. 🌐 Global Variables
+Variables compartidas entre todos los servicios:
+- Timezone (TZ)
+- PUID/PGID
+- Rutas base (/media, /downloads, etc.)
+- Configuración de red
+
+## 🏗️ Arquitectura
+
+MediaCheky utiliza una arquitectura híbrida para gestionar servicios:
+
+1. **Templates de Docker Compose** - Cada servicio tiene un template predefinido
+2. **Generación dinámica** - MediaCheky genera archivos `docker-compose.yml` basados en tu configuración
+3. **Docker Socket API** - Controla contenedores usando el socket de Docker del host
+4. **Base de datos local** - SQLite para almacenar configuraciones
+
+```
+mediacheky/
+├── volumes/
+│   ├── services/          # Archivos docker-compose.yml generados
+│   │   ├── radarr/
+│   │   ├── sonarr/
+│   │   └── jellyfin/
+│   ├── config/            # Configuración de MediaCheky
+│   └── data/              # Base de datos SQLite
 ```
 
-Ver [ejemplo completo de configuración](.env.example).
+## 🛠️ Stack Tecnológico
+
+- **Backend**: Go 1.25 + Fiber v2
+- **Frontend**: Alpine.js 3.x + Tailwind CSS
+- **Base de datos**: GORM v2 + SQLite
+- **Docker**: Docker Engine API
+- **Imagen**: ~25MB (Alpine-based)
+- **Memoria**: ~30-50MB RAM
+
+## 🔒 Seguridad
+
+**⚠️ Advertencia de Seguridad:**
+
+MediaCheky requiere acceso al socket de Docker, lo cual equivale a **acceso root** en el host. 
+
+Recomendaciones:
+- ✅ No expongas MediaCheky directamente a internet
+- ✅ Usa un reverse proxy con autenticación (Traefik, Nginx)
+- ✅ Configura firewalls adecuados
+- ✅ Revisa los logs regularmente
+
+## 📚 Documentación
+
+- [Plan de Desarrollo](docs/PROJECT_PLAN.md) - Roadmap y arquitectura
+- [Guía de Desarrollo](DEVELOPMENT.md) - Setup para contribuidores
+- [Guía para Agentes IA](AGENTS.md) - Instrucciones para GitHub Copilot
 
 ## 🤝 Contribuir
 
-¿Interesado en ayudar? Revisa:
+¡Las contribuciones son bienvenidas! Áreas donde puedes ayudar:
 
-- **[Guía de desarrollo](DEVELOPMENT.md)** - Configuración y workflows
-- **[Guía para agentes IA](AGENTS.md)** - Instrucciones para Copilot
-- **[Documentación técnica](docs/)** - Propuestas y arquitectura
+- 🎨 Mejorar UI/UX
+- 🔌 Añadir soporte para más servicios
+- 🧪 Tests y validación
+- 📝 Documentación
+- 🐛 Reportar bugs
 
-### Áreas que necesitan ayuda
-
-- 🧪 Tests unitarios y de integración
-- 📝 Documentación y ejemplos
-- 🐛 Reportar y corregir bugs
-- 💡 Sugerencias de features
-- 🌍 Traducciones
-
-## 📝 Licencia
+## �📝 Licencia
 
 MIT License - Ver [LICENSE](LICENSE) para detalles
 
-## 🙏 Agradecimientos
+## 🎯 Estado del Proyecto
 
-- **[Janitorr](https://github.com/Schaka/janitorr)** - Proyecto original que inspiró esta reescritura
-- **[Maintainerr](https://github.com/jorenn92/Maintainerr)** - Referencia para UI/UX y features avanzadas
-- Proyectos *arr (Radarr, Sonarr, etc.)
-- Comunidades de Jellyfin y Emby
+**Fase actual**: Desarrollo inicial - Redefinición completa del proyecto
+
+- [ ] Dashboard básico
+- [ ] Sistema de configuración de servicios
+- [ ] Integración Docker Compose
+- [ ] Templates de servicios principales
+- [ ] UI con Alpine.js + Tailwind
 
 ---
 
-**Estado**: v1.0.0-dev.17 - Desarrollo activo  
-**Documentación**: [docs/README.md](docs/README.md) | **Instalación**: [quickstart/README.md](quickstart/README.md) | **Desarrollo**: [DEVELOPMENT.md](DEVELOPMENT.md)
+**Stack**: Go 1.25 + Fiber v2 + Alpine.js 3.x + Tailwind CSS  
+**Puerto**: 7369 🦊✨
+
 
 

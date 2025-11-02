@@ -7,7 +7,7 @@ services:
       target: development
     container_name: mediacheky-dev
     ports:
-      - "8000:8000"
+      - "7369:7369"
     volumes:
       - ./volumes/mediacheky-go-modules:/go/pkg/mod
       - ./volumes/mediacheky-data:/app/data
@@ -21,7 +21,7 @@ services:
       - MEDIACHEKY_APP_ENVIRONMENT=${MEDIACHEKY_APP_ENVIRONMENT:-development}
       - MEDIACHEKY_APP_LOG_LEVEL=${MEDIACHEKY_APP_LOG_LEVEL:-info}
       - MEDIACHEKY_APP_DRY_RUN=${MEDIACHEKY_APP_DRY_RUN:-false}
-      - MEDIACHEKY_SERVER_PORT=${MEDIACHEKY_SERVER_PORT:-8000}
+      - MEDIACHEKY_SERVER_PORT=${MEDIACHEKY_SERVER_PORT:-7369}
       - MEDIACHEKY_DATABASE_TYPE=${MEDIACHEKY_DATABASE_TYPE:-sqlite}
       - MEDIACHEKY_DATABASE_PATH=${MEDIACHEKY_DATABASE_PATH:-/app/data/mediacheky.db}
     develop:

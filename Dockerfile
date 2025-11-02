@@ -37,11 +37,11 @@ RUN go install github.com/air-verse/air@latest
 COPY . .
 
 # Expose port
-EXPOSE 8000
+EXPOSE 7369
 
 # Set development environment
 ENV KEEPERCHEKY_APP_ENVIRONMENT=development \
-    KEEPERCHEKY_SERVER_PORT=8000 \
+    KEEPERCHEKY_SERVER_PORT=7369 \
     KEEPERCHEKY_SERVER_HOST=0.0.0.0
 
 # Run with Air for hot-reload
@@ -111,11 +111,11 @@ COPY --from=builder /app/web /app/web
 USER 65534:65534
 
 # Expose port
-EXPOSE 8000
+EXPOSE 7369
 
 # Set environment
 ENV KEEPERCHEKY_APP_ENVIRONMENT=production \
-    KEEPERCHEKY_SERVER_PORT=8000 \
+    KEEPERCHEKY_SERVER_PORT=7369 \
     KEEPERCHEKY_SERVER_HOST=0.0.0.0
 
 # Run

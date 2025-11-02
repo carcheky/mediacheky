@@ -16,7 +16,7 @@ app:
 # Server Configuration
 server:
   # Port to listen on
-  port: "8000"
+  port: "7369"
 
   # Host to bind to (0.0.0.0 for all interfaces)
   host: "0.0.0.0"
