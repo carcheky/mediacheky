@@ -103,6 +103,7 @@ func TestBazarrClient_GetSystemInfo(t *testing.T) {
 			return
 		}
 
+		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
 		json.NewEncoder(w).Encode(map[string]interface{}{
 			"data": mockStatus,
@@ -175,6 +176,7 @@ func TestBazarrClient_GetHistory(t *testing.T) {
 			return
 		}
 
+		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
 		json.NewEncoder(w).Encode(mockHistory)
 	}))
@@ -245,6 +247,7 @@ func TestBazarrClient_GetWantedMovies(t *testing.T) {
 			return
 		}
 
+		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
 		json.NewEncoder(w).Encode(mockWanted)
 	}))
@@ -304,6 +307,7 @@ func TestBazarrClient_GetWantedSeries(t *testing.T) {
 			return
 		}
 
+		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
 		json.NewEncoder(w).Encode(mockWanted)
 	}))

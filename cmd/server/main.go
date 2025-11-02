@@ -14,7 +14,7 @@ import (
 	"github.com/carcheky/mediacheky/pkg/logger"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/recover"
-	"github.com/gofiber/template/html/v2"
+	htmltemplate "github.com/gofiber/template/html/v2"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 )
@@ -61,7 +61,7 @@ func main() {
 	repos := repository.NewRepositories(db)
 
 	// Initialize template engine
-	engine := html.New("./web/templates", ".html")
+	engine := htmltemplate.New("./web/templates", ".html")
 	engine.Reload(cfg.App.Environment == "development")
 
 	// Add custom template functions
