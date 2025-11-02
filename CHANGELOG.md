@@ -1,3 +1,23 @@
+# [1.0.0-dev.2](https://github.com/carcheky/mediacheky/compare/v1.0.0-dev.1...v1.0.0-dev.2) (2025-11-02)
+
+
+### chore
+
+* **docs:** complete project redefinition to control panel vision ([7a6ddf5](https://github.com/carcheky/mediacheky/commit/7a6ddf5cf9a17503f72d2a85f17c87fc6241c4e5))
+
+
+### BREAKING CHANGES
+
+* **docs:** MediaCheky is now a centralized control panel for *arr
+services, not a library cleanup tool.
+
+- Remove all obsolete cleanup/Janitorr documentation
+- Add comprehensive PROJECT_PLAN.md with architecture, UI/UX, and roadmap
+- Rewrite docs/README.md as clean documentation index
+- Define hybrid Docker Socket + Compose Templates architecture
+- Document 4-phase development plan
+- Include database models, API design, and security considerations
+
 # 1.0.0-dev.1 (2025-11-02)
 
 
