@@ -1,6 +1,6 @@
 module github.com/carcheky/mediacheky
 
-go 1.25
+go 1.22
 
 require (
 	github.com/go-resty/resty/v2 v2.16.5
