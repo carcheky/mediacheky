@@ -1,6 +1,9 @@
 {
   "branches": [
     {
+      "name": "stable"
+    },
+    {
       "name": "develop",
       "prerelease": "dev"
     }
