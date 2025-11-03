@@ -124,7 +124,7 @@ func initDatabase(cfg *config.Config, logger *logger.Logger) (*gorm.DB, error) {
 	}
 	
 	if dbConfig.Path == "" {
-		dbConfig.Path = "./data/keepercheky.db"
+		dbConfig.Path = "./data/mediacheky.db"
 	}
 
 	return database.Initialize(dbConfig, logger)

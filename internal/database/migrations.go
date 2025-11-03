@@ -77,10 +77,12 @@ func addPerformanceIndices(db *gorm.DB) error {
 		}
 	} else if dialectName == "mysql" {
 		// MySQL doesn't support partial indices, create without WHERE clause
-		db.Exec(`CREATE INDEX idx_media_healthy_files ON media(in_jellyfin, in_radarr, in_sonarr, torrent_state)`)
-		db.Exec(`CREATE INDEX idx_media_orphan_downloads ON media(in_q_bittorrent, in_jellyfin, in_radarr, in_sonarr)`)
-		db.Exec(`CREATE INDEX idx_media_dead_torrents ON media(in_q_bittorrent, torrent_state)`)
-		db.Exec(`CREATE INDEX idx_media_default_sort ON media(in_q_bittorrent, in_jellyfin, file_path)`)
+		// Note: Errors are intentionally ignored as indices may already exist
+		// This is acceptable since index creation is a performance optimization, not critical
+		_ = db.Exec(`CREATE INDEX IF NOT EXISTS idx_media_healthy_files ON media(in_jellyfin, in_radarr, in_sonarr, torrent_state)`).Error
+		_ = db.Exec(`CREATE INDEX IF NOT EXISTS idx_media_orphan_downloads ON media(in_q_bittorrent, in_jellyfin, in_radarr, in_sonarr)`).Error
+		_ = db.Exec(`CREATE INDEX IF NOT EXISTS idx_media_dead_torrents ON media(in_q_bittorrent, torrent_state)`).Error
+		_ = db.Exec(`CREATE INDEX IF NOT EXISTS idx_media_default_sort ON media(in_q_bittorrent, in_jellyfin, file_path)`).Error
 	}
 
 	return nil

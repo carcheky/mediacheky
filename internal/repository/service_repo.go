@@ -93,7 +93,7 @@ func (r *ServiceRepository) CreateOrUpdate(service *models.Service) error {
 	}
 	
 	if result.Error != nil {
-		return fmt.Errorf("error checking existing service: %w", result.Error)
+		return fmt.Errorf("failed to check existing service by name: %w", result.Error)
 	}
 	
 	// Update existing
