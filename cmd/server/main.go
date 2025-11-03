@@ -6,16 +6,15 @@ import (
 	"os"
 
 	"github.com/carcheky/mediacheky/internal/config"
+	"github.com/carcheky/mediacheky/internal/database"
 	"github.com/carcheky/mediacheky/internal/handler"
 	"github.com/carcheky/mediacheky/internal/middleware"
-	"github.com/carcheky/mediacheky/internal/models"
 	"github.com/carcheky/mediacheky/internal/repository"
 	"github.com/carcheky/mediacheky/internal/service/scheduler"
 	"github.com/carcheky/mediacheky/pkg/logger"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/recover"
 	htmltemplate "github.com/gofiber/template/html/v2"
-	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 )
 
@@ -53,8 +52,13 @@ func main() {
 	}
 
 	// Run migrations
-	if err := models.RunMigrations(db); err != nil {
+	if err := database.RunMigrations(db); err != nil {
 		appLogger.Fatal("Failed to run migrations", "error", err)
+	}
+
+	// Seed initial data (templates and global config)
+	if err := database.SeedData(db); err != nil {
+		appLogger.Fatal("Failed to seed data", "error", err)
 	}
 
 	// Initialize repositories
@@ -114,24 +118,16 @@ func main() {
 }
 
 func initDatabase(cfg *config.Config, logger *logger.Logger) (*gorm.DB, error) {
-	var db *gorm.DB
-	var err error
-
-	// For now, use SQLite
-	// TODO: Add PostgreSQL support based on config
-	dbPath := cfg.Database.Path
-	if dbPath == "" {
-		dbPath = "./data/keepercheky.db"
+	// Use new database package for initialization
+	dbConfig := database.Config{
+		Path: cfg.Database.Path,
+	}
+	
+	if dbConfig.Path == "" {
+		dbConfig.Path = "./data/keepercheky.db"
 	}
 
-	logger.Info("Initializing database", "path", dbPath)
-
-	db, err = gorm.Open(sqlite.Open(dbPath), &gorm.Config{})
-	if err != nil {
-		return nil, err
-	}
-
-	return db, nil
+	return database.Initialize(dbConfig, logger)
 }
 
 func setupRoutes(app *fiber.App, h *handler.Handlers) {

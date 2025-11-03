@@ -1,0 +1,68 @@
+package models
+
+import (
+	"database/sql/driver"
+	"encoding/json"
+	"time"
+
+	"gorm.io/gorm"
+)
+
+// ServiceConfig is a custom type for service configuration stored as JSON
+type ServiceConfig map[string]interface{}
+
+// Scan implements the sql.Scanner interface for ServiceConfig
+func (sc *ServiceConfig) Scan(value interface{}) error {
+	if value == nil {
+		*sc = make(ServiceConfig)
+		return nil
+	}
+
+	bytes, ok := value.([]byte)
+	if !ok {
+		return nil
+	}
+
+	return json.Unmarshal(bytes, sc)
+}
+
+// Value implements the driver.Valuer interface for ServiceConfig
+func (sc ServiceConfig) Value() (driver.Value, error) {
+	if len(sc) == 0 {
+		return "{}", nil
+	}
+	return json.Marshal(sc)
+}
+
+// Service represents a managed service configuration and state
+type Service struct {
+	ID        uint           `json:"id" gorm:"primaryKey"`
+	CreatedAt time.Time      `json:"created_at"`
+	UpdatedAt time.Time      `json:"updated_at"`
+	DeletedAt gorm.DeletedAt `json:"-" gorm:"index"`
+
+	// Service identification
+	Name        string `json:"name" gorm:"uniqueIndex;not null"`  // e.g., "radarr", "sonarr"
+	DisplayName string `json:"display_name" gorm:"not null"`      // e.g., "Radarr", "Sonarr"
+	Icon        string `json:"icon"`                              // Icon name or URL
+	
+	// Service state
+	Enabled     bool   `json:"enabled" gorm:"default:false;index"` // Whether service is enabled
+	Status      string `json:"status" gorm:"default:'stopped'"`    // running, stopped, error
+	
+	// Docker configuration
+	Image       string `json:"image"`                              // Docker image (e.g., "linuxserver/radarr")
+	ContainerID string `json:"container_id"`                       // Docker container ID
+	Port        int    `json:"port"`                               // Service port
+	
+	// Service configuration (stored as JSON)
+	Config ServiceConfig `json:"config" gorm:"type:json"`
+	
+	// Relationship to template
+	TemplateID uint      `json:"template_id" gorm:"index"`
+	Template   *Template `json:"template,omitempty" gorm:"foreignKey:TemplateID"`
+}
+
+func (Service) TableName() string {
+	return "services"
+}

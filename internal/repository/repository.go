@@ -6,18 +6,26 @@ import (
 )
 
 type Repositories struct {
-	Media    *MediaRepository
-	Schedule *ScheduleRepository
-	History  *HistoryRepository
-	Settings *SettingsRepository
+	Media      *MediaRepository
+	Schedule   *ScheduleRepository
+	History    *HistoryRepository
+	Settings   *SettingsRepository
+	Service    *ServiceRepository
+	Template   *TemplateRepository
+	Config     *ConfigRepository
+	ServiceLog *ServiceLogRepository
 }
 
 func NewRepositories(db *gorm.DB) *Repositories {
 	return &Repositories{
-		Media:    NewMediaRepository(db),
-		Schedule: NewScheduleRepository(db),
-		History:  NewHistoryRepository(db),
-		Settings: NewSettingsRepository(db),
+		Media:      NewMediaRepository(db),
+		Schedule:   NewScheduleRepository(db),
+		History:    NewHistoryRepository(db),
+		Settings:   NewSettingsRepository(db),
+		Service:    NewServiceRepository(db),
+		Template:   NewTemplateRepository(db),
+		Config:     NewConfigRepository(db),
+		ServiceLog: NewServiceLogRepository(db),
 	}
 }
 
