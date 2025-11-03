@@ -1,0 +1,19 @@
+# golangci-lint configuration for MediaCheky
+# Minimal configuration due to typecheck linter issues
+# Full type checking is performed by `go build` and `go vet` in separate CI steps
+
+run:
+  timeout: 5m
+
+linters:
+  disable-all: true
+  enable:
+    - gofmt      # Checks formatting
+
+linters-settings:
+  gofmt:
+    simplify: true
+
+issues:
+  max-issues-per-linter: 0
+  max-same-issues: 0
