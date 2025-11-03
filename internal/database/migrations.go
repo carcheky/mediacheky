@@ -2,6 +2,7 @@ package database
 
 import (
 	"fmt"
+	"log"
 
 	"github.com/carcheky/mediacheky/internal/models"
 	"gorm.io/gorm"
@@ -77,15 +78,23 @@ func addPerformanceIndices(db *gorm.DB) error {
 		}
 	} else if dialectName == "mysql" {
 		// MySQL doesn't support partial indices, create without WHERE clause
-		// Note: Errors are intentionally ignored for the following reasons:
+		// Note: Errors are logged but not returned for the following reasons:
 		// 1. Indices may already exist from previous migrations
 		// 2. Index creation is a performance optimization, not critical for functionality
 		// 3. MySQL syntax variations across versions make error handling complex
 		// If index creation fails, queries will still work but may be slower
-		_ = db.Exec(`CREATE INDEX IF NOT EXISTS idx_media_healthy_files ON media(in_jellyfin, in_radarr, in_sonarr, torrent_state)`).Error
-		_ = db.Exec(`CREATE INDEX IF NOT EXISTS idx_media_orphan_downloads ON media(in_q_bittorrent, in_jellyfin, in_radarr, in_sonarr)`).Error
-		_ = db.Exec(`CREATE INDEX IF NOT EXISTS idx_media_dead_torrents ON media(in_q_bittorrent, torrent_state)`).Error
-		_ = db.Exec(`CREATE INDEX IF NOT EXISTS idx_media_default_sort ON media(in_q_bittorrent, in_jellyfin, file_path)`).Error
+		if err := db.Exec(`CREATE INDEX IF NOT EXISTS idx_media_healthy_files ON media(in_jellyfin, in_radarr, in_sonarr, torrent_state)`).Error; err != nil {
+			log.Printf("Warning: Failed to create idx_media_healthy_files: %v", err)
+		}
+		if err := db.Exec(`CREATE INDEX IF NOT EXISTS idx_media_orphan_downloads ON media(in_q_bittorrent, in_jellyfin, in_radarr, in_sonarr)`).Error; err != nil {
+			log.Printf("Warning: Failed to create idx_media_orphan_downloads: %v", err)
+		}
+		if err := db.Exec(`CREATE INDEX IF NOT EXISTS idx_media_dead_torrents ON media(in_q_bittorrent, torrent_state)`).Error; err != nil {
+			log.Printf("Warning: Failed to create idx_media_dead_torrents: %v", err)
+		}
+		if err := db.Exec(`CREATE INDEX IF NOT EXISTS idx_media_default_sort ON media(in_q_bittorrent, in_jellyfin, file_path)`).Error; err != nil {
+			log.Printf("Warning: Failed to create idx_media_default_sort: %v", err)
+		}
 	}
 
 	return nil

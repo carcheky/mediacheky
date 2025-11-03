@@ -127,6 +127,19 @@ func initDatabase(cfg *config.Config, logger *logger.Logger) (*gorm.DB, error) {
 		dbConfig.Path = "./data/mediacheky.db"
 	}
 
+	// Migration: If old database exists and new does not, move old to new
+	oldDBPath := "./data/keepercheky.db"
+	newDBPath := dbConfig.Path
+	if _, errOld := os.Stat(oldDBPath); errOld == nil {
+		if _, errNew := os.Stat(newDBPath); os.IsNotExist(errNew) {
+			if err := os.Rename(oldDBPath, newDBPath); err != nil {
+				logger.Error("Failed to migrate database file", "from", oldDBPath, "to", newDBPath, "error", err)
+			} else {
+				logger.Info("Migrated database file", "from", oldDBPath, "to", newDBPath)
+			}
+		}
+	}
+
 	return database.Initialize(dbConfig, logger)
 }
 
