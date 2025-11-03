@@ -16,7 +16,7 @@ type GlobalConfig struct {
 	// Configuration key-value pair
 	Key   string `json:"key" gorm:"uniqueIndex;not null"` // e.g., "PUID", "PGID", "TZ"
 	Value string `json:"value" gorm:"type:text"`          // Configuration value
-	
+
 	// Optional categorization
 	Category string `json:"category" gorm:"index"` // e.g., "system", "paths", "network"
 }

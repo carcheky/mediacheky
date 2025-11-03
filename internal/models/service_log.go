@@ -12,10 +12,10 @@ type ServiceLog struct {
 	// Service reference
 	ServiceID   uint   `json:"service_id" gorm:"index;not null"`
 	ServiceName string `json:"service_name" gorm:"index"` // Denormalized for query performance
-	
+
 	// Operation details
-	Action  string `json:"action" gorm:"not null"`  // e.g., "start", "stop", "restart", "config_update"
-	Status  string `json:"status" gorm:"not null"`  // e.g., "success", "failed", "pending"
+	Action  string `json:"action" gorm:"not null"`   // e.g., "start", "stop", "restart", "config_update"
+	Status  string `json:"status" gorm:"not null"`   // e.g., "success", "failed", "pending"
 	Message string `json:"message" gorm:"type:text"` // Detailed message or error
 }
 

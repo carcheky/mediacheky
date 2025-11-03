@@ -24,11 +24,11 @@ func (r *ServiceLogRepository) Create(log *models.ServiceLog) error {
 func (r *ServiceLogRepository) GetByServiceID(serviceID uint, limit int) ([]models.ServiceLog, error) {
 	var logs []models.ServiceLog
 	query := r.db.Where("service_id = ?", serviceID).Order("created_at DESC")
-	
+
 	if limit > 0 {
 		query = query.Limit(limit)
 	}
-	
+
 	result := query.Find(&logs)
 	return logs, result.Error
 }

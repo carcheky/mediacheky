@@ -161,7 +161,7 @@ func TestTemplateRepository_SchemaHandling(t *testing.T) {
 	retrieved, err := repo.GetByID(template.ID)
 	assert.NoError(t, err)
 	assert.NotNil(t, retrieved.Schema)
-	
+
 	// Verify schema structure
 	props, ok := retrieved.Schema["properties"].(map[string]interface{})
 	assert.True(t, ok)

@@ -50,10 +50,10 @@ type Template struct {
 	// Template identification
 	Name    string `json:"name" gorm:"uniqueIndex;not null"` // e.g., "radarr", "sonarr"
 	Version string `json:"version" gorm:"not null"`          // Template version
-	
+
 	// Template content
 	Content string `json:"content" gorm:"type:text;not null"` // Docker compose YAML template
-	
+
 	// Configuration schema (JSON Schema for validation)
 	Schema JSONSchema `json:"schema" gorm:"type:json"` // JSON Schema for config validation
 }

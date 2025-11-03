@@ -46,7 +46,7 @@ func (r *ConfigRepository) Set(key, value, category string) error {
 		Value:    value,
 		Category: category,
 	}
-	
+
 	// Upsert: update if exists, create if not
 	return r.db.
 		Where("key = ?", key).
@@ -69,11 +69,11 @@ func (r *ConfigRepository) GetAsMap() (map[string]string, error) {
 	if err != nil {
 		return nil, err
 	}
-	
+
 	result := make(map[string]string, len(configs))
 	for _, config := range configs {
 		result[config.Key] = config.Value
 	}
-	
+
 	return result, nil
 }

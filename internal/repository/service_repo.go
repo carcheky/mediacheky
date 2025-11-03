@@ -86,16 +86,16 @@ func (r *ServiceRepository) SetEnabled(id uint, enabled bool) error {
 func (r *ServiceRepository) CreateOrUpdate(service *models.Service) error {
 	var existing models.Service
 	result := r.db.Where("name = ?", service.Name).First(&existing)
-	
+
 	if result.Error == gorm.ErrRecordNotFound {
 		// Create new
 		return r.db.Create(service).Error
 	}
-	
+
 	if result.Error != nil {
 		return fmt.Errorf("failed to check existing service by name: %w", result.Error)
 	}
-	
+
 	// Update existing
 	service.ID = existing.ID
 	service.CreatedAt = existing.CreatedAt

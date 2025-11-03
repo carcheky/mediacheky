@@ -48,22 +48,22 @@ type Service struct {
 	DeletedAt gorm.DeletedAt `json:"-" gorm:"index"`
 
 	// Service identification
-	Name        string `json:"name" gorm:"uniqueIndex;not null"`  // e.g., "radarr", "sonarr"
-	DisplayName string `json:"display_name" gorm:"not null"`      // e.g., "Radarr", "Sonarr"
-	Icon        string `json:"icon"`                              // Icon name or URL
-	
+	Name        string `json:"name" gorm:"uniqueIndex;not null"` // e.g., "radarr", "sonarr"
+	DisplayName string `json:"display_name" gorm:"not null"`     // e.g., "Radarr", "Sonarr"
+	Icon        string `json:"icon"`                             // Icon name or URL
+
 	// Service state
-	Enabled     bool   `json:"enabled" gorm:"default:false;index"` // Whether service is enabled
-	Status      string `json:"status" gorm:"default:'stopped'"`    // running, stopped, error
-	
+	Enabled bool   `json:"enabled" gorm:"default:false;index"` // Whether service is enabled
+	Status  string `json:"status" gorm:"default:'stopped'"`    // running, stopped, error
+
 	// Docker configuration
-	Image       string `json:"image"`                              // Docker image (e.g., "linuxserver/radarr")
-	ContainerID string `json:"container_id"`                       // Docker container ID
-	Port        int    `json:"port"`                               // Service port
-	
+	Image       string `json:"image"`        // Docker image (e.g., "linuxserver/radarr")
+	ContainerID string `json:"container_id"` // Docker container ID
+	Port        int    `json:"port"`         // Service port
+
 	// Service configuration (stored as JSON)
 	Config ServiceConfig `json:"config" gorm:"type:json"`
-	
+
 	// Relationship to template
 	TemplateID uint      `json:"template_id" gorm:"index"`
 	Template   *Template `json:"template,omitempty" gorm:"foreignKey:TemplateID"`
