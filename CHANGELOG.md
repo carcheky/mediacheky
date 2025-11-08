@@ -1,3 +1,10 @@
+# [1.0.0-dev.3](https://github.com/carcheky/mediacheky/compare/v1.0.0-dev.2...v1.0.0-dev.3) (2025-11-08)
+
+
+### Features
+
+* **database:** implement GORM persistence layer for service management ([#16](https://github.com/carcheky/mediacheky/issues/16)) ([25d727f](https://github.com/carcheky/mediacheky/commit/25d727f2dfc6ba1ca93e8e76449b7aa2e98e0bfb))
+
 # [1.0.0-dev.2](https://github.com/carcheky/mediacheky/compare/v1.0.0-dev.1...v1.0.0-dev.2) (2025-11-02)
 
 
