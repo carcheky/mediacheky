@@ -439,7 +439,8 @@ func calculateCPUPercent(stats *containertypes.StatsResponse) float64 {
 		onlineCPUs = float64(len(stats.CPUStats.CPUUsage.PercpuUsage))
 	}
 
-	if systemDelta > 0.0 && cpuDelta > 0.0 {
+	// Only calculate if we have valid values to avoid division by zero
+	if systemDelta > 0.0 && cpuDelta > 0.0 && onlineCPUs > 0 {
 		cpuPercent = (cpuDelta / systemDelta) * onlineCPUs * 100.0
 	}
 
