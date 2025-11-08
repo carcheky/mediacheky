@@ -7,11 +7,15 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-	"strings"
+	"regexp"
 	"time"
 
 	"go.uber.org/zap"
+	"gopkg.in/yaml.v3"
 )
+
+// serviceNameRegex validates that service names only contain safe characters
+var serviceNameRegex = regexp.MustCompile(`^[a-zA-Z0-9_-]+$`)
 
 // DockerComposeClient handles docker-compose operations
 type DockerComposeClient struct {
@@ -27,7 +31,9 @@ func NewDockerComposeClient(logger *zap.Logger) *DockerComposeClient {
 	}
 }
 
-// ComposeUp executes 'docker compose up -d' in the specified directory
+// ComposeUp executes 'docker compose up -d' in the specified directory.
+// If ctx is nil, a default timeout context (2 minutes) will be created automatically.
+// To maintain control over operation cancellation, pass a valid context.
 func (dcc *DockerComposeClient) ComposeUp(ctx context.Context, composePath string) (*ComposeResult, error) {
 	if ctx == nil {
 		var cancel context.CancelFunc
@@ -35,22 +41,28 @@ func (dcc *DockerComposeClient) ComposeUp(ctx context.Context, composePath strin
 		defer cancel()
 	}
 
-	// Validate path
+	// Validate and sanitize path
 	if !filepath.IsAbs(composePath) {
 		return nil, fmt.Errorf("compose path must be absolute: %s", composePath)
 	}
 
-	composeDir := filepath.Dir(composePath)
-	if _, err := os.Stat(composePath); err != nil {
-		return nil, fmt.Errorf("compose file not found: %s: %w", composePath, err)
+	// Sanitize path to prevent traversal
+	cleanPath := filepath.Clean(composePath)
+	if cleanPath != composePath {
+		return nil, fmt.Errorf("compose path contains invalid sequences: %s", composePath)
+	}
+
+	composeDir := filepath.Dir(cleanPath)
+	if _, err := os.Stat(cleanPath); err != nil {
+		return nil, fmt.Errorf("compose file not found: %s: %w", cleanPath, err)
 	}
 
 	dcc.logger.Info("Executing docker compose up",
-		zap.String("path", composePath),
+		zap.String("path", cleanPath),
 		zap.String("directory", composeDir))
 
 	// Prepare command
-	cmd := exec.CommandContext(ctx, "docker", "compose", "-f", composePath, "up", "-d")
+	cmd := exec.CommandContext(ctx, "docker", "compose", "-f", cleanPath, "up", "-d")
 	cmd.Dir = composeDir
 
 	// Capture output
@@ -69,7 +81,7 @@ func (dcc *DockerComposeClient) ComposeUp(ctx context.Context, composePath strin
 
 	if err != nil {
 		dcc.logger.Error("Failed to execute docker compose up",
-			zap.String("path", composePath),
+			zap.String("path", cleanPath),
 			zap.String("stdout", result.Output),
 			zap.String("stderr", result.Error),
 			zap.Error(err))
@@ -77,13 +89,15 @@ func (dcc *DockerComposeClient) ComposeUp(ctx context.Context, composePath strin
 	}
 
 	dcc.logger.Info("Docker compose up executed successfully",
-		zap.String("path", composePath),
+		zap.String("path", cleanPath),
 		zap.String("output", result.Output))
 
 	return result, nil
 }
 
-// ComposeDown executes 'docker compose down' in the specified directory
+// ComposeDown executes 'docker compose down' in the specified directory.
+// If ctx is nil, a default timeout context (2 minutes) will be created automatically.
+// To maintain control over operation cancellation, pass a valid context.
 func (dcc *DockerComposeClient) ComposeDown(ctx context.Context, composePath string) (*ComposeResult, error) {
 	if ctx == nil {
 		var cancel context.CancelFunc
@@ -91,22 +105,28 @@ func (dcc *DockerComposeClient) ComposeDown(ctx context.Context, composePath str
 		defer cancel()
 	}
 
-	// Validate path
+	// Validate and sanitize path
 	if !filepath.IsAbs(composePath) {
 		return nil, fmt.Errorf("compose path must be absolute: %s", composePath)
 	}
 
-	composeDir := filepath.Dir(composePath)
-	if _, err := os.Stat(composePath); err != nil {
-		return nil, fmt.Errorf("compose file not found: %s: %w", composePath, err)
+	// Sanitize path to prevent traversal
+	cleanPath := filepath.Clean(composePath)
+	if cleanPath != composePath {
+		return nil, fmt.Errorf("compose path contains invalid sequences: %s", composePath)
+	}
+
+	composeDir := filepath.Dir(cleanPath)
+	if _, err := os.Stat(cleanPath); err != nil {
+		return nil, fmt.Errorf("compose file not found: %s: %w", cleanPath, err)
 	}
 
 	dcc.logger.Info("Executing docker compose down",
-		zap.String("path", composePath),
+		zap.String("path", cleanPath),
 		zap.String("directory", composeDir))
 
 	// Prepare command
-	cmd := exec.CommandContext(ctx, "docker", "compose", "-f", composePath, "down")
+	cmd := exec.CommandContext(ctx, "docker", "compose", "-f", cleanPath, "down")
 	cmd.Dir = composeDir
 
 	// Capture output
@@ -125,7 +145,7 @@ func (dcc *DockerComposeClient) ComposeDown(ctx context.Context, composePath str
 
 	if err != nil {
 		dcc.logger.Error("Failed to execute docker compose down",
-			zap.String("path", composePath),
+			zap.String("path", cleanPath),
 			zap.String("stdout", result.Output),
 			zap.String("stderr", result.Error),
 			zap.Error(err))
@@ -133,13 +153,15 @@ func (dcc *DockerComposeClient) ComposeDown(ctx context.Context, composePath str
 	}
 
 	dcc.logger.Info("Docker compose down executed successfully",
-		zap.String("path", composePath),
+		zap.String("path", cleanPath),
 		zap.String("output", result.Output))
 
 	return result, nil
 }
 
-// ComposeRestart executes 'docker compose restart' for a specific service
+// ComposeRestart executes 'docker compose restart' for a specific service.
+// If ctx is nil, a default timeout context (2 minutes) will be created automatically.
+// To maintain control over operation cancellation, pass a valid context.
 func (dcc *DockerComposeClient) ComposeRestart(ctx context.Context, composePath string, serviceName string) (*ComposeResult, error) {
 	if ctx == nil {
 		var cancel context.CancelFunc
@@ -147,23 +169,34 @@ func (dcc *DockerComposeClient) ComposeRestart(ctx context.Context, composePath 
 		defer cancel()
 	}
 
-	// Validate path
+	// Validate and sanitize path
 	if !filepath.IsAbs(composePath) {
 		return nil, fmt.Errorf("compose path must be absolute: %s", composePath)
 	}
 
-	composeDir := filepath.Dir(composePath)
-	if _, err := os.Stat(composePath); err != nil {
-		return nil, fmt.Errorf("compose file not found: %s: %w", composePath, err)
+	// Sanitize path to prevent traversal
+	cleanPath := filepath.Clean(composePath)
+	if cleanPath != composePath {
+		return nil, fmt.Errorf("compose path contains invalid sequences: %s", composePath)
+	}
+
+	// Validate serviceName to prevent command injection
+	if serviceName != "" && !serviceNameRegex.MatchString(serviceName) {
+		return nil, fmt.Errorf("invalid service name: %s", serviceName)
+	}
+
+	composeDir := filepath.Dir(cleanPath)
+	if _, err := os.Stat(cleanPath); err != nil {
+		return nil, fmt.Errorf("compose file not found: %s: %w", cleanPath, err)
 	}
 
 	dcc.logger.Info("Executing docker compose restart",
-		zap.String("path", composePath),
+		zap.String("path", cleanPath),
 		zap.String("service", serviceName),
 		zap.String("directory", composeDir))
 
 	// Prepare command
-	args := []string{"compose", "-f", composePath, "restart"}
+	args := []string{"compose", "-f", cleanPath, "restart"}
 	if serviceName != "" {
 		args = append(args, serviceName)
 	}
@@ -186,7 +219,7 @@ func (dcc *DockerComposeClient) ComposeRestart(ctx context.Context, composePath 
 
 	if err != nil {
 		dcc.logger.Error("Failed to execute docker compose restart",
-			zap.String("path", composePath),
+			zap.String("path", cleanPath),
 			zap.String("service", serviceName),
 			zap.String("stdout", result.Output),
 			zap.String("stderr", result.Error),
@@ -195,14 +228,16 @@ func (dcc *DockerComposeClient) ComposeRestart(ctx context.Context, composePath 
 	}
 
 	dcc.logger.Info("Docker compose restart executed successfully",
-		zap.String("path", composePath),
+		zap.String("path", cleanPath),
 		zap.String("service", serviceName),
 		zap.String("output", result.Output))
 
 	return result, nil
 }
 
-// ComposeLogs retrieves logs from a compose service
+// ComposeLogs retrieves logs from a compose service.
+// If ctx is nil, a default timeout context (2 minutes) will be created automatically.
+// To maintain control over operation cancellation, pass a valid context.
 func (dcc *DockerComposeClient) ComposeLogs(ctx context.Context, composePath string, serviceName string, tail int) (string, error) {
 	if ctx == nil {
 		var cancel context.CancelFunc
@@ -210,23 +245,34 @@ func (dcc *DockerComposeClient) ComposeLogs(ctx context.Context, composePath str
 		defer cancel()
 	}
 
-	// Validate path
+	// Validate and sanitize path
 	if !filepath.IsAbs(composePath) {
 		return "", fmt.Errorf("compose path must be absolute: %s", composePath)
 	}
 
-	composeDir := filepath.Dir(composePath)
-	if _, err := os.Stat(composePath); err != nil {
-		return "", fmt.Errorf("compose file not found: %s: %w", composePath, err)
+	// Sanitize path to prevent traversal
+	cleanPath := filepath.Clean(composePath)
+	if cleanPath != composePath {
+		return "", fmt.Errorf("compose path contains invalid sequences: %s", composePath)
+	}
+
+	// Validate serviceName to prevent command injection
+	if serviceName != "" && !serviceNameRegex.MatchString(serviceName) {
+		return "", fmt.Errorf("invalid service name: %s", serviceName)
+	}
+
+	composeDir := filepath.Dir(cleanPath)
+	if _, err := os.Stat(cleanPath); err != nil {
+		return "", fmt.Errorf("compose file not found: %s: %w", cleanPath, err)
 	}
 
 	dcc.logger.Debug("Retrieving compose logs",
-		zap.String("path", composePath),
+		zap.String("path", cleanPath),
 		zap.String("service", serviceName),
 		zap.Int("tail", tail))
 
 	// Prepare command
-	args := []string{"compose", "-f", composePath, "logs"}
+	args := []string{"compose", "-f", cleanPath, "logs"}
 	if tail > 0 {
 		args = append(args, "--tail", fmt.Sprintf("%d", tail))
 	}
@@ -244,7 +290,7 @@ func (dcc *DockerComposeClient) ComposeLogs(ctx context.Context, composePath str
 	// Execute command
 	if err := cmd.Run(); err != nil {
 		dcc.logger.Error("Failed to retrieve compose logs",
-			zap.String("path", composePath),
+			zap.String("path", cleanPath),
 			zap.String("service", serviceName),
 			zap.String("stderr", stderr.String()),
 			zap.Error(err))
@@ -256,38 +302,51 @@ func (dcc *DockerComposeClient) ComposeLogs(ctx context.Context, composePath str
 
 // ValidateComposeFile validates that a docker-compose.yml file is well-formed
 func (dcc *DockerComposeClient) ValidateComposeFile(composePath string) error {
-	// Validate path
+	// Validate and sanitize path
 	if !filepath.IsAbs(composePath) {
 		return fmt.Errorf("compose path must be absolute: %s", composePath)
 	}
 
+	// Sanitize path to prevent traversal
+	cleanPath := filepath.Clean(composePath)
+	if cleanPath != composePath {
+		return fmt.Errorf("compose path contains invalid sequences: %s", composePath)
+	}
+
 	// Check if file exists
-	info, err := os.Stat(composePath)
+	info, err := os.Stat(cleanPath)
 	if err != nil {
-		return fmt.Errorf("compose file not found: %s: %w", composePath, err)
+		return fmt.Errorf("compose file not found: %s: %w", cleanPath, err)
 	}
 
 	if info.IsDir() {
-		return fmt.Errorf("compose path is a directory, not a file: %s", composePath)
+		return fmt.Errorf("compose path is a directory, not a file: %s", cleanPath)
 	}
 
 	// Read file content
-	content, err := os.ReadFile(composePath)
+	content, err := os.ReadFile(cleanPath)
 	if err != nil {
 		return fmt.Errorf("failed to read compose file: %w", err)
 	}
 
-	// Basic validation - check if it contains key compose keywords
-	contentStr := string(content)
-	if !strings.Contains(contentStr, "services:") && !strings.Contains(contentStr, "version:") {
-		return fmt.Errorf("file does not appear to be a valid docker-compose file")
+	// Parse and validate YAML structure
+	var composeFile map[string]interface{}
+	if err := yaml.Unmarshal(content, &composeFile); err != nil {
+		return fmt.Errorf("invalid YAML format: %w", err)
 	}
 
-	dcc.logger.Debug("Compose file validated", zap.String("path", composePath))
+	// Check for required services definition
+	if _, hasServices := composeFile["services"]; !hasServices {
+		return fmt.Errorf("file does not contain services definition")
+	}
+
+	dcc.logger.Debug("Compose file validated", zap.String("path", cleanPath))
 	return nil
 }
 
-// IsDockerComposeAvailable checks if docker compose command is available
+// IsDockerComposeAvailable checks if the docker compose command is available.
+// Returns true if docker compose is installed and accessible, false otherwise.
+// Logs a warning if docker compose is not available.
 func (dcc *DockerComposeClient) IsDockerComposeAvailable() bool {
 	cmd := exec.Command("docker", "compose", "version")
 	if err := cmd.Run(); err != nil {

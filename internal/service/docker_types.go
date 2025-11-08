@@ -61,7 +61,10 @@ type ComposeResult struct {
 	Error   string
 }
 
-// AllowedImages is a whitelist of allowed Docker images for security
+// AllowedImages is a whitelist of allowed Docker images for security.
+// This list must be kept in sync with the services supported by MediaCheky.
+// Adding a new image here requires corresponding template and configuration support
+// in the service management layer.
 var AllowedImages = map[string]bool{
 	"linuxserver/radarr":          true,
 	"linuxserver/sonarr":          true,

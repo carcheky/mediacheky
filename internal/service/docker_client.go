@@ -58,7 +58,9 @@ func (dc *DockerClient) Close() error {
 	return nil
 }
 
-// ListContainers lists all containers managed by MediaCheky
+// ListContainers lists all containers managed by MediaCheky.
+// If ctx is nil, a default timeout context (30s) will be created automatically.
+// To maintain control over operation cancellation, pass a valid context.
 func (dc *DockerClient) ListContainers(ctx context.Context) ([]ContainerInfo, error) {
 	if ctx == nil {
 		var cancel context.CancelFunc
@@ -318,7 +320,7 @@ func (dc *DockerClient) containerSummaryToInfo(c types.Container) ContainerInfo 
 		}
 	}
 
-	ports := make([]PortBinding, 0)
+	ports := make([]PortBinding, 0, len(c.Ports))
 	for _, port := range c.Ports {
 		if port.PublicPort > 0 {
 			ports = append(ports, PortBinding{
@@ -350,6 +352,13 @@ func (dc *DockerClient) inspectToInfo(inspect types.ContainerJSON) ContainerInfo
 
 	ports := make([]PortBinding, 0)
 	if inspect.NetworkSettings != nil {
+		// Pre-calculate total number of port bindings for slice capacity
+		totalBindings := 0
+		for _, bindings := range inspect.NetworkSettings.Ports {
+			totalBindings += len(bindings)
+		}
+		ports = make([]PortBinding, 0, totalBindings)
+
 		for portProto, bindings := range inspect.NetworkSettings.Ports {
 			for _, binding := range bindings {
 				hostPort := 0
@@ -367,8 +376,16 @@ func (dc *DockerClient) inspectToInfo(inspect types.ContainerJSON) ContainerInfo
 		}
 	}
 
-	createdAt, _ := time.Parse(time.RFC3339, inspect.Created)
-	startedAt, _ := time.Parse(time.RFC3339, inspect.State.StartedAt)
+	createdAt, err := time.Parse(time.RFC3339, inspect.Created)
+	if err != nil {
+		dc.logger.Debug("Failed to parse created time", zap.Error(err), zap.String("value", inspect.Created))
+		createdAt = time.Time{}
+	}
+	startedAt, err := time.Parse(time.RFC3339, inspect.State.StartedAt)
+	if err != nil {
+		dc.logger.Debug("Failed to parse started time", zap.Error(err), zap.String("value", inspect.State.StartedAt))
+		startedAt = time.Time{}
+	}
 
 	return ContainerInfo{
 		ID:        inspect.ID,

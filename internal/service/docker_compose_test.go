@@ -224,18 +224,21 @@ services:
 
 	// These operations will execute if docker compose is available
 	// We're testing that nil context doesn't cause a panic and is handled properly
-	_, err = dcc.ComposeUp(nil, composePath)
-	// May succeed or fail depending on docker availability, but should not panic
-	assert.NotNil(t, err == nil || err != nil) // Just checking it doesn't panic
+	assert.NotPanics(t, func() {
+		_, _ = dcc.ComposeUp(nil, composePath)
+	}, "ComposeUp with nil context should not panic")
 
-	_, err = dcc.ComposeDown(nil, composePath)
-	assert.NotNil(t, err == nil || err != nil)
+	assert.NotPanics(t, func() {
+		_, _ = dcc.ComposeDown(nil, composePath)
+	}, "ComposeDown with nil context should not panic")
 
-	_, err = dcc.ComposeRestart(nil, composePath, "test")
-	assert.NotNil(t, err == nil || err != nil)
+	assert.NotPanics(t, func() {
+		_, _ = dcc.ComposeRestart(nil, composePath, "test")
+	}, "ComposeRestart with nil context should not panic")
 
-	_, err = dcc.ComposeLogs(nil, composePath, "test", 10)
-	assert.NotNil(t, err == nil || err != nil)
+	assert.NotPanics(t, func() {
+		_, _ = dcc.ComposeLogs(nil, composePath, "test", 10)
+	}, "ComposeLogs with nil context should not panic")
 }
 
 // TestComposeResultFields verifies ComposeResult field access
@@ -255,4 +258,133 @@ func TestComposeResultFields(t *testing.T) {
 	assert.False(t, emptyResult.Success)
 	assert.Empty(t, emptyResult.Output)
 	assert.Empty(t, emptyResult.Error)
+}
+
+// TestPathTraversalPrevention verifies that path traversal is prevented
+func TestPathTraversalPrevention(t *testing.T) {
+	logger, err := zap.NewDevelopment()
+	if err != nil {
+		t.Fatalf("Failed to create logger: %v", err)
+	}
+
+	dcc := NewDockerComposeClient(logger)
+	ctx := context.Background()
+
+	// Test path with traversal sequences
+	_, err = dcc.ComposeUp(ctx, "/tmp/../etc/docker-compose.yml")
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "invalid sequences")
+
+	_, err = dcc.ComposeDown(ctx, "/tmp/./../../docker-compose.yml")
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "invalid sequences")
+}
+
+// TestServiceNameValidation verifies that service names are validated
+func TestServiceNameValidation(t *testing.T) {
+	logger, err := zap.NewDevelopment()
+	if err != nil {
+		t.Fatalf("Failed to create logger: %v", err)
+	}
+
+	dcc := NewDockerComposeClient(logger)
+	ctx := context.Background()
+	tmpDir := t.TempDir()
+	composePath := filepath.Join(tmpDir, "docker-compose.yml")
+
+	// Create a valid compose file
+	content := `version: '3.8'
+services:
+  test:
+    image: hello-world
+`
+	err = os.WriteFile(composePath, []byte(content), 0644)
+	assert.NoError(t, err)
+
+	// Test with invalid service names
+	tests := []struct {
+		name        string
+		serviceName string
+		shouldFail  bool
+	}{
+		{"valid service name", "test-service", false},
+		{"valid with underscores", "test_service", false},
+		{"valid with numbers", "service123", false},
+		{"invalid with space", "test service", true},
+		{"invalid with semicolon", "test;service", true},
+		{"invalid with pipe", "test|service", true},
+		{"invalid with ampersand", "test&service", true},
+		{"command injection attempt", "test; rm -rf /", true},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			_, err := dcc.ComposeRestart(ctx, composePath, tt.serviceName)
+			if tt.shouldFail {
+				assert.Error(t, err)
+				assert.Contains(t, err.Error(), "invalid service name")
+			}
+			// Note: if !tt.shouldFail, it may still error due to docker not running,
+			// but it should NOT be a service name validation error
+		})
+	}
+}
+
+// TestValidateComposeFile_YAMLParsing verifies proper YAML validation
+func TestValidateComposeFile_YAMLParsing(t *testing.T) {
+	logger, err := zap.NewDevelopment()
+	if err != nil {
+		t.Fatalf("Failed to create logger: %v", err)
+	}
+
+	dcc := NewDockerComposeClient(logger)
+	tmpDir := t.TempDir()
+
+	tests := []struct {
+		name        string
+		content     string
+		expectError bool
+		errorMsg    string
+	}{
+		{
+			name: "valid compose file",
+			content: `version: '3.8'
+services:
+  test:
+    image: hello-world
+`,
+			expectError: false,
+		},
+		{
+			name:        "invalid YAML",
+			content:     "not: valid: yaml: structure",
+			expectError: true,
+			errorMsg:    "invalid YAML format",
+		},
+		{
+			name: "missing services",
+			content: `version: '3.8'
+networks:
+  default:
+`,
+			expectError: true,
+			errorMsg:    "does not contain services definition",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			filePath := filepath.Join(tmpDir, "compose-"+tt.name+".yml")
+			err := os.WriteFile(filePath, []byte(tt.content), 0644)
+			assert.NoError(t, err)
+
+			err = dcc.ValidateComposeFile(filePath)
+			if tt.expectError {
+				assert.Error(t, err)
+				assert.Contains(t, err.Error(), tt.errorMsg)
+			} else {
+				assert.NoError(t, err)
+			}
+		})
+	}
 }
