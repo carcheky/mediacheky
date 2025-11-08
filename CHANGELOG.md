@@ -1,3 +1,10 @@
+# [1.0.0-dev.4](https://github.com/carcheky/mediacheky/compare/v1.0.0-dev.3...v1.0.0-dev.4) (2025-11-08)
+
+
+### Features
+
+* **service:** implement Docker Socket API integration ([#17](https://github.com/carcheky/mediacheky/issues/17)) ([7525ce0](https://github.com/carcheky/mediacheky/commit/7525ce03a5ae0fb4368a67e797bc9f57158f939b))
+
 # [1.0.0-dev.3](https://github.com/carcheky/mediacheky/compare/v1.0.0-dev.2...v1.0.0-dev.3) (2025-11-08)
 
 
