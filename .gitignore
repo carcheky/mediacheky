@@ -4,6 +4,12 @@ reference-repos/
 # Docker volumes (local bind mounts)
 volumes/
 !volumes/.gitkeep
+!volumes/services/
+!volumes/services/.gitkeep
+!volumes/config/
+!volumes/config/.gitkeep
+!volumes/data/
+!volumes/data/.gitkeep
 
 # Python
 __pycache__/
