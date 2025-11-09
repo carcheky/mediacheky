@@ -1,3 +1,10 @@
+# [1.0.0-dev.6](https://github.com/carcheky/mediacheky/compare/v1.0.0-dev.5...v1.0.0-dev.6) (2025-11-09)
+
+
+### Features
+
+* implement REST API backend with Fiber v2 ([#19](https://github.com/carcheky/mediacheky/issues/19)) ([e3434bc](https://github.com/carcheky/mediacheky/commit/e3434bca1173111bad4b6054e90b3eaaebae2090))
+
 # [1.0.0-dev.5](https://github.com/carcheky/mediacheky/compare/v1.0.0-dev.4...v1.0.0-dev.5) (2025-11-09)
 
 
