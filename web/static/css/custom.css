@@ -51,7 +51,7 @@ html {
 
 .card-hover:hover {
     transform: translateY(-2px);
-    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
+    box-shadow: 0 10px 25px -5px rgb(0 0 0 / 30%);
 }
 
 /* Status badge pulse animation */
@@ -59,6 +59,7 @@ html {
     0%, 100% {
         opacity: 1;
     }
+
     50% {
         opacity: 0.5;
     }
@@ -72,7 +73,7 @@ html {
 input:focus, select:focus, textarea:focus {
     outline: none;
     border-color: #3b82f6;
-    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    box-shadow: 0 0 0 3px rgb(59 130 246 / 10%);
 }
 
 /* Disabled state */
@@ -87,11 +88,12 @@ button:active:not(:disabled) {
 }
 
 /* Toast notification animation */
-@keyframes slideInRight {
+@keyframes slide-in-right {
     from {
         transform: translateX(100%);
         opacity: 0;
     }
+
     to {
         transform: translateX(0);
         opacity: 1;
@@ -99,7 +101,7 @@ button:active:not(:disabled) {
 }
 
 .toast-notification {
-    animation: slideInRight 0.3s ease-out;
+    animation: slide-in-right 0.3s ease-out;
 }
 
 /* Grid layout utilities */
@@ -112,7 +114,7 @@ button:active:not(:disabled) {
 }
 
 /* Responsive text utilities */
-@media (max-width: 640px) {
+@media (width <= 640px) {
     .text-responsive {
         font-size: 0.875rem;
     }
@@ -132,6 +134,7 @@ button:active:not(:disabled) {
     0% {
         background-position: -1000px 0;
     }
+
     100% {
         background-position: 1000px 0;
     }
