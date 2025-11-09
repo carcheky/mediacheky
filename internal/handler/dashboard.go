@@ -192,7 +192,7 @@ func (h *DashboardHandler) HealthCheck(c *fiber.Ctx) error {
 	}
 
 	healthStatus := make([]fiber.Map, 0, len(services))
-	
+
 	for _, svc := range services {
 		status := fiber.Map{
 			"name":         svc.Name,
@@ -209,9 +209,9 @@ func (h *DashboardHandler) HealthCheck(c *fiber.Ctx) error {
 			cancel()
 
 			if err != nil {
-				h.logger.Error("Failed to get container status", 
-					"service", svc.Name, 
-					"container_id", svc.ContainerID, 
+				h.logger.Error("Failed to get container status",
+					"service", svc.Name,
+					"container_id", svc.ContainerID,
 					"error", err)
 				status["error"] = err.Error()
 			} else {

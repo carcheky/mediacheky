@@ -10,7 +10,7 @@ import (
 
 func TestValidateServiceName(t *testing.T) {
 	app := fiber.New()
-	
+
 	app.Get("/services/:name", ValidateServiceName(), func(c *fiber.Ctx) error {
 		return c.JSON(fiber.Map{"success": true})
 	})
@@ -64,7 +64,7 @@ func TestValidateServiceName(t *testing.T) {
 
 func TestValidateConfigKey(t *testing.T) {
 	app := fiber.New()
-	
+
 	app.Get("/config/:key", ValidateConfigKey(), func(c *fiber.Ctx) error {
 		return c.JSON(fiber.Map{"success": true})
 	})
@@ -119,7 +119,7 @@ func TestValidateConfigKey(t *testing.T) {
 
 func TestCORS(t *testing.T) {
 	app := fiber.New()
-	
+
 	app.Use(CORS())
 	app.Get("/test", func(c *fiber.Ctx) error {
 		return c.JSON(fiber.Map{"success": true})
@@ -167,7 +167,7 @@ func TestCORS(t *testing.T) {
 
 func TestRequestID(t *testing.T) {
 	app := fiber.New()
-	
+
 	app.Use(RequestID())
 	app.Get("/test", func(c *fiber.Ctx) error {
 		requestID := c.Locals("requestid")
