@@ -76,6 +76,16 @@ func main() {
 		}
 		return string(bytes)
 	})
+	
+	// Add JS string escaping function for use in JavaScript contexts
+	engine.AddFunc("jsStr", func(s string) string {
+		// Escape for safe use in JavaScript string context
+		bytes, err := json.Marshal(s)
+		if err != nil {
+			return `""`
+		}
+		return string(bytes)
+	})
 
 	// Initialize Fiber app
 	app := fiber.New(fiber.Config{

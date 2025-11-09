@@ -7,6 +7,8 @@
     <title>{{.Title}} - MediaCheky</title>
     <link rel="stylesheet" href="/static/css/custom.css">
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Shared utilities - Load before Alpine.js components -->
+    <script src="/static/js/shared.js"></script>
     <script>
         tailwind.config = {
             darkMode: 'class',
@@ -32,7 +34,7 @@
 
 <body class="bg-dark-bg dark:bg-dark-bg min-h-screen flex flex-col">
     <!-- Top Navigation Bar -->
-    <nav class="bg-dark-surface dark:bg-dark-surface shadow-lg border-b border-dark-border sticky top-0 z-50">
+    <nav class="bg-dark-surface dark:bg-dark-surface shadow-lg border-b border-dark-border sticky top-0 z-50" x-data="{ mobileMenuOpen: false }">
         <div class="max-w-7xl mx-auto px-4">
             <div class="flex justify-between h-16">
                 <div class="flex">
@@ -64,6 +66,7 @@
                 <!-- Mobile menu button -->
                 <div class="flex items-center sm:hidden">
                     <button @click="mobileMenuOpen = !mobileMenuOpen" type="button" 
+                        aria-label="Toggle mobile menu"
                         class="inline-flex items-center justify-center p-2 rounded-md text-dark-muted hover:text-dark-text hover:bg-dark-bg focus:outline-none">
                         <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
@@ -74,7 +77,7 @@
         </div>
         
         <!-- Mobile menu -->
-        <div x-show="mobileMenuOpen" x-transition class="sm:hidden border-t border-dark-border" x-data="{ mobileMenuOpen: false }">
+        <div x-show="mobileMenuOpen" x-transition class="sm:hidden border-t border-dark-border">
             <div class="pt-2 pb-3 space-y-1">
                 <a href="/" class="block pl-3 pr-4 py-2 border-l-4 border-transparent text-dark-muted hover:bg-dark-bg hover:border-blue-500 hover:text-dark-text">
                     📊 Dashboard

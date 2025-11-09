@@ -1,4 +1,4 @@
-<div x-data="serviceConfig('{{.ServiceName}}')" x-init="init()" class="space-y-6">
+<div x-data="serviceConfig({{.ServiceName | jsStr}})" x-init="init()" class="space-y-6">
     <!-- Header with Breadcrumb -->
     <div>
         <nav class="text-sm text-dark-muted mb-2">
@@ -285,7 +285,12 @@
                 network_name: ''
             },
             globalConfig: {},
-            errors: {},
+            errors: {
+                port: '',
+                config_path: '',
+                media_path: '',
+                downloads_path: ''
+            },
             testing: false,
             saving: false,
             testResult: null,
@@ -294,8 +299,7 @@
 
             async init() {
                 await this.loadGlobalConfig();
-                await this.loadServiceConfig();
-                await this.loadServiceStatus();
+                await this.loadServiceData();
             },
 
             async loadGlobalConfig() {
@@ -309,28 +313,17 @@
                 }
             },
 
-            async loadServiceConfig() {
+            async loadServiceData() {
                 try {
                     const response = await fetch(`/api/services/${this.serviceName}`);
                     if (response.ok) {
                         const data = await response.json();
                         // Merge with existing config
                         this.config = { ...this.config, ...data.config };
-                    }
-                } catch (error) {
-                    console.error('Error loading service config:', error);
-                }
-            },
-
-            async loadServiceStatus() {
-                try {
-                    const response = await fetch(`/api/services/${this.serviceName}`);
-                    if (response.ok) {
-                        const data = await response.json();
                         this.status = data.status || 'stopped';
                     }
                 } catch (error) {
-                    console.error('Error loading service status:', error);
+                    console.error('Error loading service data:', error);
                 }
             },
 
@@ -416,7 +409,7 @@
 
                     if (response.ok) {
                         this.showMessage('Configuration saved successfully!', 'success');
-                        await this.loadServiceStatus();
+                        await this.loadServiceData();
                     } else {
                         const data = await response.json();
                         this.showMessage(data.error || 'Failed to save configuration', 'error');
@@ -429,25 +422,10 @@
             },
 
             getServiceIcon() {
-                const icons = {
-                    'radarr': '🎬',
-                    'sonarr': '📺',
-                    'jellyfin': '🍿',
-                    'qbittorrent': '📡',
-                    'jellyseerr': '📋',
-                    'jellystat': '📊',
-                    'bazarr': '🗣️'
-                };
-                return icons[this.serviceName.toLowerCase()] || '⚙️';
+                return getServiceIcon(this.serviceName);
             },
 
-            showMessage(msg, type = 'success') {
-                this.message = msg;
-                this.messageType = type;
-                setTimeout(() => {
-                    this.message = '';
-                }, 5000);
-            }
+            showMessage: createShowMessage()
         }
     }
 </script>

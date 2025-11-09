@@ -24,15 +24,11 @@ html {
     background: #475569;
 }
 
-/* Loading spinner animation */
+/* Loading spinner animation - keyframes used by Tailwind's animate-spin */
 @keyframes spin {
     to {
         transform: rotate(360deg);
     }
-}
-
-.animate-spin {
-    animation: spin 1s linear infinite;
 }
 
 /* Fade in/out transitions */

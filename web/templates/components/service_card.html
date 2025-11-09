@@ -50,19 +50,23 @@
             Configure
         </a>
         {{if eq .Status "running"}}
-        <button class="px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 text-sm font-medium transition-colors">
+        <button @click="$dispatch('service-action', {action: 'restart', service: '{{.Name}}'})"
+                class="px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 text-sm font-medium transition-colors">
             Restart
         </button>
-        <button class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 text-sm font-medium transition-colors">
+        <button @click="$dispatch('service-action', {action: 'stop', service: '{{.Name}}'})"
+                class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 text-sm font-medium transition-colors">
             Stop
         </button>
         {{else}}
-        <button class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 text-sm font-medium transition-colors">
+        <button @click="$dispatch('service-action', {action: 'start', service: '{{.Name}}'})"
+                class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 text-sm font-medium transition-colors">
             Start
         </button>
         {{end}}
         {{else}}
-        <button class="flex-1 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 text-center text-sm font-medium transition-colors">
+        <button @click="$dispatch('service-action', {action: 'enable', service: '{{.Name}}'})"
+                class="flex-1 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 text-center text-sm font-medium transition-colors">
             Enable
         </button>
         {{end}}

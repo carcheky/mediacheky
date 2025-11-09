@@ -250,13 +250,7 @@
                 }
             },
 
-            showMessage(msg, type = 'success') {
-                this.message = msg;
-                this.messageType = type;
-                setTimeout(() => {
-                    this.message = '';
-                }, 5000);
-            }
+            showMessage: createShowMessage()
         }
     }
 </script>
