@@ -129,49 +129,59 @@ func (h *DashboardHandler) GetJellystatViewsByType(c *fiber.Ctx) error {
 	return c.JSON(views)
 }
 
+// addServiceStats adds service statistics to the stats map
+func (h *DashboardHandler) addServiceStats(stats fiber.Map) {
+	services, err := h.repos.Service.GetAll()
+	if err != nil {
+		h.logger.Error("Failed to get services", "error", err)
+		return
+	}
+
+	activeServices := 0
+	stoppedServices := 0
+	for _, svc := range services {
+		if svc.Enabled && svc.Status == "running" {
+			activeServices++
+		} else {
+			stoppedServices++
+		}
+	}
+	stats["services_active"] = activeServices
+	stats["services_stopped"] = stoppedServices
+	stats["services_total"] = len(services)
+}
+
+// addContainerStats adds Docker container statistics to the stats map
+func (h *DashboardHandler) addContainerStats(stats fiber.Map) {
+	if h.dockerClient == nil {
+		return
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	containers, err := h.dockerClient.ListContainers(ctx)
+	if err != nil {
+		h.logger.Error("Failed to list containers", "error", err)
+		return
+	}
+
+	runningContainers := 0
+	for _, container := range containers {
+		if container.Status == service.ContainerStatusRunning {
+			runningContainers++
+		}
+	}
+	stats["containers_running"] = runningContainers
+	stats["containers_total"] = len(containers)
+}
+
 // GetDashboardStats returns general statistics for the dashboard
 // Handles GET /api/dashboard/stats
 func (h *DashboardHandler) GetDashboardStats(c *fiber.Ctx) error {
 	stats := fiber.Map{}
-
-	// Get service statistics
-	services, err := h.repos.Service.GetAll()
-	if err != nil {
-		h.logger.Error("Failed to get services", "error", err)
-	} else {
-		activeServices := 0
-		stoppedServices := 0
-		for _, svc := range services {
-			if svc.Enabled && svc.Status == "running" {
-				activeServices++
-			} else {
-				stoppedServices++
-			}
-		}
-		stats["services_active"] = activeServices
-		stats["services_stopped"] = stoppedServices
-		stats["services_total"] = len(services)
-	}
-
-	// Get Docker version if available
-	if h.dockerClient != nil {
-		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-		defer cancel()
-
-		containers, err := h.dockerClient.ListContainers(ctx)
-		if err != nil {
-			h.logger.Error("Failed to list containers", "error", err)
-		} else {
-			runningContainers := 0
-			for _, container := range containers {
-				if container.Status == service.ContainerStatusRunning {
-					runningContainers++
-				}
-			}
-			stats["containers_running"] = runningContainers
-			stats["containers_total"] = len(containers)
-		}
-	}
+	h.addServiceStats(stats)
+	h.addContainerStats(stats)
 
 	return c.JSON(APIResponse{
 		Success: true,

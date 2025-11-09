@@ -3,6 +3,7 @@ package handler
 import (
 	"bytes"
 	"encoding/json"
+	"net/http"
 	"net/http/httptest"
 	"testing"
 
@@ -19,6 +20,34 @@ func setupConfigTestApp(db *gorm.DB) (*fiber.App, *ConfigHandler) {
 	log := logger.New("debug")
 	handler := NewConfigHandler(repos, log)
 	return app, handler
+}
+
+// verifyConfigResponse validates the response structure and extracts system config
+func verifyConfigResponse(t *testing.T, resp *http.Response) map[string]interface{} {
+	if resp.StatusCode != fiber.StatusOK {
+		t.Errorf("Expected status 200, got %d", resp.StatusCode)
+	}
+
+	var response APIResponse
+	if err := json.NewDecoder(resp.Body).Decode(&response); err != nil {
+		t.Fatalf("Failed to decode response: %v", err)
+	}
+
+	if !response.Success {
+		t.Errorf("Expected success=true, got %v", response.Success)
+	}
+
+	configMap, ok := response.Data.(map[string]interface{})
+	if !ok {
+		t.Fatalf("Expected data to be a map")
+	}
+
+	systemConfig, ok := configMap["system"].(map[string]interface{})
+	if !ok {
+		t.Fatalf("Expected system category in config")
+	}
+
+	return systemConfig
 }
 
 func TestGetGlobalConfig(t *testing.T) {
@@ -43,31 +72,7 @@ func TestGetGlobalConfig(t *testing.T) {
 		t.Fatalf("Failed to execute request: %v", err)
 	}
 
-	if resp.StatusCode != fiber.StatusOK {
-		t.Errorf("Expected status 200, got %d", resp.StatusCode)
-	}
-
-	var response APIResponse
-	if err := json.NewDecoder(resp.Body).Decode(&response); err != nil {
-		t.Fatalf("Failed to decode response: %v", err)
-	}
-
-	if !response.Success {
-		t.Errorf("Expected success=true, got %v", response.Success)
-	}
-
-	configMap, ok := response.Data.(map[string]interface{})
-	if !ok {
-		t.Fatalf("Expected data to be a map")
-	}
-
-	// Check if system category exists
-	systemConfig, ok := configMap["system"].(map[string]interface{})
-	if !ok {
-		t.Fatalf("Expected system category in config")
-	}
-
-	// Verify values
+	systemConfig := verifyConfigResponse(t, resp)
 	if systemConfig["PUID"] != "1000" {
 		t.Errorf("Expected PUID='1000', got '%v'", systemConfig["PUID"])
 	}
