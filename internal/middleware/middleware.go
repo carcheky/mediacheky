@@ -1,6 +1,7 @@
 package middleware
 
 import (
+	"regexp"
 	"time"
 
 	"github.com/carcheky/mediacheky/pkg/logger"
@@ -71,5 +72,83 @@ func ErrorHandler(log *logger.Logger) fiber.ErrorHandler {
 			"error":      err.Error(),
 			"request_id": c.Locals("requestid"),
 		})
+	}
+}
+
+// ValidateServiceName validates service name parameter
+// Service names should be alphanumeric with hyphens and underscores
+func ValidateServiceName() fiber.Handler {
+	validNameRegex := regexp.MustCompile(`^[a-zA-Z0-9_-]+$`)
+
+	return func(c *fiber.Ctx) error {
+		serviceName := c.Params("name")
+		if serviceName == "" {
+			return c.Next() // No name parameter, skip validation
+		}
+
+		if !validNameRegex.MatchString(serviceName) {
+			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+				"success": false,
+				"error":   "Invalid service name. Only alphanumeric characters, hyphens, and underscores are allowed",
+			})
+		}
+
+		// Limit length to prevent abuse
+		if len(serviceName) > 50 {
+			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+				"success": false,
+				"error":   "Service name too long. Maximum 50 characters",
+			})
+		}
+
+		return c.Next()
+	}
+}
+
+// ValidateConfigKey validates configuration key parameter
+func ValidateConfigKey() fiber.Handler {
+	validKeyRegex := regexp.MustCompile(`^[A-Z0-9_]+$`)
+
+	return func(c *fiber.Ctx) error {
+		key := c.Params("key")
+		if key == "" {
+			return c.Next() // No key parameter, skip validation
+		}
+
+		if !validKeyRegex.MatchString(key) {
+			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+				"success": false,
+				"error":   "Invalid configuration key. Only uppercase alphanumeric characters and underscores are allowed",
+			})
+		}
+
+		// Limit length
+		if len(key) > 50 {
+			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+				"success": false,
+				"error":   "Configuration key too long. Maximum 50 characters",
+			})
+		}
+
+		return c.Next()
+	}
+}
+
+// CORS configures CORS middleware with appropriate settings
+func CORS() fiber.Handler {
+	return func(c *fiber.Ctx) error {
+		// Set CORS headers
+		c.Set("Access-Control-Allow-Origin", "*")
+		c.Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
+		c.Set("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Request-ID")
+		c.Set("Access-Control-Expose-Headers", "X-Request-ID")
+		c.Set("Access-Control-Max-Age", "3600")
+
+		// Handle preflight requests
+		if c.Method() == "OPTIONS" {
+			return c.SendStatus(fiber.StatusNoContent)
+		}
+
+		return c.Next()
 	}
 }

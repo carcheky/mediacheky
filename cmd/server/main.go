@@ -88,6 +88,7 @@ func main() {
 	app.Use(recover.New())
 	app.Use(middleware.Logger(appLogger))
 	app.Use(middleware.RequestID())
+	app.Use(middleware.CORS())
 
 	// Static files
 	app.Static("/static", "./web/static")
@@ -167,22 +168,24 @@ func setupRoutes(app *fiber.App, h *handler.Handlers) {
 		// Stats (legacy endpoint)
 		api.Get("/stats", h.Dashboard.Stats)
 
-		// Service endpoints
-		api.Get("/services", h.Service.ListServices)
-		api.Get("/services/:name", h.Service.GetService)
-		api.Post("/services/:name/enable", h.Service.EnableService)
-		api.Post("/services/:name/disable", h.Service.DisableService)
-		api.Post("/services/:name/start", h.Service.StartContainer)
-		api.Post("/services/:name/stop", h.Service.StopContainer)
-		api.Post("/services/:name/restart", h.Service.RestartContainer)
-		api.Put("/services/:name/config", h.Service.UpdateServiceConfig)
-		api.Get("/services/:name/logs", h.Service.GetContainerLogs)
+		// Service endpoints with validation
+		services := api.Group("/services")
+		services.Get("/", h.Service.ListServices)
+		services.Get("/:name", middleware.ValidateServiceName(), h.Service.GetService)
+		services.Post("/:name/enable", middleware.ValidateServiceName(), h.Service.EnableService)
+		services.Post("/:name/disable", middleware.ValidateServiceName(), h.Service.DisableService)
+		services.Post("/:name/start", middleware.ValidateServiceName(), h.Service.StartContainer)
+		services.Post("/:name/stop", middleware.ValidateServiceName(), h.Service.StopContainer)
+		services.Post("/:name/restart", middleware.ValidateServiceName(), h.Service.RestartContainer)
+		services.Put("/:name/config", middleware.ValidateServiceName(), h.Service.UpdateServiceConfig)
+		services.Get("/:name/logs", middleware.ValidateServiceName(), h.Service.GetContainerLogs)
 
-		// Global configuration endpoints
-		api.Get("/config/global", h.Config.GetGlobalConfig)
-		api.Put("/config/global", h.Config.UpdateGlobalConfig)
-		api.Get("/config/global/:key", h.Config.GetConfigValue)
-		api.Put("/config/global/:key", h.Config.UpdateConfigValue)
+		// Global configuration endpoints with validation
+		globalConfig := api.Group("/config/global")
+		globalConfig.Get("/", h.Config.GetGlobalConfig)
+		globalConfig.Put("/", h.Config.UpdateGlobalConfig)
+		globalConfig.Get("/:key", middleware.ValidateConfigKey(), h.Config.GetConfigValue)
+		globalConfig.Put("/:key", middleware.ValidateConfigKey(), h.Config.UpdateConfigValue)
 
 		// Docker endpoints
 		api.Get("/docker/info", h.Docker.GetDockerInfo)
