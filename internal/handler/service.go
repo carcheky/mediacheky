@@ -448,3 +448,27 @@ func (h *ServiceHandler) GetContainerLogs(c *fiber.Ctx) error {
 		},
 	})
 }
+
+// ConfigPage renders the service configuration page
+func (h *ServiceHandler) ConfigPage(c *fiber.Ctx) error {
+	name := c.Params("name")
+	if name == "" {
+		return c.Status(fiber.StatusBadRequest).SendString("Service name is required")
+	}
+
+	// Verify service exists
+	_, err := h.repos.Service.GetByName(name)
+	if err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return c.Status(fiber.StatusNotFound).SendString(fmt.Sprintf("Service '%s' not found", name))
+		}
+		h.logger.Error("Failed to get service", "name", name, "error", err)
+		return c.Status(fiber.StatusInternalServerError).SendString("Failed to retrieve service")
+	}
+
+	return c.Render("pages/service_config", fiber.Map{
+		"Title":       name,
+		"ServiceName": name,
+		"Version":     "dev",
+	}, "layouts/main")
+}

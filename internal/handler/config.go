@@ -169,3 +169,11 @@ func (h *ConfigHandler) UpdateConfigValue(c *fiber.Ctx) error {
 		Data:    fiber.Map{"message": "Configuration value updated successfully"},
 	})
 }
+
+// Index renders the global configuration page
+func (h *ConfigHandler) Index(c *fiber.Ctx) error {
+	return c.Render("pages/global", fiber.Map{
+		"Title":   "Global Variables",
+		"Version": "dev",
+	}, "layouts/main")
+}

@@ -4,7 +4,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{.Title}}</title>
+    <title>{{.Title}} - MediaCheky</title>
+    <link rel="stylesheet" href="/static/css/custom.css">
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
@@ -29,36 +30,90 @@
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
 </head>
 
-<body class="bg-dark-bg dark:bg-dark-bg">
-    <nav class="bg-dark-surface dark:bg-dark-surface shadow-lg border-b border-dark-border">
+<body class="bg-dark-bg dark:bg-dark-bg min-h-screen flex flex-col">
+    <!-- Top Navigation Bar -->
+    <nav class="bg-dark-surface dark:bg-dark-surface shadow-lg border-b border-dark-border sticky top-0 z-50">
         <div class="max-w-7xl mx-auto px-4">
             <div class="flex justify-between h-16">
                 <div class="flex">
                     <div class="flex-shrink-0 flex items-center">
-                        <h1 class="text-xl font-bold text-dark-text dark:text-dark-text">MediaCheky</h1>
+                        <a href="/" class="flex items-center gap-2">
+                            <span class="text-2xl">🦊</span>
+                            <h1 class="text-xl font-bold text-dark-text dark:text-dark-text">MediaCheky</h1>
+                        </a>
                     </div>
                     <div class="hidden sm:ml-6 sm:flex sm:space-x-8">
                         <a href="/"
                             class="border-transparent text-dark-muted hover:border-blue-500 hover:text-dark-text dark:text-dark-muted dark:hover:text-dark-text inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium transition-colors">
-                            Dashboard
+                            📊 Dashboard
                         </a>
                         <a href="/settings"
                             class="border-transparent text-dark-muted hover:border-blue-500 hover:text-dark-text dark:text-dark-muted dark:hover:text-dark-text inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium transition-colors">
-                            Settings
+                            ⚙️ Settings
+                        </a>
+                        <a href="/global"
+                            class="border-transparent text-dark-muted hover:border-blue-500 hover:text-dark-text dark:text-dark-muted dark:hover:text-dark-text inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium transition-colors">
+                            🌐 Global
                         </a>
                         <a href="/logs"
                             class="border-transparent text-dark-muted hover:border-blue-500 hover:text-dark-text dark:text-dark-muted dark:hover:text-dark-text inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium transition-colors">
-                            Logs
+                            📝 Logs
                         </a>
                     </div>
                 </div>
+                <!-- Mobile menu button -->
+                <div class="flex items-center sm:hidden">
+                    <button @click="mobileMenuOpen = !mobileMenuOpen" type="button" 
+                        class="inline-flex items-center justify-center p-2 rounded-md text-dark-muted hover:text-dark-text hover:bg-dark-bg focus:outline-none">
+                        <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Mobile menu -->
+        <div x-show="mobileMenuOpen" x-transition class="sm:hidden border-t border-dark-border" x-data="{ mobileMenuOpen: false }">
+            <div class="pt-2 pb-3 space-y-1">
+                <a href="/" class="block pl-3 pr-4 py-2 border-l-4 border-transparent text-dark-muted hover:bg-dark-bg hover:border-blue-500 hover:text-dark-text">
+                    📊 Dashboard
+                </a>
+                <a href="/settings" class="block pl-3 pr-4 py-2 border-l-4 border-transparent text-dark-muted hover:bg-dark-bg hover:border-blue-500 hover:text-dark-text">
+                    ⚙️ Settings
+                </a>
+                <a href="/global" class="block pl-3 pr-4 py-2 border-l-4 border-transparent text-dark-muted hover:bg-dark-bg hover:border-blue-500 hover:text-dark-text">
+                    🌐 Global
+                </a>
+                <a href="/logs" class="block pl-3 pr-4 py-2 border-l-4 border-transparent text-dark-muted hover:bg-dark-bg hover:border-blue-500 hover:text-dark-text">
+                    📝 Logs
+                </a>
             </div>
         </div>
     </nav>
 
-    <main class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+    <!-- Main Content -->
+    <main class="flex-1 max-w-7xl mx-auto w-full py-6 px-4 sm:px-6 lg:px-8">
         {{embed}}
     </main>
+
+    <!-- Footer -->
+    <footer class="bg-dark-surface dark:bg-dark-surface border-t border-dark-border mt-auto">
+        <div class="max-w-7xl mx-auto py-4 px-4 sm:px-6 lg:px-8">
+            <div class="flex flex-col sm:flex-row justify-between items-center gap-2">
+                <p class="text-sm text-dark-muted">
+                    MediaCheky v{{.Version}} - Centralized control panel for *arr services
+                </p>
+                <div class="flex items-center gap-4 text-sm text-dark-muted">
+                    <a href="https://github.com/carcheky/mediacheky" target="_blank" rel="noopener noreferrer" 
+                       class="hover:text-dark-text transition-colors">
+                        GitHub
+                    </a>
+                    <span>Port 7369 🦊</span>
+                </div>
+            </div>
+        </div>
+    </footer>
 </body>
 
 </html>
