@@ -11,16 +11,18 @@ import (
 )
 
 type DashboardHandler struct {
-	repos       *repository.Repositories
-	logger      *logger.Logger
-	syncService *service.SyncService
+	repos        *repository.Repositories
+	logger       *logger.Logger
+	syncService  *service.SyncService
+	dockerClient *service.DockerClient
 }
 
-func NewDashboardHandler(repos *repository.Repositories, logger *logger.Logger, syncService *service.SyncService) *DashboardHandler {
+func NewDashboardHandler(repos *repository.Repositories, logger *logger.Logger, syncService *service.SyncService, dockerClient *service.DockerClient) *DashboardHandler {
 	return &DashboardHandler{
-		repos:       repos,
-		logger:      logger,
-		syncService: syncService,
+		repos:        repos,
+		logger:       logger,
+		syncService:  syncService,
+		dockerClient: dockerClient,
 	}
 }
 
@@ -125,4 +127,104 @@ func (h *DashboardHandler) GetJellystatViewsByType(c *fiber.Ctx) error {
 	}
 
 	return c.JSON(views)
+}
+
+// GetDashboardStats returns general statistics for the dashboard
+// Handles GET /api/dashboard/stats
+func (h *DashboardHandler) GetDashboardStats(c *fiber.Ctx) error {
+	stats := fiber.Map{}
+
+	// Get service statistics
+	services, err := h.repos.Service.GetAll()
+	if err != nil {
+		h.logger.Error("Failed to get services", "error", err)
+	} else {
+		activeServices := 0
+		stoppedServices := 0
+		for _, svc := range services {
+			if svc.Enabled && svc.Status == "running" {
+				activeServices++
+			} else {
+				stoppedServices++
+			}
+		}
+		stats["services_active"] = activeServices
+		stats["services_stopped"] = stoppedServices
+		stats["services_total"] = len(services)
+	}
+
+	// Get Docker version if available
+	if h.dockerClient != nil {
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+
+		containers, err := h.dockerClient.ListContainers(ctx)
+		if err != nil {
+			h.logger.Error("Failed to list containers", "error", err)
+		} else {
+			runningContainers := 0
+			for _, container := range containers {
+				if container.Status == service.ContainerStatusRunning {
+					runningContainers++
+				}
+			}
+			stats["containers_running"] = runningContainers
+			stats["containers_total"] = len(containers)
+		}
+	}
+
+	return c.JSON(APIResponse{
+		Success: true,
+		Data:    stats,
+	})
+}
+
+// HealthCheck returns health status of all enabled services
+// Handles GET /api/dashboard/health
+func (h *DashboardHandler) HealthCheck(c *fiber.Ctx) error {
+	services, err := h.repos.Service.GetEnabled()
+	if err != nil {
+		h.logger.Error("Failed to get enabled services", "error", err)
+		return c.Status(fiber.StatusInternalServerError).JSON(APIResponse{
+			Success: false,
+			Error:   "Failed to retrieve services",
+		})
+	}
+
+	healthStatus := make([]fiber.Map, 0, len(services))
+	
+	for _, svc := range services {
+		status := fiber.Map{
+			"name":         svc.Name,
+			"display_name": svc.DisplayName,
+			"enabled":      svc.Enabled,
+			"status":       svc.Status,
+			"healthy":      false,
+		}
+
+		// Check container health if Docker client is available and container exists
+		if h.dockerClient != nil && svc.ContainerID != "" {
+			ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+			containerStatus, err := h.dockerClient.GetContainerStatus(ctx, svc.ContainerID)
+			cancel()
+
+			if err != nil {
+				h.logger.Error("Failed to get container status", 
+					"service", svc.Name, 
+					"container_id", svc.ContainerID, 
+					"error", err)
+				status["error"] = err.Error()
+			} else {
+				status["container_status"] = string(containerStatus)
+				status["healthy"] = containerStatus == service.ContainerStatusRunning
+			}
+		}
+
+		healthStatus = append(healthStatus, status)
+	}
+
+	return c.JSON(APIResponse{
+		Success: true,
+		Data:    healthStatus,
+	})
 }

@@ -160,10 +160,35 @@ func setupRoutes(app *fiber.App, h *handler.Handlers) {
 	// API routes
 	api := app.Group("/api")
 	{
-		// Stats
+		// Dashboard endpoints
+		api.Get("/dashboard/stats", h.Dashboard.GetDashboardStats)
+		api.Get("/dashboard/health", h.Dashboard.HealthCheck)
+
+		// Stats (legacy endpoint)
 		api.Get("/stats", h.Dashboard.Stats)
 
-		// Configuration (Settings)
+		// Service endpoints
+		api.Get("/services", h.Service.ListServices)
+		api.Get("/services/:name", h.Service.GetService)
+		api.Post("/services/:name/enable", h.Service.EnableService)
+		api.Post("/services/:name/disable", h.Service.DisableService)
+		api.Post("/services/:name/start", h.Service.StartContainer)
+		api.Post("/services/:name/stop", h.Service.StopContainer)
+		api.Post("/services/:name/restart", h.Service.RestartContainer)
+		api.Put("/services/:name/config", h.Service.UpdateServiceConfig)
+		api.Get("/services/:name/logs", h.Service.GetContainerLogs)
+
+		// Global configuration endpoints
+		api.Get("/config/global", h.Config.GetGlobalConfig)
+		api.Put("/config/global", h.Config.UpdateGlobalConfig)
+		api.Get("/config/global/:key", h.Config.GetConfigValue)
+		api.Put("/config/global/:key", h.Config.UpdateConfigValue)
+
+		// Docker endpoints
+		api.Get("/docker/info", h.Docker.GetDockerInfo)
+		api.Get("/docker/containers", h.Docker.ListContainers)
+
+		// Configuration (Settings) - legacy endpoints
 		api.Get("/config", h.Settings.Get)
 		api.Post("/config", h.Settings.Update)
 		api.Post("/config/test/:service", h.Settings.TestConnection)
