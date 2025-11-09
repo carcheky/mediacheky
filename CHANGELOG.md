@@ -1,3 +1,10 @@
+# [1.0.0-dev.5](https://github.com/carcheky/mediacheky/compare/v1.0.0-dev.4...v1.0.0-dev.5) (2025-11-09)
+
+
+### Features
+
+* **templates:** implement docker-compose template system with validation ([#18](https://github.com/carcheky/mediacheky/issues/18)) ([def15d8](https://github.com/carcheky/mediacheky/commit/def15d80cc2697c511a317978702b64dcae851da))
+
 # [1.0.0-dev.4](https://github.com/carcheky/mediacheky/compare/v1.0.0-dev.3...v1.0.0-dev.4) (2025-11-08)
 
 
