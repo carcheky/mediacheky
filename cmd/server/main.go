@@ -88,6 +88,7 @@ func main() {
 	app.Use(recover.New())
 	app.Use(middleware.Logger(appLogger))
 	app.Use(middleware.RequestID())
+	app.Use(middleware.CORS())
 
 	// Static files
 	app.Static("/static", "./web/static")
@@ -160,10 +161,37 @@ func setupRoutes(app *fiber.App, h *handler.Handlers) {
 	// API routes
 	api := app.Group("/api")
 	{
-		// Stats
+		// Dashboard endpoints
+		api.Get("/dashboard/stats", h.Dashboard.GetDashboardStats)
+		api.Get("/dashboard/health", h.Dashboard.HealthCheck)
+
+		// Stats (legacy endpoint)
 		api.Get("/stats", h.Dashboard.Stats)
 
-		// Configuration (Settings)
+		// Service endpoints with validation
+		services := api.Group("/services")
+		services.Get("/", h.Service.ListServices)
+		services.Get("/:name", middleware.ValidateServiceName(), h.Service.GetService)
+		services.Post("/:name/enable", middleware.ValidateServiceName(), h.Service.EnableService)
+		services.Post("/:name/disable", middleware.ValidateServiceName(), h.Service.DisableService)
+		services.Post("/:name/start", middleware.ValidateServiceName(), h.Service.StartContainer)
+		services.Post("/:name/stop", middleware.ValidateServiceName(), h.Service.StopContainer)
+		services.Post("/:name/restart", middleware.ValidateServiceName(), h.Service.RestartContainer)
+		services.Put("/:name/config", middleware.ValidateServiceName(), h.Service.UpdateServiceConfig)
+		services.Get("/:name/logs", middleware.ValidateServiceName(), h.Service.GetContainerLogs)
+
+		// Global configuration endpoints with validation
+		globalConfig := api.Group("/config/global")
+		globalConfig.Get("/", h.Config.GetGlobalConfig)
+		globalConfig.Put("/", h.Config.UpdateGlobalConfig)
+		globalConfig.Get("/:key", middleware.ValidateConfigKey(), h.Config.GetConfigValue)
+		globalConfig.Put("/:key", middleware.ValidateConfigKey(), h.Config.UpdateConfigValue)
+
+		// Docker endpoints
+		api.Get("/docker/info", h.Docker.GetDockerInfo)
+		api.Get("/docker/containers", h.Docker.ListContainers)
+
+		// Configuration (Settings) - legacy endpoints
 		api.Get("/config", h.Settings.Get)
 		api.Post("/config", h.Settings.Update)
 		api.Post("/config/test/:service", h.Settings.TestConnection)
