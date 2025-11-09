@@ -319,15 +319,7 @@ func (te *TemplateEngine) LoadTemplatesFromFS(fs embed.FS, templatesPath string)
 
 		serviceName := entry.Name()[:len(entry.Name())-4] // Remove .yml extension
 
-		_, err := fs.ReadFile(filepath.Join(templatesPath, entry.Name()))
-		if err != nil {
-			te.logger.Warn("Failed to read template file",
-				zap.String("file", entry.Name()),
-				zap.Error(err))
-			continue
-		}
-
-		te.logger.Info("Loaded template from filesystem",
+		te.logger.Info("Found template file",
 			zap.String("service", serviceName),
 			zap.String("file", entry.Name()))
 	}

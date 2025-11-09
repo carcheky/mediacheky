@@ -3,6 +3,7 @@ package service
 import (
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/carcheky/mediacheky/internal/models"
@@ -130,7 +131,7 @@ func TestValidateContainerName(t *testing.T) {
 		{"invalid with space", "my radarr", true},
 		{"invalid with special char", "radarr!", true},
 		{"invalid with dot", "radarr.service", true},
-		{"invalid too long", "a" + string(make([]byte, 100)), true},
+		{"invalid too long", strings.Repeat("a", 101), true},
 	}
 
 	for _, tt := range tests {
