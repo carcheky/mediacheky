@@ -9,6 +9,12 @@ import (
 	"github.com/google/uuid"
 )
 
+// Compiled regex patterns for validation (package-level to avoid repeated compilation)
+var (
+	validServiceNameRegex = regexp.MustCompile(`^[a-zA-Z0-9_-]+$`)
+	validConfigKeyRegex   = regexp.MustCompile(`^[A-Z0-9_]+$`)
+)
+
 // Logger middleware logs HTTP requests
 func Logger(log *logger.Logger) fiber.Handler {
 	return func(c *fiber.Ctx) error {
@@ -78,15 +84,13 @@ func ErrorHandler(log *logger.Logger) fiber.ErrorHandler {
 // ValidateServiceName validates service name parameter
 // Service names should be alphanumeric with hyphens and underscores
 func ValidateServiceName() fiber.Handler {
-	validNameRegex := regexp.MustCompile(`^[a-zA-Z0-9_-]+$`)
-
 	return func(c *fiber.Ctx) error {
 		serviceName := c.Params("name")
 		if serviceName == "" {
 			return c.Next() // No name parameter, skip validation
 		}
 
-		if !validNameRegex.MatchString(serviceName) {
+		if !validServiceNameRegex.MatchString(serviceName) {
 			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 				"success": false,
 				"error":   "Invalid service name. Only alphanumeric characters, hyphens, and underscores are allowed",
@@ -107,15 +111,13 @@ func ValidateServiceName() fiber.Handler {
 
 // ValidateConfigKey validates configuration key parameter
 func ValidateConfigKey() fiber.Handler {
-	validKeyRegex := regexp.MustCompile(`^[A-Z0-9_]+$`)
-
 	return func(c *fiber.Ctx) error {
 		key := c.Params("key")
 		if key == "" {
 			return c.Next() // No key parameter, skip validation
 		}
 
-		if !validKeyRegex.MatchString(key) {
+		if !validConfigKeyRegex.MatchString(key) {
 			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 				"success": false,
 				"error":   "Invalid configuration key. Only uppercase alphanumeric characters and underscores are allowed",

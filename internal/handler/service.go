@@ -13,6 +13,13 @@ import (
 	"gorm.io/gorm"
 )
 
+const (
+	// defaultStopTimeout is the default timeout in seconds for stopping containers
+	defaultStopTimeout = 10
+	// defaultRestartTimeout is the default timeout in seconds for restarting containers
+	defaultRestartTimeout = 10
+)
+
 // ServiceHandler handles service-related HTTP requests
 type ServiceHandler struct {
 	repos        *repository.Repositories
@@ -261,8 +268,7 @@ func (h *ServiceHandler) StopContainer(c *fiber.Ctx) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
-	stopTimeout := 10 // seconds
-	if err := h.dockerClient.StopContainer(ctx, svc.ContainerID, stopTimeout); err != nil {
+	if err := h.dockerClient.StopContainer(ctx, svc.ContainerID, defaultStopTimeout); err != nil {
 		h.logger.Error("Failed to stop container", "name", name, "container_id", svc.ContainerID, "error", err)
 		return c.Status(fiber.StatusInternalServerError).JSON(APIResponse{
 			Success: false,
@@ -317,8 +323,7 @@ func (h *ServiceHandler) RestartContainer(c *fiber.Ctx) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
-	restartTimeout := 10 // seconds
-	if err := h.dockerClient.RestartContainer(ctx, svc.ContainerID, restartTimeout); err != nil {
+	if err := h.dockerClient.RestartContainer(ctx, svc.ContainerID, defaultRestartTimeout); err != nil {
 		h.logger.Error("Failed to restart container", "name", name, "container_id", svc.ContainerID, "error", err)
 		return c.Status(fiber.StatusInternalServerError).JSON(APIResponse{
 			Success: false,
