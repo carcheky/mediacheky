@@ -13,6 +13,7 @@ http://localhost:7369/api
 All API endpoints return responses in the following JSON format:
 
 ### Success Response
+
 ```json
 {
   "success": true,
@@ -21,6 +22,7 @@ All API endpoints return responses in the following JSON format:
 ```
 
 ### Error Response
+
 ```json
 {
   "success": false,
@@ -35,8 +37,11 @@ Currently, MediaCheky does not require authentication for API access. This may c
 ## CORS
 
 CORS is enabled on all API endpoints with the following configuration:
+
 - **Access-Control-Allow-Origin**: `*`
+
 - **Access-Control-Allow-Methods**: `GET, POST, PUT, DELETE, OPTIONS`
+
 - **Access-Control-Allow-Headers**: `Content-Type, Authorization, X-Request-ID`
 
 ---
@@ -85,6 +90,7 @@ GET /api/services/:name
 Returns details for a specific service.
 
 **Parameters:**
+
 - `name` (path) - Service name (e.g., `radarr`, `sonarr`)
 
 **Response:**
@@ -106,7 +112,9 @@ Returns details for a specific service.
 ```
 
 **Error Codes:**
+
 - `404` - Service not found
+
 - `400` - Invalid service name
 
 #### Enable Service
@@ -118,6 +126,7 @@ POST /api/services/:name/enable
 Enables a service.
 
 **Parameters:**
+
 - `name` (path) - Service name
 
 **Response:**
@@ -139,6 +148,7 @@ POST /api/services/:name/disable
 Disables a service.
 
 **Parameters:**
+
 - `name` (path) - Service name
 
 **Response:**
@@ -160,6 +170,7 @@ POST /api/services/:name/start
 Starts a service's Docker container.
 
 **Parameters:**
+
 - `name` (path) - Service name
 
 **Response:**
@@ -173,7 +184,9 @@ Starts a service's Docker container.
 ```
 
 **Error Codes:**
+
 - `400` - Service has no container associated
+
 - `500` - Failed to start container
 
 #### Stop Container
@@ -185,6 +198,7 @@ POST /api/services/:name/stop
 Stops a service's Docker container.
 
 **Parameters:**
+
 - `name` (path) - Service name
 
 **Response:**
@@ -198,7 +212,9 @@ Stops a service's Docker container.
 ```
 
 **Error Codes:**
+
 - `400` - Service has no container associated
+
 - `500` - Failed to stop container
 
 #### Restart Container
@@ -210,6 +226,7 @@ POST /api/services/:name/restart
 Restarts a service's Docker container.
 
 **Parameters:**
+
 - `name` (path) - Service name
 
 **Response:**
@@ -231,6 +248,7 @@ PUT /api/services/:name/config
 Updates a service's configuration.
 
 **Parameters:**
+
 - `name` (path) - Service name
 
 **Request Body:**
@@ -261,7 +279,9 @@ GET /api/services/:name/logs?tail=100
 Retrieves logs from a service's Docker container.
 
 **Parameters:**
+
 - `name` (path) - Service name
+
 - `tail` (query, optional) - Number of lines to retrieve (default: 100)
 
 **Response:**
@@ -347,6 +367,7 @@ GET /api/config/global/:key
 Returns a specific configuration entry.
 
 **Parameters:**
+
 - `key` (path) - Configuration key (e.g., `PUID`, `TZ`)
 
 **Response:**
@@ -363,7 +384,9 @@ Returns a specific configuration entry.
 ```
 
 **Error Codes:**
+
 - `404` - Configuration key not found
+
 - `400` - Invalid configuration key format
 
 #### Update Specific Configuration Value
@@ -375,6 +398,7 @@ PUT /api/config/global/:key
 Updates a specific configuration entry.
 
 **Parameters:**
+
 - `key` (path) - Configuration key
 
 **Request Body:**
@@ -531,18 +555,26 @@ Returns health status for all enabled services.
 ## Input Validation
 
 ### Service Names
+
 Service names must:
+
 - Be alphanumeric with hyphens and underscores allowed
+
 - Not exceed 50 characters
+
 - Match pattern: `^[a-zA-Z0-9_-]+$`
 
 **Valid examples:** `radarr`, `my-service`, `service_1`
 **Invalid examples:** `service.name`, `service@test`, `my service`
 
 ### Configuration Keys
+
 Configuration keys must:
+
 - Be uppercase alphanumeric with underscores allowed
+
 - Not exceed 50 characters
+
 - Match pattern: `^[A-Z0-9_]+$`
 
 **Valid examples:** `PUID`, `MY_CONFIG`, `CONFIG_123`
@@ -568,10 +600,15 @@ All errors follow the standard error response format:
 ```
 
 Common HTTP status codes:
+
 - `200` - Success
+
 - `400` - Bad Request (invalid input)
+
 - `404` - Not Found (resource doesn't exist)
+
 - `500` - Internal Server Error
+
 - `503` - Service Unavailable (Docker client not available)
 
 ---
@@ -579,9 +616,13 @@ Common HTTP status codes:
 ## Request ID
 
 All requests automatically receive a unique request ID in the `X-Request-ID` header. This ID is:
+
 - Generated automatically if not provided
+
 - Can be provided in the request header for request tracking
+
 - Included in error responses for debugging
+
 - Logged with all operations
 
 Example:
@@ -594,11 +635,19 @@ X-Request-ID: 550e8400-e29b-41d4-a716-446655440000
 ## Changelog
 
 ### Version 1.0 (Current)
+
 - Initial REST API implementation
+
 - Service management endpoints
+
 - Global configuration endpoints
+
 - Docker information endpoints
+
 - Dashboard statistics and health endpoints
+
 - Input validation middleware
+
 - CORS support
+
 - Standardized response format

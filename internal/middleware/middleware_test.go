@@ -52,11 +52,14 @@ func TestValidateServiceName(t *testing.T) {
 				t.Fatalf("Response missing 'success' field")
 			}
 
-			if tt.shouldPass && !success {
-				t.Errorf("Expected validation to pass, but got error: %v", response["error"])
-			}
-			if !tt.shouldPass && success {
-				t.Errorf("Expected validation to fail, but it passed")
+			// Simplified validation check
+			passedValidation := success
+			if passedValidation != tt.shouldPass {
+				if tt.shouldPass {
+					t.Errorf("Expected validation to pass, but got error: %v", response["error"])
+				} else {
+					t.Errorf("Expected validation to fail, but it passed")
+				}
 			}
 		})
 	}
