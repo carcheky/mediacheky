@@ -76,7 +76,7 @@ func main() {
 		}
 		return string(bytes)
 	})
-	
+
 	// Add JS string escaping function for use in JavaScript contexts
 	engine.AddFunc("jsStr", func(s string) string {
 		// Escape for safe use in JavaScript string context
