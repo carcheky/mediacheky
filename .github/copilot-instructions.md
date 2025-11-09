@@ -25,7 +25,7 @@
 - Execute commands INSIDE running containers (`docker exec`)
 - Inspect files and configurations
 - Make code changes
-- Run tests (but NOT start test servers)
+- Run validation and tests: **ALWAYS use `make check-and-fix` after changes**
 
 ---
 
@@ -165,6 +165,46 @@ Create reactive components:
     </button>
 </div>
 ```
+
+---
+
+## ✅ Testing & Validation
+
+**CRITICAL: ALWAYS run validation after making ANY code changes**
+
+### After EVERY code modification, you MUST:
+
+```bash
+make check-and-fix
+```
+
+This command will:
+1. 🔧 Auto-fix code formatting (`gofmt`)
+2. 📦 Clean dependencies (`go mod tidy`)
+3. 📝 Check format compliance
+4. 🔍 Run `go vet` static analysis
+5. 🧪 Execute all tests
+
+**NEVER skip this step.** If it fails:
+- Fix the reported issues
+- Run `make check-and-fix` again
+- Repeat until it passes
+
+### Available validation commands:
+
+```bash
+make validate        # Full validation (includes linting)
+make validate-quick  # Fast check (format + vet + test)
+make check-and-fix   # 🔧 AUTO-FIX + validate (USE THIS)
+make lint-fix        # Only fix formatting
+make test            # Run tests only
+```
+
+### When to use each:
+
+- **After editing code**: `make check-and-fix` ✅
+- **Before committing**: `make validate` (full)
+- **Quick check**: `make validate-quick`
 
 ---
 
