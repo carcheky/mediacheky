@@ -14,8 +14,8 @@ import (
 
 // ConfigValidator validates service configurations against JSON schemas
 type ConfigValidator struct {
-	logger      *zap.Logger
-	schemasDir  string
+	logger     *zap.Logger
+	schemasDir string
 }
 
 // NewConfigValidator creates a new ConfigValidator instance

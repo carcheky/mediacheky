@@ -16,11 +16,11 @@ import (
 
 // TemplateEngine handles template parsing and docker-compose generation
 type TemplateEngine struct {
-	logger         *zap.Logger
-	templatesDir   string
-	servicesDir    string
-	configRepo     ConfigRepository
-	templateRepo   TemplateRepository
+	logger       *zap.Logger
+	templatesDir string
+	servicesDir  string
+	configRepo   ConfigRepository
+	templateRepo TemplateRepository
 }
 
 // ConfigRepository defines the interface for accessing global configuration
@@ -43,10 +43,10 @@ type TemplateData struct {
 	Umask         string
 	Network       string
 	RestartPolicy string
-	
+
 	// Global configuration
 	Global GlobalConfig
-	
+
 	// Additional custom fields
 	Custom map[string]interface{}
 }
