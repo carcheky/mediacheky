@@ -1,0 +1,31 @@
+version: '3.8'
+services:
+  radarr:
+    image: {{ .Image }}
+    container_name: {{ .ContainerName }}
+    environment:
+      - PUID={{ .Global.PUID }}
+      - PGID={{ .Global.PGID }}
+      - TZ={{ .Global.Timezone }}
+      {{- if .Umask }}
+      - UMASK={{ .Umask }}
+      {{- end }}
+    volumes:
+      - {{ .Paths.Config }}:/config
+      - {{ .Paths.Movies }}:/movies
+      {{- if .Paths.Downloads }}
+      - {{ .Paths.Downloads }}:/downloads
+      {{- end }}
+    ports:
+      - "{{ .Port }}:7878"
+    {{- if .Network }}
+    networks:
+      - {{ .Network }}
+    {{- end }}
+    restart: {{ .RestartPolicy }}
+{{- if .Network }}
+
+networks:
+  {{ .Network }}:
+    external: true
+{{- end }}

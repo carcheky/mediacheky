@@ -1,0 +1,61 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "required": ["Image", "ContainerName", "Port", "Paths", "RestartPolicy"],
+  "properties": {
+    "Image": {
+      "type": "string",
+      "enum": ["linuxserver/radarr:latest", "linuxserver/radarr:develop", "linuxserver/radarr:nightly"],
+      "description": "Docker image for Radarr"
+    },
+    "ContainerName": {
+      "type": "string",
+      "pattern": "^[a-zA-Z0-9_-]+$",
+      "minLength": 1,
+      "maxLength": 100,
+      "description": "Container name"
+    },
+    "Port": {
+      "type": "integer",
+      "minimum": 1024,
+      "maximum": 65535,
+      "description": "External port for Radarr"
+    },
+    "Paths": {
+      "type": "object",
+      "required": ["Config", "Movies"],
+      "properties": {
+        "Config": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Path to config directory"
+        },
+        "Movies": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Path to movies directory"
+        },
+        "Downloads": {
+          "type": "string",
+          "description": "Optional path to downloads directory"
+        }
+      }
+    },
+    "Umask": {
+      "type": "string",
+      "pattern": "^[0-7]{3,4}$",
+      "description": "Optional umask value"
+    },
+    "Network": {
+      "type": "string",
+      "pattern": "^[a-zA-Z0-9_-]+$",
+      "description": "Optional custom network name"
+    },
+    "RestartPolicy": {
+      "type": "string",
+      "enum": ["unless-stopped", "always", "on-failure", "no"],
+      "default": "unless-stopped",
+      "description": "Container restart policy"
+    }
+  }
+}
