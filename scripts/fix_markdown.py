@@ -15,6 +15,15 @@ def fix_markdown_file(filepath: Path) -> bool:
     content = filepath.read_text(encoding='utf-8')
     original = content
     
+    # MD022: Ensure blank line before headings (except at start of file)
+    # Match: non-blank line followed by heading
+    content = re.sub(
+        r'([^\n])\n(^#{1,6} )',
+        r'\1\n\n\2',
+        content,
+        flags=re.MULTILINE
+    )
+    
     # MD022: Ensure blank line after headings (before non-blank content)
     # Match: heading followed immediately by non-blank line
     content = re.sub(
@@ -44,7 +53,7 @@ def fix_markdown_file(filepath: Path) -> bool:
     # MD032: Ensure blank line after lists
     # Match: list item followed by non-blank, non-list line
     content = re.sub(
-        r'(^[-*+] .+$)\n([^\n-*+])',
+        r'(^[-*+] .+$)\n([^\n-*+#])',
         r'\1\n\n\2',
         content,
         flags=re.MULTILINE
@@ -52,11 +61,23 @@ def fix_markdown_file(filepath: Path) -> bool:
     
     # Match: numbered list item followed by non-blank, non-list line
     content = re.sub(
-        r'(^\d+\. .+$)\n([^\n\d])',
+        r'(^\d+\. .+$)\n([^\n\d#])',
         r'\1\n\n\2',
         content,
         flags=re.MULTILINE
     )
+    
+    # MD040: Ensure code blocks have language specified
+    # Match: triple backticks with no language
+    lines = content.split('\n')
+    result = []
+    for i, line in enumerate(lines):
+        if line == '```' and (i == 0 or lines[i-1] != '```'):
+            # This is an opening fence without language, add 'text' as default
+            result.append('```text')
+        else:
+            result.append(line)
+    content = '\n'.join(result)
     
     # Remove triple+ blank lines (keep max 2)
     content = re.sub(r'\n{4,}', '\n\n\n', content)
@@ -70,6 +91,7 @@ def fix_markdown_file(filepath: Path) -> bool:
 def main():
     """Fix markdown files."""
     files_to_fix = [
+        Path('.github/copilot-instructions.md'),
         Path('docs/UI_IMPLEMENTATION.md'),
         Path('web/README.md'),
     ]
