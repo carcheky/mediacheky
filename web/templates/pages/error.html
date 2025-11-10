@@ -1,0 +1,30 @@
+<div class="flex items-center justify-center min-h-[60vh]">
+    <div class="max-w-md w-full">
+        <div class="bg-dark-surface dark:bg-dark-surface rounded-lg shadow-lg border border-dark-border p-8 text-center">
+            <!-- Error Icon -->
+            <div class="mb-6">
+                <svg class="w-20 h-20 mx-auto text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z">
+                    </path>
+                </svg>
+            </div>
+
+            <!-- Error Message -->
+            <h1 class="text-2xl font-bold text-dark-text mb-2">{{.Title}}</h1>
+            <p class="text-dark-muted mb-6">{{.Message}}</p>
+
+            <!-- Action Buttons -->
+            <div class="flex gap-3 justify-center">
+                <a href="/" 
+                   class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm font-medium transition-colors">
+                    Go to Dashboard
+                </a>
+                <button @click="window.history.back()" 
+                        class="px-6 py-2 bg-dark-border text-dark-text rounded-lg hover:bg-dark-surface text-sm font-medium transition-colors">
+                    Go Back
+                </button>
+            </div>
+        </div>
+    </div>
+</div>

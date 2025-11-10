@@ -12,9 +12,13 @@
 **YOU MUST NEVER:**
 
 - Run `make dev`, `make run`, or ANY make command that starts services
+
 - Run `docker-compose up/down/restart/stop`
+
 - Run `docker start/stop/restart/kill/rm`
+
 - Execute ANY command that manages Docker containers
+
 - Use `run_in_terminal` with `isBackground: true` for server startup
 
 **ONLY THE USER CAN START, STOP, OR RESTART SERVICES.**
@@ -22,10 +26,14 @@
 **WHAT YOU CAN DO:**
 
 - Read logs (`cat`, `tail`, `grep`)
+
 - Execute commands INSIDE running containers (`docker exec`)
+
 - Inspect files and configurations
+
 - Make code changes
-- Run tests (but NOT start test servers)
+
+- Run validation and tests: **ALWAYS use `make check-and-fix` after changes**
 
 ---
 
@@ -38,14 +46,19 @@
 Centralized interface to:
 
 1. **Dashboard** - Monitor service status (Jellyfin, Radarr, Sonarr, etc.)
+
 2. **Settings** - Enable/disable services
+
 3. **Services** - Configure each service with forms
+
 4. **Global Variables** - Share config (PUID, PGID, TZ, paths)
 
 ### How It Works
 
 1. User enables service (e.g., Radarr) → MediaCheky generates `docker-compose.yml`
+
 2. MediaCheky starts container via Docker Socket
+
 3. Dashboard shows real-time status
 
 ---
@@ -55,31 +68,38 @@ Centralized interface to:
 ### Technology Stack
 
 - **Backend**: Go 1.25 + Fiber v2
+
 - **Frontend**: Alpine.js 3.x + Tailwind CSS
+
 - **Database**: GORM v2 + SQLite
+
 - **Docker**: Docker Socket API + Compose Templates
+
 - **Target**: <25MB image, ~30-50MB RAM
 
 ### Hybrid Approach
 
 **Docker Socket + Docker Compose Templates**
 
-```
+```text
 User Action → Template Generation → docker compose up -d → Status Monitoring
-```
+```text
 
 ### Key Components
 
 - **Service Manager** - Lifecycle management
+
 - **Template Engine** - Generate docker-compose from templates
+
 - **Docker Client** - Interact with Docker Socket
+
 - **Config Repository** - Store in SQLite
 
 ---
 
 ## 📂 Project Structure
 
-```
+```text
 mediacheky/
 ├── cmd/server/main.go          # Entry point
 ├── internal/
@@ -104,7 +124,7 @@ mediacheky/
 │   └── data/                   # SQLite DB
 └── docs/
     └── PROJECT_PLAN.md         # Complete roadmap
-```
+```text
 
 ---
 
@@ -123,7 +143,7 @@ result, err := someFunction()
 if err != nil {
     return fmt.Errorf("failed: %w", err)
 }
-```
+```text
 
 ### 2. Logging
 
@@ -134,7 +154,7 @@ logger.Info("Starting service",
     "name", serviceName,
     "port", port,
 )
-```
+```text
 
 ### 3. Security
 
@@ -143,8 +163,11 @@ MediaCheky requires Docker socket → **root equivalent access**
 **Security measures:**
 
 - ✅ Validate all inputs
+
 - ✅ Whitelist allowed images
+
 - ✅ Sanitize paths (prevent `../`)
+
 - ✅ Log all actions
 
 ```go
@@ -152,7 +175,7 @@ var allowedImages = map[string]bool{
     "linuxserver/radarr": true,
     "linuxserver/sonarr": true,
 }
-```
+```text
 
 ### 4. Frontend (Alpine.js)
 
@@ -164,7 +187,57 @@ Create reactive components:
             x-text="enabled ? 'Disable' : 'Enable'">
     </button>
 </div>
-```
+```text
+
+---
+
+## ✅ Testing & Validation
+
+**CRITICAL: ALWAYS run validation after making ANY code changes**
+
+### After EVERY code modification, you MUST:
+
+```bash
+make check-and-fix
+```text
+
+This command will:
+
+1. 🔧 Auto-fix code formatting (`gofmt`)
+
+2. 📦 Clean dependencies (`go mod tidy`)
+
+3. 📝 Check format compliance
+
+4. 🔍 Run `go vet` static analysis
+
+5. 🧪 Execute all tests
+
+**NEVER skip this step.** If it fails:
+
+- Fix the reported issues
+
+- Run `make check-and-fix` again
+
+- Repeat until it passes
+
+### Available validation commands:
+
+```bash
+make validate        # Full validation (includes linting)
+make validate-quick  # Fast check (format + vet + test)
+make check-and-fix   # 🔧 AUTO-FIX + validate (USE THIS)
+make lint-fix        # Only fix formatting
+make test            # Run tests only
+```text
+
+### When to use each:
+
+- **After editing code**: `make check-and-fix` ✅
+
+- **Before committing**: `make validate` (full)
+
+- **Quick check**: `make validate-quick`
 
 ---
 
@@ -177,37 +250,50 @@ Create reactive components:
 ### Types that TRIGGER releases
 
 - `feat`: New feature
+
 - `fix`: Bug fix
+
 - `perf`: Performance improvement
 
 ### Types that DO NOT trigger releases
 
 - `docs`: Documentation
+
 - `chore`: Maintenance
+
 - `refactor`: Code restructuring
+
 - `test`: Tests
+
 - `style`: Formatting
+
 - `ci`: CI/CD changes
 
 ### Examples
 
 ```bash
+
 # TRIGGERS BUILD
+
 feat(services): add Radarr configuration panel
 fix(docker): correct container status check
 
 # DOES NOT TRIGGER BUILD
+
 docs(readme): update installation guide
 chore(deps): update dependencies
-```
+```text
 
 ---
 
 ## 🗣️ Communication
 
 - 📢 **User responses**: Spanish
+
 - 📝 **Code/docs**: English
+
 - 🐛 **Issues/PRs**: Spanish (titles and descriptions)
+
 - 💬 **GitHub interactions**: Spanish (comments, reviews)
 
 ---
@@ -215,8 +301,11 @@ chore(deps): update dependencies
 ## 📚 Resources
 
 - [Development Plan](../docs/PROJECT_PLAN.md) - Complete roadmap
+
 - [Docker API](https://docs.docker.com/engine/api/)
+
 - [Fiber Framework](https://docs.gofiber.io/)
+
 - [Alpine.js](https://alpinejs.dev/)
 
 ---

@@ -77,6 +77,16 @@ func main() {
 		return string(bytes)
 	})
 
+	// Add JS string escaping function for use in JavaScript contexts
+	engine.AddFunc("jsStr", func(s string) string {
+		// Escape for safe use in JavaScript string context
+		bytes, err := json.Marshal(s)
+		if err != nil {
+			return `""`
+		}
+		return string(bytes)
+	})
+
 	// Initialize Fiber app
 	app := fiber.New(fiber.Config{
 		AppName:      "KeeperCheky",
@@ -156,6 +166,8 @@ func setupRoutes(app *fiber.App, h *handler.Handlers) {
 	// Web UI routes
 	app.Get("/", h.Dashboard.Index)
 	app.Get("/settings", h.Settings.Index)
+	app.Get("/global", h.Config.Index)
+	app.Get("/services/:name", h.Service.ConfigPage)
 	app.Get("/logs", h.Logs.Index)
 
 	// API routes

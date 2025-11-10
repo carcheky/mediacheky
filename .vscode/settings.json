@@ -36,8 +36,8 @@
     },
     "html.format.templating": true,
     "workbench.colorCustomizations": {
-        "activityBar.background": "#1F3218",
-        "titleBar.activeBackground": "#2B4721",
+        "activityBar.background": "#322618",
+        "titleBar.activeBackground": "#826d2d",
         "titleBar.activeForeground": "#F9FCF8"
     },
     "chat.mcp.serverSampling": {

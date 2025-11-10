@@ -22,6 +22,7 @@ logs/
 # Binaries for programs and plugins
 bin/
 server
+mediacheky
 *.exe
 *.exe~
 *.dll

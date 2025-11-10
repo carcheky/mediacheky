@@ -1,4 +1,4 @@
-.PHONY: help dev dev-watch build test clean docker-build docker-run shell logs stop check-deps
+.PHONY: help dev dev-watch build test clean docker-build docker-run shell logs stop check-deps validate validate-quick lint-check lint-fix vet check-and-fix mod-tidy install-hooks uninstall-hooks
 
 # Default target
 help:
@@ -21,11 +21,19 @@ help:
 	@echo "  make test         - Run all tests"
 	@echo "  make test-coverage - Run tests with coverage"
 	@echo ""
+	@echo "Validation (run before commit):"
+	@echo "  make validate      - 🔍 Full validation (format, vet, test, lint)"
+	@echo "  make validate-quick - ⚡ Quick validation (format, vet, test)"
+	@echo "  make check-and-fix - 🔧 Auto-fix + validate"
+	@echo "  make lint-check    - Check code format"
+	@echo "  make lint-fix      - Fix code format"
+	@echo ""
 	@echo "Utilities:"
 	@echo "  make clean        - Clean build artifacts"
 	@echo "  make fmt          - Format code"
-	@echo "  make lint         - Run linter"
+	@echo "  make lint         - Run linter (golangci-lint)"
 	@echo "  make check-deps   - Check required dependencies"
+	@echo "  make install-hooks - Install pre-commit git hook"
 	@echo ""
 
 # Check dependencies
@@ -236,6 +244,110 @@ lint:
 		exit 1; \
 	}
 	@golangci-lint run ./...
+
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+# 🔍 VALIDATION TARGETS - Run before committing
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+# Validate all code (format, vet, test, lint) - RUN BEFORE COMMIT
+validate:
+	@command -v go >/dev/null 2>&1 || { \
+		echo "❌ Go is not installed"; \
+		echo "📥 Install from: https://golang.org/dl/"; \
+		exit 1; \
+	}
+	@chmod +x scripts/validate.sh
+	@bash scripts/validate.sh
+
+# Quick validation (format + vet + test) - Fast pre-commit check
+validate-quick: lint-check vet test
+	@echo ""
+	@echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+	@echo "✅ Quick validation passed!"
+	@echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+
+# Check code format (without modifying files)
+lint-check:
+	@echo "📝 Checking Go code format..."
+	@command -v go >/dev/null 2>&1 || { \
+		echo "❌ Go is not installed"; \
+		echo "📥 Install from: https://golang.org/dl/"; \
+		exit 1; \
+	}
+	@OUTPUT=$$(gofmt -s -l . 2>&1 | grep -v '^vendor/' | grep -v '^volumes/' | grep '.go$$' || true); \
+	if [ -n "$$OUTPUT" ]; then \
+		echo "❌ The following files need formatting:"; \
+		echo "$$OUTPUT"; \
+		echo ""; \
+		echo "💡 Run 'make lint-fix' to fix automatically"; \
+		exit 1; \
+	fi
+	@echo "✅ All files are properly formatted"
+
+# Fix code format automatically
+lint-fix:
+	@echo "🔧 Fixing code format..."
+	@command -v go >/dev/null 2>&1 || { \
+		echo "❌ Go is not installed"; \
+		echo "📥 Install from: https://golang.org/dl/"; \
+		exit 1; \
+	}
+	@find . -name "*.go" -not -path "./volumes/*" -not -path "./vendor/*" -exec gofmt -s -w {} \;
+	@echo "✅ Format applied successfully"
+
+# Run go vet
+vet:
+	@echo "🔍 Running go vet..."
+	@command -v go >/dev/null 2>&1 || { \
+		echo "❌ Go is not installed"; \
+		echo "📥 Install from: https://golang.org/dl/"; \
+		exit 1; \
+	}
+	@go vet ./...
+	@echo "✅ Go vet passed"
+
+# Check and fix common issues, then validate
+check-and-fix: lint-fix mod-tidy validate-quick
+	@echo ""
+	@echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+	@echo "✅ All fixes applied and validated!"
+	@echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+	@echo "👍 Ready to commit"
+
+# Tidy go modules
+mod-tidy:
+	@echo "📦 Tidying go modules..."
+	@command -v go >/dev/null 2>&1 || { \
+		echo "❌ Go is not installed"; \
+		echo "📥 Install from: https://golang.org/dl/"; \
+		exit 1; \
+	}
+	@go mod tidy
+	@echo "✅ Dependencies cleaned"
+
+# Install git hooks (optional)
+install-hooks:
+	@echo "📎 Installing git pre-commit hook..."
+	@mkdir -p .git/hooks
+	@echo '#!/bin/sh' > .git/hooks/pre-commit
+	@echo 'echo "🔍 Running pre-commit validation..."' >> .git/hooks/pre-commit
+	@echo 'make validate-quick' >> .git/hooks/pre-commit
+	@echo 'if [ $$? -ne 0 ]; then' >> .git/hooks/pre-commit
+	@echo '  echo ""' >> .git/hooks/pre-commit
+	@echo '  echo "❌ Pre-commit validation failed!"' >> .git/hooks/pre-commit
+	@echo '  echo "💡 Fix the issues or use: git commit --no-verify"' >> .git/hooks/pre-commit
+	@echo '  exit 1' >> .git/hooks/pre-commit
+	@echo 'fi' >> .git/hooks/pre-commit
+	@chmod +x .git/hooks/pre-commit
+	@echo "✅ Pre-commit hook installed"
+	@echo "   Will run 'make validate-quick' before each commit"
+	@echo "   To skip: git commit --no-verify"
+
+# Uninstall git hooks
+uninstall-hooks:
+	@echo "🗑️  Removing git pre-commit hook..."
+	@rm -f .git/hooks/pre-commit
+	@echo "✅ Hook removed"
 
 # Clean build artifacts
 clean:

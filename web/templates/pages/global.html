@@ -1,0 +1,256 @@
+<div x-data="globalConfig()" x-init="init()" class="space-y-6">
+    <!-- Header -->
+    <div class="flex justify-between items-center">
+        <div>
+            <h1 class="text-3xl font-bold text-dark-text dark:text-dark-text">Global Variables</h1>
+            <p class="text-sm text-dark-muted mt-1">Configuration shared across all services</p>
+        </div>
+        <button @click="saveConfig()" :disabled="saving"
+            class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2">
+            <svg x-show="!saving" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4">
+                </path>
+            </svg>
+            <svg x-show="saving" class="animate-spin w-5 h-5" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor"
+                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
+                </path>
+            </svg>
+            <span x-text="saving ? 'Saving...' : 'Save Changes'"></span>
+        </button>
+    </div>
+
+    <!-- User & Group Configuration -->
+    <div class="bg-dark-surface dark:bg-dark-surface rounded-lg shadow-lg border border-dark-border p-6">
+        <h2 class="text-xl font-semibold text-dark-text mb-4">User & Group</h2>
+        <p class="text-sm text-dark-muted mb-4">Linux user and group IDs for containers</p>
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+                <label class="block text-sm font-medium text-dark-text mb-1">
+                    PUID (User ID)
+                </label>
+                <input type="number" x-model.number="config.puid" placeholder="1000"
+                    class="w-full px-3 py-2 border border-dark-border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-dark-bg text-dark-text">
+                <p class="text-xs text-dark-muted mt-1">Default: 1000</p>
+            </div>
+            
+            <div>
+                <label class="block text-sm font-medium text-dark-text mb-1">
+                    PGID (Group ID)
+                </label>
+                <input type="number" x-model.number="config.pgid" placeholder="1000"
+                    class="w-full px-3 py-2 border border-dark-border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-dark-bg text-dark-text">
+                <p class="text-xs text-dark-muted mt-1">Default: 1000</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- System Configuration -->
+    <div class="bg-dark-surface dark:bg-dark-surface rounded-lg shadow-lg border border-dark-border p-6">
+        <h2 class="text-xl font-semibold text-dark-text mb-4">System</h2>
+        <p class="text-sm text-dark-muted mb-4">General system settings</p>
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+                <label class="block text-sm font-medium text-dark-text mb-1">
+                    Timezone (TZ)
+                </label>
+                <input type="text" x-model="config.timezone" placeholder="America/New_York"
+                    class="w-full px-3 py-2 border border-dark-border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-dark-bg text-dark-text">
+                <p class="text-xs text-dark-muted mt-1">Example: America/New_York, Europe/London</p>
+            </div>
+            
+            <div>
+                <label class="block text-sm font-medium text-dark-text mb-1">
+                    Language
+                </label>
+                <select x-model="config.language"
+                    class="w-full px-3 py-2 border border-dark-border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-dark-bg text-dark-text">
+                    <option value="en">English</option>
+                    <option value="es">Español</option>
+                    <option value="fr">Français</option>
+                    <option value="de">Deutsch</option>
+                </select>
+            </div>
+        </div>
+    </div>
+
+    <!-- Base Paths Configuration -->
+    <div class="bg-dark-surface dark:bg-dark-surface rounded-lg shadow-lg border border-dark-border p-6">
+        <h2 class="text-xl font-semibold text-dark-text mb-4">Base Paths</h2>
+        <p class="text-sm text-dark-muted mb-4">Default paths for media storage</p>
+        
+        <div class="space-y-4">
+            <div>
+                <label class="block text-sm font-medium text-dark-text mb-1">
+                    Media Directory
+                </label>
+                <input type="text" x-model="config.media_path" placeholder="/data/media"
+                    class="w-full px-3 py-2 border border-dark-border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-dark-bg text-dark-text">
+                <p class="text-xs text-dark-muted mt-1">Root path for movies, TV shows, music, etc.</p>
+            </div>
+            
+            <div>
+                <label class="block text-sm font-medium text-dark-text mb-1">
+                    Downloads Directory
+                </label>
+                <input type="text" x-model="config.downloads_path" placeholder="/data/downloads"
+                    class="w-full px-3 py-2 border border-dark-border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-dark-bg text-dark-text">
+                <p class="text-xs text-dark-muted mt-1">Path for download clients</p>
+            </div>
+            
+            <div>
+                <label class="block text-sm font-medium text-dark-text mb-1">
+                    Config Directory
+                </label>
+                <input type="text" x-model="config.config_path" placeholder="/data/config"
+                    class="w-full px-3 py-2 border border-dark-border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-dark-bg text-dark-text">
+                <p class="text-xs text-dark-muted mt-1">Path for service configurations</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Network Configuration -->
+    <div class="bg-dark-surface dark:bg-dark-surface rounded-lg shadow-lg border border-dark-border p-6">
+        <h2 class="text-xl font-semibold text-dark-text mb-4">Network</h2>
+        <p class="text-sm text-dark-muted mb-4">Docker network configuration</p>
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+                <label class="block text-sm font-medium text-dark-text mb-1">
+                    Network Name
+                </label>
+                <input type="text" x-model="config.network_name" placeholder="mediacheky-network"
+                    class="w-full px-3 py-2 border border-dark-border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-dark-bg text-dark-text">
+                <p class="text-xs text-dark-muted mt-1">Docker network for services</p>
+            </div>
+            
+            <div>
+                <label class="block text-sm font-medium text-dark-text mb-1">
+                    Subnet
+                </label>
+                <input type="text" x-model="config.subnet" placeholder="172.20.0.0/16"
+                    class="w-full px-3 py-2 border border-dark-border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-dark-bg text-dark-text">
+                <p class="text-xs text-dark-muted mt-1">CIDR notation (optional)</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Affected Services Preview -->
+    <div x-show="affectedServices.length > 0" class="bg-yellow-900/20 border border-yellow-700/50 rounded-lg p-6">
+        <div class="flex items-start gap-3">
+            <svg class="w-6 h-6 text-yellow-400 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd"
+                    d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
+                    clip-rule="evenodd" />
+            </svg>
+            <div>
+                <h3 class="font-semibold text-yellow-300 mb-2">Warning: Services Will Be Affected</h3>
+                <p class="text-sm text-yellow-200 mb-3">
+                    Changing these global variables will affect the following services:
+                </p>
+                <div class="flex flex-wrap gap-2">
+                    <template x-for="service in affectedServices" :key="service">
+                        <span class="px-3 py-1 bg-yellow-800/40 text-yellow-200 rounded-md text-sm" x-text="service"></span>
+                    </template>
+                </div>
+                <p class="text-sm text-yellow-200 mt-3">
+                    <strong>Note:</strong> Running services may need to be restarted for changes to take effect.
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Status Messages -->
+    <div x-show="message" x-transition :class="{
+            'bg-green-900/20 border-green-700/50 text-green-300': messageType === 'success',
+            'bg-red-900/20 border-red-700/50 text-red-300': messageType === 'error'
+        }" class="p-4 rounded-lg border">
+        <p x-text="message"></p>
+    </div>
+</div>
+
+<script>
+    function globalConfig() {
+        return {
+            config: {
+                puid: 1000,
+                pgid: 1000,
+                timezone: 'UTC',
+                language: 'en',
+                media_path: '/data/media',
+                downloads_path: '/data/downloads',
+                config_path: '/data/config',
+                network_name: 'mediacheky-network',
+                subnet: ''
+            },
+            affectedServices: [],
+            saving: false,
+            message: '',
+            messageType: 'success',
+
+            async init() {
+                await this.loadConfig();
+                await this.loadAffectedServices();
+            },
+
+            async loadConfig() {
+                try {
+                    const response = await fetch('/api/config/global');
+                    if (response.ok) {
+                        const data = await response.json();
+                        // Merge loaded config with defaults
+                        this.config = { ...this.config, ...data };
+                    }
+                } catch (error) {
+                    console.error('Error loading global config:', error);
+                }
+            },
+
+            async loadAffectedServices() {
+                try {
+                    const response = await fetch('/api/services/');
+                    if (response.ok) {
+                        const data = await response.json();
+                        // Filter for enabled services
+                        this.affectedServices = data.services
+                            .filter(s => s.enabled)
+                            .map(s => s.name);
+                    }
+                } catch (error) {
+                    console.error('Error loading services:', error);
+                }
+            },
+
+            async saveConfig() {
+                this.saving = true;
+                this.message = '';
+
+                try {
+                    const response = await fetch('/api/config/global', {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(this.config)
+                    });
+
+                    if (response.ok) {
+                        this.showMessage('Global configuration saved successfully!', 'success');
+                        await this.loadAffectedServices();
+                    } else {
+                        const data = await response.json();
+                        this.showMessage(data.error || 'Failed to save configuration', 'error');
+                    }
+                } catch (error) {
+                    this.showMessage('Error: ' + error.message, 'error');
+                } finally {
+                    this.saving = false;
+                }
+            },
+
+            showMessage: createShowMessage()
+        }
+    }
+</script>

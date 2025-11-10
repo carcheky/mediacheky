@@ -1,0 +1,30 @@
+# golangci-lint configuration for MediaCheky
+# https://golangci-lint.run/usage/configuration/
+# Optimized for CI/CD (GitHub Actions)
+
+run:
+  timeout: 5m
+  tests: true
+
+linters:
+  enable:
+    - errcheck      # Check for unchecked errors
+    - gosimple      # Simplify code
+    - govet         # Vet examines Go source code
+    - ineffassign   # Detect ineffectual assignments
+    - staticcheck   # Advanced Go linter
+    - unused        # Check for unused code
+    - gofmt         # Check formatting
+    - goimports     # Check imports
+    - misspell      # Check for misspelled words
+    - unconvert     # Remove unnecessary type conversions
+    - goconst       # Finds repeated strings that could be constants
+    - gocyclo       # Compute cyclomatic complexities
+    - dupl          # Check for code duplication
+    - gosec         # Security issues (G* rules)
+    - revive        # Fast, configurable, extensible, flexible linter
+
+issues:
+  max-issues-per-linter: 50
+  max-same-issues: 3
+  new: false

@@ -1,0 +1,88 @@
+<!-- Form Field Component -->
+<!-- Generic form field with validation support -->
+<div class="form-field">
+    <label class="block text-sm font-medium text-dark-text mb-1">
+        {{.Label}}
+        {{if .Required}}
+        <span class="text-red-400">*</span>
+        {{end}}
+        {{if .EnvSource}}
+        <span class="text-xs text-blue-400">(from .env)</span>
+        {{end}}
+    </label>
+    
+    {{if eq .Type "text"}}
+    <input type="text" 
+           name="{{.Name}}"
+           value="{{.Value}}"
+           placeholder="{{.Placeholder}}"
+           {{if .Disabled}}disabled{{end}}
+           {{if .Required}}required{{end}}
+           class="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-dark-text {{if .Disabled}}bg-slate-800/50 cursor-not-allowed{{else}}bg-dark-bg{{end}} {{if .Error}}border-red-500{{else}}border-dark-border{{end}}">
+    
+    {{else if eq .Type "number"}}
+    <input type="number" 
+           name="{{.Name}}"
+           value="{{.Value}}"
+           placeholder="{{.Placeholder}}"
+           {{if .Min}}min="{{.Min}}"{{end}}
+           {{if .Max}}max="{{.Max}}"{{end}}
+           {{if .Disabled}}disabled{{end}}
+           {{if .Required}}required{{end}}
+           class="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-dark-text {{if .Disabled}}bg-slate-800/50 cursor-not-allowed{{else}}bg-dark-bg{{end}} {{if .Error}}border-red-500{{else}}border-dark-border{{end}}">
+    
+    {{else if eq .Type "password"}}
+    <input type="password" 
+           name="{{.Name}}"
+           value="{{.Value}}"
+           placeholder="{{.Placeholder}}"
+           {{if .Disabled}}disabled{{end}}
+           {{if .Required}}required{{end}}
+           class="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-dark-text {{if .Disabled}}bg-slate-800/50 cursor-not-allowed{{else}}bg-dark-bg{{end}} {{if .Error}}border-red-500{{else}}border-dark-border{{end}}">
+    
+    {{else if eq .Type "url"}}
+    <input type="url" 
+           name="{{.Name}}"
+           value="{{.Value}}"
+           placeholder="{{.Placeholder}}"
+           {{if .Disabled}}disabled{{end}}
+           {{if .Required}}required{{end}}
+           class="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-dark-text {{if .Disabled}}bg-slate-800/50 cursor-not-allowed{{else}}bg-dark-bg{{end}} {{if .Error}}border-red-500{{else}}border-dark-border{{end}}">
+    
+    {{else if eq .Type "select"}}
+    <select name="{{.Name}}"
+            {{if .Disabled}}disabled{{end}}
+            {{if .Required}}required{{end}}
+            class="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-dark-text {{if .Disabled}}bg-slate-800/50 cursor-not-allowed{{else}}bg-dark-bg{{end}} {{if .Error}}border-red-500{{else}}border-dark-border{{end}}">
+        {{range .Options}}
+        <option value="{{.Value}}" {{if eq .Value $.Value}}selected{{end}}>{{.Label}}</option>
+        {{end}}
+    </select>
+    
+    {{else if eq .Type "textarea"}}
+    <textarea name="{{.Name}}"
+              placeholder="{{.Placeholder}}"
+              {{if .Disabled}}disabled{{end}}
+              {{if .Required}}required{{end}}
+              rows="{{.Rows}}"
+              class="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-dark-text {{if .Disabled}}bg-slate-800/50 cursor-not-allowed{{else}}bg-dark-bg{{end}} {{if .Error}}border-red-500{{else}}border-dark-border{{end}}">{{.Value}}</textarea>
+    
+    {{else if eq .Type "checkbox"}}
+    <label class="flex items-center cursor-pointer {{if .Disabled}}opacity-70 cursor-not-allowed{{end}}">
+        <input type="checkbox" 
+               name="{{.Name}}"
+               {{if .Value}}checked{{end}}
+               {{if .Disabled}}disabled{{end}}
+               class="sr-only peer">
+        <div class="relative w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600">
+        </div>
+        <span class="ml-3 text-sm font-medium text-dark-text">{{.CheckboxLabel}}</span>
+    </label>
+    {{end}}
+    
+    {{if .Error}}
+    <p class="text-xs text-red-400 mt-1">{{.Error}}</p>
+    {{else if .Help}}
+    <p class="text-xs text-dark-muted mt-1">{{.Help}}</p>
+    {{end}}
+</div>
