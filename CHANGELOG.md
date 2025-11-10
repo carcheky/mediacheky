@@ -1,3 +1,10 @@
+# [1.0.0-dev.7](https://github.com/carcheky/mediacheky/compare/v1.0.0-dev.6...v1.0.0-dev.7) (2025-11-10)
+
+
+### Features
+
+* **ui:** Implement Alpine.js and Tailwind CSS frontend with Global and Service configuration pages ([#20](https://github.com/carcheky/mediacheky/issues/20)) ([11901cc](https://github.com/carcheky/mediacheky/commit/11901ccb32db96302aa9a934a9f268f43eaaae36)), closes [#2508206982](https://github.com/carcheky/mediacheky/issues/2508206982) [#2508207053](https://github.com/carcheky/mediacheky/issues/2508207053) [#2508207044](https://github.com/carcheky/mediacheky/issues/2508207044) [#2508206993](https://github.com/carcheky/mediacheky/issues/2508206993) [#2508207028](https://github.com/carcheky/mediacheky/issues/2508207028) [#2508207066](https://github.com/carcheky/mediacheky/issues/2508207066) [#2508207017](https://github.com/carcheky/mediacheky/issues/2508207017) [#2508207006](https://github.com/carcheky/mediacheky/issues/2508207006) [#2508207060](https://github.com/carcheky/mediacheky/issues/2508207060) [#2508207035](https://github.com/carcheky/mediacheky/issues/2508207035) [#2508206962](https://github.com/carcheky/mediacheky/issues/2508206962)
+
 # [1.0.0-dev.6](https://github.com/carcheky/mediacheky/compare/v1.0.0-dev.5...v1.0.0-dev.6) (2025-11-09)
 
 
