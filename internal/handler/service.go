@@ -22,17 +22,19 @@ const (
 
 // ServiceHandler handles service-related HTTP requests
 type ServiceHandler struct {
-	repos        *repository.Repositories
-	logger       *logger.Logger
-	dockerClient *service.DockerClient
+	repos          *repository.Repositories
+	logger         *logger.Logger
+	dockerClient   *service.DockerClient
+	serviceManager *service.ServiceManager
 }
 
 // NewServiceHandler creates a new ServiceHandler instance
-func NewServiceHandler(repos *repository.Repositories, logger *logger.Logger, dockerClient *service.DockerClient) *ServiceHandler {
+func NewServiceHandler(repos *repository.Repositories, logger *logger.Logger, dockerClient *service.DockerClient, serviceManager *service.ServiceManager) *ServiceHandler {
 	return &ServiceHandler{
-		repos:        repos,
-		logger:       logger,
-		dockerClient: dockerClient,
+		repos:          repos,
+		logger:         logger,
+		dockerClient:   dockerClient,
+		serviceManager: serviceManager,
 	}
 }
 
@@ -94,33 +96,23 @@ func (h *ServiceHandler) EnableService(c *fiber.Ctx) error {
 		})
 	}
 
-	svc, err := h.repos.Service.GetByName(name)
-	if err != nil {
-		if err == gorm.ErrRecordNotFound {
-			return c.Status(fiber.StatusNotFound).JSON(APIResponse{
-				Success: false,
-				Error:   fmt.Sprintf("Service '%s' not found", name),
-			})
-		}
-		h.logger.Error("Failed to get service", "name", name, "error", err)
-		return c.Status(fiber.StatusInternalServerError).JSON(APIResponse{
+	// Check if service manager is available
+	if h.serviceManager == nil {
+		return c.Status(fiber.StatusServiceUnavailable).JSON(APIResponse{
 			Success: false,
-			Error:   "Failed to retrieve service",
+			Error:   "Service manager is not available",
 		})
 	}
 
-	if svc.Enabled {
-		return c.JSON(APIResponse{
-			Success: true,
-			Data:    fiber.Map{"message": "Service is already enabled"},
-		})
-	}
+	// Use service manager to enable service
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
 
-	if err := h.repos.Service.SetEnabled(svc.ID, true); err != nil {
+	if err := h.serviceManager.EnableService(ctx, name); err != nil {
 		h.logger.Error("Failed to enable service", "name", name, "error", err)
 		return c.Status(fiber.StatusInternalServerError).JSON(APIResponse{
 			Success: false,
-			Error:   "Failed to enable service",
+			Error:   fmt.Sprintf("Failed to enable service: %v", err),
 		})
 	}
 
@@ -141,33 +133,23 @@ func (h *ServiceHandler) DisableService(c *fiber.Ctx) error {
 		})
 	}
 
-	svc, err := h.repos.Service.GetByName(name)
-	if err != nil {
-		if err == gorm.ErrRecordNotFound {
-			return c.Status(fiber.StatusNotFound).JSON(APIResponse{
-				Success: false,
-				Error:   fmt.Sprintf("Service '%s' not found", name),
-			})
-		}
-		h.logger.Error("Failed to get service", "name", name, "error", err)
-		return c.Status(fiber.StatusInternalServerError).JSON(APIResponse{
+	// Check if service manager is available
+	if h.serviceManager == nil {
+		return c.Status(fiber.StatusServiceUnavailable).JSON(APIResponse{
 			Success: false,
-			Error:   "Failed to retrieve service",
+			Error:   "Service manager is not available",
 		})
 	}
 
-	if !svc.Enabled {
-		return c.JSON(APIResponse{
-			Success: true,
-			Data:    fiber.Map{"message": "Service is already disabled"},
-		})
-	}
+	// Use service manager to disable service
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
 
-	if err := h.repos.Service.SetEnabled(svc.ID, false); err != nil {
+	if err := h.serviceManager.DisableService(ctx, name); err != nil {
 		h.logger.Error("Failed to disable service", "name", name, "error", err)
 		return c.Status(fiber.StatusInternalServerError).JSON(APIResponse{
 			Success: false,
-			Error:   "Failed to disable service",
+			Error:   fmt.Sprintf("Failed to disable service: %v", err),
 		})
 	}
 
@@ -188,48 +170,30 @@ func (h *ServiceHandler) StartContainer(c *fiber.Ctx) error {
 		})
 	}
 
-	svc, err := h.repos.Service.GetByName(name)
-	if err != nil {
-		if err == gorm.ErrRecordNotFound {
-			return c.Status(fiber.StatusNotFound).JSON(APIResponse{
-				Success: false,
-				Error:   fmt.Sprintf("Service '%s' not found", name),
-			})
-		}
-		h.logger.Error("Failed to get service", "name", name, "error", err)
-		return c.Status(fiber.StatusInternalServerError).JSON(APIResponse{
+	// Check if service manager is available
+	if h.serviceManager == nil {
+		return c.Status(fiber.StatusServiceUnavailable).JSON(APIResponse{
 			Success: false,
-			Error:   "Failed to retrieve service",
+			Error:   "Service manager is not available",
 		})
 	}
 
-	if svc.ContainerID == "" {
-		return c.Status(fiber.StatusBadRequest).JSON(APIResponse{
-			Success: false,
-			Error:   "Service has no container associated",
-		})
-	}
-
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	// Use service manager to start service
+	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
 	defer cancel()
 
-	if err := h.dockerClient.StartContainer(ctx, svc.ContainerID); err != nil {
-		h.logger.Error("Failed to start container", "name", name, "container_id", svc.ContainerID, "error", err)
+	if err := h.serviceManager.StartService(ctx, name); err != nil {
+		h.logger.Error("Failed to start service", "name", name, "error", err)
 		return c.Status(fiber.StatusInternalServerError).JSON(APIResponse{
 			Success: false,
-			Error:   fmt.Sprintf("Failed to start container: %v", err),
+			Error:   fmt.Sprintf("Failed to start service: %v", err),
 		})
 	}
 
-	// Update service status
-	if err := h.repos.Service.UpdateStatus(svc.ID, "running", svc.ContainerID); err != nil {
-		h.logger.Error("Failed to update service status", "name", name, "error", err)
-	}
-
-	h.logger.Info("Container started", "name", name, "container_id", svc.ContainerID)
+	h.logger.Info("Service started", "name", name)
 	return c.JSON(APIResponse{
 		Success: true,
-		Data:    fiber.Map{"message": "Container started successfully"},
+		Data:    fiber.Map{"message": "Service started successfully"},
 	})
 }
 
@@ -243,48 +207,30 @@ func (h *ServiceHandler) StopContainer(c *fiber.Ctx) error {
 		})
 	}
 
-	svc, err := h.repos.Service.GetByName(name)
-	if err != nil {
-		if err == gorm.ErrRecordNotFound {
-			return c.Status(fiber.StatusNotFound).JSON(APIResponse{
-				Success: false,
-				Error:   fmt.Sprintf("Service '%s' not found", name),
-			})
-		}
-		h.logger.Error("Failed to get service", "name", name, "error", err)
-		return c.Status(fiber.StatusInternalServerError).JSON(APIResponse{
+	// Check if service manager is available
+	if h.serviceManager == nil {
+		return c.Status(fiber.StatusServiceUnavailable).JSON(APIResponse{
 			Success: false,
-			Error:   "Failed to retrieve service",
+			Error:   "Service manager is not available",
 		})
 	}
 
-	if svc.ContainerID == "" {
-		return c.Status(fiber.StatusBadRequest).JSON(APIResponse{
-			Success: false,
-			Error:   "Service has no container associated",
-		})
-	}
-
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	// Use service manager to stop service
+	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
 	defer cancel()
 
-	if err := h.dockerClient.StopContainer(ctx, svc.ContainerID, defaultStopTimeout); err != nil {
-		h.logger.Error("Failed to stop container", "name", name, "container_id", svc.ContainerID, "error", err)
+	if err := h.serviceManager.StopService(ctx, name); err != nil {
+		h.logger.Error("Failed to stop service", "name", name, "error", err)
 		return c.Status(fiber.StatusInternalServerError).JSON(APIResponse{
 			Success: false,
-			Error:   fmt.Sprintf("Failed to stop container: %v", err),
+			Error:   fmt.Sprintf("Failed to stop service: %v", err),
 		})
 	}
 
-	// Update service status
-	if err := h.repos.Service.UpdateStatus(svc.ID, "stopped", svc.ContainerID); err != nil {
-		h.logger.Error("Failed to update service status", "name", name, "error", err)
-	}
-
-	h.logger.Info("Container stopped", "name", name, "container_id", svc.ContainerID)
+	h.logger.Info("Service stopped", "name", name)
 	return c.JSON(APIResponse{
 		Success: true,
-		Data:    fiber.Map{"message": "Container stopped successfully"},
+		Data:    fiber.Map{"message": "Service stopped successfully"},
 	})
 }
 
@@ -298,48 +244,30 @@ func (h *ServiceHandler) RestartContainer(c *fiber.Ctx) error {
 		})
 	}
 
-	svc, err := h.repos.Service.GetByName(name)
-	if err != nil {
-		if err == gorm.ErrRecordNotFound {
-			return c.Status(fiber.StatusNotFound).JSON(APIResponse{
-				Success: false,
-				Error:   fmt.Sprintf("Service '%s' not found", name),
-			})
-		}
-		h.logger.Error("Failed to get service", "name", name, "error", err)
-		return c.Status(fiber.StatusInternalServerError).JSON(APIResponse{
+	// Check if service manager is available
+	if h.serviceManager == nil {
+		return c.Status(fiber.StatusServiceUnavailable).JSON(APIResponse{
 			Success: false,
-			Error:   "Failed to retrieve service",
+			Error:   "Service manager is not available",
 		})
 	}
 
-	if svc.ContainerID == "" {
-		return c.Status(fiber.StatusBadRequest).JSON(APIResponse{
-			Success: false,
-			Error:   "Service has no container associated",
-		})
-	}
-
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	// Use service manager to restart service
+	ctx, cancel := context.WithTimeout(context.Background(), 90*time.Second)
 	defer cancel()
 
-	if err := h.dockerClient.RestartContainer(ctx, svc.ContainerID, defaultRestartTimeout); err != nil {
-		h.logger.Error("Failed to restart container", "name", name, "container_id", svc.ContainerID, "error", err)
+	if err := h.serviceManager.RestartService(ctx, name); err != nil {
+		h.logger.Error("Failed to restart service", "name", name, "error", err)
 		return c.Status(fiber.StatusInternalServerError).JSON(APIResponse{
 			Success: false,
-			Error:   fmt.Sprintf("Failed to restart container: %v", err),
+			Error:   fmt.Sprintf("Failed to restart service: %v", err),
 		})
 	}
 
-	// Update service status
-	if err := h.repos.Service.UpdateStatus(svc.ID, "running", svc.ContainerID); err != nil {
-		h.logger.Error("Failed to update service status", "name", name, "error", err)
-	}
-
-	h.logger.Info("Container restarted", "name", name, "container_id", svc.ContainerID)
+	h.logger.Info("Service restarted", "name", name)
 	return c.JSON(APIResponse{
 		Success: true,
-		Data:    fiber.Map{"message": "Container restarted successfully"},
+		Data:    fiber.Map{"message": "Service restarted successfully"},
 	})
 }
 
@@ -353,21 +281,6 @@ func (h *ServiceHandler) UpdateServiceConfig(c *fiber.Ctx) error {
 		})
 	}
 
-	svc, err := h.repos.Service.GetByName(name)
-	if err != nil {
-		if err == gorm.ErrRecordNotFound {
-			return c.Status(fiber.StatusNotFound).JSON(APIResponse{
-				Success: false,
-				Error:   fmt.Sprintf("Service '%s' not found", name),
-			})
-		}
-		h.logger.Error("Failed to get service", "name", name, "error", err)
-		return c.Status(fiber.StatusInternalServerError).JSON(APIResponse{
-			Success: false,
-			Error:   "Failed to retrieve service",
-		})
-	}
-
 	var configUpdate models.ServiceConfig
 	if err := c.BodyParser(&configUpdate); err != nil {
 		h.logger.Error("Failed to parse config update", "name", name, "error", err)
@@ -377,13 +290,23 @@ func (h *ServiceHandler) UpdateServiceConfig(c *fiber.Ctx) error {
 		})
 	}
 
-	// Update the service configuration
-	svc.Config = configUpdate
-	if err := h.repos.Service.Update(svc); err != nil {
+	// Check if service manager is available
+	if h.serviceManager == nil {
+		return c.Status(fiber.StatusServiceUnavailable).JSON(APIResponse{
+			Success: false,
+			Error:   "Service manager is not available",
+		})
+	}
+
+	// Use service manager to update configuration
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
+	if err := h.serviceManager.UpdateServiceConfig(ctx, name, configUpdate); err != nil {
 		h.logger.Error("Failed to update service config", "name", name, "error", err)
 		return c.Status(fiber.StatusInternalServerError).JSON(APIResponse{
 			Success: false,
-			Error:   "Failed to update service configuration",
+			Error:   fmt.Sprintf("Failed to update service configuration: %v", err),
 		})
 	}
 
