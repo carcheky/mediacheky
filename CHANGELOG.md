@@ -1,3 +1,10 @@
+# [1.0.0-dev.8](https://github.com/carcheky/mediacheky/compare/v1.0.0-dev.7...v1.0.0-dev.8) (2025-11-10)
+
+
+### Features
+
+* Implement complete Radarr service management as MVP proof-of-concept ([#21](https://github.com/carcheky/mediacheky/issues/21)) ([3d7ff6a](https://github.com/carcheky/mediacheky/commit/3d7ff6a139960125f04dbfd17d0d8685c26ea430))
+
 # [1.0.0-dev.7](https://github.com/carcheky/mediacheky/compare/v1.0.0-dev.6...v1.0.0-dev.7) (2025-11-10)
 
 
