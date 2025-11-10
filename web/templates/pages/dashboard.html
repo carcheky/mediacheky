@@ -97,6 +97,97 @@
         </div>
     </div>
 
+    <!-- Services Section -->
+    <div x-data="servicesStatus()" x-init="init()" class="bg-dark-surface dark:bg-dark-surface rounded-lg shadow-lg border border-dark-border p-6">
+        <div class="flex justify-between items-center mb-6">
+            <h2 class="text-xl font-semibold text-dark-text">Services</h2>
+            <button @click="refresh()" :disabled="loading" 
+                    class="px-3 py-1 text-sm bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50">
+                <span x-show="!loading">Refresh</span>
+                <span x-show="loading">Loading...</span>
+            </button>
+        </div>
+
+        <!-- Services Grid -->
+        <div x-show="services.length > 0" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <template x-for="service in services" :key="service.id">
+                <div class="bg-dark-bg rounded-lg p-4 border border-dark-border hover:border-blue-500/50 transition-all">
+                    <div class="flex items-start justify-between mb-3">
+                        <div class="flex items-center gap-3">
+                            <div class="text-2xl" x-text="service.icon || '📦'"></div>
+                            <div>
+                                <h3 class="text-sm font-semibold text-dark-text" x-text="service.display_name"></h3>
+                                <p class="text-xs text-dark-muted" x-text="'Port: ' + (service.port || 'N/A')"></p>
+                            </div>
+                        </div>
+                        <div>
+                            <span x-show="service.status === 'running'" class="px-2 py-1 bg-green-900/30 border border-green-600/50 text-green-300 rounded text-xs">
+                                ✅ Running
+                            </span>
+                            <span x-show="service.status === 'stopped'" class="px-2 py-1 bg-gray-900/30 border border-gray-600/50 text-gray-300 rounded text-xs">
+                                📴 Stopped
+                            </span>
+                            <span x-show="service.status !== 'running' && service.status !== 'stopped'" class="px-2 py-1 bg-yellow-900/30 border border-yellow-600/50 text-yellow-300 rounded text-xs">
+                                ⚠️ <span x-text="service.status"></span>
+                            </span>
+                        </div>
+                    </div>
+
+                    <!-- Service Actions -->
+                    <div class="flex gap-2 mt-3">
+                        <template x-if="service.enabled && service.status === 'running'">
+                            <div class="flex gap-2 flex-1">
+                                <button @click="actionService(service.name, 'restart')" :disabled="actionInProgress"
+                                        class="flex-1 px-3 py-1.5 bg-yellow-600 text-white rounded hover:bg-yellow-700 text-xs font-medium transition-colors disabled:opacity-50">
+                                    Restart
+                                </button>
+                                <button @click="actionService(service.name, 'stop')" :disabled="actionInProgress"
+                                        class="flex-1 px-3 py-1.5 bg-red-600 text-white rounded hover:bg-red-700 text-xs font-medium transition-colors disabled:opacity-50">
+                                    Stop
+                                </button>
+                            </div>
+                        </template>
+                        <template x-if="service.enabled && service.status !== 'running'">
+                            <button @click="actionService(service.name, 'start')" :disabled="actionInProgress"
+                                    class="flex-1 px-3 py-1.5 bg-green-600 text-white rounded hover:bg-green-700 text-xs font-medium transition-colors disabled:opacity-50">
+                                Start
+                            </button>
+                        </template>
+                        <template x-if="!service.enabled">
+                            <button @click="actionService(service.name, 'enable')" :disabled="actionInProgress"
+                                    class="flex-1 px-3 py-1.5 bg-blue-600 text-white rounded hover:bg-blue-700 text-xs font-medium transition-colors disabled:opacity-50">
+                                Enable
+                            </button>
+                        </template>
+                        <a :href="'/services/' + service.name" 
+                           class="px-3 py-1.5 bg-purple-600 text-white rounded hover:bg-purple-700 text-xs font-medium transition-colors text-center">
+                            Configure
+                        </a>
+                    </div>
+
+                    <!-- Quick link if running -->
+                    <template x-if="service.enabled && service.status === 'running' && service.port">
+                        <a :href="'http://' + window.location.hostname + ':' + service.port" target="_blank"
+                           class="block mt-2 text-xs text-blue-400 hover:text-blue-300 text-center">
+                            Open UI →
+                        </a>
+                    </template>
+                </div>
+            </template>
+        </div>
+
+        <!-- Empty State -->
+        <div x-show="services.length === 0 && !loading" class="text-center py-8 text-dark-muted">
+            <p>No services configured yet.</p>
+            <a href="/settings" class="text-blue-400 hover:text-blue-300 mt-2 inline-block">Configure Services →</a>
+        </div>
+
+        <!-- Loading State -->
+        <div x-show="loading" class="text-center py-8 text-dark-muted">
+            <p>Loading services...</p>
+        </div>
+    </div>
+
     <!-- Radarr Queue (if enabled) -->
     <div x-data="radarrQueue()" x-init="init()" x-show="queueItems && queueItems.length > 0" 
          class="bg-dark-surface dark:bg-dark-surface rounded-lg shadow-lg border border-dark-border p-6">
@@ -592,6 +683,64 @@
         if (diffDays < 7) return `Hace ${diffDays} días`;
         if (diffDays < 30) return `Hace ${Math.floor(diffDays / 7)} semanas`;
         return date.toLocaleDateString('es-ES', { month: 'short', day: 'numeric' });
+    }
+
+    function servicesStatus() {
+        return {
+            services: [],
+            loading: false,
+            actionInProgress: false,
+
+            async init() {
+                await this.loadServices();
+                // Refresh services every 15 seconds
+                setInterval(() => this.loadServices(), 15000);
+            },
+
+            async loadServices() {
+                try {
+                    const response = await fetch('/api/services');
+                    if (!response.ok) throw new Error('Failed to load services');
+                    const data = await response.json();
+                    this.services = data.data || [];
+                } catch (error) {
+                    console.error('Error loading services:', error);
+                    this.services = [];
+                }
+            },
+
+            async actionService(serviceName, action) {
+                this.actionInProgress = true;
+                try {
+                    const response = await fetch(`/api/services/${serviceName}/${action}`, {
+                        method: 'POST',
+                    });
+
+                    const data = await response.json();
+
+                    if (response.ok) {
+                        console.log(`${action} ${serviceName}:`, data);
+                        // Wait a bit for the action to take effect
+                        await new Promise(resolve => setTimeout(resolve, 2000));
+                        await this.loadServices();
+                    } else {
+                        console.error(`Failed to ${action} ${serviceName}:`, data.error);
+                        alert(`Failed to ${action} ${serviceName}: ${data.error}`);
+                    }
+                } catch (error) {
+                    console.error(`Error during ${action} ${serviceName}:`, error);
+                    alert(`Error: ${error.message}`);
+                } finally {
+                    this.actionInProgress = false;
+                }
+            },
+
+            async refresh() {
+                this.loading = true;
+                await this.loadServices();
+                this.loading = false;
+            }
+        }
     }
 
     function dashboard() {
