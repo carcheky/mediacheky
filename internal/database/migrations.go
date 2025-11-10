@@ -260,7 +260,7 @@ func seedServices(db *gorm.DB) error {
 	// Get the radarr template
 	var radarrTemplate models.Template
 	if err := db.Where("name = ?", "radarr").First(&radarrTemplate).Error; err != nil {
-		return fmt.Errorf("radarr template not found: %w", err)
+		return fmt.Errorf("Radarr template not found: %w", err)
 	}
 
 	// Define default services

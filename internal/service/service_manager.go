@@ -3,7 +3,6 @@ package service
 import (
 	"context"
 	"fmt"
-	"regexp"
 	"time"
 
 	"github.com/carcheky/mediacheky/internal/models"
@@ -32,9 +31,6 @@ type ServiceManager struct {
 	serviceRepo    ServiceRepository
 	logRepo        ServiceLogRepository
 }
-
-// containerNameRegex validates container names
-var containerNameRegex = regexp.MustCompile(`^[a-zA-Z0-9_-]+$`)
 
 // NewServiceManager creates a new ServiceManager instance
 func NewServiceManager(
@@ -161,16 +157,23 @@ func (sm *ServiceManager) StartService(ctx context.Context, serviceName string) 
 		containerName = serviceName
 	}
 
-	// Wait a bit for container to be created
-	time.Sleep(2 * time.Second)
-
-	// Get container info
-	containerID, err := sm.findContainerByName(ctx, containerName)
-	if err != nil {
+	// Poll for container to be created, up to 10 seconds
+	var containerID string
+	const pollTimeout = 10 * time.Second
+	const pollInterval = 200 * time.Millisecond
+	start := time.Now()
+	for time.Since(start) < pollTimeout {
+		var pollErr error
+		containerID, pollErr = sm.findContainerByName(ctx, containerName)
+		if pollErr == nil && containerID != "" {
+			break
+		}
+		time.Sleep(pollInterval)
+	}
+	if containerID == "" {
 		sm.logger.Warn("Could not find container after start",
 			zap.String("service", serviceName),
-			zap.String("container_name", containerName),
-			zap.Error(err))
+			zap.String("container_name", containerName))
 	}
 
 	// Update service status

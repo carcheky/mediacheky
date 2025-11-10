@@ -690,14 +690,28 @@
             services: [],
             loading: false,
             actionInProgress: false,
+            refreshInterval: null,
 
             async init() {
                 await this.loadServices();
-                // Refresh services every 15 seconds
-                setInterval(() => this.loadServices(), 15000);
+                // Refresh services every 15 seconds, ensuring no overlap
+                this.refreshInterval = setInterval(async () => {
+                    if (!this.loading && !this.actionInProgress) {
+                        await this.loadServices();
+                    }
+                }, 15000);
+            },
+
+            destroy() {
+                if (this.refreshInterval) {
+                    clearInterval(this.refreshInterval);
+                }
             },
 
             async loadServices() {
+                if (this.loading) return; // Prevent overlapping calls
+                
+                this.loading = true;
                 try {
                     const response = await fetch('/api/services');
                     if (!response.ok) throw new Error('Failed to load services');
@@ -706,6 +720,8 @@
                 } catch (error) {
                     console.error('Error loading services:', error);
                     this.services = [];
+                } finally {
+                    this.loading = false;
                 }
             },
 
@@ -720,25 +736,68 @@
 
                     if (response.ok) {
                         console.log(`${action} ${serviceName}:`, data);
-                        // Wait a bit for the action to take effect
-                        await new Promise(resolve => setTimeout(resolve, 2000));
-                        await this.loadServices();
+                        // Poll for service status change (max 10s, every 500ms)
+                        const maxWait = 10000;
+                        const pollInterval = 500;
+                        const startTime = Date.now();
+                        
+                        while (Date.now() - startTime < maxWait) {
+                            await this.loadServices();
+                            const svc = this.services.find(s => s.name === serviceName);
+                            if (svc) {
+                                // Determine expected status based on action
+                                let expected;
+                                if (action === 'start' || action === 'restart') expected = 'running';
+                                else if (action === 'stop') expected = 'stopped';
+                                else if (action === 'enable') expected = true; // Check enabled flag
+                                
+                                if (action === 'enable' && svc.enabled) {
+                                    break;
+                                } else if (expected && svc.status === expected) {
+                                    break;
+                                }
+                            }
+                            await new Promise(resolve => setTimeout(resolve, pollInterval));
+                        }
                     } else {
                         console.error(`Failed to ${action} ${serviceName}:`, data.error);
-                        alert(`Failed to ${action} ${serviceName}: ${data.error}`);
+                        // Provide user-friendly error messages
+                        let errorMsg = this.getUserFriendlyError(action, data.error);
+                        alert(errorMsg);
                     }
                 } catch (error) {
                     console.error(`Error during ${action} ${serviceName}:`, error);
-                    alert(`Error: ${error.message}`);
+                    let errorMsg = this.getUserFriendlyError(action, error.message);
+                    alert(errorMsg);
                 } finally {
                     this.actionInProgress = false;
                 }
             },
 
+            getUserFriendlyError(action, technicalError) {
+                const actionNames = {
+                    'start': 'start',
+                    'stop': 'stop',
+                    'restart': 'restart',
+                    'enable': 'enable'
+                };
+                
+                // Check for common error patterns
+                if (technicalError.includes('docker') || technicalError.includes('Docker')) {
+                    return `Unable to ${actionNames[action]} service. Please ensure Docker is running and you have the necessary permissions.`;
+                } else if (technicalError.includes('not available') || technicalError.includes('unavailable')) {
+                    return `Service management is currently unavailable. Please check that MediaCheky has access to Docker.`;
+                } else if (technicalError.includes('not found')) {
+                    return `Service not found. Please refresh the page and try again.`;
+                } else if (technicalError.includes('already')) {
+                    return `Service is already in the requested state.`;
+                } else {
+                    return `Failed to ${actionNames[action]} service: ${technicalError}`;
+                }
+            },
+
             async refresh() {
-                this.loading = true;
                 await this.loadServices();
-                this.loading = false;
             }
         }
     }
