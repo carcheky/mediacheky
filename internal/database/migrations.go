@@ -112,6 +112,11 @@ func SeedData(db *gorm.DB) error {
 		return fmt.Errorf("failed to seed templates: %w", err)
 	}
 
+	// Seed default services
+	if err := seedServices(db); err != nil {
+		return fmt.Errorf("failed to seed services: %w", err)
+	}
+
 	return nil
 }
 
@@ -243,6 +248,53 @@ services:
 		if result.Error == gorm.ErrRecordNotFound {
 			if err := db.Create(&template).Error; err != nil {
 				return fmt.Errorf("failed to create template %s: %w", template.Name, err)
+			}
+		}
+	}
+
+	return nil
+}
+
+// seedServices creates default service records with their configurations
+func seedServices(db *gorm.DB) error {
+	// Get the radarr template
+	var radarrTemplate models.Template
+	if err := db.Where("name = ?", "radarr").First(&radarrTemplate).Error; err != nil {
+		return fmt.Errorf("radarr template not found: %w", err)
+	}
+
+	// Define default services
+	defaultServices := []models.Service{
+		{
+			Name:        "radarr",
+			DisplayName: "Radarr",
+			Icon:        "🎬",
+			Enabled:     false,
+			Status:      "stopped",
+			Image:       "linuxserver/radarr:latest",
+			Port:        7878,
+			TemplateID:  radarrTemplate.ID,
+			Config: models.ServiceConfig{
+				"Image":         "linuxserver/radarr:latest",
+				"ContainerName": "radarr",
+				"Port":          7878,
+				"Paths": map[string]interface{}{
+					"Config":    "/data/config/radarr",
+					"Movies":    "/data/media/movies",
+					"Downloads": "/data/downloads",
+				},
+				"RestartPolicy": "unless-stopped",
+			},
+		},
+	}
+
+	for _, service := range defaultServices {
+		// Only create if doesn't exist
+		var existing models.Service
+		result := db.Where("name = ?", service.Name).First(&existing)
+		if result.Error == gorm.ErrRecordNotFound {
+			if err := db.Create(&service).Error; err != nil {
+				return fmt.Errorf("failed to create service %s: %w", service.Name, err)
 			}
 		}
 	}

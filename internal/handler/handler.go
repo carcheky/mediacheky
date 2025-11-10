@@ -27,12 +27,37 @@ func NewHandlers(db *gorm.DB, repos *repository.Repositories, logger *logger.Log
 		dockerClient = nil
 	}
 
+	// Initialize Docker Compose client
+	dockerCompose := service.NewDockerComposeClient(logger.Desugar())
+
+	// Initialize Template Engine
+	templateEngine := service.NewTemplateEngine(
+		logger.Desugar(),
+		"./templates",
+		"./volumes/services",
+		repos.Config,
+		repos.Template,
+	)
+
+	// Initialize Service Manager
+	var serviceManager *service.ServiceManager
+	if dockerClient != nil {
+		serviceManager = service.NewServiceManager(
+			logger.Desugar(),
+			templateEngine,
+			dockerCompose,
+			dockerClient,
+			repos.Service,
+			repos.ServiceLog,
+		)
+	}
+
 	return &Handlers{
 		Health:    NewHealthHandler(db, logger),
 		Dashboard: NewDashboardHandler(repos, logger, nil, dockerClient),
 		Settings:  NewSettingsHandler(repos, logger, cfg, nil),
 		Logs:      NewLogsHandler(repos, logger),
-		Service:   NewServiceHandler(repos, logger, dockerClient),
+		Service:   NewServiceHandler(repos, logger, dockerClient, serviceManager),
 		Config:    NewConfigHandler(repos, logger),
 		Docker:    NewDockerHandler(logger, dockerClient),
 	}
