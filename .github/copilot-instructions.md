@@ -9,31 +9,37 @@
 
 ## ⛔️ CRITICAL RULE - NEVER VIOLATE ⛔️
 
-**YOU MUST NEVER:**
+**YOU MUST NEVER EVER UNDER ANY CIRCUMSTANCES:**
 
 - Run `make dev`, `make run`, or ANY make command that starts services
-
-- Run `docker-compose up/down/restart/stop`
-
-- Run `docker start/stop/restart/kill/rm`
-
-- Execute ANY command that manages Docker containers
-
+- Run `docker-compose up/down/restart/stop/start`
+- Run `docker restart/stop/start/kill/rm` on ANY container
+- Execute ANY command that manages Docker containers lifecycle
 - Use `run_in_terminal` with `isBackground: true` for server startup
+- Suggest restarting containers to the user
+- Tell the user to restart services
+
+**THE USER IS ALREADY RUNNING `make dev` WITH WATCH MODE.**
+
+**Any code changes are automatically detected and the service reloads.**
 
 **ONLY THE USER CAN START, STOP, OR RESTART SERVICES.**
+
+**IF YOU VIOLATE THIS RULE, YOU WILL BE TERMINATED.**
 
 **WHAT YOU CAN DO:**
 
 - Read logs (`cat`, `tail`, `grep`)
-
-- Execute commands INSIDE running containers (`docker exec`)
-
+- Execute commands INSIDE running containers - **ALWAYS use this exact command:**
+  ```bash
+  docker compose exec mediacheky <command>
+  ```
+  **NEVER use container IDs, names with random suffixes, or any other format**
 - Inspect files and configurations
-
-- Make code changes
-
+- Make code changes (they auto-reload)
 - Run validation and tests: **ALWAYS use `make check-and-fix` after changes**
+- Check database content using: `docker compose exec mediacheky sqlite3 /app/volumes/data/mediacheky.db`
+- View container logs with `docker compose logs mediacheky`
 
 ---
 
@@ -298,14 +304,44 @@ chore(deps): update dependencies
 
 ---
 
+## 🎨 UI Standards (CRITICAL)
+
+**ALL user feedback MUST use floating toast notifications**
+
+### Toast Notifications Rules
+
+- **Position**: Fixed top-right (`fixed top-4 right-4 z-50`)
+- **Success**: Auto-dismiss after 5 seconds
+- **Error**: Auto-dismiss after 8 seconds
+- **Structure**: Icon + Message + Close button
+- **Animations**: Fade + slide transitions
+
+**NEVER use inline messages or static positioned feedback**
+
+### Page Structure
+
+- **Settings page has TWO tabs**: Services + Global Variables
+- **NO separate `/global` route** - it's a tab in Settings
+- **Service config URLs**: `/services/:name` (NOT `/services/:name/config`)
+
+### Data Standards
+
+- **Database**: `mediacheky.db` (NOT `keepercheky.db`)
+- **Env Prefix**: `MEDIACHEKY_` (NOT `KEEPERCHEKY_`)
+- **Network**: `mediacheky-net` (ALWAYS connected, NOT conditional)
+- **Ports**: NOT exposed by default (optional via checkbox)
+
+See [docs/UI_STANDARDS.md](../docs/UI_STANDARDS.md) for complete guidelines.
+
+---
+
 ## 📚 Resources
 
+- [UI Standards](../docs/UI_STANDARDS.md) - **READ THIS FIRST** for UI changes
 - [Development Plan](../docs/PROJECT_PLAN.md) - Complete roadmap
-
+- [UI Implementation](../docs/UI_IMPLEMENTATION.md) - Technical details
 - [Docker API](https://docs.docker.com/engine/api/)
-
 - [Fiber Framework](https://docs.gofiber.io/)
-
 - [Alpine.js](https://alpinejs.dev/)
 
 ---

@@ -42,7 +42,9 @@ November 9, 2025
 
 - Two tabs: Services and Configuration
 
-#### Global Variables (`/global`) - **NEW**
+#### Global Variables (Settings Tab) - **UPDATED**
+
+**NOTE: Global Variables is now a tab within Settings page, NOT a separate route**
 
 - User & Group configuration (PUID, PGID)
 
@@ -52,9 +54,7 @@ November 9, 2025
 
 - Network configuration
 
-- Affected services preview
-
-- Real-time validation
+- **Floating toast notifications** for all feedback
 
 #### Service Config (`/services/:name`) - **NEW**
 
@@ -128,8 +128,7 @@ November 9, 2025
 
 ```go
 app.Get("/", h.Dashboard.Index)
-app.Get("/settings", h.Settings.Index)
-app.Get("/global", h.Config.Index)              // NEW
+app.Get("/settings", h.Settings.Index)          // Includes Global Variables tab
 app.Get("/services/:name", h.Service.ConfigPage) // NEW
 app.Get("/logs", h.Logs.Index)
 ```text
@@ -249,13 +248,13 @@ web/
 
 ### Modifying Global Variables
 
-1. Navigate to `/global`
+1. Navigate to `/settings`
 
-2. Update desired values
+2. Click on "Global Variables" tab
 
-3. Review affected services warning
+3. Update desired values
 
-4. Save changes
+4. Save changes (toast notification will appear)
 
 5. Restart affected services if needed
 
