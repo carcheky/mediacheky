@@ -97,9 +97,15 @@
         </div>
     </div>
 
-    <!-- Basic Settings -->
+    <!-- Docker Configuration -->
     <div class="bg-dark-surface dark:bg-dark-surface rounded-lg shadow-lg border border-dark-border p-6">
-        <h2 class="text-xl font-semibold text-dark-text mb-4">Basic Settings</h2>
+        <div class="flex items-center gap-2 mb-4">
+            <svg class="w-6 h-6 text-blue-400" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M13.983 11.078h2.119a.186.186 0 00.186-.185V9.006a.186.186 0 00-.186-.186h-2.119a.185.185 0 00-.185.185v1.888c0 .102.083.185.185.185m-2.954-5.43h2.118a.186.186 0 00.186-.186V3.574a.186.186 0 00-.186-.185h-2.118a.185.185 0 00-.185.185v1.888c0 .102.082.185.185.185m0 2.716h2.118a.187.187 0 00.186-.186V6.29a.186.186 0 00-.186-.185h-2.118a.185.185 0 00-.185.185v1.887c0 .102.082.185.185.186m-2.93 0h2.12a.186.186 0 00.184-.186V6.29a.185.185 0 00-.185-.185H8.1a.185.185 0 00-.185.185v1.887c0 .102.083.185.185.186m-2.964 0h2.119a.186.186 0 00.185-.186V6.29a.185.185 0 00-.185-.185H5.136a.186.186 0 00-.186.185v1.887c0 .102.084.185.186.186m5.893 2.715h2.118a.186.186 0 00.186-.185V9.006a.186.186 0 00-.186-.186h-2.118a.185.185 0 00-.185.185v1.888c0 .102.082.185.185.185m-2.93 0h2.12a.185.185 0 00.184-.185V9.006a.185.185 0 00-.184-.186h-2.12a.185.185 0 00-.184.185v1.888c0 .102.083.185.185.185m-2.964 0h2.119a.185.185 0 00.185-.185V9.006a.185.185 0 00-.184-.186h-2.12a.186.186 0 00-.186.186v1.887c0 .102.084.185.186.185m-2.92 0h2.12a.185.185 0 00.184-.185V9.006a.185.185 0 00-.184-.186h-2.12a.185.185 0 00-.184.185v1.888c0 .102.082.185.185.185M23.763 9.89c-.065-.051-.672-.51-1.954-.51-.338 0-.676.03-1.01.091-1.308-2.580-4.038-4.16-6.955-4.16-.656 0-1.326.082-1.99.245-.494.122-.66.346-.66.638v13.687c0 .337.228.646.558.724.313.071 6.356.064 6.356.064 1.315 0 2.415-.449 3.272-1.336.784-.806 1.182-1.877 1.182-3.183 0-1.268-.375-2.317-1.117-3.122a5.085 5.085 0 00-.835-.668c.504-.302.934-.693 1.27-1.164.471-.654.71-1.402.71-2.223 0-.82-.192-1.525-.574-2.098-.312-.468-.722-.843-1.218-1.115"/>
+            </svg>
+            <h2 class="text-xl font-semibold text-dark-text">Docker Configuration</h2>
+        </div>
+        <p class="text-sm text-dark-muted mb-6">Container settings, networking, and image configuration</p>
         
         <div class="space-y-4">
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -170,15 +176,8 @@
                     <option value="no">No</option>
                 </select>
             </div>
-        </div>
-    </div>
 
-    <!-- Paths Configuration -->
-    <div class="bg-dark-surface dark:bg-dark-surface rounded-lg shadow-lg border border-dark-border p-6">
-        <h2 class="text-xl font-semibold text-dark-text mb-4">Paths</h2>
-        <p class="text-sm text-dark-muted mb-4">Configure volume mounts for the service</p>
-        
-        <div class="space-y-4">
+            <!-- Docker Config Paths -->
             <div>
                 <label class="block text-sm font-medium text-dark-text mb-1">
                     Config Path
@@ -190,35 +189,114 @@
                     class="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-dark-bg text-dark-text"
                     :class="errors.config_path ? 'border-red-500' : 'border-dark-border'">
                 <p x-show="errors.config_path" class="text-xs text-red-400 mt-1" x-text="errors.config_path"></p>
-                <p x-show="!errors.config_path" class="text-xs text-dark-muted mt-1">Host path for service configuration</p>
+                <p x-show="!errors.config_path" class="text-xs text-dark-muted mt-1">Host path for service configuration files</p>
             </div>
-            
+        </div>
+    </div>
+
+    <!-- Service Configuration -->
+    <div class="bg-dark-surface dark:bg-dark-surface rounded-lg shadow-lg border border-dark-border p-6">
+        <div class="flex items-center gap-2 mb-4">
+            <svg class="w-6 h-6 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+            </svg>
+            <h2 class="text-xl font-semibold text-dark-text">
+                <span x-text="serviceName.charAt(0).toUpperCase() + serviceName.slice(1)"></span> Configuration
+            </h2>
+        </div>
+        <p class="text-sm text-dark-muted mb-6">Service-specific settings and library paths</p>
+        
+        <div class="space-y-4">
+            <!-- Library Path (Read-only from MEDIACHEKY_MEDIA_PATH) -->
             <div>
                 <label class="block text-sm font-medium text-dark-text mb-1">
-                    Media Path
-                    <span class="text-red-400">*</span>
+                    <span x-text="serviceName === 'radarr' ? 'Movies Library' : serviceName === 'sonarr' ? 'TV Shows Library' : 'Media Library'"></span> Path
+                    <span class="ml-2 px-2 py-0.5 text-xs bg-blue-900/50 text-blue-300 rounded">Read-only</span>
                 </label>
-                <input type="text" x-model="config.Paths.Movies" 
-                    @input="validateField('media_path')"
-                    placeholder="/data/media/movies"
-                    class="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-dark-bg text-dark-text"
-                    :class="errors.media_path ? 'border-red-500' : 'border-dark-border'">
-                <p x-show="errors.media_path" class="text-xs text-red-400 mt-1" x-text="errors.media_path"></p>
-                <p x-show="!errors.media_path" class="text-xs text-dark-muted mt-1">Host path for media files</p>
+                <div class="relative">
+                    <input type="text" 
+                        :value="globalConfig.MEDIACHEKY_MEDIA_PATH || '/MEDIACHEKY_LIBRARY'"
+                        disabled
+                        readonly
+                        class="w-full px-3 py-2 border border-dark-border rounded-md bg-dark-bg/50 text-dark-muted cursor-not-allowed">
+                    <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                        <svg class="w-5 h-5 text-dark-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
+                        </svg>
+                    </div>
+                </div>
+                <p class="text-xs text-dark-muted mt-1 flex items-center gap-1">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                    Configured via <code class="px-1 py-0.5 bg-dark-surface rounded text-xs">MEDIACHEKY_MEDIA_PATH</code> environment variable in .env
+                </p>
             </div>
-            
+
+            <!-- Downloads Path (Read-only, auto-configured) -->
             <div>
                 <label class="block text-sm font-medium text-dark-text mb-1">
                     Downloads Path
-                    <span class="text-red-400">*</span>
+                    <span class="ml-2 px-2 py-0.5 text-xs bg-blue-900/50 text-blue-300 rounded">Read-only</span>
                 </label>
-                <input type="text" x-model="config.Paths.Downloads" 
-                    @input="validateField('downloads_path')"
-                    placeholder="/data/downloads"
-                    class="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-dark-bg text-dark-text"
-                    :class="errors.downloads_path ? 'border-red-500' : 'border-dark-border'">
-                <p x-show="errors.downloads_path" class="text-xs text-red-400 mt-1" x-text="errors.downloads_path"></p>
-                <p x-show="!errors.downloads_path" class="text-xs text-dark-muted mt-1">Host path for downloads</p>
+                <div class="relative">
+                    <input type="text" 
+                        :value="(globalConfig.MEDIACHEKY_MEDIA_PATH || '/MEDIACHEKY_LIBRARY') + '/downloads'"
+                        disabled
+                        readonly
+                        class="w-full px-3 py-2 border border-dark-border rounded-md bg-dark-bg/50 text-dark-muted cursor-not-allowed">
+                    <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                        <svg class="w-5 h-5 text-dark-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
+                        </svg>
+                    </div>
+                </div>
+                <p class="text-xs text-dark-muted mt-1">Auto-configured within library path</p>
+            </div>
+
+            <!-- Library Structure Info -->
+            <div class="mt-4 p-4 bg-dark-bg/50 border border-dark-border rounded-lg">
+                <div class="flex items-start gap-2">
+                    <svg class="w-5 h-5 text-blue-400 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                    <div class="flex-1">
+                        <h4 class="text-sm font-medium text-dark-text mb-2">Library Structure</h4>
+                        <div class="text-xs font-mono text-dark-muted space-y-1">
+                            <div class="flex items-center gap-1">
+                                <svg class="w-3.5 h-3.5 text-yellow-500" fill="currentColor" viewBox="0 0 20 20">
+                                    <path d="M2 6a2 2 0 012-2h5l2 2h5a2 2 0 012 2v6a2 2 0 01-2 2H4a2 2 0 01-2-2V6z"></path>
+                                </svg>
+                                <span class="text-blue-400">/MEDIACHEKY_LIBRARY/</span>
+                            </div>
+                            <div class="ml-6 space-y-1">
+                                <div class="flex items-center gap-1">
+                                    <svg class="w-3.5 h-3.5 text-yellow-500" fill="currentColor" viewBox="0 0 20 20">
+                                        <path d="M2 6a2 2 0 012-2h5l2 2h5a2 2 0 012 2v6a2 2 0 01-2 2H4a2 2 0 01-2-2V6z"></path>
+                                    </svg>
+                                    <span>├── downloads/</span>
+                                </div>
+                                <div class="ml-6 text-dark-muted/70">
+                                    <div>│   ├── incomplete/</div>
+                                    <div>│   ├── movies/</div>
+                                    <div>│   ├── series/</div>
+                                    <div>│   └── {qbittorrent_category}/</div>
+                                </div>
+                                <div class="flex items-center gap-1">
+                                    <svg class="w-3.5 h-3.5 text-yellow-500" fill="currentColor" viewBox="0 0 20 20">
+                                        <path d="M2 6a2 2 0 012-2h5l2 2h5a2 2 0 012 2v6a2 2 0 01-2 2H4a2 2 0 01-2-2V6z"></path>
+                                    </svg>
+                                    <span>└── library/</span>
+                                </div>
+                                <div class="ml-6 text-dark-muted/70">
+                                    <div>    ├── movies/</div>
+                                    <div>    └── series/</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -382,9 +460,8 @@
             globalConfig: {},
             errors: {
                 port: '',
-                config_path: '',
-                media_path: '',
-                downloads_path: ''
+                config_path: ''
+                // media_path and downloads_path are auto-calculated, no errors needed
             },
             testing: false,
             saving: false,
@@ -412,7 +489,8 @@
                                 puid: data.system?.PUID || '1000',
                                 pgid: data.system?.PGID || '1000',
                                 timezone: data.system?.TZ || 'UTC',
-                                network_name: data.network?.NETWORK_MODE || 'bridge'
+                                network_name: data.network?.NETWORK_MODE || 'bridge',
+                                MEDIACHEKY_MEDIA_PATH: data.paths?.MEDIACHEKY_MEDIA_PATH || '/MEDIACHEKY_LIBRARY'
                             };
                         } else {
                             // Flat structure
@@ -420,7 +498,8 @@
                                 puid: data.PUID || '1000',
                                 pgid: data.PGID || '1000',
                                 timezone: data.TZ || 'UTC',
-                                network_name: data.NETWORK_MODE || 'bridge'
+                                network_name: data.NETWORK_MODE || 'bridge',
+                                MEDIACHEKY_MEDIA_PATH: data.MEDIACHEKY_MEDIA_PATH || '/MEDIACHEKY_LIBRARY'
                             };
                         }
                     }
@@ -467,9 +546,8 @@
                         ExposePort: false,
                         HostPort: 0,
                         Paths: {
-                            Config: '/data/config/radarr',
-                            Movies: '/data/media/movies',
-                            Downloads: '/data/downloads'
+                            Config: '/data/config/radarr'
+                            // Movies and Downloads are auto-calculated from MEDIACHEKY_MEDIA_PATH
                         }
                     },
                     sonarr: {
@@ -479,9 +557,8 @@
                         ExposePort: false,
                         HostPort: 0,
                         Paths: {
-                            Config: '/data/config/sonarr',
-                            TV: '/data/media/tv',
-                            Downloads: '/data/downloads'
+                            Config: '/data/config/sonarr'
+                            // TV and Downloads are auto-calculated from MEDIACHEKY_MEDIA_PATH
                         }
                     }
                 };
@@ -532,24 +609,14 @@
                             this.errors.config_path = 'Config path is required';
                         }
                         break;
-                    case 'media_path':
-                        if (!this.config.Paths.Movies || this.config.Paths.Movies.trim() === '') {
-                            this.errors.media_path = 'Media path is required';
-                        }
-                        break;
-                    case 'downloads_path':
-                        if (!this.config.Paths.Downloads || this.config.Paths.Downloads.trim() === '') {
-                            this.errors.downloads_path = 'Downloads path is required';
-                        }
-                        break;
+                    // media_path and downloads_path are auto-calculated, no validation needed
                 }
             },
 
             validateAll() {
                 this.validateField('port');
                 this.validateField('config_path');
-                this.validateField('media_path');
-                this.validateField('downloads_path');
+                // Don't validate media_path and downloads_path as they're read-only auto-calculated
                 
                 return Object.keys(this.errors).every(key => !this.errors[key]);
             },
@@ -598,10 +665,19 @@
                 this.message = '';
 
                 try {
+                    // Auto-calculate Downloads path from MEDIACHEKY_MEDIA_PATH
+                    const configToSave = {
+                        ...this.config,
+                        Paths: {
+                            ...this.config.Paths,
+                            Downloads: (this.globalConfig.MEDIACHEKY_MEDIA_PATH || '/MEDIACHEKY_LIBRARY') + '/downloads'
+                        }
+                    };
+
                     const response = await fetch(`/api/services/${this.serviceName}/config`, {
                         method: 'PUT',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(this.config)
+                        body: JSON.stringify(configToSave)
                     });
 
                     if (response.ok) {
