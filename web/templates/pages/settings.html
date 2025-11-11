@@ -44,81 +44,166 @@
             <h2 class="text-xl font-semibold text-dark-text mb-4">Available Services</h2>
             <p class="text-sm text-dark-muted mb-6">Enable services to configure and use them. Enabled services will appear in the Dashboard.</p>
             
-            <div class="space-y-3">
-                <template x-for="service in services" :key="service.id">
-                    <div :id="'service-' + service.id" 
-                        class="flex items-center justify-between p-4 rounded-lg border transition-colors scroll-mt-6"
-                        :class="config.services[service.id]?.enabled ? 'bg-blue-900/20 border-blue-600/50' : 'bg-dark-bg border-dark-border'">
-                        <div class="flex items-center gap-4">
-                            <div class="text-3xl" x-text="service.icon || '⚙️'"></div>
-                            <div>
-                                <h3 class="font-semibold text-dark-text" x-text="service.label"></h3>
-                                <p class="text-sm text-dark-muted" x-text="service.description || 'No description available'"></p>
+            <div class="space-y-10">
+                <!-- Media Server Section -->
+                <div>
+                    <h3 class="text-lg font-semibold text-dark-text mb-3 flex items-center gap-2">📺 Media Server</h3>
+                    <div class="space-y-3">
+                        <template x-for="service in getServicesByCategory('media-server')" :key="service.id">
+                            <div :id="'service-' + service.id" 
+                                class="flex items-center justify-between p-4 rounded-lg border transition-colors scroll-mt-6"
+                                :class="config.services[service.id]?.enabled ? 'bg-blue-900/20 border-blue-600/50' : 'bg-dark-bg border-dark-border'">
+                                <div class="flex items-center gap-4">
+                                    <div class="text-3xl" x-text="service.icon || '⚙️'"></div>
+                                    <div>
+                                        <h3 class="font-semibold text-dark-text" x-text="service.label"></h3>
+                                        <p class="text-sm text-dark-muted" x-text="service.description || 'No description available'"></p>
+                                    </div>
+                                </div>
+                                <div class="flex items-center gap-3">
+                                    <template x-if="config.services[service.id]?.enabled">
+                                        <div class="flex items-center gap-2">
+                                            <button x-show="serviceStatuses[service.id] !== 'running'"
+                                                @click="startService(service.id)"
+                                                :disabled="actionInProgress[service.id]"
+                                                class="px-3 py-1 bg-green-600 text-white rounded-md hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed text-sm flex items-center gap-1">
+                                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"/>
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                                </svg>
+                                                <span>Start</span>
+                                            </button>
+                                            <button x-show="serviceStatuses[service.id] === 'running'"
+                                                @click="stopService(service.id)"
+                                                :disabled="actionInProgress[service.id]"
+                                                class="px-3 py-1 bg-red-600 text-white rounded-md hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed text-sm flex items-center gap-1">
+                                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 10a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1v-4z"/>
+                                                </svg>
+                                                <span>Stop</span>
+                                            </button>
+                                            <button x-show="serviceStatuses[service.id] === 'running'"
+                                                @click="restartService(service.id)"
+                                                :disabled="actionInProgress[service.id]"
+                                                class="px-3 py-1 bg-yellow-600 text-white rounded-md hover:bg-yellow-700 disabled:opacity-50 disabled:cursor-not-allowed text-sm flex items-center gap-1">
+                                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+                                                </svg>
+                                                <span>Restart</span>
+                                            </button>
+                                            <a :href="'/services/' + service.id"
+                                                class="px-3 py-1 bg-blue-600 text-white rounded-md hover:bg-blue-700 text-sm flex items-center gap-1">
+                                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                                                </svg>
+                                                <span>Configure</span>
+                                            </a>
+                                        </div>
+                                    </template>
+                                    <label class="flex items-center cursor-pointer">
+                                        <input type="checkbox" x-model="config.services[service.id].enabled" 
+                                            @change="saveAll()" class="sr-only peer">
+                                        <div class="relative w-11 h-6 bg-gray-600 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-800 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600">
+                                        </div>
+                                        <span class="ml-3 text-sm font-medium text-dark-text" 
+                                            x-text="config.services[service.id]?.enabled ? 'Enabled' : 'Disabled'"></span>
+                                    </label>
+                                </div>
                             </div>
-                        </div>
-                        <div class="flex items-center gap-3">
-                            <!-- Action buttons (only visible when enabled) -->
-                            <template x-if="config.services[service.id]?.enabled">
-                                <div class="flex items-center gap-2">
-                                    <!-- Start button (only if stopped) -->
-                                    <button x-show="serviceStatuses[service.id] !== 'running'"
-                                        @click="startService(service.id)"
-                                        :disabled="actionInProgress[service.id]"
-                                        class="px-3 py-1 bg-green-600 text-white rounded-md hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed text-sm flex items-center gap-1">
-                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"/>
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                                        </svg>
-                                        <span>Start</span>
-                                    </button>
-                                    
-                                    <!-- Stop button (only if running) -->
-                                    <button x-show="serviceStatuses[service.id] === 'running'"
-                                        @click="stopService(service.id)"
-                                        :disabled="actionInProgress[service.id]"
-                                        class="px-3 py-1 bg-red-600 text-white rounded-md hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed text-sm flex items-center gap-1">
-                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 10a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1v-4z"/>
-                                        </svg>
-                                        <span>Stop</span>
-                                    </button>
-                                    
-                                    <!-- Restart button (only if running) -->
-                                    <button x-show="serviceStatuses[service.id] === 'running'"
-                                        @click="restartService(service.id)"
-                                        :disabled="actionInProgress[service.id]"
-                                        class="px-3 py-1 bg-yellow-600 text-white rounded-md hover:bg-yellow-700 disabled:opacity-50 disabled:cursor-not-allowed text-sm flex items-center gap-1">
-                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
-                                        </svg>
-                                        <span>Restart</span>
-                                    </button>
-                                    
-                                    <!-- Configure button -->
-                                    <a :href="'/services/' + service.id"
-                                        class="px-3 py-1 bg-blue-600 text-white rounded-md hover:bg-blue-700 text-sm flex items-center gap-1">
-                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
-                                        </svg>
-                                        <span>Configure</span>
-                                    </a>
-                                </div>
-                            </template>
-                            
-                            <!-- Enable/Disable toggle -->
-                            <label class="flex items-center cursor-pointer">
-                                <input type="checkbox" x-model="config.services[service.id].enabled" 
-                                    @change="saveAll()" class="sr-only peer">
-                                <div class="relative w-11 h-6 bg-gray-600 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-800 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600">
-                                </div>
-                                <span class="ml-3 text-sm font-medium text-dark-text" 
-                                    x-text="config.services[service.id]?.enabled ? 'Enabled' : 'Disabled'"></span>
-                            </label>
-                        </div>
+                        </template>
+                        <template x-if="getServicesByCategory('media-server').length === 0">
+                            <p class="text-sm text-dark-muted">No media server services found.</p>
+                        </template>
                     </div>
-                </template>
+                </div>
+
+                <!-- *arr Services Section -->
+                <div>
+                    <h3 class="text-lg font-semibold text-dark-text mb-3 flex items-center gap-2">📦 *arr Services</h3>
+                    <div class="space-y-3">
+                        <template x-for="service in getServicesByCategory('arr')" :key="service.id">
+                            <div :id="'service-' + service.id" 
+                                class="flex items-center justify-between p-4 rounded-lg border transition-colors scroll-mt-6"
+                                :class="config.services[service.id]?.enabled ? 'bg-blue-900/20 border-blue-600/50' : 'bg-dark-bg border-dark-border'">
+                                <div class="flex items-center gap-4">
+                                    <div class="text-3xl" x-text="service.icon || '⚙️'"></div>
+                                    <div>
+                                        <h3 class="font-semibold text-dark-text" x-text="service.label"></h3>
+                                        <p class="text-sm text-dark-muted" x-text="service.description || 'No description available'"></p>
+                                    </div>
+                                </div>
+                                <div class="flex items-center gap-3">
+                                    <template x-if="config.services[service.id]?.enabled">
+                                        <div class="flex items-center gap-2">
+                                            <button x-show="serviceStatuses[service.id] !== 'running'"
+                                                @click="startService(service.id)"
+                                                :disabled="actionInProgress[service.id]"
+                                                class="px-3 py-1 bg-green-600 text-white rounded-md hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed text-sm flex items-center gap-1">Start</button>
+                                            <button x-show="serviceStatuses[service.id] === 'running'"
+                                                @click="stopService(service.id)"
+                                                :disabled="actionInProgress[service.id]"
+                                                class="px-3 py-1 bg-red-600 text-white rounded-md hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed text-sm flex items-center gap-1">Stop</button>
+                                            <button x-show="serviceStatuses[service.id] === 'running'"
+                                                @click="restartService(service.id)"
+                                                :disabled="actionInProgress[service.id]"
+                                                class="px-3 py-1 bg-yellow-600 text-white rounded-md hover:bg-yellow-700 disabled:opacity-50 disabled:cursor-not-allowed text-sm flex items-center gap-1">Restart</button>
+                                            <a :href="'/services/' + service.id" class="px-3 py-1 bg-blue-600 text-white rounded-md hover:bg-blue-700 text-sm">Configure</a>
+                                        </div>
+                                    </template>
+                                    <label class="flex items-center cursor-pointer">
+                                        <input type="checkbox" x-model="config.services[service.id].enabled" 
+                                            @change="saveAll()" class="sr-only peer">
+                                        <div class="relative w-11 h-6 bg-gray-600 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-800 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                                        <span class="ml-3 text-sm font-medium text-dark-text" x-text="config.services[service.id]?.enabled ? 'Enabled' : 'Disabled'"></span>
+                                    </label>
+                                </div>
+                            </div>
+                        </template>
+                        <template x-if="getServicesByCategory('arr').length === 0">
+                            <p class="text-sm text-dark-muted">No *arr services found.</p>
+                        </template>
+                    </div>
+                </div>
+
+                <!-- Other Services Section -->
+                <div>
+                    <h3 class="text-lg font-semibold text-dark-text mb-3 flex items-center gap-2">🔧 Other Services</h3>
+                    <div class="space-y-3">
+                        <template x-for="service in getServicesByCategory('other')" :key="service.id">
+                            <div :id="'service-' + service.id" 
+                                class="flex items-center justify-between p-4 rounded-lg border transition-colors scroll-mt-6"
+                                :class="config.services[service.id]?.enabled ? 'bg-blue-900/20 border-blue-600/50' : 'bg-dark-bg border-dark-border'">
+                                <div class="flex items-center gap-4">
+                                    <div class="text-3xl" x-text="service.icon || '⚙️'"></div>
+                                    <div>
+                                        <h3 class="font-semibold text-dark-text" x-text="service.label"></h3>
+                                        <p class="text-sm text-dark-muted" x-text="service.description || 'No description available'"></p>
+                                    </div>
+                                </div>
+                                <div class="flex items-center gap-3">
+                                    <template x-if="config.services[service.id]?.enabled">
+                                        <div class="flex items-center gap-2">
+                                            <button x-show="serviceStatuses[service.id] !== 'running'" @click="startService(service.id)" :disabled="actionInProgress[service.id]" class="px-3 py-1 bg-green-600 text-white rounded-md hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed text-sm">Start</button>
+                                            <button x-show="serviceStatuses[service.id] === 'running'" @click="stopService(service.id)" :disabled="actionInProgress[service.id]" class="px-3 py-1 bg-red-600 text-white rounded-md hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed text-sm">Stop</button>
+                                            <button x-show="serviceStatuses[service.id] === 'running'" @click="restartService(service.id)" :disabled="actionInProgress[service.id]" class="px-3 py-1 bg-yellow-600 text-white rounded-md hover:bg-yellow-700 disabled:opacity-50 disabled:cursor-not-allowed text-sm">Restart</button>
+                                            <a :href="'/services/' + service.id" class="px-3 py-1 bg-blue-600 text-white rounded-md hover:bg-blue-700 text-sm">Configure</a>
+                                        </div>
+                                    </template>
+                                    <label class="flex items-center cursor-pointer">
+                                        <input type="checkbox" x-model="config.services[service.id].enabled" @change="saveAll()" class="sr-only peer">
+                                        <div class="relative w-11 h-6 bg-gray-600 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-800 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                                        <span class="ml-3 text-sm font-medium text-dark-text" x-text="config.services[service.id]?.enabled ? 'Enabled' : 'Disabled'"></span>
+                                    </label>
+                                </div>
+                            </div>
+                        </template>
+                        <template x-if="getServicesByCategory('other').length === 0">
+                            <p class="text-sm text-dark-muted">No other services found.</p>
+                        </template>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -384,12 +469,33 @@
             message: '',
             messageType: 'success',
 
-            // Service definitions with metadata
+            // Service definitions with metadata (deduplicated + categorized)
             services: [
+                {
+                    id: 'jellyfin',
+                    label: 'Jellyfin',
+                    icon: '🍿',
+                    category: 'media-server',
+                    description: 'Media server for streaming movies, TV shows, and music',
+                    fields: [
+                        { name: 'url', label: 'URL', type: 'url', placeholder: 'http://localhost:8096' },
+                        { name: 'api_key', label: 'API Key', type: 'password', placeholder: 'Enter Jellyfin API Key' }
+                    ],
+                    systemInfoFields: [
+                        { key: 'version', label: 'Version' },
+                        { key: 'product_name', label: 'Product Name' },
+                        { key: 'server_name', label: 'Server Name' },
+                        { key: 'server_id', label: 'Server ID', mono: true },
+                        { key: 'os', label: 'Operating System' },
+                        { key: 'os_display_name', label: 'OS Display Name' },
+                        { key: 'local_address', label: 'Local Address', mono: true, span: true }
+                    ]
+                },
                 {
                     id: 'radarr',
                     label: 'Radarr',
                     icon: '🎬',
+                    category: 'arr',
                     description: 'Movie collection manager for Usenet and BitTorrent',
                     fields: [
                         { name: 'url', label: 'URL', type: 'url', placeholder: 'http://localhost:7878' },
@@ -412,6 +518,7 @@
                     id: 'sonarr',
                     label: 'Sonarr',
                     icon: '📺',
+                    category: 'arr',
                     description: 'TV series collection manager for Usenet and BitTorrent',
                     fields: [
                         { name: 'url', label: 'URL', type: 'url', placeholder: 'http://localhost:8989' },
@@ -431,28 +538,48 @@
                     ]
                 },
                 {
-                    id: 'jellyfin',
-                    label: 'Jellyfin',
-                    icon: '🍿',
-                    description: 'Media server for streaming movies, TV shows, and music',
+                    id: 'prowlarr',
+                    label: 'Prowlarr',
+                    icon: '🔍',
+                    category: 'arr',
+                    description: 'Indexer manager/proxy for Radarr, Sonarr, and other services',
                     fields: [
-                        { name: 'url', label: 'URL', type: 'url', placeholder: 'http://localhost:8096' },
-                        { name: 'api_key', label: 'API Key', type: 'password', placeholder: 'Enter Jellyfin API Key' }
+                        { name: 'url', label: 'URL', type: 'url', placeholder: 'http://localhost:9696' },
+                        { name: 'api_key', label: 'API Key', type: 'password', placeholder: 'Enter Prowlarr API Key' }
                     ],
                     systemInfoFields: [
                         { key: 'version', label: 'Version' },
-                        { key: 'product_name', label: 'Product Name' },
-                        { key: 'server_name', label: 'Server Name' },
-                        { key: 'server_id', label: 'Server ID', mono: true },
+                        { key: 'branch', label: 'Branch' },
                         { key: 'os', label: 'Operating System' },
-                        { key: 'os_display_name', label: 'OS Display Name' },
-                        { key: 'local_address', label: 'Local Address', mono: true, span: true }
+                        { key: 'os_version', label: 'OS Version' }
+                    ]
+                },
+                {
+                    id: 'bazarr',
+                    label: 'Bazarr',
+                    icon: '🗣️',
+                    category: 'arr',
+                    description: 'Subtitle management companion for Radarr and Sonarr',
+                    fields: [
+                        { name: 'url', label: 'URL', type: 'url', placeholder: 'http://localhost:6767' },
+                        { name: 'api_key', label: 'API Key', type: 'password', placeholder: 'Enter Bazarr API Key' }
+                    ],
+                    systemInfoFields: [
+                        { key: 'bazarr_version', label: 'Bazarr Version' },
+                        { key: 'sonarr_version', label: 'Sonarr Version (Connected)' },
+                        { key: 'radarr_version', label: 'Radarr Version (Connected)' },
+                        { key: 'os', label: 'Operating System' },
+                        { key: 'os_version', label: 'OS Version' },
+                        { key: 'python_version', label: 'Python Version' },
+                        { key: 'directory', label: 'Install Directory', mono: true, span: true },
+                        { key: 'start_time', label: 'Start Time', span: true }
                     ]
                 },
                 {
                     id: 'jellyseerr',
                     label: 'Jellyseerr',
                     icon: '🎫',
+                    category: 'other',
                     description: 'Media request management for Jellyfin',
                     fields: [
                         { name: 'url', label: 'URL', type: 'url', placeholder: 'http://localhost:5055' },
@@ -469,6 +596,7 @@
                     id: 'jellystat',
                     label: 'Jellystat',
                     icon: '📊',
+                    category: 'other',
                     description: 'Statistics and analytics for Jellyfin',
                     fields: [
                         { name: 'url', label: 'URL', type: 'url', placeholder: 'http://localhost:3000' },
@@ -482,6 +610,7 @@
                     id: 'qbittorrent',
                     label: 'qBittorrent',
                     icon: '⬇️',
+                    category: 'other',
                     description: 'BitTorrent client for downloading media',
                     fields: [
                         { name: 'url', label: 'URL', type: 'url', placeholder: 'http://localhost:8080' },
@@ -501,28 +630,11 @@
                         { key: 'temp_path', label: 'Temp Path', mono: true, span: true },
                         { key: 'export_dir', label: 'Export Dir', mono: true, span: true }
                     ]
-                },
-                {
-                    id: 'bazarr',
-                    label: 'Bazarr',
-                    icon: '🗣️',
-                    description: 'Subtitle management companion for Radarr and Sonarr',
-                    fields: [
-                        { name: 'url', label: 'URL', type: 'url', placeholder: 'http://localhost:6767' },
-                        { name: 'api_key', label: 'API Key', type: 'password', placeholder: 'Enter Bazarr API Key' }
-                    ],
-                    systemInfoFields: [
-                        { key: 'bazarr_version', label: 'Bazarr Version' },
-                        { key: 'sonarr_version', label: 'Sonarr Version (Connected)' },
-                        { key: 'radarr_version', label: 'Radarr Version (Connected)' },
-                        { key: 'os', label: 'Operating System' },
-                        { key: 'os_version', label: 'OS Version' },
-                        { key: 'python_version', label: 'Python Version' },
-                        { key: 'directory', label: 'Install Directory', mono: true, span: true },
-                        { key: 'start_time', label: 'Start Time', span: true }
-                    ]
                 }
             ],
+            getServicesByCategory(category) {
+                return this.services.filter(s => s.category === category);
+            },
 
             async init() {
                 await this.loadConfig();
@@ -758,9 +870,10 @@
             showMessage(msg, type = 'success') {
                 this.message = msg;
                 this.messageType = type;
+                const delay = type === 'success' ? 5000 : 8000;
                 setTimeout(() => {
                     this.message = '';
-                }, 5000);
+                }, delay);
             }
         }
     }

@@ -83,26 +83,44 @@ func NewTemplateEngine(logger *zap.Logger, templatesDir, servicesDir string, con
 	}
 }
 
-// GenerateCompose validates that the service compose file exists
-// Since we now use static compose files in services/ directory,
-// this function only verifies the file exists and returns its path
+// GenerateCompose decides between static compose file usage and dynamic template rendering.
+// If the configuration requires conditional sections (like ExposePort/HostPort) we render
+// a fresh docker-compose.yml using the legacy template path. Otherwise we validate static file.
 func (te *TemplateEngine) GenerateCompose(serviceName string, config models.ServiceConfig) (string, error) {
-	te.logger.Info("Validating compose file for service",
-		zap.String("service", serviceName))
+	te.logger.Info("Preparing compose for service", zap.String("service", serviceName))
 
-	// Get path to static compose file
-	composePath := te.GetComposePath(serviceName)
-
-	// Verify file exists
-	if _, err := os.Stat(composePath); err != nil {
-		return "", fmt.Errorf("compose file not found for service %s: %w", serviceName, err)
+	// Determine if we need dynamic generation
+	if needsDynamicCompose(config) {
+		te.logger.Info("Dynamic compose generation required (conditional settings detected)",
+			zap.String("service", serviceName))
+		return te.generateComposeOld(serviceName, config)
 	}
 
-	te.logger.Info("Compose file found",
+	// Static path fallback
+	composePath := te.GetComposePath(serviceName)
+	if _, err := os.Stat(composePath); err != nil {
+		return "", fmt.Errorf("static compose file not found for service %s: %w", serviceName, err)
+	}
+	te.logger.Info("Using static compose file",
 		zap.String("service", serviceName),
 		zap.String("path", composePath))
-
 	return composePath, nil
+}
+
+// needsDynamicCompose returns true if config contains fields requiring template processing.
+func needsDynamicCompose(config models.ServiceConfig) bool {
+	// ExposePort or HostPort set
+	if expose, ok := config["ExposePort"].(bool); ok && expose {
+		return true
+	}
+	if hostPortFloat, ok := config["HostPort"].(float64); ok && int(hostPortFloat) > 0 {
+		return true
+	}
+	if hostPortInt, ok := config["HostPort"].(int); ok && hostPortInt > 0 {
+		return true
+	}
+	// Future: add more conditional triggers here (environment overrides, optional volumes, etc.)
+	return false
 }
 
 // Legacy: Keep unused code for reference (can be removed later)
@@ -421,16 +439,26 @@ func (te *TemplateEngine) backupComposeFile(composePath string) error {
 
 // GetComposePath returns the path to a service's docker-compose.yml file
 func (te *TemplateEngine) GetComposePath(serviceName string) string {
-	// Return absolute path to static compose files in services/ directory
-	// These are version-controlled and maintained separately
-	absPath, err := filepath.Abs(filepath.Join("services", serviceName+".yml"))
-	if err != nil {
-		te.logger.Warn("Failed to get absolute path, returning relative",
-			zap.String("service", serviceName),
-			zap.Error(err))
-		return filepath.Join("services", serviceName+".yml")
+	// Prefer dynamically generated compose if it exists
+	dynamicPath := filepath.Join(te.servicesDir, serviceName, "docker-compose.yml")
+	if _, err := os.Stat(dynamicPath); err == nil {
+		abs, err2 := filepath.Abs(dynamicPath)
+		if err2 == nil {
+			return abs
+		}
+		return dynamicPath
 	}
-	return absPath
+	// Fallback to static tracked file (services/<name>.yml)
+	staticPath := filepath.Join("services", serviceName+".yml")
+	absStatic, err := filepath.Abs(staticPath)
+	if err == nil {
+		return absStatic
+	}
+	te.logger.Warn("Returning relative static compose path (abs resolution failed)",
+		zap.String("service", serviceName),
+		zap.String("path", staticPath),
+		zap.Error(err))
+	return staticPath
 }
 
 // LoadTemplatesFromFS loads templates from filesystem into the database

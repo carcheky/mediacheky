@@ -344,7 +344,18 @@ func (sm *ServiceManager) UpdateServiceConfig(ctx context.Context, serviceName s
 		return fmt.Errorf("failed to get service: %w", err)
 	}
 
-	// Update configuration
+	// Keep previous port exposure values to decide if restart is needed
+	prevExpose, _ := svc.Config["ExposePort"].(bool)
+	prevHostPortFloat, hostFloatOk := svc.Config["HostPort"].(float64)
+	prevHostPortInt, hostIntOk := svc.Config["HostPort"].(int)
+	prevHostPort := 0
+	if hostFloatOk {
+		prevHostPort = int(prevHostPortFloat)
+	} else if hostIntOk {
+		prevHostPort = prevHostPortInt
+	}
+
+	// Update configuration in memory
 	svc.Config = config
 
 	// Extract port and image for quick access
@@ -370,7 +381,27 @@ func (sm *ServiceManager) UpdateServiceConfig(ctx context.Context, serviceName s
 			sm.logAction(svc.ID, "config_update", "warning", fmt.Sprintf("Config saved but compose regeneration failed: %v", err))
 			return fmt.Errorf("config saved but failed to regenerate compose file: %w", err)
 		}
-		sm.logAction(svc.ID, "config_update", "success", "Configuration updated and compose file regenerated")
+
+		// Determine new exposure values
+		newExpose, _ := config["ExposePort"].(bool)
+		newHostPort := 0
+		if hpFloat, ok := config["HostPort"].(float64); ok {
+			newHostPort = int(hpFloat)
+		} else if hpInt, ok := config["HostPort"].(int); ok {
+			newHostPort = hpInt
+		}
+
+		// If exposure settings changed, restart to apply port mapping
+		if prevExpose != newExpose || prevHostPort != newHostPort {
+			sm.logger.Info("Port exposure settings changed, restarting service to apply", zap.String("service", serviceName))
+			if err := sm.RestartService(ctx, serviceName); err != nil {
+				sm.logAction(svc.ID, "config_update", "warning", fmt.Sprintf("Compose regenerated but restart failed: %v", err))
+				return fmt.Errorf("compose regenerated but failed to restart service: %w", err)
+			}
+			sm.logAction(svc.ID, "config_update", "success", "Configuration updated, compose regenerated and service restarted (port changes applied)")
+		} else {
+			sm.logAction(svc.ID, "config_update", "success", "Configuration updated and compose file regenerated")
+		}
 	} else {
 		sm.logAction(svc.ID, "config_update", "success", "Configuration updated")
 	}
