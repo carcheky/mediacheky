@@ -31,6 +31,15 @@ func RunMigrations(db *gorm.DB) error {
 		return fmt.Errorf("failed to add performance indices: %w", err)
 	}
 
+	// Seed initial data
+	if err := seedGlobalConfig(db); err != nil {
+		return fmt.Errorf("failed to seed global config: %w", err)
+	}
+
+	if err := seedTemplates(db); err != nil {
+		return fmt.Errorf("failed to seed templates: %w", err)
+	}
+
 	return nil
 }
 
@@ -100,55 +109,14 @@ func addPerformanceIndices(db *gorm.DB) error {
 	return nil
 }
 
-// SeedData populates the database with initial data
-func SeedData(db *gorm.DB) error {
-	// Seed default global configuration
-	if err := seedGlobalConfig(db); err != nil {
-		return fmt.Errorf("failed to seed global config: %w", err)
-	}
-
-	// Seed default templates
-	if err := seedTemplates(db); err != nil {
-		return fmt.Errorf("failed to seed templates: %w", err)
-	}
-
-	// Seed default services
-	if err := seedServices(db); err != nil {
-		return fmt.Errorf("failed to seed services: %w", err)
-	}
-
-	return nil
+// UpdateTemplates updates existing templates with the latest versions
+// This is useful when templates are modified in the code
+func UpdateTemplates(db *gorm.DB) error {
+	return upsertTemplates(db)
 }
 
-// seedGlobalConfig creates default global configuration values
-func seedGlobalConfig(db *gorm.DB) error {
-	defaultConfigs := []models.GlobalConfig{
-		{Key: "PUID", Value: "1000", Category: "system"},
-		{Key: "PGID", Value: "1000", Category: "system"},
-		{Key: "TZ", Value: "UTC", Category: "system"},
-		{Key: "BASE_PATH", Value: "/data", Category: "paths"},
-		{Key: "CONFIG_PATH", Value: "/config", Category: "paths"},
-		{Key: "MEDIA_PATH", Value: "/media", Category: "paths"},
-		{Key: "DOWNLOAD_PATH", Value: "/downloads", Category: "paths"},
-		{Key: "NETWORK_MODE", Value: "bridge", Category: "network"},
-	}
-
-	for _, config := range defaultConfigs {
-		// Only create if doesn't exist
-		var existing models.GlobalConfig
-		result := db.Where("key = ?", config.Key).First(&existing)
-		if result.Error == gorm.ErrRecordNotFound {
-			if err := db.Create(&config).Error; err != nil {
-				return fmt.Errorf("failed to create config %s: %w", config.Key, err)
-			}
-		}
-	}
-
-	return nil
-}
-
-// seedTemplates creates default service templates
-func seedTemplates(db *gorm.DB) error {
+// upsertTemplates creates or updates templates from the default templates
+func upsertTemplates(db *gorm.DB) error {
 	defaultTemplates := []models.Template{
 		{
 			Name:    "radarr",
@@ -191,6 +159,117 @@ networks:
 					"Port": map[string]interface{}{
 						"type":    "integer",
 						"default": 7878,
+					},
+				},
+			},
+		},
+	}
+
+	for _, template := range defaultTemplates {
+		// Find existing template
+		var existing models.Template
+		result := db.Where("name = ?", template.Name).First(&existing)
+
+		if result.Error == gorm.ErrRecordNotFound {
+			// Create new template
+			if err := db.Create(&template).Error; err != nil {
+				return fmt.Errorf("failed to create template %s: %w", template.Name, err)
+			}
+			log.Printf("Created template: %s", template.Name)
+		} else if result.Error != nil {
+			return fmt.Errorf("error checking template %s: %w", template.Name, result.Error)
+		} else {
+			// Update existing template
+			existing.Content = template.Content
+			existing.Version = template.Version
+			existing.Schema = template.Schema
+			if err := db.Save(&existing).Error; err != nil {
+				return fmt.Errorf("failed to update template %s: %w", template.Name, err)
+			}
+			log.Printf("Updated template: %s", template.Name)
+		}
+	}
+
+	return nil
+}
+
+// seedGlobalConfig creates default global configuration values
+func seedGlobalConfig(db *gorm.DB) error {
+	defaultConfigs := []models.GlobalConfig{
+		{Key: "PUID", Value: "1000", Category: "system"},
+		{Key: "PGID", Value: "1000", Category: "system"},
+		{Key: "TZ", Value: "UTC", Category: "system"},
+		{Key: "BASE_PATH", Value: "/data", Category: "paths"},
+		{Key: "CONFIG_PATH", Value: "/config", Category: "paths"},
+		{Key: "MEDIA_PATH", Value: "/media", Category: "paths"},
+		{Key: "DOWNLOAD_PATH", Value: "/downloads", Category: "paths"},
+		{Key: "NETWORK_MODE", Value: "bridge", Category: "network"},
+	}
+
+	for _, config := range defaultConfigs {
+		// Only create if doesn't exist
+		var existing models.GlobalConfig
+		result := db.Where("key = ?", config.Key).First(&existing)
+		if result.Error == gorm.ErrRecordNotFound {
+			if err := db.Create(&config).Error; err != nil {
+				return fmt.Errorf("failed to create config %s: %w", config.Key, err)
+			}
+		}
+	}
+
+	return nil
+}
+
+// seedTemplates creates default service templates
+func seedTemplates(db *gorm.DB) error {
+	defaultTemplates := []models.Template{
+		{
+			Name:    "radarr",
+			Version: "2.0.0",
+			Content: `version: '3.8'
+services:
+  radarr:
+    image: {{ .Image }}
+    container_name: {{ .ContainerName }}
+    environment:
+      - PUID={{ .Global.PUID }}
+      - PGID={{ .Global.PGID }}
+      - TZ={{ .Global.Timezone }}
+      {{- if .Umask }}
+      - UMASK={{ .Umask }}
+      {{- end }}
+    volumes:
+      - {{ .Paths.Config }}:/config
+      - {{ .Paths.Movies }}:/movies
+      {{- if .Paths.Downloads }}
+      - {{ .Paths.Downloads }}:/downloads
+      {{- end }}
+    {{- if .ExposePort }}
+    ports:
+      - "{{ if .HostPort }}{{ .HostPort }}{{ else }}{{ .Port }}{{ end }}:7878"
+    {{- end }}
+    networks:
+      - mediacheky-net
+    restart: {{ .RestartPolicy }}
+
+networks:
+  mediacheky-net:
+    external: true
+`,
+			Schema: models.JSONSchema{
+				"type": "object",
+				"properties": map[string]interface{}{
+					"Port": map[string]interface{}{
+						"type":    "integer",
+						"default": 7878,
+					},
+					"ExposePort": map[string]interface{}{
+						"type":    "boolean",
+						"default": false,
+					},
+					"HostPort": map[string]interface{}{
+						"type":    "integer",
+						"default": 0,
 					},
 				},
 			},
@@ -285,13 +364,28 @@ networks:
 	}
 
 	for _, template := range defaultTemplates {
-		// Only create if doesn't exist
 		var existing models.Template
 		result := db.Where("name = ?", template.Name).First(&existing)
+
 		if result.Error == gorm.ErrRecordNotFound {
+			// Create new template
 			if err := db.Create(&template).Error; err != nil {
 				return fmt.Errorf("failed to create template %s: %w", template.Name, err)
 			}
+			log.Printf("Created new template: %s v%s", template.Name, template.Version)
+		} else if result.Error == nil {
+			// Update if version changed
+			if existing.Version != template.Version {
+				existing.Version = template.Version
+				existing.Content = template.Content
+				existing.Schema = template.Schema
+				if err := db.Save(&existing).Error; err != nil {
+					return fmt.Errorf("failed to update template %s: %w", template.Name, err)
+				}
+				log.Printf("Updated template: %s from v%s to v%s", template.Name, existing.Version, template.Version)
+			}
+		} else {
+			return fmt.Errorf("error checking template %s: %w", template.Name, result.Error)
 		}
 	}
 
@@ -321,6 +415,8 @@ func seedServices(db *gorm.DB) error {
 				"Image":         "linuxserver/radarr:latest",
 				"ContainerName": "radarr",
 				"Port":          7878,
+				"ExposePort":    false, // CRITICAL: Do NOT expose ports by default
+				"HostPort":      0,     // 0 means use service Port
 				"Paths": map[string]interface{}{
 					"Config":    "/data/config/radarr",
 					"Movies":    "/data/media/movies",
