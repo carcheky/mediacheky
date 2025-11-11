@@ -14,6 +14,7 @@ services:
       - ./volumes/mediacheky-config:/app/config
       - ./logs:/app/logs  # Mount logs directory
       - ./volumes/media-library:/media-library:ro  # Read-only access to test media
+      - ./services:/app/services:ro  # Read-only access to service compose files
       # Docker socket for container management
       - /var/run/docker.sock:/var/run/docker.sock
     environment:
