@@ -3,21 +3,6 @@
     <div class="flex justify-between items-center">
         <h1 class="text-3xl font-bold text-dark-text dark:text-dark-text">Settings</h1>
         <div class="flex gap-3">
-            <button @click="testAllConnections()" :disabled="testing" x-show="activeTab === 'services'"
-                class="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2">
-                <svg x-show="!testing" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                        d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z">
-                    </path>
-                </svg>
-                <svg x-show="testing" class="animate-spin w-5 h-5" fill="none" viewBox="0 0 24 24">
-                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                    <path class="opacity-75" fill="currentColor"
-                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
-                    </path>
-                </svg>
-                <span x-text="testing ? 'Testing...' : 'Test All Connections'"></span>
-            </button>
             <button @click="saveAll()" :disabled="saving"
                 class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2">
                 <svg x-show="!saving" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -31,7 +16,7 @@
                         d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
                     </path>
                 </svg>
-                <span x-text="saving ? 'Saving...' : 'Save All'"></span>
+                <span x-text="saving ? 'Saving...' : 'Save Changes'"></span>
             </button>
         </div>
     </div>
@@ -44,219 +29,218 @@
                 class="whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors">
                 Services
             </button>
-            <button @click="activeTab = 'configuration'"
-                :class="activeTab === 'configuration' ? 'border-blue-500 text-blue-400' : 'border-transparent text-dark-muted hover:text-dark-text hover:border-slate-600'"
+            <button @click="activeTab = 'global'"
+                :class="activeTab === 'global' ? 'border-blue-500 text-blue-400' : 'border-transparent text-dark-muted hover:text-dark-text hover:border-slate-600'"
                 class="whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors">
-                Configuration
+                Global Variables
             </button>
         </nav>
     </div>
 
     <!-- Services Tab Content -->
     <div x-show="activeTab === 'services'" class="space-y-6">
-        <!-- Services Summary Header -->
+        <!-- Service Enable/Disable List -->
         <div class="bg-dark-surface dark:bg-dark-surface shadow-lg rounded-lg border border-dark-border p-6">
-            <h2 class="text-xl font-semibold text-dark-text mb-4">Services Overview</h2>
+            <h2 class="text-xl font-semibold text-dark-text mb-4">Available Services</h2>
+            <p class="text-sm text-dark-muted mb-6">Enable services to configure and use them. Enabled services will appear in the Dashboard.</p>
             
-            <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+            <div class="space-y-3">
                 <template x-for="service in services" :key="service.id">
-                    <div @click="scrollToService(service.id)" 
-                        class="flex flex-col items-center p-3 rounded-lg border transition-all cursor-pointer hover:scale-105"
-                        :class="{
-                            'bg-green-900/20 border-green-600/50 hover:bg-green-900/30': connectionResults[service.id]?.success,
-                            'bg-red-900/20 border-red-600/50 hover:bg-red-900/30': connectionResults[service.id] && !connectionResults[service.id]?.success,
-                            'bg-gray-900/20 border-gray-600/50 hover:bg-gray-900/30': !connectionResults[service.id],
-                            'opacity-50': !config.services[service.id]?.enabled
-                        }">
-                        <div class="text-2xl mb-2">
-                            <span x-show="connectionResults[service.id]?.success">✅</span>
-                            <span x-show="connectionResults[service.id] && !connectionResults[service.id]?.success">❌</span>
-                            <span x-show="!connectionResults[service.id]">⚪</span>
+                    <div :id="'service-' + service.id" 
+                        class="flex items-center justify-between p-4 rounded-lg border transition-colors scroll-mt-6"
+                        :class="config.services[service.id]?.enabled ? 'bg-blue-900/20 border-blue-600/50' : 'bg-dark-bg border-dark-border'">
+                        <div class="flex items-center gap-4">
+                            <div class="text-3xl" x-text="service.icon || '⚙️'"></div>
+                            <div>
+                                <h3 class="font-semibold text-dark-text" x-text="service.label"></h3>
+                                <p class="text-sm text-dark-muted" x-text="service.description || 'No description available'"></p>
+                            </div>
                         </div>
-                        <p class="text-sm font-medium text-dark-text text-center" x-text="service.label"></p>
-                        <p class="text-xs text-dark-muted mt-1" x-show="config.services[service.id]?.enabled">Enabled</p>
-                        <p class="text-xs text-dark-muted mt-1" x-show="!config.services[service.id]?.enabled">Disabled</p>
-                    </div>
-                </template>
-            </div>
-            
-            <!-- Overall Test Results Summary -->
-            <div x-show="Object.keys(connectionResults).length > 0" x-transition class="mt-4 pt-4 border-t border-dark-border">
-                <div class="flex items-center justify-between">
-                    <div>
-                        <p class="text-sm font-medium text-dark-text">
-                            Test Results: 
-                            <span class="text-green-400" x-text="Object.values(connectionResults).filter(r => r?.success).length"></span>
-                            <span class="text-dark-muted">/</span>
-                            <span class="text-dark-text" x-text="Object.keys(connectionResults).length"></span>
-                            <span class="text-dark-muted">passed</span>
-                        </p>
-                    </div>
-                    <button @click="connectionResults = {}" class="text-xs text-dark-muted hover:text-dark-text">
-                        Clear Results
-                    </button>
-                </div>
-            </div>
-        </div>
-        
-        <!-- Service Settings Panels -->
-        <template x-for="service in services" :key="service.id">
-            <div :id="'service-' + service.id" class="bg-dark-surface dark:bg-dark-surface shadow-lg rounded-lg border border-dark-border p-6 scroll-mt-6">
-            <!-- Service Header with Enable Toggle -->
-            <div class="flex items-center justify-between mb-6">
-                <h2 class="text-xl font-semibold text-dark-text" x-text="service.label + ' Configuration'"></h2>
-                <div class="flex items-center gap-2">
-                    <label class="flex items-center"
-                        :class="envSources[service.id]?.enabled ? 'cursor-not-allowed opacity-70' : 'cursor-pointer'">
-                        <input type="checkbox" x-model="config.services[service.id].enabled"
-                            :disabled="envSources[service.id]?.enabled" class="sr-only peer">
-                        <div class="relative w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600">
-                        </div>
-                        <span class="ml-3 text-sm font-medium text-dark-text">Enabled</span>
-                    </label>
-                    <span x-show="envSources[service.id]?.enabled" class="text-xs text-blue-400">(from .env)</span>
-                </div>
-            </div>
-
-            <!-- Service Fields -->
-            <div class="space-y-4">
-                <template x-for="field in service.fields" :key="field.name">
-                    <div>
-                        <label class="block text-sm font-medium text-dark-text mb-1">
-                            <span x-text="field.label"></span>
-                            <span x-show="envSources[service.id]?.[field.name]" class="text-xs text-blue-400">(from .env)</span>
-                        </label>
-                        <input 
-                            :type="field.type || 'text'" 
-                            x-model="config.services[service.id][field.name]"
-                            :placeholder="field.placeholder"
-                            :disabled="envSources[service.id]?.[field.name]"
-                            :class="envSources[service.id]?.[field.name] ? 'bg-slate-800/50 cursor-not-allowed' : 'bg-dark-bg'"
-                            class="w-full px-3 py-2 border border-dark-border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-dark-text">
-                    </div>
-                </template>
-
-                <!-- Test Connection Button -->
-                <button @click="testConnection(service.id)" :disabled="testing"
-                    class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50">
-                    <span x-text="testing ? 'Testing...' : 'Test Connection'"></span>
-                </button>
-
-                <!-- Connection Results -->
-                <div x-show="connectionResults[service.id]" x-transition class="mt-4">
-                    <!-- Error State -->
-                    <div x-show="connectionResults[service.id] && !connectionResults[service.id].success"
-                        class="p-4 bg-red-900/20 text-red-300 border border-red-700/50 rounded-lg">
-                        <div class="flex items-start gap-2">
-                            <svg class="w-5 h-5 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                                <path fill-rule="evenodd"
-                                    d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
-                                    clip-rule="evenodd" />
-                            </svg>
-                            <p x-text="connectionResults[service.id].message"></p>
-                        </div>
-                    </div>
-
-                    <!-- Success State with System Info -->
-                    <div x-show="connectionResults[service.id] && connectionResults[service.id].success"
-                        class="p-4 bg-green-900/20 border border-green-700/50 rounded-lg">
-                        <div class="flex items-center gap-2 mb-3">
-                            <svg class="w-5 h-5 text-green-600" fill="currentColor" viewBox="0 0 20 20">
-                                <path fill-rule="evenodd"
-                                    d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
-                                    clip-rule="evenodd" />
-                            </svg>
-                            <p class="font-semibold text-green-300">✓ Connection Successful</p>
-                        </div>
-
-                        <!-- System Information (if available) -->
-                        <div x-show="connectionResults[service.id].system_info" 
-                            class="grid grid-cols-2 gap-3 mt-4 pt-3 border-t border-green-200">
-                            <template x-for="field in getSystemInfoDisplay(service.id)" :key="field.key">
-                                <div :class="field.span ? 'col-span-2' : ''">
-                                    <p class="text-xs text-green-400 font-medium" x-text="field.label"></p>
-                                    <p x-show="field.html" class="text-sm text-green-300" :class="field.mono ? 'font-mono break-all' : ''" 
-                                        x-html="field.value"></p>
-                                    <p x-show="!field.html" class="text-sm text-green-300" :class="field.mono ? 'font-mono break-all' : ''" 
-                                        x-text="field.value"></p>
+                        <div class="flex items-center gap-3">
+                            <!-- Configure button (only visible when enabled) -->
+                            <a x-show="config.services[service.id]?.enabled" 
+                                :href="'/services/' + service.id"
+                                class="px-3 py-1 bg-blue-600 text-white rounded-md hover:bg-blue-700 text-sm">
+                                Configure
+                            </a>
+                            <!-- Enable/Disable toggle -->
+                            <label class="flex items-center cursor-pointer">
+                                <input type="checkbox" x-model="config.services[service.id].enabled" 
+                                    @change="saveAll()" class="sr-only peer">
+                                <div class="relative w-11 h-6 bg-gray-600 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-800 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600">
                                 </div>
-                            </template>
+                                <span class="ml-3 text-sm font-medium text-dark-text" 
+                                    x-text="config.services[service.id]?.enabled ? 'Enabled' : 'Disabled'"></span>
+                            </label>
                         </div>
                     </div>
-                </div>
+                </template>
             </div>
-        </div>
-    </template>
-    </div>
-
-    <!-- Configuration Tab Content -->
-    <div x-show="activeTab === 'configuration'" class="space-y-6">
-        <!-- Cleanup Rules Panel -->
-        <div class="bg-dark-surface dark:bg-dark-surface shadow-lg rounded-lg border border-dark-border p-6">
-        <h2 class="text-xl font-semibold text-dark-text mb-6">Cleanup Rules Configuration</h2>
-
-        <div class="space-y-6">
-            <!-- Dry Run Mode -->
-            <div class="flex items-center justify-between p-4 bg-yellow-900/20 rounded-lg border border-yellow-700/50">
-                <div>
-                    <h3 class="font-medium text-dark-text">Dry Run Mode</h3>
-                    <p class="text-sm text-dark-muted">Preview deletions without actually removing files</p>
-                </div>
-                <label class="flex items-center cursor-pointer">
-                    <input type="checkbox" x-model="config.cleanup.dry_run" class="sr-only peer">
-                    <div
-                        class="relative w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600">
-                    </div>
-                </label>
-            </div>
-
-            <!-- Days to Keep -->
-            <div>
-                <label class="block text-sm font-medium text-dark-text mb-1">Days to Keep Media</label>
-                <input type="number" x-model.number="config.cleanup.days_to_keep" min="1" max="365"
-                    class="w-full px-3 py-2 border border-dark-border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-dark-bg text-dark-text">
-                <p class="text-sm text-dark-muted mt-1">Media older than this will be marked for deletion</p>
-            </div>
-
-            <!-- Leaving Soon Days -->
-            <div>
-                <label class="block text-sm font-medium text-dark-text mb-1">Leaving Soon Warning (days)</label>
-                <input type="number" x-model.number="config.cleanup.leaving_soon_days" min="1" max="30"
-                    class="w-full px-3 py-2 border border-dark-border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-dark-bg text-dark-text">
-                <p class="text-sm text-dark-muted mt-1">Create symlinks this many days before deletion</p>
-            </div>
-
-            <!-- Exclusion Tags -->
-            <div>
-                <label class="block text-sm font-medium text-dark-text mb-1">Exclusion Tags</label>
-                <input type="text" x-model="config.cleanup.exclusion_tags" placeholder="keep, favorite, important"
-                    class="w-full px-3 py-2 border border-dark-border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-dark-bg text-dark-text">
-                <p class="text-sm text-dark-muted mt-1">Comma-separated list of tags that prevent deletion</p>
-            </div>
-
-            <!-- Delete Unmonitored -->
-            <div class="flex items-center justify-between">
-                <div>
-                    <h3 class="font-medium text-dark-text">Delete Unmonitored</h3>
-                    <p class="text-sm text-dark-muted">Remove media not monitored in Radarr/Sonarr</p>
-                </div>
-                <label class="flex items-center cursor-pointer">
-                    <input type="checkbox" x-model="config.cleanup.delete_unmonitored" class="sr-only peer">
-                    <div
-                        class="relative w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600">
-                    </div>
-                </label>
-            </div>
-        </div>
         </div>
     </div>
 
-    <!-- Status Messages -->
-    <div x-show="message" x-transition :class="{
-            'bg-green-900/20 border-green-700/50 text-green-300': messageType === 'success',
-            'bg-red-900/20 border-red-700/50 text-red-300': messageType === 'error'
-        }" class="p-4 rounded-lg border">
-        <p x-text="message"></p>
+    <!-- Global Variables Tab Content -->
+    <div x-show="activeTab === 'global'" class="space-y-6">
+        <!-- User & Group Configuration -->
+        <div class="bg-dark-surface dark:bg-dark-surface rounded-lg shadow-lg border border-dark-border p-6">
+            <h2 class="text-xl font-semibold text-dark-text mb-4">User & Group</h2>
+            <p class="text-sm text-dark-muted mb-4">Linux user and group IDs for containers</p>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-sm font-medium text-dark-text mb-1">
+                        PUID (User ID)
+                    </label>
+                    <input type="number" x-model.number="config.global.puid" placeholder="1000"
+                        class="w-full px-3 py-2 border border-dark-border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-dark-bg text-dark-text">
+                    <p class="text-xs text-dark-muted mt-1">Default: 1000</p>
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-dark-text mb-1">
+                        PGID (Group ID)
+                    </label>
+                    <input type="number" x-model.number="config.global.pgid" placeholder="1000"
+                        class="w-full px-3 py-2 border border-dark-border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-dark-bg text-dark-text">
+                    <p class="text-xs text-dark-muted mt-1">Default: 1000</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- System Configuration -->
+        <div class="bg-dark-surface dark:bg-dark-surface rounded-lg shadow-lg border border-dark-border p-6">
+            <h2 class="text-xl font-semibold text-dark-text mb-4">System</h2>
+            <p class="text-sm text-dark-muted mb-4">General system settings</p>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-sm font-medium text-dark-text mb-1">
+                        Timezone (TZ)
+                    </label>
+                    <input type="text" x-model="config.global.timezone" placeholder="America/New_York"
+                        class="w-full px-3 py-2 border border-dark-border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-dark-bg text-dark-text">
+                    <p class="text-xs text-dark-muted mt-1">Example: America/New_York, Europe/London</p>
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-dark-text mb-1">
+                        Language
+                    </label>
+                    <select x-model="config.global.language"
+                        class="w-full px-3 py-2 border border-dark-border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-dark-bg text-dark-text">
+                        <option value="en">English</option>
+                        <option value="es">Español</option>
+                        <option value="fr">Français</option>
+                        <option value="de">Deutsch</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <!-- Base Paths Configuration -->
+        <div class="bg-dark-surface dark:bg-dark-surface rounded-lg shadow-lg border border-dark-border p-6">
+            <h2 class="text-xl font-semibold text-dark-text mb-4">Base Paths</h2>
+            <p class="text-sm text-dark-muted mb-4">Default paths for media storage</p>
+            
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-dark-text mb-1">
+                        Media Directory
+                    </label>
+                    <input type="text" x-model="config.global.media_path" placeholder="/data/media"
+                        class="w-full px-3 py-2 border border-dark-border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-dark-bg text-dark-text">
+                    <p class="text-xs text-dark-muted mt-1">Root path for movies, TV shows, music, etc.</p>
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-dark-text mb-1">
+                        Downloads Directory
+                    </label>
+                    <input type="text" x-model="config.global.downloads_path" placeholder="/data/downloads"
+                        class="w-full px-3 py-2 border border-dark-border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-dark-bg text-dark-text">
+                    <p class="text-xs text-dark-muted mt-1">Path for download clients</p>
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-dark-text mb-1">
+                        Config Directory
+                    </label>
+                    <input type="text" x-model="config.global.config_path" placeholder="/data/config"
+                        class="w-full px-3 py-2 border border-dark-border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-dark-bg text-dark-text">
+                    <p class="text-xs text-dark-muted mt-1">Path for service configurations</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Network Configuration -->
+        <div class="bg-dark-surface dark:bg-dark-surface rounded-lg shadow-lg border border-dark-border p-6">
+            <h2 class="text-xl font-semibold text-dark-text mb-4">Network</h2>
+            <p class="text-sm text-dark-muted mb-4">Docker network configuration</p>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-sm font-medium text-dark-text mb-1">
+                        Network Name
+                    </label>
+                    <input type="text" x-model="config.global.network_name" placeholder="mediacheky-net"
+                        class="w-full px-3 py-2 border border-dark-border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-dark-bg text-dark-text">
+                    <p class="text-xs text-dark-muted mt-1">Docker network for services</p>
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-dark-text mb-1">
+                        Subnet
+                    </label>
+                    <input type="text" x-model="config.global.subnet" placeholder="172.20.0.0/16"
+                        class="w-full px-3 py-2 border border-dark-border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-dark-bg text-dark-text">
+                    <p class="text-xs text-dark-muted mt-1">CIDR notation (optional)</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Floating Toast Messages -->
+    <div x-show="message" 
+         x-transition:enter="transition ease-out duration-300"
+         x-transition:enter-start="opacity-0 transform translate-y-2"
+         x-transition:enter-end="opacity-100 transform translate-y-0"
+         x-transition:leave="transition ease-in duration-200"
+         x-transition:leave-start="opacity-100 transform translate-y-0"
+         x-transition:leave-end="opacity-0 transform translate-y-2"
+         class="fixed top-4 right-4 z-50 min-w-[300px] max-w-md shadow-2xl rounded-lg border p-4 flex items-start gap-3"
+         :class="{
+            'bg-green-900/95 border-green-600/50': messageType === 'success',
+            'bg-red-900/95 border-red-600/50': messageType === 'error',
+            'bg-blue-900/95 border-blue-600/50': messageType === 'info'
+         }">
+        <!-- Icon -->
+        <div class="flex-shrink-0">
+            <svg x-show="messageType === 'success'" class="w-6 h-6 text-green-300" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+            </svg>
+            <svg x-show="messageType === 'error'" class="w-6 h-6 text-red-300" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/>
+            </svg>
+            <svg x-show="messageType === 'info'" class="w-6 h-6 text-blue-300" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/>
+            </svg>
+        </div>
+        <!-- Message -->
+        <div class="flex-1">
+            <p class="text-sm font-medium" 
+               :class="{
+                  'text-green-200': messageType === 'success',
+                  'text-red-200': messageType === 'error',
+                  'text-blue-200': messageType === 'info'
+               }"
+               x-text="message"></p>
+        </div>
+        <!-- Close button -->
+        <button @click="message = ''" class="flex-shrink-0 text-white/60 hover:text-white/90 transition-colors">
+            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"/>
+            </svg>
+        </button>
     </div>
 </div>
 
@@ -335,12 +319,16 @@
                     qbittorrent: { enabled: false, url: '', username: '', password: '' },
                     bazarr: { enabled: false, url: '', api_key: '' },
                 },
-                cleanup: {
-                    dry_run: true,
-                    days_to_keep: 90,
-                    leaving_soon_days: 7,
-                    exclusion_tags: '',
-                    delete_unmonitored: false
+                global: {
+                    puid: 1000,
+                    pgid: 1000,
+                    timezone: 'UTC',
+                    language: 'en',
+                    media_path: '/data/media',
+                    downloads_path: '/data/downloads',
+                    config_path: '/data/config',
+                    network_name: 'mediacheky-net',
+                    subnet: ''
                 }
             },
             connectionResults: {},
@@ -355,6 +343,8 @@
                 {
                     id: 'radarr',
                     label: 'Radarr',
+                    icon: '🎬',
+                    description: 'Movie collection manager for Usenet and BitTorrent',
                     fields: [
                         { name: 'url', label: 'URL', type: 'url', placeholder: 'http://localhost:7878' },
                         { name: 'api_key', label: 'API Key', type: 'password', placeholder: 'Enter Radarr API Key' }
@@ -375,6 +365,8 @@
                 {
                     id: 'sonarr',
                     label: 'Sonarr',
+                    icon: '📺',
+                    description: 'TV series collection manager for Usenet and BitTorrent',
                     fields: [
                         { name: 'url', label: 'URL', type: 'url', placeholder: 'http://localhost:8989' },
                         { name: 'api_key', label: 'API Key', type: 'password', placeholder: 'Enter Sonarr API Key' }
@@ -395,6 +387,8 @@
                 {
                     id: 'jellyfin',
                     label: 'Jellyfin',
+                    icon: '🍿',
+                    description: 'Media server for streaming movies, TV shows, and music',
                     fields: [
                         { name: 'url', label: 'URL', type: 'url', placeholder: 'http://localhost:8096' },
                         { name: 'api_key', label: 'API Key', type: 'password', placeholder: 'Enter Jellyfin API Key' }
@@ -412,6 +406,8 @@
                 {
                     id: 'jellyseerr',
                     label: 'Jellyseerr',
+                    icon: '🎫',
+                    description: 'Media request management for Jellyfin',
                     fields: [
                         { name: 'url', label: 'URL', type: 'url', placeholder: 'http://localhost:5055' },
                         { name: 'api_key', label: 'API Key', type: 'password', placeholder: 'Enter Jellyseerr API Key' }
@@ -426,6 +422,8 @@
                 {
                     id: 'jellystat',
                     label: 'Jellystat',
+                    icon: '📊',
+                    description: 'Statistics and analytics for Jellyfin',
                     fields: [
                         { name: 'url', label: 'URL', type: 'url', placeholder: 'http://localhost:3000' },
                         { name: 'api_key', label: 'API Key', type: 'password', placeholder: 'Enter Jellystat API Key' }
@@ -437,6 +435,8 @@
                 {
                     id: 'qbittorrent',
                     label: 'qBittorrent',
+                    icon: '⬇️',
+                    description: 'BitTorrent client for downloading media',
                     fields: [
                         { name: 'url', label: 'URL', type: 'url', placeholder: 'http://localhost:8080' },
                         { name: 'username', label: 'Username', type: 'text', placeholder: 'admin' },
