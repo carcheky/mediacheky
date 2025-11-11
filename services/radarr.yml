@@ -7,9 +7,9 @@ services:
       - PGID=1000
       - TZ=UTC
     volumes:
-      - ./volumes/radarr-config:/config
-      - ./volumes/media-library/movies:/movies
-      - ./volumes/media-library/downloads:/downloads
+      - ${CONFIG_BASE_PATH}/radarr:/config
+      - ${BASE_MEDIA_PATH}/${MOVIES_PATH}:/movies
+      - ${BASE_MEDIA_PATH}/${DOWNLOADS_PATH}:/downloads
     networks:
       - mediacheky_mediacheky-net
     restart: unless-stopped

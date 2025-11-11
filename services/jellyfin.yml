@@ -1,17 +1,17 @@
 version: '3.8'
 
 services:
-  sonarr:
-    image: linuxserver/sonarr:latest
-    container_name: sonarr
+  jellyfin:
+    image: linuxserver/jellyfin:latest
+    container_name: jellyfin
     environment:
       - PUID=1000
       - PGID=1000
       - TZ=Europe/Madrid
     volumes:
-      - ${CONFIG_BASE_PATH}/sonarr:/config
-      - ${BASE_MEDIA_PATH}/${SERIES_PATH}:/tv
-      - ${BASE_MEDIA_PATH}/${DOWNLOADS_PATH}:/downloads
+      - ${CONFIG_BASE_PATH}/jellyfin:/config
+      - ${BASE_MEDIA_PATH}/${MOVIES_PATH}:/data/movies
+      - ${BASE_MEDIA_PATH}/${SERIES_PATH}:/data/tvshows
     restart: unless-stopped
     networks:
       - mediacheky_mediacheky-net

@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 	"text/template"
 	"time"
 
@@ -188,6 +189,61 @@ func (te *TemplateEngine) loadGlobalConfig() (GlobalConfig, error) {
 		PGID:     pgid,
 		Timezone: timezone,
 	}, nil
+}
+
+// LoadGlobalConfigPublic is a public wrapper for loadGlobalConfig
+// Returns both GlobalConfig and the raw config map for variable expansion
+func (te *TemplateEngine) LoadGlobalConfigPublic() (map[string]string, error) {
+	configMap, err := te.configRepo.GetAsMap()
+	if err != nil {
+		return nil, err
+	}
+
+	// Set defaults if not found
+	if configMap["PUID"] == "" {
+		configMap["PUID"] = "1000"
+	}
+	if configMap["PGID"] == "" {
+		configMap["PGID"] = "1000"
+	}
+	if configMap["TZ"] == "" {
+		configMap["TZ"] = "UTC"
+	}
+
+	// Path defaults - convert relative paths to absolute based on project root
+	if configMap["CONFIG_BASE_PATH"] == "" {
+		configMap["CONFIG_BASE_PATH"] = "./volumes"
+	}
+	// Convert to absolute path if relative
+	if !filepath.IsAbs(configMap["CONFIG_BASE_PATH"]) {
+		absPath, err := filepath.Abs(configMap["CONFIG_BASE_PATH"])
+		if err == nil {
+			configMap["CONFIG_BASE_PATH"] = absPath
+		}
+	}
+
+	if configMap["BASE_MEDIA_PATH"] == "" {
+		configMap["BASE_MEDIA_PATH"] = "./volumes/media-library"
+	}
+	// Convert to absolute path if relative
+	if !filepath.IsAbs(configMap["BASE_MEDIA_PATH"]) {
+		absPath, err := filepath.Abs(configMap["BASE_MEDIA_PATH"])
+		if err == nil {
+			configMap["BASE_MEDIA_PATH"] = absPath
+		}
+	}
+
+	if configMap["DOWNLOADS_PATH"] == "" {
+		configMap["DOWNLOADS_PATH"] = "downloads"
+	}
+	if configMap["MOVIES_PATH"] == "" {
+		configMap["MOVIES_PATH"] = "movies"
+	}
+	if configMap["SERIES_PATH"] == "" {
+		configMap["SERIES_PATH"] = "series"
+	}
+
+	return configMap, nil
 }
 
 // loadTemplate loads template content from database or filesystem
@@ -397,5 +453,89 @@ func (te *TemplateEngine) LoadTemplatesFromFS(fs embed.FS, templatesPath string)
 			zap.String("file", entry.Name()))
 	}
 
+	return nil
+}
+
+// ExtractVolumePaths parses a docker-compose file and extracts host volume paths
+// It expands environment variables using the provided config map
+func (te *TemplateEngine) ExtractVolumePaths(composePath string, configMap map[string]string) ([]string, error) {
+	content, err := os.ReadFile(composePath)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read compose file: %w", err)
+	}
+
+	// Expand environment variables in the content
+	contentStr := string(content)
+	for key, value := range configMap {
+		contentStr = strings.ReplaceAll(contentStr, "${"+key+"}", value)
+	}
+
+	var composeData map[string]interface{}
+	if err := yaml.Unmarshal([]byte(contentStr), &composeData); err != nil {
+		return nil, fmt.Errorf("failed to parse compose YAML: %w", err)
+	}
+
+	var volumePaths []string
+
+	// Extract services section
+	services, ok := composeData["services"].(map[string]interface{})
+	if !ok {
+		return volumePaths, nil
+	}
+
+	// Iterate through each service
+	for _, serviceData := range services {
+		service, ok := serviceData.(map[string]interface{})
+		if !ok {
+			continue
+		}
+
+		// Extract volumes section
+		volumes, ok := service["volumes"].([]interface{})
+		if !ok {
+			continue
+		}
+
+		// Parse each volume definition
+		for _, vol := range volumes {
+			volStr, ok := vol.(string)
+			if !ok {
+				continue
+			}
+
+			// Parse volume string (format: "host_path:container_path" or "host_path:container_path:options")
+			parts := strings.Split(volStr, ":")
+			if len(parts) < 2 {
+				continue
+			}
+
+			hostPath := parts[0]
+
+			// Skip named volumes (no path separator)
+			if !filepath.IsAbs(hostPath) && !strings.HasPrefix(hostPath, ".") {
+				continue
+			}
+
+			// Convert relative paths to absolute
+			if !filepath.IsAbs(hostPath) {
+				composeDir := filepath.Dir(composePath)
+				hostPath = filepath.Join(composeDir, hostPath)
+			}
+
+			volumePaths = append(volumePaths, hostPath)
+		}
+	}
+
+	return volumePaths, nil
+}
+
+// EnsureDirectoryExists creates a directory if it doesn't exist
+func (te *TemplateEngine) EnsureDirectoryExists(path string) error {
+	if _, err := os.Stat(path); os.IsNotExist(err) {
+		te.logger.Debug("Creating volume directory", zap.String("path", path))
+		if err := os.MkdirAll(path, 0755); err != nil {
+			return fmt.Errorf("failed to create directory: %w", err)
+		}
+	}
 	return nil
 }

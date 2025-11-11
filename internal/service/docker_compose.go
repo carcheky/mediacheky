@@ -31,17 +31,8 @@ func NewDockerComposeClient(logger *zap.Logger) *DockerComposeClient {
 	}
 }
 
-// ComposeUp executes 'docker compose up -d' with multiple compose files.
-// The first file should be the main docker-compose.yml, subsequent files override/extend it.
-// If ctx is nil, a default timeout context (2 minutes) will be created automatically.
-// To maintain control over operation cancellation, pass a valid context.
-func (dcc *DockerComposeClient) ComposeUp(ctx context.Context, composePath string) (*ComposeResult, error) {
-	if ctx == nil {
-		var cancel context.CancelFunc
-		ctx, cancel = context.WithTimeout(context.Background(), dcc.timeout)
-		defer cancel()
-	}
-
+// ComposeUp runs 'docker compose up -d' for the specified compose file
+func (dcc *DockerComposeClient) ComposeUp(ctx context.Context, composePath string, configMap map[string]string) (*ComposeResult, error) {
 	// Validate and sanitize path
 	if !filepath.IsAbs(composePath) {
 		return nil, fmt.Errorf("compose path must be absolute: %s", composePath)
@@ -60,17 +51,21 @@ func (dcc *DockerComposeClient) ComposeUp(ctx context.Context, composePath strin
 
 	// Get project root (where main docker-compose.yml is)
 	projectRoot := filepath.Dir(composeDir) // services/ -> project root
-	mainCompose := filepath.Join(projectRoot, "docker-compose.yml")
 
-	dcc.logger.Info("Executing docker compose up with multiple files",
-		zap.String("main", mainCompose),
-		zap.String("service", cleanPath),
+	dcc.logger.Info("Executing docker compose up",
+		zap.String("path", cleanPath),
 		zap.String("directory", projectRoot))
 
-	// Prepare command: Only use the service file, NOT the main compose
-	// Each service is an independent project but shares the external network
+	// Build command
+	// Note: Using 'docker compose' (new) instead of 'docker-compose' (old)
 	cmd := exec.CommandContext(ctx, "docker", "compose", "-f", cleanPath, "up", "-d")
 	cmd.Dir = projectRoot
+
+	// Set environment variables from config (will be used by docker compose)
+	cmd.Env = os.Environ()
+	for key, value := range configMap {
+		cmd.Env = append(cmd.Env, key+"="+value)
+	}
 
 	// Capture output
 	var stdout, stderr bytes.Buffer
@@ -100,13 +95,11 @@ func (dcc *DockerComposeClient) ComposeUp(ctx context.Context, composePath strin
 		zap.String("output", result.Output))
 
 	return result, nil
-}
-
-// ComposeDown executes 'docker compose down' with multiple compose files.
+} // ComposeDown executes 'docker compose down' with multiple compose files.
 // The first file should be the main docker-compose.yml, subsequent files override/extend it.
 // If ctx is nil, a default timeout context (2 minutes) will be created automatically.
 // To maintain control over operation cancellation, pass a valid context.
-func (dcc *DockerComposeClient) ComposeDown(ctx context.Context, composePath string) (*ComposeResult, error) {
+func (dcc *DockerComposeClient) ComposeDown(ctx context.Context, composePath string, configMap map[string]string) (*ComposeResult, error) {
 	if ctx == nil {
 		var cancel context.CancelFunc
 		ctx, cancel = context.WithTimeout(context.Background(), dcc.timeout)
@@ -142,6 +135,12 @@ func (dcc *DockerComposeClient) ComposeDown(ctx context.Context, composePath str
 	// Each service is an independent project but shares the external network
 	cmd := exec.CommandContext(ctx, "docker", "compose", "-f", cleanPath, "down")
 	cmd.Dir = projectRoot
+
+	// Set environment variables from config (will be used by docker compose)
+	cmd.Env = os.Environ()
+	for key, value := range configMap {
+		cmd.Env = append(cmd.Env, key+"="+value)
+	}
 
 	// Capture output
 	var stdout, stderr bytes.Buffer

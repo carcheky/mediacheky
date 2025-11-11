@@ -1,0 +1,17 @@
+version: '3.8'
+
+services:
+  jellyseerr:
+    image: fallenbagel/jellyseerr:latest
+    container_name: jellyseerr
+    environment:
+      - TZ=Europe/Madrid
+    volumes:
+      - ${CONFIG_BASE_PATH}/jellyseerr:/app/config
+    restart: unless-stopped
+    networks:
+      - mediacheky_mediacheky-net
+
+networks:
+  mediacheky_mediacheky-net:
+    external: true

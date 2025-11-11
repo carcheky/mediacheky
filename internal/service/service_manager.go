@@ -157,8 +157,21 @@ func (sm *ServiceManager) StartService(ctx context.Context, serviceName string) 
 	// Get compose file path
 	composePath := sm.templateEngine.GetComposePath(serviceName)
 
-	// Execute docker compose up
-	result, err := sm.dockerCompose.ComposeUp(ctx, composePath)
+	// Load global config for volume creation and docker compose execution
+	globalConfig, err := sm.templateEngine.LoadGlobalConfigPublic()
+	if err != nil {
+		sm.logAction(svc.ID, "start", "error", fmt.Sprintf("Failed to load global config: %v", err))
+		return fmt.Errorf("failed to load global config: %w", err)
+	}
+
+	// Ensure all volume directories exist before starting
+	if err := sm.ensureVolumesExist(composePath); err != nil {
+		sm.logAction(svc.ID, "start", "error", fmt.Sprintf("Failed to create volumes: %v", err))
+		return fmt.Errorf("failed to ensure volumes exist: %w", err)
+	}
+
+	// Execute docker compose up with config variables
+	result, err := sm.dockerCompose.ComposeUp(ctx, composePath, globalConfig)
 	if err != nil {
 		sm.logAction(svc.ID, "start", "error", fmt.Sprintf("Failed to start: %v", err))
 		return fmt.Errorf("failed to start service: %w", err)
@@ -216,8 +229,15 @@ func (sm *ServiceManager) StopService(ctx context.Context, serviceName string) e
 	// Get compose file path
 	composePath := sm.templateEngine.GetComposePath(serviceName)
 
-	// Execute docker compose down
-	result, err := sm.dockerCompose.ComposeDown(ctx, composePath)
+	// Load global config for docker compose execution
+	globalConfig, err := sm.templateEngine.LoadGlobalConfigPublic()
+	if err != nil {
+		sm.logAction(svc.ID, "stop", "error", fmt.Sprintf("Failed to load global config: %v", err))
+		return fmt.Errorf("failed to load global config: %w", err)
+	}
+
+	// Execute docker compose down with config variables
+	result, err := sm.dockerCompose.ComposeDown(ctx, composePath, globalConfig)
 	if err != nil {
 		sm.logAction(svc.ID, "stop", "error", fmt.Sprintf("Failed to stop: %v", err))
 		return fmt.Errorf("failed to stop service: %w", err)
@@ -328,6 +348,34 @@ func (sm *ServiceManager) findContainerByName(ctx context.Context, containerName
 	}
 
 	return "", fmt.Errorf("container not found: %s", containerName)
+}
+
+// ensureVolumesExist creates volume directories if they don't exist
+func (sm *ServiceManager) ensureVolumesExist(composePath string) error {
+	// Load global config to get path variables
+	globalConfig, err := sm.templateEngine.LoadGlobalConfigPublic()
+	if err != nil {
+		return fmt.Errorf("failed to load global config: %w", err)
+	}
+
+	// Parse compose file to extract volume paths
+	volumeDirs, err := sm.templateEngine.ExtractVolumePaths(composePath, globalConfig)
+	if err != nil {
+		return fmt.Errorf("failed to extract volume paths: %w", err)
+	}
+
+	// Create each volume directory
+	for _, dir := range volumeDirs {
+		if err := sm.templateEngine.EnsureDirectoryExists(dir); err != nil {
+			return fmt.Errorf("failed to create volume directory %s: %w", dir, err)
+		}
+	}
+
+	sm.logger.Debug("Volume directories ensured",
+		zap.String("compose_path", composePath),
+		zap.Int("volume_count", len(volumeDirs)))
+
+	return nil
 }
 
 // logAction logs a service action to the service log
