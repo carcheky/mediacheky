@@ -83,7 +83,7 @@
                         Port
                         <span class="text-red-400">*</span>
                     </label>
-                    <input type="number" x-model.number="config.port" 
+                    <input type="number" x-model.number="config.Port" 
                         @input="validateField('port')"
                         placeholder="7878"
                         min="1024" max="65535"
@@ -97,7 +97,7 @@
                     <label class="block text-sm font-medium text-dark-text mb-1">
                         Docker Image
                     </label>
-                    <input type="text" x-model="config.image" placeholder="linuxserver/radarr:latest"
+                    <input type="text" x-model="config.Image" placeholder="linuxserver/radarr:latest"
                         class="w-full px-3 py-2 border border-dark-border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-dark-bg text-dark-text">
                     <p class="text-xs text-dark-muted mt-1">Docker image to use</p>
                 </div>
@@ -107,7 +107,7 @@
                 <label class="block text-sm font-medium text-dark-text mb-1">
                     Restart Policy
                 </label>
-                <select x-model="config.restart_policy"
+                <select x-model="config.RestartPolicy"
                     class="w-full px-3 py-2 border border-dark-border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-dark-bg text-dark-text">
                     <option value="unless-stopped">Unless Stopped</option>
                     <option value="always">Always</option>
@@ -129,7 +129,7 @@
                     Config Path
                     <span class="text-red-400">*</span>
                 </label>
-                <input type="text" x-model="config.config_path" 
+                <input type="text" x-model="config.Paths.Config" 
                     @input="validateField('config_path')"
                     placeholder="/data/config/radarr"
                     class="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-dark-bg text-dark-text"
@@ -143,7 +143,7 @@
                     Media Path
                     <span class="text-red-400">*</span>
                 </label>
-                <input type="text" x-model="config.media_path" 
+                <input type="text" x-model="config.Paths.Movies" 
                     @input="validateField('media_path')"
                     placeholder="/data/media/movies"
                     class="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-dark-bg text-dark-text"
@@ -157,7 +157,7 @@
                     Downloads Path
                     <span class="text-red-400">*</span>
                 </label>
-                <input type="text" x-model="config.downloads_path" 
+                <input type="text" x-model="config.Paths.Downloads" 
                     @input="validateField('downloads_path')"
                     placeholder="/data/downloads"
                     class="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-dark-bg text-dark-text"
@@ -230,7 +230,7 @@
                 <label class="block text-sm font-medium text-dark-text mb-1">
                     Network Name
                 </label>
-                <input type="text" x-model="config.network_name" 
+                <input type="text" x-model="config.Network" 
                     :placeholder="globalConfig.network_name || 'mediacheky-network'"
                     class="w-full px-3 py-2 border border-dark-border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-dark-bg text-dark-text">
             </div>
@@ -274,15 +274,19 @@
             serviceName: serviceName,
             status: 'unknown',
             config: {
-                port: null,
-                image: '',
-                restart_policy: 'unless-stopped',
-                config_path: '',
-                media_path: '',
-                downloads_path: '',
+                Port: null,
+                Image: '',
+                ContainerName: '',
+                RestartPolicy: 'unless-stopped',
+                Paths: {
+                    Config: '',
+                    Movies: '',
+                    Downloads: ''
+                },
+                Umask: '',
+                Network: '',
                 use_vpn: false,
-                custom_network: false,
-                network_name: ''
+                custom_network: false
             },
             globalConfig: {},
             errors: {
@@ -306,7 +310,8 @@
                 try {
                     const response = await fetch('/api/config/global');
                     if (response.ok) {
-                        this.globalConfig = await response.json();
+                        const data = await response.json();
+                        this.globalConfig = data.data || data;
                     }
                 } catch (error) {
                     console.error('Error loading global config:', error);
@@ -317,9 +322,23 @@
                 try {
                     const response = await fetch(`/api/services/${this.serviceName}`);
                     if (response.ok) {
-                        const data = await response.json();
-                        // Merge with existing config
-                        this.config = { ...this.config, ...data.config };
+                        const result = await response.json();
+                        const data = result.data || result;
+                        
+                        // Load service configuration
+                        if (data.config) {
+                            this.config = { 
+                                ...this.config, 
+                                ...data.config,
+                                Paths: { ...this.config.Paths, ...(data.config.Paths || {}) }
+                            };
+                        }
+                        
+                        // Set container name if not already set
+                        if (!this.config.ContainerName) {
+                            this.config.ContainerName = this.serviceName;
+                        }
+                        
                         this.status = data.status || 'stopped';
                     }
                 } catch (error) {
@@ -332,17 +351,25 @@
                 
                 switch (field) {
                     case 'port':
-                        if (!this.config.port) {
+                        if (!this.config.Port) {
                             this.errors.port = 'Port is required';
-                        } else if (this.config.port < 1024 || this.config.port > 65535) {
+                        } else if (this.config.Port < 1024 || this.config.Port > 65535) {
                             this.errors.port = 'Port must be between 1024 and 65535';
                         }
                         break;
                     case 'config_path':
+                        if (!this.config.Paths.Config || this.config.Paths.Config.trim() === '') {
+                            this.errors.config_path = 'Config path is required';
+                        }
+                        break;
                     case 'media_path':
+                        if (!this.config.Paths.Movies || this.config.Paths.Movies.trim() === '') {
+                            this.errors.media_path = 'Media path is required';
+                        }
+                        break;
                     case 'downloads_path':
-                        if (!this.config[field] || this.config[field].trim() === '') {
-                            this.errors[field] = 'Path is required';
+                        if (!this.config.Paths.Downloads || this.config.Paths.Downloads.trim() === '') {
+                            this.errors.downloads_path = 'Downloads path is required';
                         }
                         break;
                 }
