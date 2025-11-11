@@ -9,6 +9,12 @@ import (
 	"go.uber.org/zap"
 )
 
+const (
+	// MediaChekyNetwork is the hardcoded network name that ALL services MUST use
+	// This is the Docker Compose prefixed name (project_networkname)
+	MediaChekyNetwork = "mediacheky_mediacheky-net"
+)
+
 // ServiceRepository defines the interface for service data access
 type ServiceRepository interface {
 	GetByName(name string) (*models.Service, error)
