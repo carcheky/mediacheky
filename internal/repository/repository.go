@@ -14,6 +14,7 @@ type Repositories struct {
 	Template   *TemplateRepository
 	Config     *ConfigRepository
 	ServiceLog *ServiceLogRepository
+	Proxy      *ProxyRepository
 }
 
 func NewRepositories(db *gorm.DB) *Repositories {
@@ -26,6 +27,7 @@ func NewRepositories(db *gorm.DB) *Repositories {
 		Template:   NewTemplateRepository(db),
 		Config:     NewConfigRepository(db),
 		ServiceLog: NewServiceLogRepository(db),
+		Proxy:      NewProxyRepository(db),
 	}
 }
 

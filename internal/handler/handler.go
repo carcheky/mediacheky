@@ -16,6 +16,7 @@ type Handlers struct {
 	Service   *ServiceHandler
 	Config    *ConfigHandler
 	Docker    *DockerHandler
+	Proxy     *ProxyHandler
 }
 
 func NewHandlers(db *gorm.DB, repos *repository.Repositories, logger *logger.Logger, cfg *config.Config) *Handlers {
@@ -62,5 +63,6 @@ func NewHandlers(db *gorm.DB, repos *repository.Repositories, logger *logger.Log
 		Service:   NewServiceHandler(repos, logger, dockerClient, serviceManager),
 		Config:    NewConfigHandler(repos, logger),
 		Docker:    NewDockerHandler(logger, dockerClient),
+		Proxy:     NewProxyHandler(repos, logger),
 	}
 }

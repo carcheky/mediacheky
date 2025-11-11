@@ -192,6 +192,8 @@ func setupRoutes(app *fiber.App, h *handler.Handlers) {
 		services.Post("/:name/update", middleware.ValidateServiceName(), h.Service.UpdateService)
 		services.Put("/:name/config", middleware.ValidateServiceName(), h.Service.UpdateServiceConfig)
 		services.Get("/:name/logs", middleware.ValidateServiceName(), h.Service.GetContainerLogs)
+		services.Put("/:name/subdomain", middleware.ValidateServiceName(), h.Proxy.UpdateServiceSubdomain)
+		services.Get("/:name/endpoint", middleware.ValidateServiceName(), h.Proxy.GetServiceEndpoint)
 
 		// Global configuration endpoints with validation
 		globalConfig := api.Group("/config/global")
@@ -199,6 +201,14 @@ func setupRoutes(app *fiber.App, h *handler.Handlers) {
 		globalConfig.Put("/", h.Config.UpdateGlobalConfig)
 		globalConfig.Get("/:key", middleware.ValidateConfigKey(), h.Config.GetConfigValue)
 		globalConfig.Put("/:key", middleware.ValidateConfigKey(), h.Config.UpdateConfigValue)
+
+		// Proxy endpoints
+		proxy := api.Group("/proxy")
+		proxy.Get("/config", h.Proxy.GetProxyConfig)
+		proxy.Put("/config", h.Proxy.UpdateProxyConfig)
+		proxy.Get("/domains", h.Proxy.GetDomains)
+		proxy.Post("/domains", h.Proxy.AddDomain)
+		proxy.Delete("/domains/:name", h.Proxy.DeleteDomain)
 
 		// Docker endpoints
 		api.Get("/docker/info", h.Docker.GetDockerInfo)
