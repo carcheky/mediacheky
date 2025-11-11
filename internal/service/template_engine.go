@@ -223,7 +223,7 @@ func (te *TemplateEngine) LoadGlobalConfigPublic() (map[string]string, error) {
 	}
 
 	if configMap["BASE_MEDIA_PATH"] == "" {
-		configMap["BASE_MEDIA_PATH"] = "./volumes/media-library"
+		configMap["BASE_MEDIA_PATH"] = "./volumes"
 	}
 	// Convert to absolute path if relative
 	if !filepath.IsAbs(configMap["BASE_MEDIA_PATH"]) {

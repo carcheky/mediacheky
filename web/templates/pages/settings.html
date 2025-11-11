@@ -57,12 +57,56 @@
                             </div>
                         </div>
                         <div class="flex items-center gap-3">
-                            <!-- Configure button (only visible when enabled) -->
-                            <a x-show="config.services[service.id]?.enabled" 
-                                :href="'/services/' + service.id"
-                                class="px-3 py-1 bg-blue-600 text-white rounded-md hover:bg-blue-700 text-sm">
-                                Configure
-                            </a>
+                            <!-- Action buttons (only visible when enabled) -->
+                            <template x-if="config.services[service.id]?.enabled">
+                                <div class="flex items-center gap-2">
+                                    <!-- Start button (only if stopped) -->
+                                    <button x-show="serviceStatuses[service.id] !== 'running'"
+                                        @click="startService(service.id)"
+                                        :disabled="actionInProgress[service.id]"
+                                        class="px-3 py-1 bg-green-600 text-white rounded-md hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed text-sm flex items-center gap-1">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"/>
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                        </svg>
+                                        <span>Start</span>
+                                    </button>
+                                    
+                                    <!-- Stop button (only if running) -->
+                                    <button x-show="serviceStatuses[service.id] === 'running'"
+                                        @click="stopService(service.id)"
+                                        :disabled="actionInProgress[service.id]"
+                                        class="px-3 py-1 bg-red-600 text-white rounded-md hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed text-sm flex items-center gap-1">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 10a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1v-4z"/>
+                                        </svg>
+                                        <span>Stop</span>
+                                    </button>
+                                    
+                                    <!-- Restart button (only if running) -->
+                                    <button x-show="serviceStatuses[service.id] === 'running'"
+                                        @click="restartService(service.id)"
+                                        :disabled="actionInProgress[service.id]"
+                                        class="px-3 py-1 bg-yellow-600 text-white rounded-md hover:bg-yellow-700 disabled:opacity-50 disabled:cursor-not-allowed text-sm flex items-center gap-1">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+                                        </svg>
+                                        <span>Restart</span>
+                                    </button>
+                                    
+                                    <!-- Configure button -->
+                                    <a :href="'/services/' + service.id"
+                                        class="px-3 py-1 bg-blue-600 text-white rounded-md hover:bg-blue-700 text-sm flex items-center gap-1">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                                        </svg>
+                                        <span>Configure</span>
+                                    </a>
+                                </div>
+                            </template>
+                            
                             <!-- Enable/Disable toggle -->
                             <label class="flex items-center cursor-pointer">
                                 <input type="checkbox" x-model="config.services[service.id].enabled" 
@@ -333,6 +377,8 @@
             },
             connectionResults: {},
             envSources: {},
+            serviceStatuses: {},
+            actionInProgress: {},
             testing: false,
             saving: false,
             message: '',
@@ -480,6 +526,9 @@
 
             async init() {
                 await this.loadConfig();
+                await this.loadServiceStatuses();
+                // Poll statuses every 5 seconds
+                setInterval(() => this.loadServiceStatuses(), 5000);
             },
 
             async loadConfig() {
@@ -495,6 +544,83 @@
                     }
                 } catch (error) {
                     console.error('Error loading config:', error);
+                }
+            },
+
+            async loadServiceStatuses() {
+                try {
+                    const response = await fetch('/api/services');
+                    if (response.ok) {
+                        const services = await response.json();
+                        services.forEach(service => {
+                            this.serviceStatuses[service.name] = service.status;
+                        });
+                    }
+                } catch (error) {
+                    console.error('Error loading service statuses:', error);
+                }
+            },
+
+            async startService(serviceId) {
+                this.actionInProgress[serviceId] = true;
+                try {
+                    const response = await fetch(`/api/services/${serviceId}/start`, {
+                        method: 'POST'
+                    });
+                    const data = await response.json();
+                    
+                    if (response.ok) {
+                        this.showMessage(`Service ${serviceId} started successfully`, 'success');
+                        await this.loadServiceStatuses();
+                    } else {
+                        this.showMessage(data.error || `Failed to start ${serviceId}`, 'error');
+                    }
+                } catch (error) {
+                    this.showMessage(`Error starting ${serviceId}: ${error.message}`, 'error');
+                } finally {
+                    this.actionInProgress[serviceId] = false;
+                }
+            },
+
+            async stopService(serviceId) {
+                this.actionInProgress[serviceId] = true;
+                try {
+                    const response = await fetch(`/api/services/${serviceId}/stop`, {
+                        method: 'POST'
+                    });
+                    const data = await response.json();
+                    
+                    if (response.ok) {
+                        this.showMessage(`Service ${serviceId} stopped successfully`, 'success');
+                        await this.loadServiceStatuses();
+                    } else {
+                        this.showMessage(data.error || `Failed to stop ${serviceId}`, 'error');
+                    }
+                } catch (error) {
+                    this.showMessage(`Error stopping ${serviceId}: ${error.message}`, 'error');
+                } finally {
+                    this.actionInProgress[serviceId] = false;
+                }
+            },
+
+            async restartService(serviceId) {
+                this.actionInProgress[serviceId] = true;
+                try {
+                    const response = await fetch(`/api/services/${serviceId}/restart`, {
+                        method: 'POST'
+                    });
+                    const data = await response.json();
+                    
+                    if (response.ok) {
+                        this.showMessage(`Service ${serviceId} restarted successfully`, 'success');
+                        await this.loadServiceStatuses();
+                    } else {
+                        this.showMessage(data.error || `Failed to restart ${serviceId}`, 'error');
+                    }
+                } catch (error) {
+                    this.showMessage(`Error restarting ${serviceId}: ${error.message}`, 'error');
+                } finally {
+                    this.actionInProgress[serviceId] = false;
                 }
             },
 

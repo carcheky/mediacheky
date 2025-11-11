@@ -283,6 +283,57 @@ func (sm *ServiceManager) RestartService(ctx context.Context, serviceName string
 	return nil
 }
 
+// UpdateService updates a service by pulling the latest image and restarting
+func (sm *ServiceManager) UpdateService(ctx context.Context, serviceName string) error {
+	sm.logger.Info("Updating service (pull + restart)", zap.String("service", serviceName))
+
+	// Get service from database
+	svc, err := sm.serviceRepo.GetByName(serviceName)
+	if err != nil {
+		return fmt.Errorf("failed to get service: %w", err)
+	}
+
+	if !svc.Enabled {
+		return fmt.Errorf("service is not enabled")
+	}
+
+	// Get compose file path
+	composePath := sm.templateEngine.GetComposePath(serviceName)
+
+	// Load global config for docker compose execution
+	globalConfig, err := sm.templateEngine.LoadGlobalConfigPublic()
+	if err != nil {
+		sm.logAction(svc.ID, "update", "error", fmt.Sprintf("Failed to load global config: %v", err))
+		return fmt.Errorf("failed to load global config: %w", err)
+	}
+
+	sm.logger.Info("Pulling latest image", zap.String("service", serviceName))
+	sm.logAction(svc.ID, "update", "info", "Pulling latest image...")
+
+	// Pull the latest image using docker compose
+	result, err := sm.dockerCompose.ComposePull(ctx, composePath, globalConfig)
+	if err != nil {
+		sm.logAction(svc.ID, "update", "error", fmt.Sprintf("Failed to pull image: %v", err))
+		return fmt.Errorf("failed to pull image: %w", err)
+	}
+
+	sm.logger.Info("Image pulled successfully",
+		zap.String("service", serviceName),
+		zap.String("output", result.Output))
+	sm.logAction(svc.ID, "update", "info", "Image pulled successfully, restarting service...")
+
+	// Restart the service to use the new image
+	if err := sm.RestartService(ctx, serviceName); err != nil {
+		sm.logAction(svc.ID, "update", "error", fmt.Sprintf("Image pulled but failed to restart: %v", err))
+		return fmt.Errorf("image pulled but failed to restart service: %w", err)
+	}
+
+	sm.logAction(svc.ID, "update", "success", "Service updated and restarted with latest image")
+	sm.logger.Info("Service updated successfully", zap.String("service", serviceName))
+
+	return nil
+}
+
 // UpdateServiceConfig updates a service's configuration and regenerates compose file if enabled
 func (sm *ServiceManager) UpdateServiceConfig(ctx context.Context, serviceName string, config models.ServiceConfig) error {
 	sm.logger.Info("Updating service configuration", zap.String("service", serviceName))

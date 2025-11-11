@@ -172,6 +172,77 @@ func (dcc *DockerComposeClient) ComposeDown(ctx context.Context, composePath str
 	return result, nil
 }
 
+// ComposePull executes 'docker compose pull' to update images
+func (dcc *DockerComposeClient) ComposePull(ctx context.Context, composePath string, configMap map[string]string) (*ComposeResult, error) {
+	if ctx == nil {
+		var cancel context.CancelFunc
+		ctx, cancel = context.WithTimeout(context.Background(), 5*time.Minute) // 5 min for image pull
+		defer cancel()
+	}
+
+	// Validate and sanitize path
+	if !filepath.IsAbs(composePath) {
+		return nil, fmt.Errorf("compose path must be absolute: %s", composePath)
+	}
+
+	// Sanitize path to prevent traversal
+	cleanPath := filepath.Clean(composePath)
+	if cleanPath != composePath {
+		return nil, fmt.Errorf("compose path contains invalid sequences: %s", composePath)
+	}
+
+	composeDir := filepath.Dir(cleanPath)
+	if _, err := os.Stat(cleanPath); err != nil {
+		return nil, fmt.Errorf("compose file not found: %s: %w", cleanPath, err)
+	}
+
+	// Get project root (where main docker-compose.yml is)
+	projectRoot := filepath.Dir(composeDir) // services/ -> project root
+
+	dcc.logger.Info("Executing docker compose pull",
+		zap.String("path", cleanPath),
+		zap.String("directory", projectRoot))
+
+	// Build command
+	cmd := exec.CommandContext(ctx, "docker", "compose", "-f", cleanPath, "pull")
+	cmd.Dir = projectRoot
+
+	// Set environment variables from config (will be used by docker compose)
+	cmd.Env = os.Environ()
+	for key, value := range configMap {
+		cmd.Env = append(cmd.Env, key+"="+value)
+	}
+
+	// Capture output
+	var stdout, stderr bytes.Buffer
+	cmd.Stdout = &stdout
+	cmd.Stderr = &stderr
+
+	// Execute command
+	err := cmd.Run()
+
+	result := &ComposeResult{
+		Success: err == nil,
+		Output:  stdout.String(),
+		Error:   stderr.String(),
+	}
+
+	if err != nil {
+		dcc.logger.Error("Failed to execute docker compose pull",
+			zap.String("path", cleanPath),
+			zap.String("stdout", result.Output),
+			zap.String("stderr", result.Error),
+			zap.Error(err))
+		return result, fmt.Errorf("docker compose pull failed: %w", err)
+	}
+
+	dcc.logger.Info("Docker compose pull executed successfully",
+		zap.String("path", cleanPath),
+		zap.String("output", result.Output))
+
+	return result, nil
+}
+
 // ComposeRestart executes 'docker compose restart' for a specific service.
 // If ctx is nil, a default timeout context (2 minutes) will be created automatically.
 // To maintain control over operation cancellation, pass a valid context.

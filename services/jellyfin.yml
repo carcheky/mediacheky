@@ -10,8 +10,7 @@ services:
       - TZ=Europe/Madrid
     volumes:
       - ${CONFIG_BASE_PATH}/jellyfin:/config
-      - ${BASE_MEDIA_PATH}/${MOVIES_PATH}:/data/movies
-      - ${BASE_MEDIA_PATH}/${SERIES_PATH}:/data/tvshows
+      - ${BASE_MEDIA_PATH}:/MEDIACHEKY_LIBRARY
     restart: unless-stopped
     networks:
       - mediacheky_mediacheky-net

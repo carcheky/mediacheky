@@ -10,8 +10,7 @@ services:
       - TZ=Europe/Madrid
     volumes:
       - ${CONFIG_BASE_PATH}/sonarr:/config
-      - ${BASE_MEDIA_PATH}/${SERIES_PATH}:/tv
-      - ${BASE_MEDIA_PATH}/${DOWNLOADS_PATH}:/downloads
+      - ${BASE_MEDIA_PATH}:/MEDIACHEKY_LIBRARY
     restart: unless-stopped
     networks:
       - mediacheky_mediacheky-net

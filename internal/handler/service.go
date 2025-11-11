@@ -234,6 +234,46 @@ func (h *ServiceHandler) StopContainer(c *fiber.Ctx) error {
 	})
 }
 
+// UpdateService handles POST /api/services/:name/update
+// Pulls the latest image and restarts the service
+func (h *ServiceHandler) UpdateService(c *fiber.Ctx) error {
+	name := c.Params("name")
+	if name == "" {
+		return c.Status(fiber.StatusBadRequest).JSON(APIResponse{
+			Success: false,
+			Error:   "Service name is required",
+		})
+	}
+
+	// Check if service manager is available
+	if h.serviceManager == nil {
+		return c.Status(fiber.StatusServiceUnavailable).JSON(APIResponse{
+			Success: false,
+			Error:   "Service manager is not available",
+		})
+	}
+
+	// Use service manager to update service (pull image + restart)
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute) // 5 min for image pull
+	defer cancel()
+
+	h.logger.Info("Updating service", "name", name)
+
+	if err := h.serviceManager.UpdateService(ctx, name); err != nil {
+		h.logger.Error("Failed to update service", "name", name, "error", err)
+		return c.Status(fiber.StatusInternalServerError).JSON(APIResponse{
+			Success: false,
+			Error:   fmt.Sprintf("Failed to update service: %v", err),
+		})
+	}
+
+	h.logger.Info("Service updated successfully", "name", name)
+	return c.JSON(APIResponse{
+		Success: true,
+		Data:    fiber.Map{"message": "Service updated and restarted successfully"},
+	})
+}
+
 // RestartContainer handles POST /api/services/:name/restart
 func (h *ServiceHandler) RestartContainer(c *fiber.Ctx) error {
 	name := c.Params("name")

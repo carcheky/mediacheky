@@ -10,8 +10,7 @@ services:
       - TZ=Europe/Madrid
     volumes:
       - ${CONFIG_BASE_PATH}/bazarr:/config
-      - ${BASE_MEDIA_PATH}/${MOVIES_PATH}:/movies
-      - ${BASE_MEDIA_PATH}/${SERIES_PATH}:/tv
+      - ${BASE_MEDIA_PATH}:/MEDIACHEKY_LIBRARY
     restart: unless-stopped
     networks:
       - mediacheky_mediacheky-net
