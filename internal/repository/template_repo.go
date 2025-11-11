@@ -56,3 +56,18 @@ func (r *TemplateRepository) Update(template *models.Template) error {
 func (r *TemplateRepository) Delete(id uint) error {
 	return r.db.Delete(&models.Template{}, id).Error
 }
+
+// UpsertByName creates or updates a template by name
+func (r *TemplateRepository) UpsertByName(template *models.Template) error {
+	var existing models.Template
+	result := r.db.Where("name = ?", template.Name).First(&existing)
+
+	if result.Error != nil {
+		// Template doesn't exist, create it
+		return r.db.Create(template).Error
+	}
+
+	// Template exists, update it
+	template.ID = existing.ID
+	return r.db.Save(template).Error
+}

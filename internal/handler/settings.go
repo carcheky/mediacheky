@@ -2,9 +2,11 @@ package handler
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/carcheky/mediacheky/internal/config"
+	"github.com/carcheky/mediacheky/internal/models"
 	"github.com/carcheky/mediacheky/internal/repository"
 	"github.com/carcheky/mediacheky/internal/service"
 	"github.com/carcheky/mediacheky/pkg/logger"
@@ -45,6 +47,24 @@ func (h *SettingsHandler) Get(c *fiber.Ctx) error {
 
 	// Get environment source map to inform UI which fields are from .env
 	envSources := config.GetEnvSourceMap()
+
+	// Get global config from database
+	configs, _ := h.repos.Config.GetAll()
+	globalConfig := make(map[string]interface{})
+	globalConfig["puid"] = 1000
+	globalConfig["pgid"] = 1000
+	globalConfig["timezone"] = "UTC"
+	globalConfig["language"] = "en"
+	globalConfig["media_path"] = "/data/media"
+	globalConfig["downloads_path"] = "/data/downloads"
+	globalConfig["config_path"] = "/data/config"
+	globalConfig["network_name"] = "mediacheky-net"
+	globalConfig["subnet"] = ""
+
+	// Override with database values if they exist
+	for _, cfg := range configs {
+		globalConfig[cfg.Key] = cfg.Value
+	}
 
 	// Return config in the format expected by frontend
 	// Note: Config already contains values from environment variables (they have precedence in Viper)
@@ -89,6 +109,7 @@ func (h *SettingsHandler) Get(c *fiber.Ctx) error {
 			"exclusion_tags":     exclusionTags,
 			"delete_unmonitored": h.config.Cleanup.DeleteUnmonitored,
 		},
+		"global":      globalConfig,
 		"env_sources": envSources,
 	})
 }
@@ -134,6 +155,7 @@ func (h *SettingsHandler) Update(c *fiber.Ctx) error {
 			LeavingSoonDays   int  `json:"leaving_soon_days"`
 			DeleteUnmonitored bool `json:"delete_unmonitored"`
 		} `json:"cleanup"`
+		Global map[string]interface{} `json:"global"`
 	}
 
 	var update ConfigUpdate
@@ -183,6 +205,115 @@ func (h *SettingsHandler) Update(c *fiber.Ctx) error {
 		"jellyfin_enabled", h.config.Clients.Jellyfin.Enabled,
 		"dry_run", h.config.Cleanup.DryRun,
 	)
+
+	// Save global configuration to database
+	if update.Global != nil {
+		for key, value := range update.Global {
+			// Convert value to string for storage
+			var valueStr string
+			switch v := value.(type) {
+			case string:
+				valueStr = v
+			case int:
+				valueStr = fmt.Sprintf("%d", v)
+			case float64:
+				valueStr = fmt.Sprintf("%d", int(v))
+			case bool:
+				valueStr = fmt.Sprintf("%t", v)
+			default:
+				valueStr = fmt.Sprintf("%v", v)
+			}
+
+			// Determine category based on key
+			category := "system"
+			switch key {
+			case "puid", "pgid":
+				category = "user"
+			case "timezone", "language":
+				category = "system"
+			case "media_path", "downloads_path", "config_path":
+				category = "paths"
+			case "network_name", "subnet":
+				category = "network"
+			}
+
+			// Save to database (upsert: create or update)
+			if err := h.repos.Config.Set(key, valueStr, category); err != nil {
+				h.logger.Error("Failed to save global config", "key", key, "error", err)
+			}
+		}
+		h.logger.Info("Global configuration saved to database")
+	}
+
+	// Create/update services in database when enabled
+	servicesToSync := []struct {
+		name    string
+		enabled bool
+	}{
+		{"radarr", update.Services.Radarr.Enabled},
+		{"sonarr", update.Services.Sonarr.Enabled},
+		{"jellyfin", update.Services.Jellyfin.Enabled},
+		{"jellyseerr", update.Services.Jellyseerr.Enabled},
+		{"jellystat", update.Services.Jellystat.Enabled},
+		{"qbittorrent", update.Services.QBittorrent.Enabled},
+	}
+
+	for _, svc := range servicesToSync {
+		if svc.enabled {
+			// Get or create service
+			existing, _ := h.repos.Service.GetByName(svc.name)
+			if existing == nil {
+				// Create new service with defaults including proper network configuration
+				// ExposePort=false by default (internal access only via mediacheky-net)
+				defaultPorts := map[string]int{
+					"radarr":      7878,
+					"sonarr":      8989,
+					"jellyfin":    8096,
+					"jellyseerr":  5055,
+					"jellystat":   3000,
+					"qbittorrent": 8080,
+				}
+				port, ok := defaultPorts[svc.name]
+				if !ok {
+					port = 8080 // fallback
+				}
+
+				defaultConfig := models.ServiceConfig{
+					"Image":         "linuxserver/" + svc.name + ":latest",
+					"ContainerName": svc.name,
+					"Port":          port,
+					"ExposePort":    false,
+					"HostPort":      0,
+					"RestartPolicy": "unless-stopped",
+					"Paths": map[string]interface{}{
+						"Config": "/data/config/" + svc.name,
+					},
+				}
+				existing = &models.Service{
+					Name:        svc.name,
+					DisplayName: svc.name,
+					Status:      "stopped",
+					Config:      defaultConfig,
+				}
+			}
+			existing.Enabled = true
+
+			if err := h.repos.Service.CreateOrUpdate(existing); err != nil {
+				h.logger.Error("Failed to sync service", "name", svc.name, "error", err)
+			} else {
+				h.logger.Info("Service synced to database", "name", svc.name, "enabled", true)
+			}
+		} else {
+			// If disabled, update status if exists
+			existing, _ := h.repos.Service.GetByName(svc.name)
+			if existing != nil {
+				existing.Enabled = false
+				if err := h.repos.Service.Update(existing); err != nil {
+					h.logger.Error("Failed to disable service", "name", svc.name, "error", err)
+				}
+			}
+		}
+	}
 
 	// Save configuration to file
 	if err := config.Save(h.config); err != nil {
