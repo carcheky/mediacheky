@@ -1,3 +1,10 @@
+# [1.0.0-dev.11](https://github.com/carcheky/mediacheky/compare/v1.0.0-dev.10...v1.0.0-dev.11) (2025-11-11)
+
+
+### Features
+
+* **docker:** update media path configuration for shared library volume ([eebc57d](https://github.com/carcheky/mediacheky/commit/eebc57d413e883c7f929ab09b6a6fa540cdbf59d))
+
 # [1.0.0-dev.10](https://github.com/carcheky/mediacheky/compare/v1.0.0-dev.9...v1.0.0-dev.10) (2025-11-11)
 
 
