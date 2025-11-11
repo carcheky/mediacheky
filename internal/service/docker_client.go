@@ -463,3 +463,43 @@ func calculateCPUPercent(stats *containertypes.StatsResponse) float64 {
 
 	return cpuPercent
 }
+
+// ConnectContainerToNetwork connects a container to a Docker network.
+// If ctx is nil, a default timeout context (30s) will be created automatically.
+func (dc *DockerClient) ConnectContainerToNetwork(ctx context.Context, containerID, networkName string) error {
+	if ctx == nil {
+		var cancel context.CancelFunc
+		ctx, cancel = context.WithTimeout(context.Background(), dc.timeout)
+		defer cancel()
+	}
+
+	// Check if container is already connected to the network
+	container, err := dc.client.ContainerInspect(ctx, containerID)
+	if err != nil {
+		return fmt.Errorf("failed to inspect container: %w", err)
+	}
+
+	// Check if already connected
+	if container.NetworkSettings != nil {
+		for netName := range container.NetworkSettings.Networks {
+			if netName == networkName {
+				dc.logger.Debug("Container already connected to network",
+					zap.String("container_id", containerID),
+					zap.String("network", networkName))
+				return nil
+			}
+		}
+	}
+
+	// Connect to network
+	err = dc.client.NetworkConnect(ctx, networkName, containerID, nil)
+	if err != nil {
+		return fmt.Errorf("failed to connect container to network: %w", err)
+	}
+
+	dc.logger.Info("Container connected to network",
+		zap.String("container_id", containerID),
+		zap.String("network", networkName))
+
+	return nil
+}
