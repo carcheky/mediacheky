@@ -61,6 +61,9 @@ type GlobalConfig struct {
 	PUID     string
 	PGID     string
 	Timezone string
+	// Absolute host path to the shared media library root
+	// Source of truth: MEDIACHEKY_MEDIA_PATH (deprecated fallback: BASE_MEDIA_PATH)
+	MediaPath string
 }
 
 // NewTemplateEngine creates a new TemplateEngine instance
@@ -202,15 +205,36 @@ func (te *TemplateEngine) loadGlobalConfig() (GlobalConfig, error) {
 		timezone = "UTC"
 	}
 
+	// Resolve MediaPath from new env key, with deprecated fallback
+	mediaPath := configMap["MEDIACHEKY_MEDIA_PATH"]
+	if mediaPath == "" {
+		// Backward compatibility: fallback to BASE_MEDIA_PATH if present
+		if legacy := configMap["BASE_MEDIA_PATH"]; legacy != "" {
+			te.logger.Warn("BASE_MEDIA_PATH is deprecated; please use MEDIACHEKY_MEDIA_PATH",
+				zap.String("legacy", legacy))
+			mediaPath = legacy
+		} else {
+			mediaPath = "./volumes"
+		}
+	}
+	// Convert to absolute path if relative
+	if !filepath.IsAbs(mediaPath) {
+		if absPath, err := filepath.Abs(mediaPath); err == nil {
+			mediaPath = absPath
+		}
+	}
+
 	return GlobalConfig{
-		PUID:     puid,
-		PGID:     pgid,
-		Timezone: timezone,
+		PUID:      puid,
+		PGID:      pgid,
+		Timezone:  timezone,
+		MediaPath: mediaPath,
 	}, nil
 }
 
 // LoadGlobalConfigPublic is a public wrapper for loadGlobalConfig
 // Returns both GlobalConfig and the raw config map for variable expansion
+// New canonical key for shared media root (also supports legacy key)
 func (te *TemplateEngine) LoadGlobalConfigPublic() (map[string]string, error) {
 	configMap, err := te.configRepo.GetAsMap()
 	if err != nil {
@@ -240,14 +264,21 @@ func (te *TemplateEngine) LoadGlobalConfigPublic() (map[string]string, error) {
 		}
 	}
 
-	if configMap["BASE_MEDIA_PATH"] == "" {
-		configMap["BASE_MEDIA_PATH"] = "./volumes"
+	// New canonical key for shared media root
+	if configMap["MEDIACHEKY_MEDIA_PATH"] == "" {
+		if legacy := configMap["BASE_MEDIA_PATH"]; legacy != "" {
+			// Backward compatibility: migrate legacy key to new one
+			te.logger.Warn("Using deprecated BASE_MEDIA_PATH; prefer MEDIACHEKY_MEDIA_PATH")
+			configMap["MEDIACHEKY_MEDIA_PATH"] = legacy
+		} else {
+			configMap["MEDIACHEKY_MEDIA_PATH"] = "./volumes"
+		}
 	}
 	// Convert to absolute path if relative
-	if !filepath.IsAbs(configMap["BASE_MEDIA_PATH"]) {
-		absPath, err := filepath.Abs(configMap["BASE_MEDIA_PATH"])
+	if !filepath.IsAbs(configMap["MEDIACHEKY_MEDIA_PATH"]) {
+		absPath, err := filepath.Abs(configMap["MEDIACHEKY_MEDIA_PATH"])
 		if err == nil {
-			configMap["BASE_MEDIA_PATH"] = absPath
+			configMap["MEDIACHEKY_MEDIA_PATH"] = absPath
 		}
 	}
 

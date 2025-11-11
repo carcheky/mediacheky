@@ -12,7 +12,7 @@ services:
       {{- end }}
     volumes:
       - {{ .Paths.Config }}:/config
-      - {{ .Global.BaseMediaPath }}:/MEDIACHEKY_LIBRARY
+  - {{ .Global.MediaPath }}:/MEDIACHEKY_LIBRARY
     {{- if .ExposePort }}
     ports:
       - "{{ if .HostPort }}{{ .HostPort }}{{ else }}{{ .Port }}{{ end }}:7878"

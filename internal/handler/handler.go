@@ -31,10 +31,12 @@ func NewHandlers(db *gorm.DB, repos *repository.Repositories, logger *logger.Log
 	dockerCompose := service.NewDockerComposeClient(logger.Desugar())
 
 	// Initialize Template Engine
+	// Use /app/data/services for generated compose files (writable)
+	// Static templates remain at /app/services (read-only)
 	templateEngine := service.NewTemplateEngine(
 		logger.Desugar(),
 		"/app/templates",
-		"/app/services",
+		"/app/data/services", // Writable directory for generated compose files
 		repos.Config,
 		repos.Template,
 	)
