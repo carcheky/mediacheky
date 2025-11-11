@@ -1,3 +1,10 @@
+# [1.0.0-dev.12](https://github.com/carcheky/mediacheky/compare/v1.0.0-dev.11...v1.0.0-dev.12) (2025-11-11)
+
+
+### Features
+
+* **dashboard:** enhance stats display with compact mini-badges for mobile ([e4b3340](https://github.com/carcheky/mediacheky/commit/e4b3340cad99787f8d12d9ece7ec4453ab73cd2e))
+
 # [1.0.0-dev.11](https://github.com/carcheky/mediacheky/compare/v1.0.0-dev.10...v1.0.0-dev.11) (2025-11-11)
 
 
