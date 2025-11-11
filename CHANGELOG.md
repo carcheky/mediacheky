@@ -1,3 +1,10 @@
+# [1.0.0-dev.10](https://github.com/carcheky/mediacheky/compare/v1.0.0-dev.9...v1.0.0-dev.10) (2025-11-11)
+
+
+### Features
+
+* **config:** update media path environment variable to MEDIACHEKY_MEDIA_PATH for consistency ([a03318c](https://github.com/carcheky/mediacheky/commit/a03318c767a6796c2df3a64fe2c8687e69cec986))
+
 # [1.0.0-dev.9](https://github.com/carcheky/mediacheky/compare/v1.0.0-dev.8...v1.0.0-dev.9) (2025-11-11)
 
 
