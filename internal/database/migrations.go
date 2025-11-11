@@ -153,27 +153,42 @@ func seedTemplates(db *gorm.DB) error {
 		{
 			Name:    "radarr",
 			Version: "1.0.0",
-			Content: `version: "3.8"
+			Content: `version: '3.8'
 services:
   radarr:
-    image: linuxserver/radarr:latest
-    container_name: radarr
+    image: {{ .Image }}
+    container_name: {{ .ContainerName }}
     environment:
-      - PUID={{.PUID}}
-      - PGID={{.PGID}}
-      - TZ={{.TZ}}
+      - PUID={{ .Global.PUID }}
+      - PGID={{ .Global.PGID }}
+      - TZ={{ .Global.Timezone }}
+      {{- if .Umask }}
+      - UMASK={{ .Umask }}
+      {{- end }}
     volumes:
-      - {{.CONFIG_PATH}}/radarr:/config
-      - {{.MEDIA_PATH}}:/movies
-      - {{.DOWNLOAD_PATH}}:/downloads
+      - {{ .Paths.Config }}:/config
+      - {{ .Paths.Movies }}:/movies
+      {{- if .Paths.Downloads }}
+      - {{ .Paths.Downloads }}:/downloads
+      {{- end }}
     ports:
-      - "{{.PORT}}:7878"
-    restart: unless-stopped
+      - "{{ .Port }}:7878"
+    {{- if .Network }}
+    networks:
+      - {{ .Network }}
+    {{- end }}
+    restart: {{ .RestartPolicy }}
+{{- if .Network }}
+
+networks:
+  {{ .Network }}:
+    external: true
+{{- end }}
 `,
 			Schema: models.JSONSchema{
 				"type": "object",
 				"properties": map[string]interface{}{
-					"PORT": map[string]interface{}{
+					"Port": map[string]interface{}{
 						"type":    "integer",
 						"default": 7878,
 					},
@@ -183,27 +198,42 @@ services:
 		{
 			Name:    "sonarr",
 			Version: "1.0.0",
-			Content: `version: "3.8"
+			Content: `version: '3.8'
 services:
   sonarr:
-    image: linuxserver/sonarr:latest
-    container_name: sonarr
+    image: {{ .Image }}
+    container_name: {{ .ContainerName }}
     environment:
-      - PUID={{.PUID}}
-      - PGID={{.PGID}}
-      - TZ={{.TZ}}
+      - PUID={{ .Global.PUID }}
+      - PGID={{ .Global.PGID }}
+      - TZ={{ .Global.Timezone }}
+      {{- if .Umask }}
+      - UMASK={{ .Umask }}
+      {{- end }}
     volumes:
-      - {{.CONFIG_PATH}}/sonarr:/config
-      - {{.MEDIA_PATH}}:/tv
-      - {{.DOWNLOAD_PATH}}:/downloads
+      - {{ .Paths.Config }}:/config
+      - {{ .Paths.TV }}:/tv
+      {{- if .Paths.Downloads }}
+      - {{ .Paths.Downloads }}:/downloads
+      {{- end }}
     ports:
-      - "{{.PORT}}:8989"
-    restart: unless-stopped
+      - "{{ .Port }}:8989"
+    {{- if .Network }}
+    networks:
+      - {{ .Network }}
+    {{- end }}
+    restart: {{ .RestartPolicy }}
+{{- if .Network }}
+
+networks:
+  {{ .Network }}:
+    external: true
+{{- end }}
 `,
 			Schema: models.JSONSchema{
 				"type": "object",
 				"properties": map[string]interface{}{
-					"PORT": map[string]interface{}{
+					"Port": map[string]interface{}{
 						"type":    "integer",
 						"default": 8989,
 					},
@@ -213,26 +243,39 @@ services:
 		{
 			Name:    "jellyfin",
 			Version: "1.0.0",
-			Content: `version: "3.8"
+			Content: `version: '3.8'
 services:
   jellyfin:
-    image: linuxserver/jellyfin:latest
-    container_name: jellyfin
+    image: {{ .Image }}
+    container_name: {{ .ContainerName }}
     environment:
-      - PUID={{.PUID}}
-      - PGID={{.PGID}}
-      - TZ={{.TZ}}
+      - PUID={{ .Global.PUID }}
+      - PGID={{ .Global.PGID }}
+      - TZ={{ .Global.Timezone }}
+      {{- if .Umask }}
+      - UMASK={{ .Umask }}
+      {{- end }}
     volumes:
-      - {{.CONFIG_PATH}}/jellyfin:/config
-      - {{.MEDIA_PATH}}:/media
+      - {{ .Paths.Config }}:/config
+      - {{ .Paths.Media }}:/media
     ports:
-      - "{{.PORT}}:8096"
-    restart: unless-stopped
+      - "{{ .Port }}:8096"
+    {{- if .Network }}
+    networks:
+      - {{ .Network }}
+    {{- end }}
+    restart: {{ .RestartPolicy }}
+{{- if .Network }}
+
+networks:
+  {{ .Network }}:
+    external: true
+{{- end }}
 `,
 			Schema: models.JSONSchema{
 				"type": "object",
 				"properties": map[string]interface{}{
-					"PORT": map[string]interface{}{
+					"Port": map[string]interface{}{
 						"type":    "integer",
 						"default": 8096,
 					},
