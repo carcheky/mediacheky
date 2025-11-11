@@ -31,7 +31,8 @@ func NewDockerComposeClient(logger *zap.Logger) *DockerComposeClient {
 	}
 }
 
-// ComposeUp executes 'docker compose up -d' in the specified directory.
+// ComposeUp executes 'docker compose up -d' with multiple compose files.
+// The first file should be the main docker-compose.yml, subsequent files override/extend it.
 // If ctx is nil, a default timeout context (2 minutes) will be created automatically.
 // To maintain control over operation cancellation, pass a valid context.
 func (dcc *DockerComposeClient) ComposeUp(ctx context.Context, composePath string) (*ComposeResult, error) {
@@ -57,13 +58,19 @@ func (dcc *DockerComposeClient) ComposeUp(ctx context.Context, composePath strin
 		return nil, fmt.Errorf("compose file not found: %s: %w", cleanPath, err)
 	}
 
-	dcc.logger.Info("Executing docker compose up",
-		zap.String("path", cleanPath),
-		zap.String("directory", composeDir))
+	// Get project root (where main docker-compose.yml is)
+	projectRoot := filepath.Dir(composeDir) // services/ -> project root
+	mainCompose := filepath.Join(projectRoot, "docker-compose.yml")
 
-	// Prepare command
+	dcc.logger.Info("Executing docker compose up with multiple files",
+		zap.String("main", mainCompose),
+		zap.String("service", cleanPath),
+		zap.String("directory", projectRoot))
+
+	// Prepare command: Only use the service file, NOT the main compose
+	// Each service is an independent project but shares the external network
 	cmd := exec.CommandContext(ctx, "docker", "compose", "-f", cleanPath, "up", "-d")
-	cmd.Dir = composeDir
+	cmd.Dir = projectRoot
 
 	// Capture output
 	var stdout, stderr bytes.Buffer
@@ -95,7 +102,8 @@ func (dcc *DockerComposeClient) ComposeUp(ctx context.Context, composePath strin
 	return result, nil
 }
 
-// ComposeDown executes 'docker compose down' in the specified directory.
+// ComposeDown executes 'docker compose down' with multiple compose files.
+// The first file should be the main docker-compose.yml, subsequent files override/extend it.
 // If ctx is nil, a default timeout context (2 minutes) will be created automatically.
 // To maintain control over operation cancellation, pass a valid context.
 func (dcc *DockerComposeClient) ComposeDown(ctx context.Context, composePath string) (*ComposeResult, error) {
@@ -121,13 +129,19 @@ func (dcc *DockerComposeClient) ComposeDown(ctx context.Context, composePath str
 		return nil, fmt.Errorf("compose file not found: %s: %w", cleanPath, err)
 	}
 
-	dcc.logger.Info("Executing docker compose down",
-		zap.String("path", cleanPath),
-		zap.String("directory", composeDir))
+	// Get project root (where main docker-compose.yml is)
+	projectRoot := filepath.Dir(composeDir) // services/ -> project root
+	mainCompose := filepath.Join(projectRoot, "docker-compose.yml")
 
-	// Prepare command
+	dcc.logger.Info("Executing docker compose down with multiple files",
+		zap.String("main", mainCompose),
+		zap.String("service", cleanPath),
+		zap.String("directory", projectRoot))
+
+	// Prepare command: Only use the service file, NOT the main compose
+	// Each service is an independent project but shares the external network
 	cmd := exec.CommandContext(ctx, "docker", "compose", "-f", cleanPath, "down")
-	cmd.Dir = composeDir
+	cmd.Dir = projectRoot
 
 	// Capture output
 	var stdout, stderr bytes.Buffer
