@@ -31,6 +31,15 @@ func RunMigrations(db *gorm.DB) error {
 		return fmt.Errorf("failed to add performance indices: %w", err)
 	}
 
+	// Seed initial data
+	if err := seedGlobalConfig(db); err != nil {
+		return fmt.Errorf("failed to seed global config: %w", err)
+	}
+
+	if err := seedTemplates(db); err != nil {
+		return fmt.Errorf("failed to seed templates: %w", err)
+	}
+
 	return nil
 }
 
@@ -100,21 +109,85 @@ func addPerformanceIndices(db *gorm.DB) error {
 	return nil
 }
 
-// SeedData populates the database with initial data
-func SeedData(db *gorm.DB) error {
-	// Seed default global configuration
-	if err := seedGlobalConfig(db); err != nil {
-		return fmt.Errorf("failed to seed global config: %w", err)
+// UpdateTemplates updates existing templates with the latest versions
+// This is useful when templates are modified in the code
+func UpdateTemplates(db *gorm.DB) error {
+	return upsertTemplates(db)
+}
+
+// upsertTemplates creates or updates templates from the default templates
+func upsertTemplates(db *gorm.DB) error {
+	defaultTemplates := []models.Template{
+		{
+			Name:    "radarr",
+			Version: "1.0.0",
+			Content: `version: '3.8'
+services:
+  radarr:
+    image: {{ .Image }}
+    container_name: {{ .ContainerName }}
+    environment:
+      - PUID={{ .Global.PUID }}
+      - PGID={{ .Global.PGID }}
+      - TZ={{ .Global.Timezone }}
+      {{- if .Umask }}
+      - UMASK={{ .Umask }}
+      {{- end }}
+    volumes:
+      - {{ .Paths.Config }}:/config
+      - {{ .Paths.Movies }}:/movies
+      {{- if .Paths.Downloads }}
+      - {{ .Paths.Downloads }}:/downloads
+      {{- end }}
+    ports:
+      - "{{ .Port }}:7878"
+    {{- if .Network }}
+    networks:
+      - {{ .Network }}
+    {{- end }}
+    restart: {{ .RestartPolicy }}
+{{- if .Network }}
+
+networks:
+  {{ .Network }}:
+    external: true
+{{- end }}
+`,
+			Schema: models.JSONSchema{
+				"type": "object",
+				"properties": map[string]interface{}{
+					"Port": map[string]interface{}{
+						"type":    "integer",
+						"default": 7878,
+					},
+				},
+			},
+		},
 	}
 
-	// Seed default templates
-	if err := seedTemplates(db); err != nil {
-		return fmt.Errorf("failed to seed templates: %w", err)
-	}
+	for _, template := range defaultTemplates {
+		// Find existing template
+		var existing models.Template
+		result := db.Where("name = ?", template.Name).First(&existing)
 
-	// Seed default services
-	if err := seedServices(db); err != nil {
-		return fmt.Errorf("failed to seed services: %w", err)
+		if result.Error == gorm.ErrRecordNotFound {
+			// Create new template
+			if err := db.Create(&template).Error; err != nil {
+				return fmt.Errorf("failed to create template %s: %w", template.Name, err)
+			}
+			log.Printf("Created template: %s", template.Name)
+		} else if result.Error != nil {
+			return fmt.Errorf("error checking template %s: %w", template.Name, result.Error)
+		} else {
+			// Update existing template
+			existing.Content = template.Content
+			existing.Version = template.Version
+			existing.Schema = template.Schema
+			if err := db.Save(&existing).Error; err != nil {
+				return fmt.Errorf("failed to update template %s: %w", template.Name, err)
+			}
+			log.Printf("Updated template: %s", template.Name)
+		}
 	}
 
 	return nil
@@ -152,30 +225,51 @@ func seedTemplates(db *gorm.DB) error {
 	defaultTemplates := []models.Template{
 		{
 			Name:    "radarr",
-			Version: "1.0.0",
-			Content: `version: "3.8"
+			Version: "2.0.0",
+			Content: `version: '3.8'
 services:
   radarr:
-    image: linuxserver/radarr:latest
-    container_name: radarr
+    image: {{ .Image }}
+    container_name: {{ .ContainerName }}
     environment:
-      - PUID={{.PUID}}
-      - PGID={{.PGID}}
-      - TZ={{.TZ}}
+      - PUID={{ .Global.PUID }}
+      - PGID={{ .Global.PGID }}
+      - TZ={{ .Global.Timezone }}
+      {{- if .Umask }}
+      - UMASK={{ .Umask }}
+      {{- end }}
     volumes:
-      - {{.CONFIG_PATH}}/radarr:/config
-      - {{.MEDIA_PATH}}:/movies
-      - {{.DOWNLOAD_PATH}}:/downloads
+      - {{ .Paths.Config }}:/config
+      - {{ .Paths.Movies }}:/movies
+      {{- if .Paths.Downloads }}
+      - {{ .Paths.Downloads }}:/downloads
+      {{- end }}
+    {{- if .ExposePort }}
     ports:
-      - "{{.PORT}}:7878"
-    restart: unless-stopped
+      - "{{ if .HostPort }}{{ .HostPort }}{{ else }}{{ .Port }}{{ end }}:7878"
+    {{- end }}
+    networks:
+      - mediacheky-net
+    restart: {{ .RestartPolicy }}
+
+networks:
+  mediacheky-net:
+    external: true
 `,
 			Schema: models.JSONSchema{
 				"type": "object",
 				"properties": map[string]interface{}{
-					"PORT": map[string]interface{}{
+					"Port": map[string]interface{}{
 						"type":    "integer",
 						"default": 7878,
+					},
+					"ExposePort": map[string]interface{}{
+						"type":    "boolean",
+						"default": false,
+					},
+					"HostPort": map[string]interface{}{
+						"type":    "integer",
+						"default": 0,
 					},
 				},
 			},
@@ -183,27 +277,42 @@ services:
 		{
 			Name:    "sonarr",
 			Version: "1.0.0",
-			Content: `version: "3.8"
+			Content: `version: '3.8'
 services:
   sonarr:
-    image: linuxserver/sonarr:latest
-    container_name: sonarr
+    image: {{ .Image }}
+    container_name: {{ .ContainerName }}
     environment:
-      - PUID={{.PUID}}
-      - PGID={{.PGID}}
-      - TZ={{.TZ}}
+      - PUID={{ .Global.PUID }}
+      - PGID={{ .Global.PGID }}
+      - TZ={{ .Global.Timezone }}
+      {{- if .Umask }}
+      - UMASK={{ .Umask }}
+      {{- end }}
     volumes:
-      - {{.CONFIG_PATH}}/sonarr:/config
-      - {{.MEDIA_PATH}}:/tv
-      - {{.DOWNLOAD_PATH}}:/downloads
+      - {{ .Paths.Config }}:/config
+      - {{ .Paths.TV }}:/tv
+      {{- if .Paths.Downloads }}
+      - {{ .Paths.Downloads }}:/downloads
+      {{- end }}
     ports:
-      - "{{.PORT}}:8989"
-    restart: unless-stopped
+      - "{{ .Port }}:8989"
+    {{- if .Network }}
+    networks:
+      - {{ .Network }}
+    {{- end }}
+    restart: {{ .RestartPolicy }}
+{{- if .Network }}
+
+networks:
+  {{ .Network }}:
+    external: true
+{{- end }}
 `,
 			Schema: models.JSONSchema{
 				"type": "object",
 				"properties": map[string]interface{}{
-					"PORT": map[string]interface{}{
+					"Port": map[string]interface{}{
 						"type":    "integer",
 						"default": 8989,
 					},
@@ -213,26 +322,39 @@ services:
 		{
 			Name:    "jellyfin",
 			Version: "1.0.0",
-			Content: `version: "3.8"
+			Content: `version: '3.8'
 services:
   jellyfin:
-    image: linuxserver/jellyfin:latest
-    container_name: jellyfin
+    image: {{ .Image }}
+    container_name: {{ .ContainerName }}
     environment:
-      - PUID={{.PUID}}
-      - PGID={{.PGID}}
-      - TZ={{.TZ}}
+      - PUID={{ .Global.PUID }}
+      - PGID={{ .Global.PGID }}
+      - TZ={{ .Global.Timezone }}
+      {{- if .Umask }}
+      - UMASK={{ .Umask }}
+      {{- end }}
     volumes:
-      - {{.CONFIG_PATH}}/jellyfin:/config
-      - {{.MEDIA_PATH}}:/media
+      - {{ .Paths.Config }}:/config
+      - {{ .Paths.Media }}:/media
     ports:
-      - "{{.PORT}}:8096"
-    restart: unless-stopped
+      - "{{ .Port }}:8096"
+    {{- if .Network }}
+    networks:
+      - {{ .Network }}
+    {{- end }}
+    restart: {{ .RestartPolicy }}
+{{- if .Network }}
+
+networks:
+  {{ .Network }}:
+    external: true
+{{- end }}
 `,
 			Schema: models.JSONSchema{
 				"type": "object",
 				"properties": map[string]interface{}{
-					"PORT": map[string]interface{}{
+					"Port": map[string]interface{}{
 						"type":    "integer",
 						"default": 8096,
 					},
@@ -242,13 +364,28 @@ services:
 	}
 
 	for _, template := range defaultTemplates {
-		// Only create if doesn't exist
 		var existing models.Template
 		result := db.Where("name = ?", template.Name).First(&existing)
+
 		if result.Error == gorm.ErrRecordNotFound {
+			// Create new template
 			if err := db.Create(&template).Error; err != nil {
 				return fmt.Errorf("failed to create template %s: %w", template.Name, err)
 			}
+			log.Printf("Created new template: %s v%s", template.Name, template.Version)
+		} else if result.Error == nil {
+			// Update if version changed
+			if existing.Version != template.Version {
+				existing.Version = template.Version
+				existing.Content = template.Content
+				existing.Schema = template.Schema
+				if err := db.Save(&existing).Error; err != nil {
+					return fmt.Errorf("failed to update template %s: %w", template.Name, err)
+				}
+				log.Printf("Updated template: %s from v%s to v%s", template.Name, existing.Version, template.Version)
+			}
+		} else {
+			return fmt.Errorf("error checking template %s: %w", template.Name, result.Error)
 		}
 	}
 
@@ -278,6 +415,8 @@ func seedServices(db *gorm.DB) error {
 				"Image":         "linuxserver/radarr:latest",
 				"ContainerName": "radarr",
 				"Port":          7878,
+				"ExposePort":    false, // CRITICAL: Do NOT expose ports by default
+				"HostPort":      0,     // 0 means use service Port
 				"Paths": map[string]interface{}{
 					"Config":    "/data/config/radarr",
 					"Movies":    "/data/media/movies",

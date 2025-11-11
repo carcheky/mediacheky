@@ -38,3 +38,18 @@ func Close(db *gorm.DB) error {
 
 	return sqlDB.Close()
 }
+
+// SeedData seeds initial data (global config and templates)
+func SeedData(db *gorm.DB) error {
+	// Always update templates to ensure they have the latest version
+	if err := UpdateTemplates(db); err != nil {
+		return fmt.Errorf("failed to update templates: %w", err)
+	}
+
+	// Seed global config if not exists
+	if err := seedGlobalConfig(db); err != nil {
+		return fmt.Errorf("failed to seed global config: %w", err)
+	}
+
+	return nil
+}

@@ -100,3 +100,5 @@ coverage.html
 #Ignore vscode AI rules
 .github/instructions/codacy.instructions.md
 
+prompt.md
+prompt.md

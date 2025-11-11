@@ -1,0 +1,19 @@
+services:
+  radarr:
+    image: linuxserver/radarr:latest
+    container_name: radarr
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=UTC
+    volumes:
+      - ${CONFIG_BASE_PATH}/radarr:/config
+      - ${BASE_MEDIA_PATH}:/MEDIACHEKY_LIBRARY
+    networks:
+      - mediacheky_mediacheky-net
+    restart: unless-stopped
+    # NO ports section = internal network only
+
+networks:
+  mediacheky_mediacheky-net:
+    external: true

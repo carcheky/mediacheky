@@ -33,6 +33,11 @@ FROM base AS development
 # Install Air for hot-reload
 RUN go install github.com/air-verse/air@latest
 
+# Install Docker CLI and Docker Compose plugin
+RUN apk add --no-cache \
+    docker-cli \
+    docker-cli-compose
+
 # Copy source code
 COPY . .
 

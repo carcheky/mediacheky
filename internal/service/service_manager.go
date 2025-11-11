@@ -9,6 +9,12 @@ import (
 	"go.uber.org/zap"
 )
 
+const (
+	// MediaChekyNetwork is the hardcoded network name that ALL services MUST use
+	// This is the Docker Compose prefixed name (project_networkname)
+	MediaChekyNetwork = "mediacheky_mediacheky-net"
+)
+
 // ServiceRepository defines the interface for service data access
 type ServiceRepository interface {
 	GetByName(name string) (*models.Service, error)
@@ -82,6 +88,18 @@ func (sm *ServiceManager) EnableService(ctx context.Context, serviceName string)
 	sm.logAction(svc.ID, "enable", "success", fmt.Sprintf("Service enabled, compose generated at %s", composePath))
 	sm.logger.Info("Service enabled successfully", zap.String("service", serviceName))
 
+	// Start the service automatically with default values
+	sm.logger.Info("Starting service automatically after enable", zap.String("service", serviceName))
+	if err := sm.StartService(ctx, serviceName); err != nil {
+		sm.logger.Error("Failed to auto-start service after enable",
+			zap.String("service", serviceName),
+			zap.Error(err))
+		// Don't fail the enable operation, just log the error
+		sm.logAction(svc.ID, "enable", "warning", fmt.Sprintf("Service enabled but failed to start: %v", err))
+	} else {
+		sm.logger.Info("Service auto-started successfully", zap.String("service", serviceName))
+	}
+
 	return nil
 }
 
@@ -100,18 +118,14 @@ func (sm *ServiceManager) DisableService(ctx context.Context, serviceName string
 		return nil
 	}
 
-	// Stop container if running
-	if svc.ContainerID != "" && svc.Status == "running" {
-		sm.logger.Info("Stopping container before disabling",
+	// Always try to stop the service when disabling
+	// This ensures we stop the container even if the DB state is not accurate
+	sm.logger.Info("Stopping service before disabling", zap.String("service", serviceName))
+	if err := sm.StopService(ctx, serviceName); err != nil {
+		sm.logger.Warn("Failed to stop container during disable",
 			zap.String("service", serviceName),
-			zap.String("container_id", svc.ContainerID))
-
-		if err := sm.StopService(ctx, serviceName); err != nil {
-			sm.logger.Warn("Failed to stop container during disable",
-				zap.String("service", serviceName),
-				zap.Error(err))
-			// Continue with disable even if stop fails
-		}
+			zap.Error(err))
+		// Continue with disable even if stop fails
 	}
 
 	// Update service state
@@ -143,8 +157,21 @@ func (sm *ServiceManager) StartService(ctx context.Context, serviceName string) 
 	// Get compose file path
 	composePath := sm.templateEngine.GetComposePath(serviceName)
 
-	// Execute docker compose up
-	result, err := sm.dockerCompose.ComposeUp(ctx, composePath)
+	// Load global config for volume creation and docker compose execution
+	globalConfig, err := sm.templateEngine.LoadGlobalConfigPublic()
+	if err != nil {
+		sm.logAction(svc.ID, "start", "error", fmt.Sprintf("Failed to load global config: %v", err))
+		return fmt.Errorf("failed to load global config: %w", err)
+	}
+
+	// Ensure all volume directories exist before starting
+	if err := sm.ensureVolumesExist(composePath); err != nil {
+		sm.logAction(svc.ID, "start", "error", fmt.Sprintf("Failed to create volumes: %v", err))
+		return fmt.Errorf("failed to ensure volumes exist: %w", err)
+	}
+
+	// Execute docker compose up with config variables
+	result, err := sm.dockerCompose.ComposeUp(ctx, composePath, globalConfig)
 	if err != nil {
 		sm.logAction(svc.ID, "start", "error", fmt.Sprintf("Failed to start: %v", err))
 		return fmt.Errorf("failed to start service: %w", err)
@@ -202,8 +229,15 @@ func (sm *ServiceManager) StopService(ctx context.Context, serviceName string) e
 	// Get compose file path
 	composePath := sm.templateEngine.GetComposePath(serviceName)
 
-	// Execute docker compose down
-	result, err := sm.dockerCompose.ComposeDown(ctx, composePath)
+	// Load global config for docker compose execution
+	globalConfig, err := sm.templateEngine.LoadGlobalConfigPublic()
+	if err != nil {
+		sm.logAction(svc.ID, "stop", "error", fmt.Sprintf("Failed to load global config: %v", err))
+		return fmt.Errorf("failed to load global config: %w", err)
+	}
+
+	// Execute docker compose down with config variables
+	result, err := sm.dockerCompose.ComposeDown(ctx, composePath, globalConfig)
 	if err != nil {
 		sm.logAction(svc.ID, "stop", "error", fmt.Sprintf("Failed to stop: %v", err))
 		return fmt.Errorf("failed to stop service: %w", err)
@@ -245,6 +279,57 @@ func (sm *ServiceManager) RestartService(ctx context.Context, serviceName string
 
 	sm.logAction(svc.ID, "restart", "success", "Service restarted")
 	sm.logger.Info("Service restarted successfully", zap.String("service", serviceName))
+
+	return nil
+}
+
+// UpdateService updates a service by pulling the latest image and restarting
+func (sm *ServiceManager) UpdateService(ctx context.Context, serviceName string) error {
+	sm.logger.Info("Updating service (pull + restart)", zap.String("service", serviceName))
+
+	// Get service from database
+	svc, err := sm.serviceRepo.GetByName(serviceName)
+	if err != nil {
+		return fmt.Errorf("failed to get service: %w", err)
+	}
+
+	if !svc.Enabled {
+		return fmt.Errorf("service is not enabled")
+	}
+
+	// Get compose file path
+	composePath := sm.templateEngine.GetComposePath(serviceName)
+
+	// Load global config for docker compose execution
+	globalConfig, err := sm.templateEngine.LoadGlobalConfigPublic()
+	if err != nil {
+		sm.logAction(svc.ID, "update", "error", fmt.Sprintf("Failed to load global config: %v", err))
+		return fmt.Errorf("failed to load global config: %w", err)
+	}
+
+	sm.logger.Info("Pulling latest image", zap.String("service", serviceName))
+	sm.logAction(svc.ID, "update", "info", "Pulling latest image...")
+
+	// Pull the latest image using docker compose
+	result, err := sm.dockerCompose.ComposePull(ctx, composePath, globalConfig)
+	if err != nil {
+		sm.logAction(svc.ID, "update", "error", fmt.Sprintf("Failed to pull image: %v", err))
+		return fmt.Errorf("failed to pull image: %w", err)
+	}
+
+	sm.logger.Info("Image pulled successfully",
+		zap.String("service", serviceName),
+		zap.String("output", result.Output))
+	sm.logAction(svc.ID, "update", "info", "Image pulled successfully, restarting service...")
+
+	// Restart the service to use the new image
+	if err := sm.RestartService(ctx, serviceName); err != nil {
+		sm.logAction(svc.ID, "update", "error", fmt.Sprintf("Image pulled but failed to restart: %v", err))
+		return fmt.Errorf("image pulled but failed to restart service: %w", err)
+	}
+
+	sm.logAction(svc.ID, "update", "success", "Service updated and restarted with latest image")
+	sm.logger.Info("Service updated successfully", zap.String("service", serviceName))
 
 	return nil
 }
@@ -314,6 +399,34 @@ func (sm *ServiceManager) findContainerByName(ctx context.Context, containerName
 	}
 
 	return "", fmt.Errorf("container not found: %s", containerName)
+}
+
+// ensureVolumesExist creates volume directories if they don't exist
+func (sm *ServiceManager) ensureVolumesExist(composePath string) error {
+	// Load global config to get path variables
+	globalConfig, err := sm.templateEngine.LoadGlobalConfigPublic()
+	if err != nil {
+		return fmt.Errorf("failed to load global config: %w", err)
+	}
+
+	// Parse compose file to extract volume paths
+	volumeDirs, err := sm.templateEngine.ExtractVolumePaths(composePath, globalConfig)
+	if err != nil {
+		return fmt.Errorf("failed to extract volume paths: %w", err)
+	}
+
+	// Create each volume directory
+	for _, dir := range volumeDirs {
+		if err := sm.templateEngine.EnsureDirectoryExists(dir); err != nil {
+			return fmt.Errorf("failed to create volume directory %s: %w", dir, err)
+		}
+	}
+
+	sm.logger.Debug("Volume directories ensured",
+		zap.String("compose_path", composePath),
+		zap.Int("volume_count", len(volumeDirs)))
+
+	return nil
 }
 
 // logAction logs a service action to the service log

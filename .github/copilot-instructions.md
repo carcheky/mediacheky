@@ -9,31 +9,43 @@
 
 ## ⛔️ CRITICAL RULE - NEVER VIOLATE ⛔️
 
-**YOU MUST NEVER:**
+**YOU MUST NEVER EVER UNDER ANY CIRCUMSTANCES:**
 
 - Run `make dev`, `make run`, or ANY make command that starts services
-
-- Run `docker-compose up/down/restart/stop`
-
-- Run `docker start/stop/restart/kill/rm`
-
-- Execute ANY command that manages Docker containers
-
+- Run `docker-compose up/down/restart/stop/start`
+- Run `docker compose up/down/restart/stop/start`
+- Run `docker restart/stop/start/kill/rm` on ANY container
+- Execute ANY command that manages Docker containers lifecycle
 - Use `run_in_terminal` with `isBackground: true` for server startup
+- Suggest restarting containers to the user
+- Tell the user to restart services
+- Execute `docker compose restart` or any variant
+- Execute `docker-compose restart` or any variant
+- Stop, start, or restart the mediacheky container or ANY service container
+
+**THE USER IS ALREADY RUNNING `make dev` WITH WATCH MODE.**
+
+**Any code changes are automatically detected and the service reloads.**
 
 **ONLY THE USER CAN START, STOP, OR RESTART SERVICES.**
+
+**IF YOU VIOLATE THIS RULE, YOU WILL BE TERMINATED.**
+
+**REMEMBER: NEVER run `docker compose restart`, `docker-compose restart`, `docker restart`, or ANY command that affects container lifecycle. EVER.**
 
 **WHAT YOU CAN DO:**
 
 - Read logs (`cat`, `tail`, `grep`)
-
-- Execute commands INSIDE running containers (`docker exec`)
-
+- Execute commands INSIDE running containers - **ALWAYS use this exact command:**
+  ```bash
+  docker compose exec mediacheky <command>
+  ```
+  **NEVER use container IDs, names with random suffixes, or any other format**
 - Inspect files and configurations
-
-- Make code changes
-
+- Make code changes (they auto-reload)
 - Run validation and tests: **ALWAYS use `make check-and-fix` after changes**
+- Check database content using: `docker compose exec mediacheky sqlite3 /app/volumes/data/mediacheky.db`
+- View container logs with `docker compose logs mediacheky`
 
 ---
 
@@ -243,69 +255,130 @@ make test            # Run tests only
 
 ## 🔄 Git Commit Conventions
 
+**⚠️ CRITICAL: ALL COMMITS MUST BE IN ENGLISH - NO EXCEPTIONS ⚠️**
+
 **Format**: `<type>(<scope>): <description>`
 
-**ALL commit messages in ENGLISH** (Conventional Commits)
+**Use Conventional Commits specification (https://www.conventionalcommits.org/)**
+
+### Commit Message Rules
+
+1. **ALWAYS write commit messages in ENGLISH** 🇬🇧
+2. **NEVER use Spanish or any other language** ❌
+3. Use present tense: "add feature" not "added feature"
+4. Use imperative mood: "fix bug" not "fixes bug"
+5. Keep subject line under 72 characters
+6. Capitalize first letter after type
+7. No period at the end of subject line
 
 ### Types that TRIGGER releases
 
 - `feat`: New feature
-
 - `fix`: Bug fix
-
 - `perf`: Performance improvement
 
 ### Types that DO NOT trigger releases
 
-- `docs`: Documentation
+- `docs`: Documentation only changes
+- `chore`: Maintenance tasks
+- `refactor`: Code restructuring without feature/fix
+- `test`: Adding or updating tests
+- `style`: Code formatting, whitespace
+- `ci`: CI/CD pipeline changes
+- `build`: Build system or dependencies
 
-- `chore`: Maintenance
-
-- `refactor`: Code restructuring
-
-- `test`: Tests
-
-- `style`: Formatting
-
-- `ci`: CI/CD changes
-
-### Examples
+### Examples (ALL IN ENGLISH)
 
 ```bash
-
-# TRIGGERS BUILD
-
+# ✅ CORRECT - Triggers release
 feat(services): add Radarr configuration panel
 fix(docker): correct container status check
+perf(db): optimize query performance
 
-# DOES NOT TRIGGER BUILD
-
+# ✅ CORRECT - Does not trigger release
 docs(readme): update installation guide
-chore(deps): update dependencies
-```text
+chore(deps): update Go dependencies to latest
+refactor(handler): simplify error handling logic
+test(service): add unit tests for template engine
+style(format): fix code formatting issues
+ci(github): update workflow to use Go 1.25
+
+# ❌ WRONG - Spanish (NEVER DO THIS)
+feat(servicios): agregar panel de configuración
+fix(docker): corregir verificación de estado
+docs(readme): actualizar guía de instalación
+
+# ❌ WRONG - Past tense
+feat(services): added Radarr configuration panel
+fix(docker): corrected container status
+
+# ❌ WRONG - Missing type
+add Radarr configuration panel
+update installation guide
+```
 
 ---
 
-## 🗣️ Communication
+## 🗣️ Communication & Language Rules
 
-- 📢 **User responses**: Spanish
+### Commit Messages & Code
+- � **Git commits**: **ALWAYS ENGLISH** (Conventional Commits) - NO EXCEPTIONS
+- 📝 **Code & comments**: English
+- � **Documentation files**: English
+- 🏷️ **Variable/function names**: English
 
-- 📝 **Code/docs**: English
+### User Interaction
+- � **User responses**: Spanish (when talking to user)
+- 🐛 **Issue/PR titles**: Spanish
+- 💬 **PR descriptions**: Spanish
+- � **Code review comments**: Spanish
 
-- 🐛 **Issues/PRs**: Spanish (titles and descriptions)
+### Summary
+- **Write code in English** ✅
+- **Write commits in English** ✅
+- **Talk to user in Spanish** ✅
+- **NEVER mix languages in commits** ❌
 
-- 💬 **GitHub interactions**: Spanish (comments, reviews)
+---
+
+## 🎨 UI Standards (CRITICAL)
+
+**ALL user feedback MUST use floating toast notifications**
+
+### Toast Notifications Rules
+
+- **Position**: Fixed top-right (`fixed top-4 right-4 z-50`)
+- **Success**: Auto-dismiss after 5 seconds
+- **Error**: Auto-dismiss after 8 seconds
+- **Structure**: Icon + Message + Close button
+- **Animations**: Fade + slide transitions
+
+**NEVER use inline messages or static positioned feedback**
+
+### Page Structure
+
+- **Settings page has TWO tabs**: Services + Global Variables
+- **NO separate `/global` route** - it's a tab in Settings
+- **Service config URLs**: `/services/:name` (NOT `/services/:name/config`)
+
+### Data Standards
+
+- **Database**: `mediacheky.db` (NOT `keepercheky.db`)
+- **Env Prefix**: `MEDIACHEKY_` (NOT `KEEPERCHEKY_`)
+- **Network**: `mediacheky-net` (ALWAYS connected, NOT conditional)
+- **Ports**: NOT exposed by default (optional via checkbox)
+
+See [docs/UI_STANDARDS.md](../docs/UI_STANDARDS.md) for complete guidelines.
 
 ---
 
 ## 📚 Resources
 
+- [UI Standards](../docs/UI_STANDARDS.md) - **READ THIS FIRST** for UI changes
 - [Development Plan](../docs/PROJECT_PLAN.md) - Complete roadmap
-
+- [UI Implementation](../docs/UI_IMPLEMENTATION.md) - Technical details
 - [Docker API](https://docs.docker.com/engine/api/)
-
 - [Fiber Framework](https://docs.gofiber.io/)
-
 - [Alpine.js](https://alpinejs.dev/)
 
 ---

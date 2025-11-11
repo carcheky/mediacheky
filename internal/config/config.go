@@ -506,7 +506,7 @@ func setDefaults() {
 
 	// Database defaults
 	viper.SetDefault("database.type", "sqlite")
-	viper.SetDefault("database.path", "./data/keepercheky.db")
+	viper.SetDefault("database.path", "./data/mediacheky.db")
 
 	// Cleanup defaults
 	viper.SetDefault("cleanup.dry_run", true)

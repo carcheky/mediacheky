@@ -1,11 +1,14 @@
 package service
 
+// TemplateEngine generates docker-compose files from templates
+
 import (
 	"bytes"
 	"embed"
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 	"text/template"
 	"time"
 
@@ -39,6 +42,8 @@ type TemplateData struct {
 	Image         string
 	ContainerName string
 	Port          int
+	ExposePort    bool // Whether to expose port to host
+	HostPort      int  // Port to expose on host (if different from Port)
 	Paths         map[string]string
 	Umask         string
 	Network       string
@@ -60,20 +65,48 @@ type GlobalConfig struct {
 
 // NewTemplateEngine creates a new TemplateEngine instance
 func NewTemplateEngine(logger *zap.Logger, templatesDir, servicesDir string, configRepo ConfigRepository, templateRepo TemplateRepository) *TemplateEngine {
+	// Ensure servicesDir is absolute path
+	absServicesDir, err := filepath.Abs(servicesDir)
+	if err != nil {
+		logger.Warn("Failed to get absolute path for servicesDir, using as-is",
+			zap.String("servicesDir", servicesDir),
+			zap.Error(err))
+		absServicesDir = servicesDir
+	}
+
 	return &TemplateEngine{
 		logger:       logger,
 		templatesDir: templatesDir,
-		servicesDir:  servicesDir,
+		servicesDir:  absServicesDir,
 		configRepo:   configRepo,
 		templateRepo: templateRepo,
 	}
 }
 
-// GenerateCompose generates a docker-compose.yml file for a service
+// GenerateCompose validates that the service compose file exists
+// Since we now use static compose files in services/ directory,
+// this function only verifies the file exists and returns its path
 func (te *TemplateEngine) GenerateCompose(serviceName string, config models.ServiceConfig) (string, error) {
-	te.logger.Info("Generating docker-compose for service",
+	te.logger.Info("Validating compose file for service",
 		zap.String("service", serviceName))
 
+	// Get path to static compose file
+	composePath := te.GetComposePath(serviceName)
+
+	// Verify file exists
+	if _, err := os.Stat(composePath); err != nil {
+		return "", fmt.Errorf("compose file not found for service %s: %w", serviceName, err)
+	}
+
+	te.logger.Info("Compose file found",
+		zap.String("service", serviceName),
+		zap.String("path", composePath))
+
+	return composePath, nil
+}
+
+// Legacy: Keep unused code for reference (can be removed later)
+func (te *TemplateEngine) generateComposeOld(serviceName string, config models.ServiceConfig) (string, error) {
 	// Load global configuration
 	globalConfig, err := te.loadGlobalConfig()
 	if err != nil {
@@ -90,6 +123,11 @@ func (te *TemplateEngine) GenerateCompose(serviceName string, config models.Serv
 	templateData, err := te.buildTemplateData(config, globalConfig)
 	if err != nil {
 		return "", fmt.Errorf("failed to build template data: %w", err)
+	}
+
+	// Validate required fields
+	if templateData.Image == "" {
+		return "", fmt.Errorf("image is required but not specified in configuration")
 	}
 
 	// Parse and execute template
@@ -153,6 +191,61 @@ func (te *TemplateEngine) loadGlobalConfig() (GlobalConfig, error) {
 	}, nil
 }
 
+// LoadGlobalConfigPublic is a public wrapper for loadGlobalConfig
+// Returns both GlobalConfig and the raw config map for variable expansion
+func (te *TemplateEngine) LoadGlobalConfigPublic() (map[string]string, error) {
+	configMap, err := te.configRepo.GetAsMap()
+	if err != nil {
+		return nil, err
+	}
+
+	// Set defaults if not found
+	if configMap["PUID"] == "" {
+		configMap["PUID"] = "1000"
+	}
+	if configMap["PGID"] == "" {
+		configMap["PGID"] = "1000"
+	}
+	if configMap["TZ"] == "" {
+		configMap["TZ"] = "UTC"
+	}
+
+	// Path defaults - convert relative paths to absolute based on project root
+	if configMap["CONFIG_BASE_PATH"] == "" {
+		configMap["CONFIG_BASE_PATH"] = "./volumes"
+	}
+	// Convert to absolute path if relative
+	if !filepath.IsAbs(configMap["CONFIG_BASE_PATH"]) {
+		absPath, err := filepath.Abs(configMap["CONFIG_BASE_PATH"])
+		if err == nil {
+			configMap["CONFIG_BASE_PATH"] = absPath
+		}
+	}
+
+	if configMap["BASE_MEDIA_PATH"] == "" {
+		configMap["BASE_MEDIA_PATH"] = "./volumes"
+	}
+	// Convert to absolute path if relative
+	if !filepath.IsAbs(configMap["BASE_MEDIA_PATH"]) {
+		absPath, err := filepath.Abs(configMap["BASE_MEDIA_PATH"])
+		if err == nil {
+			configMap["BASE_MEDIA_PATH"] = absPath
+		}
+	}
+
+	if configMap["DOWNLOADS_PATH"] == "" {
+		configMap["DOWNLOADS_PATH"] = "downloads"
+	}
+	if configMap["MOVIES_PATH"] == "" {
+		configMap["MOVIES_PATH"] = "movies"
+	}
+	if configMap["SERIES_PATH"] == "" {
+		configMap["SERIES_PATH"] = "series"
+	}
+
+	return configMap, nil
+}
+
 // loadTemplate loads template content from database or filesystem
 func (te *TemplateEngine) loadTemplate(serviceName string) (string, error) {
 	// First try to load from database
@@ -187,8 +280,14 @@ func (te *TemplateEngine) buildTemplateData(config models.ServiceConfig, globalC
 	}
 
 	// Extract standard fields from config
-	if image, ok := config["Image"].(string); ok {
+	if image, ok := config["Image"].(string); ok && image != "" {
 		data.Image = image
+	} else if image, ok := config["image"].(string); ok && image != "" {
+		// Try lowercase variant
+		data.Image = image
+	} else {
+		// Set empty to detect missing image later
+		data.Image = ""
 	}
 	if containerName, ok := config["ContainerName"].(string); ok {
 		data.ContainerName = containerName
@@ -197,6 +296,20 @@ func (te *TemplateEngine) buildTemplateData(config models.ServiceConfig, globalC
 		data.Port = int(port)
 	} else if port, ok := config["Port"].(int); ok {
 		data.Port = port
+	}
+
+	// Extract port exposure configuration
+	if exposePort, ok := config["ExposePort"].(bool); ok {
+		data.ExposePort = exposePort
+	} else {
+		data.ExposePort = false // Default: do not expose
+	}
+	if hostPort, ok := config["HostPort"].(float64); ok {
+		data.HostPort = int(hostPort)
+	} else if hostPort, ok := config["HostPort"].(int); ok {
+		data.HostPort = hostPort
+	} else {
+		data.HostPort = 0 // 0 means use service Port
 	}
 
 	// Extract paths
@@ -226,6 +339,7 @@ func (te *TemplateEngine) buildTemplateData(config models.ServiceConfig, globalC
 	standardFields := map[string]bool{
 		"Image": true, "ContainerName": true, "Port": true, "Paths": true,
 		"Umask": true, "Network": true, "RestartPolicy": true,
+		"ExposePort": true, "HostPort": true,
 	}
 	for k, v := range config {
 		if !standardFields[k] {
@@ -275,7 +389,13 @@ func (te *TemplateEngine) writeComposeFile(serviceName, content string) (string,
 		return "", fmt.Errorf("failed to write compose file: %w", err)
 	}
 
-	return composePath, nil
+	// Get absolute path before returning (required for docker compose)
+	absPath, err := filepath.Abs(composePath)
+	if err != nil {
+		return "", fmt.Errorf("failed to get absolute path: %w", err)
+	}
+
+	return absPath, nil
 }
 
 // backupComposeFile creates a backup of an existing compose file
@@ -301,7 +421,16 @@ func (te *TemplateEngine) backupComposeFile(composePath string) error {
 
 // GetComposePath returns the path to a service's docker-compose.yml file
 func (te *TemplateEngine) GetComposePath(serviceName string) string {
-	return filepath.Join(te.servicesDir, serviceName, "docker-compose.yml")
+	// Return absolute path to static compose files in services/ directory
+	// These are version-controlled and maintained separately
+	absPath, err := filepath.Abs(filepath.Join("services", serviceName+".yml"))
+	if err != nil {
+		te.logger.Warn("Failed to get absolute path, returning relative",
+			zap.String("service", serviceName),
+			zap.Error(err))
+		return filepath.Join("services", serviceName+".yml")
+	}
+	return absPath
 }
 
 // LoadTemplatesFromFS loads templates from filesystem into the database
@@ -324,5 +453,89 @@ func (te *TemplateEngine) LoadTemplatesFromFS(fs embed.FS, templatesPath string)
 			zap.String("file", entry.Name()))
 	}
 
+	return nil
+}
+
+// ExtractVolumePaths parses a docker-compose file and extracts host volume paths
+// It expands environment variables using the provided config map
+func (te *TemplateEngine) ExtractVolumePaths(composePath string, configMap map[string]string) ([]string, error) {
+	content, err := os.ReadFile(composePath)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read compose file: %w", err)
+	}
+
+	// Expand environment variables in the content
+	contentStr := string(content)
+	for key, value := range configMap {
+		contentStr = strings.ReplaceAll(contentStr, "${"+key+"}", value)
+	}
+
+	var composeData map[string]interface{}
+	if err := yaml.Unmarshal([]byte(contentStr), &composeData); err != nil {
+		return nil, fmt.Errorf("failed to parse compose YAML: %w", err)
+	}
+
+	var volumePaths []string
+
+	// Extract services section
+	services, ok := composeData["services"].(map[string]interface{})
+	if !ok {
+		return volumePaths, nil
+	}
+
+	// Iterate through each service
+	for _, serviceData := range services {
+		service, ok := serviceData.(map[string]interface{})
+		if !ok {
+			continue
+		}
+
+		// Extract volumes section
+		volumes, ok := service["volumes"].([]interface{})
+		if !ok {
+			continue
+		}
+
+		// Parse each volume definition
+		for _, vol := range volumes {
+			volStr, ok := vol.(string)
+			if !ok {
+				continue
+			}
+
+			// Parse volume string (format: "host_path:container_path" or "host_path:container_path:options")
+			parts := strings.Split(volStr, ":")
+			if len(parts) < 2 {
+				continue
+			}
+
+			hostPath := parts[0]
+
+			// Skip named volumes (no path separator)
+			if !filepath.IsAbs(hostPath) && !strings.HasPrefix(hostPath, ".") {
+				continue
+			}
+
+			// Convert relative paths to absolute
+			if !filepath.IsAbs(hostPath) {
+				composeDir := filepath.Dir(composePath)
+				hostPath = filepath.Join(composeDir, hostPath)
+			}
+
+			volumePaths = append(volumePaths, hostPath)
+		}
+	}
+
+	return volumePaths, nil
+}
+
+// EnsureDirectoryExists creates a directory if it doesn't exist
+func (te *TemplateEngine) EnsureDirectoryExists(path string) error {
+	if _, err := os.Stat(path); os.IsNotExist(err) {
+		te.logger.Debug("Creating volume directory", zap.String("path", path))
+		if err := os.MkdirAll(path, 0755); err != nil {
+			return fmt.Errorf("failed to create directory: %w", err)
+		}
+	}
 	return nil
 }

@@ -1,0 +1,21 @@
+version: '3.8'
+
+services:
+  qbittorrent:
+    image: linuxserver/qbittorrent:latest
+    container_name: qbittorrent
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=Europe/Madrid
+      - WEBUI_PORT=8080
+    volumes:
+      - ${CONFIG_BASE_PATH}/qbittorrent:/config
+      - ${BASE_MEDIA_PATH}:/MEDIACHEKY_LIBRARY
+    restart: unless-stopped
+    networks:
+      - mediacheky_mediacheky-net
+
+networks:
+  mediacheky_mediacheky-net:
+    external: true

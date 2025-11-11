@@ -33,8 +33,8 @@ func NewHandlers(db *gorm.DB, repos *repository.Repositories, logger *logger.Log
 	// Initialize Template Engine
 	templateEngine := service.NewTemplateEngine(
 		logger.Desugar(),
-		"./templates",
-		"./volumes/services",
+		"/app/templates",
+		"/app/services",
 		repos.Config,
 		repos.Template,
 	)

@@ -1,0 +1,37 @@
+version: '3.8'
+
+services:
+  jellystat:
+    image: cyfershepard/jellystat:latest
+    container_name: jellystat
+    environment:
+      - TZ=Europe/Madrid
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=mypassword
+      - POSTGRES_IP=jellystat-db
+      - POSTGRES_PORT=5432
+      - JWT_SECRET=my-secret-jwt-key
+    volumes:
+      - ${CONFIG_BASE_PATH}/jellystat:/app/backend/backup-data
+    restart: unless-stopped
+    networks:
+      - mediacheky_mediacheky-net
+    depends_on:
+      - jellystat-db
+
+  jellystat-db:
+    image: postgres:15
+    container_name: jellystat-db
+    environment:
+      - POSTGRES_DB=jfstat
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=mypassword
+    volumes:
+      - ${CONFIG_BASE_PATH}/jellystat-db:/var/lib/postgresql/data
+    restart: unless-stopped
+    networks:
+      - mediacheky_mediacheky-net
+
+networks:
+  mediacheky_mediacheky-net:
+    external: true

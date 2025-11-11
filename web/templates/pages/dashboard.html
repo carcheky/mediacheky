@@ -108,9 +108,9 @@
             </button>
         </div>
 
-        <!-- Services Grid -->
-        <div x-show="services.length > 0" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            <template x-for="service in services" :key="service.id">
+        <!-- Services Grid - Only show enabled services -->
+        <div x-show="enabledServices.length > 0" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <template x-for="service in enabledServices" :key="service.id">
                 <div class="bg-dark-bg rounded-lg p-4 border border-dark-border hover:border-blue-500/50 transition-all">
                     <div class="flex items-start justify-between mb-3">
                         <div class="flex items-center gap-3">
@@ -118,6 +118,9 @@
                             <div>
                                 <h3 class="text-sm font-semibold text-dark-text" x-text="service.display_name"></h3>
                                 <p class="text-xs text-dark-muted" x-text="'Port: ' + (service.port || 'N/A')"></p>
+                                <!-- Docker image version -->
+                                <p x-show="service.image_version" class="text-xs text-blue-400 mt-1" 
+                                   x-text="'v' + service.image_version"></p>
                             </div>
                         </div>
                         <div>
@@ -135,28 +138,27 @@
 
                     <!-- Service Actions -->
                     <div class="flex gap-2 mt-3">
-                        <template x-if="service.enabled && service.status === 'running'">
+                        <template x-if="service.status === 'running'">
                             <div class="flex gap-2 flex-1">
+                                <button @click="actionService(service.name, 'update')" :disabled="actionInProgress"
+                                        title="Update to latest version"
+                                        class="px-3 py-1.5 bg-cyan-600 text-white rounded hover:bg-cyan-700 text-xs font-medium transition-colors disabled:opacity-50">
+                                    🔄 Update
+                                </button>
                                 <button @click="actionService(service.name, 'restart')" :disabled="actionInProgress"
-                                        class="flex-1 px-3 py-1.5 bg-yellow-600 text-white rounded hover:bg-yellow-700 text-xs font-medium transition-colors disabled:opacity-50">
+                                        class="px-3 py-1.5 bg-yellow-600 text-white rounded hover:bg-yellow-700 text-xs font-medium transition-colors disabled:opacity-50">
                                     Restart
                                 </button>
                                 <button @click="actionService(service.name, 'stop')" :disabled="actionInProgress"
-                                        class="flex-1 px-3 py-1.5 bg-red-600 text-white rounded hover:bg-red-700 text-xs font-medium transition-colors disabled:opacity-50">
+                                        class="px-3 py-1.5 bg-red-600 text-white rounded hover:bg-red-700 text-xs font-medium transition-colors disabled:opacity-50">
                                     Stop
                                 </button>
                             </div>
                         </template>
-                        <template x-if="service.enabled && service.status !== 'running'">
+                        <template x-if="service.status !== 'running'">
                             <button @click="actionService(service.name, 'start')" :disabled="actionInProgress"
                                     class="flex-1 px-3 py-1.5 bg-green-600 text-white rounded hover:bg-green-700 text-xs font-medium transition-colors disabled:opacity-50">
                                 Start
-                            </button>
-                        </template>
-                        <template x-if="!service.enabled">
-                            <button @click="actionService(service.name, 'enable')" :disabled="actionInProgress"
-                                    class="flex-1 px-3 py-1.5 bg-blue-600 text-white rounded hover:bg-blue-700 text-xs font-medium transition-colors disabled:opacity-50">
-                                Enable
                             </button>
                         </template>
                         <a :href="'/services/' + service.name" 
@@ -166,7 +168,7 @@
                     </div>
 
                     <!-- Quick link if running -->
-                    <template x-if="service.enabled && service.status === 'running' && service.port">
+                    <template x-if="service.status === 'running' && service.port">
                         <a :href="'http://' + window.location.hostname + ':' + service.port" target="_blank"
                            class="block mt-2 text-xs text-blue-400 hover:text-blue-300 text-center">
                             Open UI →
@@ -177,9 +179,9 @@
         </div>
 
         <!-- Empty State -->
-        <div x-show="services.length === 0 && !loading" class="text-center py-8 text-dark-muted">
-            <p>No services configured yet.</p>
-            <a href="/settings" class="text-blue-400 hover:text-blue-300 mt-2 inline-block">Configure Services →</a>
+        <div x-show="enabledServices.length === 0 && !loading" class="text-center py-8 text-dark-muted">
+            <p>No enabled services yet.</p>
+            <a href="/settings" class="text-blue-400 hover:text-blue-300 mt-2 inline-block">Enable Services →</a>
         </div>
 
         <!-- Loading State -->
@@ -692,6 +694,11 @@
             actionInProgress: false,
             refreshInterval: null,
 
+            // Computed property to filter only enabled services
+            get enabledServices() {
+                return this.services.filter(s => s.enabled === true);
+            },
+
             async init() {
                 await this.loadServices();
                 // Refresh services every 15 seconds, ensuring no overlap
@@ -726,6 +733,13 @@
             },
 
             async actionService(serviceName, action) {
+                // Special handling for update action
+                if (action === 'update') {
+                    if (!confirm(`Update ${serviceName} to the latest version? This will:\n1. Pull the latest image\n2. Stop the current container\n3. Start with the new image\n\nThis may take a few minutes.`)) {
+                        return;
+                    }
+                }
+
                 this.actionInProgress = true;
                 try {
                     const response = await fetch(`/api/services/${serviceName}/${action}`, {
@@ -736,8 +750,14 @@
 
                     if (response.ok) {
                         console.log(`${action} ${serviceName}:`, data);
-                        // Poll for service status change (max 10s, every 500ms)
-                        const maxWait = 10000;
+                        
+                        // For update action, show success message immediately
+                        if (action === 'update') {
+                            alert(`${serviceName} updated successfully! The service is restarting...`);
+                        }
+                        
+                        // Poll for service status change (max 30s for update, 10s for others)
+                        const maxWait = action === 'update' ? 30000 : 10000;
                         const pollInterval = 500;
                         const startTime = Date.now();
                         
@@ -747,7 +767,7 @@
                             if (svc) {
                                 // Determine expected status based on action
                                 let expected;
-                                if (action === 'start' || action === 'restart') expected = 'running';
+                                if (action === 'start' || action === 'restart' || action === 'update') expected = 'running';
                                 else if (action === 'stop') expected = 'stopped';
                                 else if (action === 'enable') expected = true; // Check enabled flag
                                 
@@ -779,7 +799,8 @@
                     'start': 'start',
                     'stop': 'stop',
                     'restart': 'restart',
-                    'enable': 'enable'
+                    'enable': 'enable',
+                    'update': 'update'
                 };
                 
                 // Check for common error patterns
@@ -791,6 +812,8 @@
                     return `Service not found. Please refresh the page and try again.`;
                 } else if (technicalError.includes('already')) {
                     return `Service is already in the requested state.`;
+                } else if (action === 'update' && technicalError.includes('image')) {
+                    return `Failed to update image: ${technicalError}. Please check your internet connection.`;
                 } else {
                     return `Failed to ${actionNames[action]} service: ${technicalError}`;
                 }

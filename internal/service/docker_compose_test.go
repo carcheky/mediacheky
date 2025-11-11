@@ -127,14 +127,15 @@ func TestComposeUp_PathValidation(t *testing.T) {
 
 	dcc := NewDockerComposeClient(logger)
 	ctx := context.Background()
+	emptyConfig := map[string]string{}
 
 	// Test non-absolute path
-	_, err = dcc.ComposeUp(ctx, "relative/path/compose.yml")
+	_, err = dcc.ComposeUp(ctx, "relative/path/compose.yml", emptyConfig)
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "must be absolute")
 
 	// Test non-existent file
-	_, err = dcc.ComposeUp(ctx, "/nonexistent/path/compose.yml")
+	_, err = dcc.ComposeUp(ctx, "/nonexistent/path/compose.yml", emptyConfig)
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "not found")
 }
@@ -148,14 +149,15 @@ func TestComposeDown_PathValidation(t *testing.T) {
 
 	dcc := NewDockerComposeClient(logger)
 	ctx := context.Background()
+	emptyConfig := map[string]string{}
 
 	// Test non-absolute path
-	_, err = dcc.ComposeDown(ctx, "relative/path/compose.yml")
+	_, err = dcc.ComposeDown(ctx, "relative/path/compose.yml", emptyConfig)
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "must be absolute")
 
 	// Test non-existent file
-	_, err = dcc.ComposeDown(ctx, "/nonexistent/path/compose.yml")
+	_, err = dcc.ComposeDown(ctx, "/nonexistent/path/compose.yml", emptyConfig)
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "not found")
 }
@@ -224,12 +226,13 @@ services:
 
 	// These operations will execute if docker compose is available
 	// We're testing that nil context doesn't cause a panic and is handled properly
+	emptyConfig := map[string]string{}
 	assert.NotPanics(t, func() {
-		_, _ = dcc.ComposeUp(nil, composePath)
+		_, _ = dcc.ComposeUp(nil, composePath, emptyConfig)
 	}, "ComposeUp with nil context should not panic")
 
 	assert.NotPanics(t, func() {
-		_, _ = dcc.ComposeDown(nil, composePath)
+		_, _ = dcc.ComposeDown(nil, composePath, emptyConfig)
 	}, "ComposeDown with nil context should not panic")
 
 	assert.NotPanics(t, func() {
@@ -269,13 +272,14 @@ func TestPathTraversalPrevention(t *testing.T) {
 
 	dcc := NewDockerComposeClient(logger)
 	ctx := context.Background()
+	emptyConfig := map[string]string{}
 
 	// Test path with traversal sequences
-	_, err = dcc.ComposeUp(ctx, "/tmp/../etc/docker-compose.yml")
+	_, err = dcc.ComposeUp(ctx, "/tmp/../etc/docker-compose.yml", emptyConfig)
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "invalid sequences")
 
-	_, err = dcc.ComposeDown(ctx, "/tmp/./../../docker-compose.yml")
+	_, err = dcc.ComposeDown(ctx, "/tmp/./../../docker-compose.yml", emptyConfig)
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "invalid sequences")
 }

@@ -80,7 +80,11 @@ func TestSeedData(t *testing.T) {
 	err = db.Where("name = ?", "radarr").First(&radarrTemplate).Error
 	assert.NoError(t, err)
 	assert.Equal(t, "1.0.0", radarrTemplate.Version)
-	assert.Contains(t, radarrTemplate.Content, "linuxserver/radarr")
+	// Check that the template uses the new format with variables
+	assert.Contains(t, radarrTemplate.Content, "{{ .Image }}")
+	assert.Contains(t, radarrTemplate.Content, "{{ .ContainerName }}")
+	assert.Contains(t, radarrTemplate.Content, "{{ .Global.PUID }}")
+	assert.Contains(t, radarrTemplate.Content, "{{ .Paths.Config }}")
 }
 
 func TestSeedData_Idempotent(t *testing.T) {
