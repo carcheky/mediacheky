@@ -310,8 +310,27 @@
                 try {
                     const response = await fetch('/api/config/global');
                     if (response.ok) {
-                        const data = await response.json();
-                        this.globalConfig = data.data || data;
+                        const result = await response.json();
+                        const data = result.data || result;
+                        
+                        // Handle both flat and nested config structures
+                        if (data.system) {
+                            // Nested structure (grouped by category)
+                            this.globalConfig = {
+                                puid: data.system?.PUID || '1000',
+                                pgid: data.system?.PGID || '1000',
+                                timezone: data.system?.TZ || 'UTC',
+                                network_name: data.network?.NETWORK_MODE || 'bridge'
+                            };
+                        } else {
+                            // Flat structure
+                            this.globalConfig = {
+                                puid: data.PUID || '1000',
+                                pgid: data.PGID || '1000',
+                                timezone: data.TZ || 'UTC',
+                                network_name: data.NETWORK_MODE || 'bridge'
+                            };
+                        }
                     }
                 } catch (error) {
                     console.error('Error loading global config:', error);
