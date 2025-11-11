@@ -1,3 +1,10 @@
+# [1.0.0-dev.13](https://github.com/carcheky/mediacheky/compare/v1.0.0-dev.12...v1.0.0-dev.13) (2025-11-11)
+
+
+### Features
+
+* **docs:** add automatic proxy feature documentation for MediaCheky ([19beed3](https://github.com/carcheky/mediacheky/commit/19beed33a718feb4aed65183616fd71e56e66e76))
+
 # [1.0.0-dev.12](https://github.com/carcheky/mediacheky/compare/v1.0.0-dev.11...v1.0.0-dev.12) (2025-11-11)
 
 
