@@ -16,16 +16,14 @@ services:
       {{- if .Paths.Downloads }}
       - {{ .Paths.Downloads }}:/downloads
       {{- end }}
+    {{- if .ExposePort }}
     ports:
-      - "{{ .Port }}:7878"
-    {{- if .Network }}
-    networks:
-      - {{ .Network }}
+      - "{{ if .HostPort }}{{ .HostPort }}{{ else }}{{ .Port }}{{ end }}:7878"
     {{- end }}
+    networks:
+      - mediacheky-net
     restart: {{ .RestartPolicy }}
-{{- if .Network }}
 
 networks:
-  {{ .Network }}:
+  mediacheky-net:
     external: true
-{{- end }}
