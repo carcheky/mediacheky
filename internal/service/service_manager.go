@@ -88,6 +88,18 @@ func (sm *ServiceManager) EnableService(ctx context.Context, serviceName string)
 	sm.logAction(svc.ID, "enable", "success", fmt.Sprintf("Service enabled, compose generated at %s", composePath))
 	sm.logger.Info("Service enabled successfully", zap.String("service", serviceName))
 
+	// Start the service automatically with default values
+	sm.logger.Info("Starting service automatically after enable", zap.String("service", serviceName))
+	if err := sm.StartService(ctx, serviceName); err != nil {
+		sm.logger.Error("Failed to auto-start service after enable",
+			zap.String("service", serviceName),
+			zap.Error(err))
+		// Don't fail the enable operation, just log the error
+		sm.logAction(svc.ID, "enable", "warning", fmt.Sprintf("Service enabled but failed to start: %v", err))
+	} else {
+		sm.logger.Info("Service auto-started successfully", zap.String("service", serviceName))
+	}
+
 	return nil
 }
 
@@ -106,18 +118,14 @@ func (sm *ServiceManager) DisableService(ctx context.Context, serviceName string
 		return nil
 	}
 
-	// Stop container if running
-	if svc.ContainerID != "" && svc.Status == "running" {
-		sm.logger.Info("Stopping container before disabling",
+	// Always try to stop the service when disabling
+	// This ensures we stop the container even if the DB state is not accurate
+	sm.logger.Info("Stopping service before disabling", zap.String("service", serviceName))
+	if err := sm.StopService(ctx, serviceName); err != nil {
+		sm.logger.Warn("Failed to stop container during disable",
 			zap.String("service", serviceName),
-			zap.String("container_id", svc.ContainerID))
-
-		if err := sm.StopService(ctx, serviceName); err != nil {
-			sm.logger.Warn("Failed to stop container during disable",
-				zap.String("service", serviceName),
-				zap.Error(err))
-			// Continue with disable even if stop fails
-		}
+			zap.Error(err))
+		// Continue with disable even if stop fails
 	}
 
 	// Update service state
