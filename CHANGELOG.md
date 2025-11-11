@@ -1,3 +1,10 @@
+# [1.0.0-dev.9](https://github.com/carcheky/mediacheky/compare/v1.0.0-dev.8...v1.0.0-dev.9) (2025-11-11)
+
+
+### Features
+
+* **settings:** enhance service management UI with categorized sections and dynamic controls ([4b63aca](https://github.com/carcheky/mediacheky/commit/4b63aca451e9e26d814f3d6a92fa8817bc287585))
+
 # [1.0.0-dev.8](https://github.com/carcheky/mediacheky/compare/v1.0.0-dev.7...v1.0.0-dev.8) (2025-11-10)
 
 
