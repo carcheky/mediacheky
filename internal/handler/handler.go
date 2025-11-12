@@ -20,6 +20,8 @@ type Handlers struct {
 }
 
 func NewHandlers(db *gorm.DB, repos *repository.Repositories, logger *logger.Logger, cfg *config.Config) *Handlers {
+	// Initialize SyncService for external integrations (Radarr, Sonarr, Jellyfin, etc.)
+	syncSvc := service.NewSyncService(repos.Media, logger, cfg)
 	// Initialize Docker client
 	dockerClient, err := service.NewDockerClient(logger.Desugar())
 	if err != nil {
@@ -57,8 +59,8 @@ func NewHandlers(db *gorm.DB, repos *repository.Repositories, logger *logger.Log
 
 	return &Handlers{
 		Health:    NewHealthHandler(db, logger),
-		Dashboard: NewDashboardHandler(repos, logger, nil, dockerClient),
-		Settings:  NewSettingsHandler(repos, logger, cfg, nil),
+		Dashboard: NewDashboardHandler(repos, logger, cfg, syncSvc, dockerClient),
+		Settings:  NewSettingsHandler(repos, logger, cfg, syncSvc),
 		Logs:      NewLogsHandler(repos, logger),
 		Service:   NewServiceHandler(repos, logger, dockerClient, serviceManager),
 		Config:    NewConfigHandler(repos, logger),

@@ -9,6 +9,7 @@ import (
 	"github.com/carcheky/mediacheky/internal/models"
 	"github.com/carcheky/mediacheky/internal/repository"
 	"github.com/carcheky/mediacheky/internal/service"
+	serviceclients "github.com/carcheky/mediacheky/internal/service/clients"
 	"github.com/carcheky/mediacheky/pkg/logger"
 	"github.com/gofiber/fiber/v2"
 )
@@ -499,6 +500,21 @@ func (h *SettingsHandler) TestConnection(c *fiber.Ctx) error {
 
 // GetJellyfinStats returns detailed Jellyfin statistics.
 func (h *SettingsHandler) GetJellyfinStats(c *fiber.Ctx) error {
+	if h.config == nil || !h.config.Clients.Jellyfin.Enabled {
+		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
+			"error": "Jellyfin service is disabled",
+		})
+	}
+	if h.config.Clients.Jellyfin.URL == "" {
+		return c.Status(fiber.StatusServiceUnavailable).JSON(fiber.Map{
+			"error": "Jellyfin URL not configured",
+		})
+	}
+	if h.syncService == nil {
+		return c.Status(fiber.StatusServiceUnavailable).JSON(fiber.Map{
+			"error": "Sync service unavailable",
+		})
+	}
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
@@ -517,6 +533,21 @@ func (h *SettingsHandler) GetJellyfinStats(c *fiber.Ctx) error {
 
 // GetJellyfinSessions returns active Jellyfin sessions.
 func (h *SettingsHandler) GetJellyfinSessions(c *fiber.Ctx) error {
+	if h.config == nil || !h.config.Clients.Jellyfin.Enabled {
+		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
+			"error": "Jellyfin service is disabled",
+		})
+	}
+	if h.config.Clients.Jellyfin.URL == "" {
+		return c.Status(fiber.StatusServiceUnavailable).JSON(fiber.Map{
+			"error": "Jellyfin URL not configured",
+		})
+	}
+	if h.syncService == nil {
+		return c.Status(fiber.StatusServiceUnavailable).JSON(fiber.Map{
+			"error": "Sync service unavailable",
+		})
+	}
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
@@ -538,6 +569,21 @@ func (h *SettingsHandler) GetJellyfinSessions(c *fiber.Ctx) error {
 
 // GetJellyfinRecentlyAdded returns recently added items from Jellyfin.
 func (h *SettingsHandler) GetJellyfinRecentlyAdded(c *fiber.Ctx) error {
+	if h.config == nil || !h.config.Clients.Jellyfin.Enabled {
+		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
+			"error": "Jellyfin service is disabled",
+		})
+	}
+	if h.config.Clients.Jellyfin.URL == "" {
+		return c.Status(fiber.StatusServiceUnavailable).JSON(fiber.Map{
+			"error": "Jellyfin URL not configured",
+		})
+	}
+	if h.syncService == nil {
+		return c.Status(fiber.StatusServiceUnavailable).JSON(fiber.Map{
+			"error": "Sync service unavailable",
+		})
+	}
 	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 	defer cancel()
 
@@ -562,6 +608,21 @@ func (h *SettingsHandler) GetJellyfinRecentlyAdded(c *fiber.Ctx) error {
 
 // GetJellyfinActivity returns Jellyfin activity log.
 func (h *SettingsHandler) GetJellyfinActivity(c *fiber.Ctx) error {
+	if h.config == nil || !h.config.Clients.Jellyfin.Enabled {
+		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
+			"error": "Jellyfin service is disabled",
+		})
+	}
+	if h.config.Clients.Jellyfin.URL == "" {
+		return c.Status(fiber.StatusServiceUnavailable).JSON(fiber.Map{
+			"error": "Jellyfin URL not configured",
+		})
+	}
+	if h.syncService == nil {
+		return c.Status(fiber.StatusServiceUnavailable).JSON(fiber.Map{
+			"error": "Sync service unavailable",
+		})
+	}
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
@@ -586,6 +647,21 @@ func (h *SettingsHandler) GetJellyfinActivity(c *fiber.Ctx) error {
 
 // GetJellystatStats returns detailed Jellystat statistics.
 func (h *SettingsHandler) GetJellystatStats(c *fiber.Ctx) error {
+	if h.config == nil || !h.config.Clients.Jellystat.Enabled {
+		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
+			"error": "Jellystat service is disabled",
+		})
+	}
+	if h.config.Clients.Jellystat.URL == "" {
+		return c.Status(fiber.StatusServiceUnavailable).JSON(fiber.Map{
+			"error": "Jellystat URL not configured",
+		})
+	}
+	if h.syncService == nil {
+		return c.Status(fiber.StatusServiceUnavailable).JSON(fiber.Map{
+			"error": "Sync service unavailable",
+		})
+	}
 	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 	defer cancel()
 
@@ -607,6 +683,21 @@ func (h *SettingsHandler) GetJellystatStats(c *fiber.Ctx) error {
 
 // GetJellystatViewsByType returns views aggregated by library type.
 func (h *SettingsHandler) GetJellystatViewsByType(c *fiber.Ctx) error {
+	if h.config == nil || !h.config.Clients.Jellystat.Enabled {
+		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
+			"error": "Jellystat service is disabled",
+		})
+	}
+	if h.config.Clients.Jellystat.URL == "" {
+		return c.Status(fiber.StatusServiceUnavailable).JSON(fiber.Map{
+			"error": "Jellystat URL not configured",
+		})
+	}
+	if h.syncService == nil {
+		return c.Status(fiber.StatusServiceUnavailable).JSON(fiber.Map{
+			"error": "Sync service unavailable",
+		})
+	}
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
@@ -628,6 +719,21 @@ func (h *SettingsHandler) GetJellystatViewsByType(c *fiber.Ctx) error {
 
 // GetJellystatUserActivity returns user activity statistics.
 func (h *SettingsHandler) GetJellystatUserActivity(c *fiber.Ctx) error {
+	if h.config == nil || !h.config.Clients.Jellystat.Enabled {
+		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
+			"error": "Jellystat service is disabled",
+		})
+	}
+	if h.config.Clients.Jellystat.URL == "" {
+		return c.Status(fiber.StatusServiceUnavailable).JSON(fiber.Map{
+			"error": "Jellystat URL not configured",
+		})
+	}
+	if h.syncService == nil {
+		return c.Status(fiber.StatusServiceUnavailable).JSON(fiber.Map{
+			"error": "Sync service unavailable",
+		})
+	}
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
@@ -652,6 +758,21 @@ func (h *SettingsHandler) GetJellystatUserActivity(c *fiber.Ctx) error {
 
 // GetJellystatLibraryStats returns library statistics.
 func (h *SettingsHandler) GetJellystatLibraryStats(c *fiber.Ctx) error {
+	if h.config == nil || !h.config.Clients.Jellystat.Enabled {
+		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
+			"error": "Jellystat service is disabled",
+		})
+	}
+	if h.config.Clients.Jellystat.URL == "" {
+		return c.Status(fiber.StatusServiceUnavailable).JSON(fiber.Map{
+			"error": "Jellystat URL not configured",
+		})
+	}
+	if h.syncService == nil {
+		return c.Status(fiber.StatusServiceUnavailable).JSON(fiber.Map{
+			"error": "Sync service unavailable",
+		})
+	}
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
@@ -671,5 +792,103 @@ func (h *SettingsHandler) GetJellystatLibraryStats(c *fiber.Ctx) error {
 	return c.JSON(fiber.Map{
 		"libraries": libraries,
 		"count":     len(libraries),
+	})
+}
+
+// GetRadarrQueue returns the current Radarr download queue
+func (h *SettingsHandler) GetRadarrQueue(c *fiber.Ctx) error {
+	if h.config == nil || !h.config.Clients.Radarr.Enabled {
+		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
+			"error": "Radarr service is disabled",
+		})
+	}
+	if h.config.Clients.Radarr.URL == "" {
+		return c.Status(fiber.StatusServiceUnavailable).JSON(fiber.Map{
+			"error": "Radarr URL not configured",
+		})
+	}
+	if h.syncService == nil {
+		return c.Status(fiber.StatusServiceUnavailable).JSON(fiber.Map{
+			"error": "Sync service unavailable",
+		})
+	}
+
+	client := h.syncService.GetRadarrClient()
+	if client == nil {
+		return c.Status(fiber.StatusServiceUnavailable).JSON(fiber.Map{
+			"error": "Radarr client not available",
+		})
+	}
+
+	radarrClient, ok := client.(*serviceclients.RadarrClient)
+	if !ok {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": "Invalid Radarr client type",
+		})
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	items, err := radarrClient.GetQueue(ctx)
+	if err != nil {
+		h.logger.Error("Failed to get Radarr queue", "error", err)
+		return c.Status(fiber.StatusBadGateway).JSON(fiber.Map{
+			"error": err.Error(),
+		})
+	}
+
+	return c.JSON(fiber.Map{
+		"items": items,
+		"count": len(items),
+	})
+}
+
+// GetSonarrQueue returns the current Sonarr download queue
+func (h *SettingsHandler) GetSonarrQueue(c *fiber.Ctx) error {
+	if h.config == nil || !h.config.Clients.Sonarr.Enabled {
+		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
+			"error": "Sonarr service is disabled",
+		})
+	}
+	if h.config.Clients.Sonarr.URL == "" {
+		return c.Status(fiber.StatusServiceUnavailable).JSON(fiber.Map{
+			"error": "Sonarr URL not configured",
+		})
+	}
+	if h.syncService == nil {
+		return c.Status(fiber.StatusServiceUnavailable).JSON(fiber.Map{
+			"error": "Sync service unavailable",
+		})
+	}
+
+	client := h.syncService.GetSonarrClient()
+	if client == nil {
+		return c.Status(fiber.StatusServiceUnavailable).JSON(fiber.Map{
+			"error": "Sonarr client not available",
+		})
+	}
+
+	sonarrClient, ok := client.(*serviceclients.SonarrClient)
+	if !ok {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": "Invalid Sonarr client type",
+		})
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	items, err := sonarrClient.GetQueue(ctx)
+	if err != nil {
+		h.logger.Error("Failed to get Sonarr queue", "error", err)
+		return c.Status(fiber.StatusBadGateway).JSON(fiber.Map{
+			"error": err.Error(),
+		})
+	}
+
+	return c.JSON(fiber.Map{
+		"items": items,
+		"count": len(items),
 	})
 }

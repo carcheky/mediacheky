@@ -4,6 +4,7 @@ import (
 	"context"
 	"time"
 
+	"github.com/carcheky/mediacheky/internal/config"
 	"github.com/carcheky/mediacheky/internal/repository"
 	"github.com/carcheky/mediacheky/internal/service"
 	"github.com/carcheky/mediacheky/pkg/logger"
@@ -13,14 +14,16 @@ import (
 type DashboardHandler struct {
 	repos        *repository.Repositories
 	logger       *logger.Logger
+	config       *config.Config
 	syncService  *service.SyncService
 	dockerClient *service.DockerClient
 }
 
-func NewDashboardHandler(repos *repository.Repositories, logger *logger.Logger, syncService *service.SyncService, dockerClient *service.DockerClient) *DashboardHandler {
+func NewDashboardHandler(repos *repository.Repositories, logger *logger.Logger, cfg *config.Config, syncService *service.SyncService, dockerClient *service.DockerClient) *DashboardHandler {
 	return &DashboardHandler{
 		repos:        repos,
 		logger:       logger,
+		config:       cfg,
 		syncService:  syncService,
 		dockerClient: dockerClient,
 	}
@@ -50,6 +53,22 @@ func (h *DashboardHandler) Stats(c *fiber.Ctx) error {
 
 // GetJellyseerrStats returns detailed Jellyseerr statistics.
 func (h *DashboardHandler) GetJellyseerrStats(c *fiber.Ctx) error {
+	if h.config == nil || !h.config.Clients.Jellyseerr.Enabled {
+		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
+			"error": "Jellyseerr service is disabled",
+		})
+	}
+	if h.config.Clients.Jellyseerr.URL == "" {
+		return c.Status(fiber.StatusServiceUnavailable).JSON(fiber.Map{
+			"error": "Jellyseerr URL not configured",
+		})
+	}
+	if h.syncService == nil {
+		return c.Status(fiber.StatusServiceUnavailable).JSON(fiber.Map{
+			"error": "Sync service unavailable",
+		})
+	}
+
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
@@ -58,7 +77,7 @@ func (h *DashboardHandler) GetJellyseerrStats(c *fiber.Ctx) error {
 		h.logger.Error("Failed to get Jellyseerr stats",
 			"error", err,
 		)
-		return c.Status(500).JSON(fiber.Map{
+		return c.Status(fiber.StatusBadGateway).JSON(fiber.Map{
 			"error": err.Error(),
 		})
 	}
@@ -68,6 +87,22 @@ func (h *DashboardHandler) GetJellyseerrStats(c *fiber.Ctx) error {
 
 // GetJellyseerrRequests returns recent Jellyseerr requests.
 func (h *DashboardHandler) GetJellyseerrRequests(c *fiber.Ctx) error {
+	if h.config == nil || !h.config.Clients.Jellyseerr.Enabled {
+		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
+			"error": "Jellyseerr service is disabled",
+		})
+	}
+	if h.config.Clients.Jellyseerr.URL == "" {
+		return c.Status(fiber.StatusServiceUnavailable).JSON(fiber.Map{
+			"error": "Jellyseerr URL not configured",
+		})
+	}
+	if h.syncService == nil {
+		return c.Status(fiber.StatusServiceUnavailable).JSON(fiber.Map{
+			"error": "Sync service unavailable",
+		})
+	}
+
 	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 	defer cancel()
 
@@ -76,7 +111,7 @@ func (h *DashboardHandler) GetJellyseerrRequests(c *fiber.Ctx) error {
 		h.logger.Error("Failed to get Jellyseerr requests",
 			"error", err,
 		)
-		return c.Status(500).JSON(fiber.Map{
+		return c.Status(fiber.StatusBadGateway).JSON(fiber.Map{
 			"error": err.Error(),
 		})
 	}
@@ -89,6 +124,22 @@ func (h *DashboardHandler) GetJellyseerrRequests(c *fiber.Ctx) error {
 
 // GetJellystatStats returns detailed Jellystat statistics for the dashboard.
 func (h *DashboardHandler) GetJellystatStats(c *fiber.Ctx) error {
+	if h.config == nil || !h.config.Clients.Jellystat.Enabled {
+		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
+			"error": "Jellystat service is disabled",
+		})
+	}
+	if h.config.Clients.Jellystat.URL == "" {
+		return c.Status(fiber.StatusServiceUnavailable).JSON(fiber.Map{
+			"error": "Jellystat URL not configured",
+		})
+	}
+	if h.syncService == nil {
+		return c.Status(fiber.StatusServiceUnavailable).JSON(fiber.Map{
+			"error": "Sync service unavailable",
+		})
+	}
+
 	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 	defer cancel()
 
@@ -100,7 +151,7 @@ func (h *DashboardHandler) GetJellystatStats(c *fiber.Ctx) error {
 		h.logger.Error("Failed to get Jellystat stats",
 			"error", err,
 		)
-		return c.Status(500).JSON(fiber.Map{
+		return c.Status(fiber.StatusBadGateway).JSON(fiber.Map{
 			"error": err.Error(),
 		})
 	}
@@ -110,6 +161,22 @@ func (h *DashboardHandler) GetJellystatStats(c *fiber.Ctx) error {
 
 // GetJellystatViewsByType returns views by library type for the dashboard.
 func (h *DashboardHandler) GetJellystatViewsByType(c *fiber.Ctx) error {
+	if h.config == nil || !h.config.Clients.Jellystat.Enabled {
+		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
+			"error": "Jellystat service is disabled",
+		})
+	}
+	if h.config.Clients.Jellystat.URL == "" {
+		return c.Status(fiber.StatusServiceUnavailable).JSON(fiber.Map{
+			"error": "Jellystat URL not configured",
+		})
+	}
+	if h.syncService == nil {
+		return c.Status(fiber.StatusServiceUnavailable).JSON(fiber.Map{
+			"error": "Sync service unavailable",
+		})
+	}
+
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
@@ -121,7 +188,7 @@ func (h *DashboardHandler) GetJellystatViewsByType(c *fiber.Ctx) error {
 		h.logger.Error("Failed to get Jellystat views by type",
 			"error", err,
 		)
-		return c.Status(500).JSON(fiber.Map{
+		return c.Status(fiber.StatusBadGateway).JSON(fiber.Map{
 			"error": err.Error(),
 		})
 	}
