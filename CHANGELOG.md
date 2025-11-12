@@ -1,3 +1,10 @@
+# [1.0.0-dev.14](https://github.com/carcheky/mediacheky/compare/v1.0.0-dev.13...v1.0.0-dev.14) (2025-11-12)
+
+
+### Features
+
+* **settings:** add Radarr and Sonarr queue endpoints with sync service integration ([5122071](https://github.com/carcheky/mediacheky/commit/51220714b4eb20c56faea918a6373c0cd30c85f0))
+
 # [1.0.0-dev.13](https://github.com/carcheky/mediacheky/compare/v1.0.0-dev.12...v1.0.0-dev.13) (2025-11-11)
 
 
