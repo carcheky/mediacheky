@@ -1,4 +1,4 @@
-.PHONY: help dev dev-watch build test clean docker-build docker-run shell logs stop check-deps validate validate-quick lint-check lint-fix vet check-and-fix mod-tidy install-hooks uninstall-hooks
+.PHONY: help dev dev-watch build test clean docker-build docker-run shell logs stop check-deps validate validate-quick lint-check lint-fix vet check-and-fix mod-tidy install-hooks uninstall-hooks clean-branches clean-branches-force
 
 # Default target
 help:
@@ -34,6 +34,7 @@ help:
 	@echo "  make lint         - Run linter (golangci-lint)"
 	@echo "  make check-deps   - Check required dependencies"
 	@echo "  make install-hooks - Install pre-commit git hook"
+	@echo "  make clean-branches - Remove local branches that don't exist in remote"
 	@echo ""
 
 # Check dependencies
@@ -348,6 +349,54 @@ uninstall-hooks:
 	@echo "🗑️  Removing git pre-commit hook..."
 	@rm -f .git/hooks/pre-commit
 	@echo "✅ Hook removed"
+
+# Clean local branches that don't exist in remote
+clean-branches:
+	@echo "🧹 Cleaning local branches that don't exist in remote..."
+	@echo ""
+	@echo "📡 Fetching from remote and pruning deleted branches..."
+	@git fetch --prune
+	@echo ""
+	@echo "🔍 Finding local branches to delete..."
+	@BRANCHES=$$(git branch -vv | grep ': gone]' | awk '{print $$1}'); \
+	if [ -z "$$BRANCHES" ]; then \
+		echo "✅ No stale branches found - all local branches are in sync"; \
+	else \
+		echo "Found the following branches to delete:"; \
+		echo "$$BRANCHES" | sed 's/^/  - /'; \
+		echo ""; \
+		printf "Delete these branches? [y/N] "; \
+		read REPLY; \
+		case $$REPLY in \
+			[Yy]*) \
+				echo "$$BRANCHES" | xargs git branch -D; \
+				echo ""; \
+				echo "✅ Branches deleted successfully"; \
+				;; \
+			*) \
+				echo "❌ Operation cancelled"; \
+				;; \
+		esac; \
+	fi
+
+# Force clean local branches (no confirmation)
+clean-branches-force:
+	@echo "🧹 Force cleaning local branches that don't exist in remote..."
+	@echo ""
+	@echo "📡 Fetching from remote and pruning deleted branches..."
+	@git fetch --prune
+	@echo ""
+	@BRANCHES=$$(git branch -vv | grep ': gone]' | awk '{print $$1}'); \
+	if [ -z "$$BRANCHES" ]; then \
+		echo "✅ No stale branches found - all local branches are in sync"; \
+	else \
+		echo "Deleting the following branches:"; \
+		echo "$$BRANCHES" | sed 's/^/  - /'; \
+		echo ""; \
+		echo "$$BRANCHES" | xargs git branch -D; \
+		echo ""; \
+		echo "✅ Branches deleted successfully"; \
+	fi
 
 # Clean build artifacts
 clean:
