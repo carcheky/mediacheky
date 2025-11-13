@@ -44,7 +44,7 @@ func TestDashboardEndpoints(t *testing.T) {
 		resp := DoRequest(t, ta.App, GET("/api/stats"))
 
 		AssertStatusCode(t, resp, fiber.StatusOK)
-		
+
 		// Stats endpoint returns plain JSON, not API Response format
 		var data map[string]interface{}
 		AssertJSONResponse(t, resp, &data)

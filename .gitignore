@@ -19,8 +19,9 @@ __pycache__/
 logs/
 *.log
 
-# Binaries for programs and plugins
+# Build artifacts
 bin/
+tmp/
 server
 mediacheky
 *.exe

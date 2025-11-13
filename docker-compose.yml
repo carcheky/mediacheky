@@ -5,6 +5,11 @@ services:
       context: .
       dockerfile: Dockerfile
       target: development
+      cache_from:
+        - mediacheky:dev-cache
+      args:
+        - BUILDKIT_INLINE_CACHE=1
+    image: mediacheky:dev
     container_name: mediacheky-dev
     ports:
       - "${MEDIACHEKY_SERVER_PORT:-7369}:7369"
@@ -15,8 +20,11 @@ services:
       - ${MEDIACHEKY_MEDIA_PATH:-./volumes/MEDIACHEKY_MEDIA_PATH}:/MEDIACHEKY_LIBRARY
       
       # Development only - Hot reload & debugging
-      - ./volumes/mediacheky-go-modules:/go/pkg/mod  # Go modules cache
+      - go-modules-cache:/go/pkg/mod  # Go modules cache (named volume for speed)
       - ./logs:/app/logs  # Logs accessible from host
+      - ./.air.toml:/app/.air.toml  # Air configuration
+      - ./go.mod:/app/go.mod  # Go modules
+      - ./go.sum:/app/go.sum
       - ./cmd:/app/cmd  # Source code sync
       - ./internal:/app/internal
       - ./pkg:/app/pkg
@@ -200,7 +208,9 @@ services:
   #     - jellystat-db
   #   restart: unless-stopped
 
-# volumes:
+volumes:
+  go-modules-cache:
+    name: mediacheky-go-modules-cache
 #   jellystat-db:
 
 networks:

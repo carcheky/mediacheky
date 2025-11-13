@@ -123,10 +123,9 @@ func main() {
 	}
 
 	// Start server
-	port := cfg.Server.Port
-	if port == "" {
-		port = "8000"
-	}
+	// Internal port is always 7369 (fixed)
+	// External port mapping is handled by Docker Compose
+	port := "7369"
 
 	appLogger.Info("Server starting", "port", port)
 	if err := app.Listen(":" + port); err != nil {
@@ -200,6 +199,7 @@ func setupRoutes(app *fiber.App, h *handler.Handlers) {
 		services.Get("/:name/logs", middleware.ValidateServiceName(), h.Service.GetContainerLogs)
 		services.Put("/:name/subdomain", middleware.ValidateServiceName(), h.Proxy.UpdateServiceSubdomain)
 		services.Get("/:name/endpoint", middleware.ValidateServiceName(), h.Proxy.GetServiceEndpoint)
+		services.Post("/:name/reset", middleware.ValidateServiceName(), h.Service.ResetService)
 
 		// Global configuration endpoints with validation
 		globalConfig := api.Group("/config/global")
@@ -219,6 +219,7 @@ func setupRoutes(app *fiber.App, h *handler.Handlers) {
 		// Docker endpoints
 		api.Get("/docker/info", h.Docker.GetDockerInfo)
 		api.Get("/docker/containers", h.Docker.ListContainers)
+		api.Get("/docker/tags", h.Docker.GetDockerTags)
 
 		// Configuration (Settings) - legacy endpoints
 		api.Get("/config", h.Settings.Get)

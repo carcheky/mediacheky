@@ -14,7 +14,7 @@
                 <p class="text-sm text-dark-muted mt-1">Configure service settings and paths</p>
             </div>
             <div class="flex gap-3">
-                <button @click="testConnection()" :disabled="testing"
+                <button @click="testConnection()" :disabled="testing || !enabled"
                     class="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2">
                     <svg x-show="!testing" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -29,28 +29,43 @@
                     </svg>
                     <span x-text="testing ? 'Testing...' : 'Test Connection'"></span>
                 </button>
-                <button @click="saveConfig()" :disabled="saving"
-                    class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2">
-                    <svg x-show="!saving" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <button @click="resetConfig()" :disabled="resetting || !enabled"
+                    class="px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2">
+                    <svg x-show="!resetting" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4">
+                            d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15">
                         </path>
                     </svg>
-                    <svg x-show="saving" class="animate-spin w-5 h-5" fill="none" viewBox="0 0 24 24">
+                    <svg x-show="resetting" class="animate-spin w-5 h-5" fill="none" viewBox="0 0 24 24">
                         <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                         <path class="opacity-75" fill="currentColor"
                             d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
                         </path>
                     </svg>
-                    <span x-text="saving ? 'Saving...' : 'Save Configuration'"></span>
+                    <span x-text="resetting ? 'Resetting...' : 'Reset'"></span>
+                </button>
+                <button @click="applyConfig()" :disabled="applying || !enabled"
+                    class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2">
+                    <svg x-show="!applying" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15">
+                        </path>
+                    </svg>
+                    <svg x-show="applying" class="animate-spin w-5 h-5" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor"
+                            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
+                        </path>
+                    </svg>
+                    <span x-text="applying ? 'Applying...' : 'Apply'"></span>
                 </button>
             </div>
         </div>
     </div>
 
-    <!-- Service Status Card -->
+    <!-- Service Status Card with Enable/Disable Toggle -->
     <div class="bg-dark-surface dark:bg-dark-surface rounded-lg shadow-lg border border-dark-border p-6">
-        <div class="flex items-center justify-between">
+        <div class="flex items-center justify-between mb-4">
             <div class="flex items-center gap-4">
                 <div class="text-4xl" x-text="getServiceIcon()"></div>
                 <div>
@@ -58,6 +73,21 @@
                     <p class="text-sm text-dark-muted">Service Status</p>
                 </div>
             </div>
+            
+            <!-- Enable/Disable Toggle -->
+            <div class="flex items-center gap-3">
+                <label class="flex items-center gap-2 cursor-pointer">
+                    <span class="text-sm text-dark-muted">Enabled:</span>
+                    <div class="relative">
+                        <input type="checkbox" x-model="enabled" @change="toggleService()" 
+                            class="sr-only peer">
+                        <div class="w-11 h-6 bg-gray-700 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-800 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                    </div>
+                </label>
+            </div>
+        </div>
+        
+        <div class="flex items-center justify-between">
             <div class="flex items-center gap-3">
                 <span x-show="status === 'running'" class="px-3 py-1 bg-green-900/30 border border-green-600/50 text-green-300 rounded-md text-sm">
                     ✅ Running
@@ -68,17 +98,30 @@
                 <span x-show="status === 'error'" class="px-3 py-1 bg-red-900/30 border border-red-600/50 text-red-300 rounded-md text-sm">
                     ⚠️ Error
                 </span>
+                <span x-show="enabled && status === 'running'" class="px-3 py-1 bg-green-900/30 border border-green-600/50 text-green-300 rounded-md text-sm">
+                    ✅ Running
+                </span>
+                <span x-show="enabled && status === 'stopped'" class="px-3 py-1 bg-gray-900/30 border border-gray-600/50 text-gray-300 rounded-md text-sm">
+                    📴 Stopped
+                </span>
+                <span x-show="enabled && status === 'error'" class="px-3 py-1 bg-red-900/30 border border-red-600/50 text-red-300 rounded-md text-sm">
+                    ⚠️ Error
+                </span>
+                <span x-show="!enabled" class="px-3 py-1 bg-gray-900/30 border border-gray-600/50 text-gray-400 rounded-md text-sm">
+                    ⚪ Disabled
+                </span>
                 
-                <!-- Service Control Buttons -->
-                <div class="flex gap-2 ml-4">
-                    <button @click="startService()" :disabled="status === 'running' || actionInProgress"
+                <!-- Service Control Buttons (only visible when enabled) -->
+                <div x-show="enabled" class="flex gap-2 ml-4">
+                    <!-- Dynamic Start/Stop button -->
+                    <button x-show="status !== 'running'" @click="startService()" :disabled="actionInProgress"
                         class="px-3 py-1 bg-green-600 text-white rounded-md hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed text-sm flex items-center gap-1">
                         <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
                             <path d="M6.3 2.841A1.5 1.5 0 004 4.11V15.89a1.5 1.5 0 002.3 1.269l9.344-5.89a1.5 1.5 0 000-2.538L6.3 2.84z"/>
                         </svg>
                         Start
                     </button>
-                    <button @click="stopService()" :disabled="status !== 'running' || actionInProgress"
+                    <button x-show="status === 'running'" @click="stopService()" :disabled="actionInProgress"
                         class="px-3 py-1 bg-red-600 text-white rounded-md hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed text-sm flex items-center gap-1">
                         <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
                             <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8 7a1 1 0 00-1 1v4a1 1 0 001 1h4a1 1 0 001-1V8a1 1 0 00-1-1H8z" clip-rule="evenodd"/>
@@ -98,7 +141,8 @@
     </div>
 
     <!-- Proxy & Domain Configuration -->
-    <div class="bg-dark-surface dark:bg-dark-surface rounded-lg shadow-lg border border-dark-border p-6">
+    <div class="bg-dark-surface dark:bg-dark-surface rounded-lg shadow-lg border border-dark-border p-6"
+         :class="!enabled && 'opacity-50 pointer-events-none'">
         <h2 class="text-xl font-semibold text-dark-text mb-4">Proxy & Domain Access</h2>
         <p class="text-sm text-dark-muted mb-4">Configure subdomain and domain for this service</p>
         
@@ -149,7 +193,8 @@
     </div>
 
     <!-- Docker Configuration -->
-    <div class="bg-dark-surface dark:bg-dark-surface rounded-lg shadow-lg border border-dark-border p-6">
+    <div class="bg-dark-surface dark:bg-dark-surface rounded-lg shadow-lg border border-dark-border p-6"
+         :class="!enabled && 'opacity-50 pointer-events-none'">
         <div class="flex items-center gap-2 mb-4">
             <svg class="w-6 h-6 text-blue-400" fill="currentColor" viewBox="0 0 24 24">
                 <path d="M13.983 11.078h2.119a.186.186 0 00.186-.185V9.006a.186.186 0 00-.186-.186h-2.119a.185.185 0 00-.185.185v1.888c0 .102.083.185.185.185m-2.954-5.43h2.118a.186.186 0 00.186-.186V3.574a.186.186 0 00-.186-.185h-2.118a.185.185 0 00-.185.185v1.888c0 .102.082.185.185.185m0 2.716h2.118a.187.187 0 00.186-.186V6.29a.186.186 0 00-.186-.185h-2.118a.185.185 0 00-.185.185v1.887c0 .102.082.185.185.186m-2.93 0h2.12a.186.186 0 00.184-.186V6.29a.185.185 0 00-.185-.185H8.1a.185.185 0 00-.185.185v1.887c0 .102.083.185.185.186m-2.964 0h2.119a.186.186 0 00.185-.186V6.29a.185.185 0 00-.185-.185H5.136a.186.186 0 00-.186.185v1.887c0 .102.084.185.186.186m5.893 2.715h2.118a.186.186 0 00.186-.185V9.006a.186.186 0 00-.186-.186h-2.118a.185.185 0 00-.185.185v1.888c0 .102.082.185.185.185m-2.93 0h2.12a.185.185 0 00.184-.185V9.006a.185.185 0 00-.184-.186h-2.12a.185.185 0 00-.184.185v1.888c0 .102.083.185.185.185m-2.964 0h2.119a.185.185 0 00.185-.185V9.006a.185.185 0 00-.184-.186h-2.12a.186.186 0 00-.186.186v1.887c0 .102.084.185.186.185m-2.92 0h2.12a.185.185 0 00.184-.185V9.006a.185.185 0 00-.184-.186h-2.12a.185.185 0 00-.184.185v1.888c0 .102.082.185.185.185M23.763 9.89c-.065-.051-.672-.51-1.954-.51-.338 0-.676.03-1.01.091-1.308-2.580-4.038-4.16-6.955-4.16-.656 0-1.326.082-1.99.245-.494.122-.66.346-.66.638v13.687c0 .337.228.646.558.724.313.071 6.356.064 6.356.064 1.315 0 2.415-.449 3.272-1.336.784-.806 1.182-1.877 1.182-3.183 0-1.268-.375-2.317-1.117-3.122a5.085 5.085 0 00-.835-.668c.504-.302.934-.693 1.27-1.164.471-.654.71-1.402.71-2.223 0-.82-.192-1.525-.574-2.098-.312-.468-.722-.843-1.218-1.115"/>
@@ -160,11 +205,30 @@
         <div class="space-y-4">
             <div>
                 <label class="block text-sm font-medium text-dark-text mb-1">
-                    Docker Image
+                    Docker Image Tag
                 </label>
-                <input type="text" x-model="config.Image" placeholder="linuxserver/radarr:latest"
-                    class="w-full px-3 py-2 border border-dark-border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-dark-bg text-dark-text">
-                <p class="text-xs text-dark-muted mt-1">Docker image to use for this service</p>
+                <div class="flex gap-2">
+                    <select x-model="selectedTag" @change="updateImageTag()"
+                        class="flex-1 px-3 py-2 border border-dark-border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-dark-bg text-dark-text">
+                        <option value="latest">latest</option>
+                        <template x-for="tag in availableTags" :key="tag">
+                            <option :value="tag" x-text="tag"></option>
+                        </template>
+                    </select>
+                    <button @click="loadDockerTags()" :disabled="loadingTags"
+                        class="px-3 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2">
+                        <svg x-show="!loadingTags" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                        </svg>
+                        <svg x-show="loadingTags" class="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                    </button>
+                </div>
+                <p class="text-xs text-dark-muted mt-1">
+                    Current: <code class="px-1 bg-dark-surface rounded text-blue-400" x-text="config.Image"></code>
+                </p>
             </div>
 
             <div>
@@ -325,6 +389,7 @@
     function serviceConfig(serviceName) {
         return {
             serviceName: serviceName,
+            enabled: false,
             status: 'unknown',
             config: {
                 Image: '',
@@ -335,6 +400,9 @@
                 }
                 // HostPort is NOT initialized - only added if user explicitly sets it
             },
+            selectedTag: 'latest',
+            availableTags: [],
+            loadingTags: false,
             globalConfig: {},
             errors: {
                 port: '',
@@ -343,6 +411,8 @@
             },
             testing: false,
             saving: false,
+            applying: false,
+            resetting: false,
             actionInProgress: false,
             testResult: null,
             message: '',
@@ -401,6 +471,9 @@
                         const result = await response.json();
                         const data = result.data || result;
                         
+                        // Load enabled state
+                        this.enabled = data.enabled || false;
+                        
                         // Load service configuration
                         if (data.config) {
                             this.config = { 
@@ -408,6 +481,11 @@
                                 ...data.config,
                                 Paths: { ...this.config.Paths, ...(data.config.Paths || {}) }
                             };
+                        }
+                        
+                        // Extract tag from Image
+                        if (this.config.Image && this.config.Image.includes(':')) {
+                            this.selectedTag = this.config.Image.split(':')[1];
                         }
                         
                         // Load proxy configuration
@@ -476,6 +554,160 @@
                     if (!this.config.Paths[key] || this.config.Paths[key].trim() === '') {
                         this.config.Paths[key] = value;
                     }
+                }
+            },
+
+            async toggleService() {
+                if (this.enabled) {
+                    // Enable service
+                    try {
+                        const response = await fetch(`/api/services/${this.serviceName}/enable`, {
+                            method: 'POST'
+                        });
+                        
+                        if (response.ok) {
+                            this.showMessage('Service enabled successfully', 'success');
+                            await this.loadServiceData();
+                        } else {
+                            const data = await response.json();
+                            this.showMessage(data.error || 'Failed to enable service', 'error');
+                            this.enabled = false; // Revert toggle
+                        }
+                    } catch (error) {
+                        this.showMessage('Error: ' + error.message, 'error');
+                        this.enabled = false; // Revert toggle
+                    }
+                } else {
+                    // Disable service (will stop and remove container)
+                    if (!confirm('Disabling will stop and remove the container. Continue?')) {
+                        this.enabled = true; // Revert toggle
+                        return;
+                    }
+                    
+                    try {
+                        const response = await fetch(`/api/services/${this.serviceName}/disable`, {
+                            method: 'POST'
+                        });
+                        
+                        if (response.ok) {
+                            this.showMessage('Service disabled successfully', 'success');
+                            this.status = 'stopped';
+                            await this.loadServiceData();
+                        } else {
+                            const data = await response.json();
+                            this.showMessage(data.error || 'Failed to disable service', 'error');
+                            this.enabled = true; // Revert toggle
+                        }
+                    } catch (error) {
+                        this.showMessage('Error: ' + error.message, 'error');
+                        this.enabled = true; // Revert toggle
+                    }
+                }
+            },
+
+            async loadDockerTags() {
+                this.loadingTags = true;
+                try {
+                    // Extract image name (before :)
+                    const imageName = this.config.Image.split(':')[0];
+                    
+                    // Call API to get tags from Docker Hub
+                    const response = await fetch(`/api/docker/tags?image=${encodeURIComponent(imageName)}`);
+                    
+                    if (response.ok) {
+                        const data = await response.json();
+                        this.availableTags = data.tags || [];
+                        this.showMessage('Tags loaded successfully', 'success');
+                    } else {
+                        this.showMessage('Failed to load tags from Docker Hub', 'error');
+                    }
+                } catch (error) {
+                    this.showMessage('Error loading tags: ' + error.message, 'error');
+                } finally {
+                    this.loadingTags = false;
+                }
+            },
+
+            updateImageTag() {
+                // Extract image name without tag
+                const imageName = this.config.Image.split(':')[0];
+                // Update with selected tag
+                this.config.Image = `${imageName}:${this.selectedTag}`;
+            },
+
+            async applyConfig() {
+                if (!this.validateAll()) {
+                    this.showMessage('Please fix validation errors before applying', 'error');
+                    return;
+                }
+
+                if (!confirm('This will save configuration and recreate the container. Continue?')) {
+                    return;
+                }
+
+                this.applying = true;
+                this.message = '';
+
+                try {
+                    // First save config
+                    const configToSave = { ...this.config };
+                    if (!configToSave.HostPort || configToSave.HostPort === 0) {
+                        delete configToSave.HostPort;
+                    }
+
+                    const saveResponse = await fetch(`/api/services/${this.serviceName}/config`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(configToSave)
+                    });
+
+                    if (!saveResponse.ok) {
+                        const data = await saveResponse.json();
+                        this.showMessage(data.error || 'Failed to save configuration', 'error');
+                        return;
+                    }
+
+                    // Then trigger restart/recreate
+                    const restartResponse = await fetch(`/api/services/${this.serviceName}/restart`, {
+                        method: 'POST'
+                    });
+
+                    if (restartResponse.ok) {
+                        this.showMessage('Configuration applied and container recreated successfully!', 'success');
+                        setTimeout(() => this.loadServiceData(), 2000);
+                    } else {
+                        const data = await restartResponse.json();
+                        this.showMessage(data.error || 'Failed to restart service', 'error');
+                    }
+                } catch (error) {
+                    this.showMessage('Error: ' + error.message, 'error');
+                } finally {
+                    this.applying = false;
+                }
+            },
+
+            async resetConfig() {
+                if (!confirm('This will DELETE all configuration data in the config volume and recreate the container. This action cannot be undone. Continue?')) {
+                    return;
+                }
+
+                this.resetting = true;
+                try {
+                    const response = await fetch(`/api/services/${this.serviceName}/reset`, {
+                        method: 'POST'
+                    });
+
+                    if (response.ok) {
+                        this.showMessage('Configuration reset and container recreated successfully!', 'success');
+                        setTimeout(() => this.loadServiceData(), 2000);
+                    } else {
+                        const data = await response.json();
+                        this.showMessage(data.error || 'Failed to reset configuration', 'error');
+                    }
+                } catch (error) {
+                    this.showMessage('Error: ' + error.message, 'error');
+                } finally {
+                    this.resetting = false;
                 }
             },
 

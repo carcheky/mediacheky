@@ -78,7 +78,7 @@ setup-env:
 		echo "✅ .env already exists"; \
 	fi
 	@echo "📁 Creating required directories..."
-	@mkdir -p volumes/mediacheky-go-modules
+	@mkdir -p tmp
 	@mkdir -p volumes/mediacheky-data
 	@mkdir -p volumes/mediacheky-config
 	@mkdir -p volumes/media-library/downloads
@@ -103,23 +103,29 @@ dev: check-deps setup-env
 	@echo ""
 	@echo "📊 Status:"
 	@echo "  • Environment: Development"
-	@echo "  • URL: http://localhost:8000"
-	@echo "  • Logs: logs/mediacheky-dev.log"
-	@echo "  • Hot-reload: Enabled (via Docker Compose Watch)"
+	@echo "  • URL: http://localhost:7369"
+	@echo "  • Hot-reload: Enabled (Air watches file changes)"
 	@echo ""
 	@echo "💡 Tips:"
 	@echo "  • Press Ctrl+C to stop"
-	@echo "  • Run 'make logs' in another terminal to see logs"
+	@echo "  • Run 'make logs' to see live logs"
 	@echo "  • Run 'make shell' to open a shell in the container"
-	@echo "  • Edit code and it will auto-reload"
+	@echo "  • Edit code and Air will auto-reload (no rebuild needed!)"
+	@echo "  • First start builds image (slow), subsequent starts are instant"
 	@echo ""
 	@echo "Starting containers..."
-	@docker compose up --build --watch
+	@DOCKER_BUILDKIT=1 docker compose up
+
+# Rebuild development image (only needed after Dockerfile changes)
+dev-rebuild:
+	@echo "🔨 Rebuilding development image..."
+	@DOCKER_BUILDKIT=1 docker compose build --no-cache development
+	@echo "✅ Image rebuilt. Run 'make dev' to start"
 
 # Development with Docker Compose Watch (Docker 28+)
 dev-watch:
 	@echo "🚀 Starting development server with Docker Compose Watch..."
-	@docker compose watch
+	@DOCKER_BUILDKIT=1 docker compose watch
 
 # Show development logs
 logs:
