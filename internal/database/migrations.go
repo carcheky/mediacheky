@@ -43,6 +43,10 @@ func RunMigrations(db *gorm.DB) error {
 		return fmt.Errorf("failed to seed templates: %w", err)
 	}
 
+	if err := seedProxyConfig(db); err != nil {
+		return fmt.Errorf("failed to seed proxy config: %w", err)
+	}
+
 	return nil
 }
 
@@ -166,5 +170,38 @@ func seedServices(db *gorm.DB) error {
 	// Services are now created via API when enabled
 	// No need to pre-seed with default configurations
 	log.Println("Service seeding skipped - services created on-demand")
+	return nil
+}
+
+// seedProxyConfig creates default proxy configuration and domains
+func seedProxyConfig(db *gorm.DB) error {
+	// Create default proxy config if doesn't exist
+	var existingConfig models.ProxyConfig
+	result := db.First(&existingConfig)
+	if result.Error == gorm.ErrRecordNotFound {
+		proxyConfig := models.ProxyConfig{
+			Enabled:   true, // Enable by default for development
+			ProxyType: "internal",
+		}
+		if err := db.Create(&proxyConfig).Error; err != nil {
+			return fmt.Errorf("failed to create proxy config: %w", err)
+		}
+		log.Println("Created default proxy config")
+	}
+
+	// Create default docker.internal domain if doesn't exist
+	var existingDomain models.Domain
+	result = db.Where("name = ?", "docker.internal").First(&existingDomain)
+	if result.Error == gorm.ErrRecordNotFound {
+		domain := models.Domain{
+			Name:      "docker.internal",
+			IsPrimary: true,
+		}
+		if err := db.Create(&domain).Error; err != nil {
+			return fmt.Errorf("failed to create docker.internal domain: %w", err)
+		}
+		log.Println("Created default domain: docker.internal")
+	}
+
 	return nil
 }

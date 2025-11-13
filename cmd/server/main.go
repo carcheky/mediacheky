@@ -101,6 +101,10 @@ func main() {
 	app.Use(middleware.RequestID())
 	app.Use(middleware.CORS())
 
+	// Reverse proxy middleware - MUST be before static files and routes
+	// This intercepts requests based on Host header and proxies to services
+	app.Use(middleware.ReverseProxy(repos, appLogger))
+
 	// Static files
 	app.Static("/static", "./web/static")
 
