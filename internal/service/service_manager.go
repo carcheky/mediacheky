@@ -18,6 +18,7 @@ const (
 // ServiceRepository defines the interface for service data access
 type ServiceRepository interface {
 	GetByName(name string) (*models.Service, error)
+	Create(service *models.Service) error
 	Update(service *models.Service) error
 	UpdateStatus(id uint, status string, containerID string) error
 	SetEnabled(id uint, enabled bool) error
@@ -61,10 +62,35 @@ func NewServiceManager(
 func (sm *ServiceManager) EnableService(ctx context.Context, serviceName string) error {
 	sm.logger.Info("Enabling service", zap.String("service", serviceName))
 
-	// Get service from database
+	// Get service from database, create if doesn't exist
 	svc, err := sm.serviceRepo.GetByName(serviceName)
 	if err != nil {
-		return fmt.Errorf("failed to get service: %w", err)
+		if err.Error() == "record not found" || err.Error() == "failed to get service: record not found" {
+			// Create service with default configuration
+			sm.logger.Info("Service not found, creating with defaults", zap.String("service", serviceName))
+			defaultConfig := map[string]interface{}{
+				"Image":         fmt.Sprintf("linuxserver/%s:latest", serviceName),
+				"ContainerName": serviceName,
+				"Paths": map[string]string{
+					"Config": fmt.Sprintf("./volumes/%s/config", serviceName),
+				},
+				"RestartPolicy": "unless-stopped",
+			}
+
+			svc = &models.Service{
+				Name:    serviceName,
+				Enabled: false,
+				Status:  "stopped",
+				Config:  defaultConfig,
+			}
+
+			if err := sm.serviceRepo.Create(svc); err != nil {
+				return fmt.Errorf("failed to create service: %w", err)
+			}
+			sm.logger.Info("Service created successfully", zap.String("service", serviceName))
+		} else {
+			return fmt.Errorf("failed to get service: %w", err)
+		}
 	}
 
 	if svc.Enabled {

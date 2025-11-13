@@ -134,7 +134,7 @@ func seedGlobalConfig(db *gorm.DB) error {
 		{Key: "TZ", Value: "UTC", Category: "system"},
 		{Key: "BASE_PATH", Value: "/data", Category: "paths"},
 		{Key: "CONFIG_PATH", Value: "/config", Category: "paths"},
-		{Key: "MEDIA_PATH", Value: "/media", Category: "paths"},
+		{Key: "MEDIACHEKY_MEDIA_PATH", Value: "/app/volumes", Category: "paths"},
 		{Key: "DOWNLOAD_PATH", Value: "/downloads", Category: "paths"},
 		{Key: "NETWORK_MODE", Value: "bridge", Category: "network"},
 	}
