@@ -138,7 +138,7 @@ func (s *ProxyService) validateDomainName(domain string) error {
 	// Basic domain validation regex
 	// Allows: example.com, sub.example.com, localhost, example.local
 	domainRegex := regexp.MustCompile(`^(?:[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\.)*[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?$`)
-	
+
 	if !domainRegex.MatchString(domain) {
 		return fmt.Errorf("invalid domain format: %s", domain)
 	}
@@ -154,7 +154,7 @@ func (s *ProxyService) validateSubdomain(subdomain string) error {
 
 	// Subdomain validation: alphanumeric and hyphens, must start with letter/number
 	subdomainRegex := regexp.MustCompile(`^[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?$`)
-	
+
 	if !subdomainRegex.MatchString(subdomain) {
 		return fmt.Errorf("invalid subdomain format: %s (use alphanumeric and hyphens only)", subdomain)
 	}

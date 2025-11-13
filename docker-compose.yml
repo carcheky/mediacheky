@@ -7,7 +7,8 @@ services:
       target: development
     container_name: mediacheky-dev
     ports:
-      - "7369:7369"
+      - "${MEDIACHEKY_SERVER_PORT:-7369}:7369"
+      - "${MEDIACHEKY_SERVER_PORT_SSL:-7370}:7370"
     volumes:
       - ./volumes/mediacheky-go-modules:/go/pkg/mod
       - ./volumes/mediacheky-data:/app/data

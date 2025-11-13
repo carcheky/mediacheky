@@ -159,58 +159,33 @@
         <p class="text-sm text-dark-muted mb-6">Container settings, networking, and image configuration</p>
         
         <div class="space-y-4">
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                    <label class="block text-sm font-medium text-dark-text mb-1">
-                        Service Port
-                        <span class="text-red-400">*</span>
-                    </label>
-                    <input type="number" x-model.number="config.Port" 
-                        @input="validateField('port')"
-                        placeholder="7878"
-                        min="1024" max="65535"
-                        class="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-dark-bg text-dark-text"
-                        :class="errors.port ? 'border-red-500' : 'border-dark-border'">
-                    <p x-show="errors.port" class="text-xs text-red-400 mt-1" x-text="errors.port"></p>
-                    <p x-show="!errors.port" class="text-xs text-dark-muted mt-1">Internal service port (1024-65535)</p>
-                </div>
-                
-                <div>
-                    <label class="block text-sm font-medium text-dark-text mb-1">
-                        Docker Image
-                    </label>
-                    <input type="text" x-model="config.Image" placeholder="linuxserver/radarr:latest"
-                        class="w-full px-3 py-2 border border-dark-border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-dark-bg text-dark-text">
-                    <p class="text-xs text-dark-muted mt-1">Docker image to use</p>
-                </div>
+            <div>
+                <label class="block text-sm font-medium text-dark-text mb-1">
+                    Docker Image
+                </label>
+                <input type="text" x-model="config.Image" placeholder="linuxserver/radarr:latest"
+                    class="w-full px-3 py-2 border border-dark-border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-dark-bg text-dark-text">
+                <p class="text-xs text-dark-muted mt-1">Docker image to use</p>
             </div>
 
             <!-- Port Exposure Configuration -->
             <div class="border border-dark-border rounded-lg p-4 bg-dark-bg">
-                <div class="flex items-center justify-between mb-3">
-                    <div>
-                        <h3 class="text-sm font-medium text-dark-text">Expose Port to Host</h3>
-                        <p class="text-xs text-dark-muted mt-1">
-                            By default, services communicate internally via mediacheky-net network.<br>
-                            Enable this to access the service from your browser.
-                        </p>
-                    </div>
-                    <label class="relative inline-flex items-center cursor-pointer">
-                        <input type="checkbox" x-model="config.ExposePort" class="sr-only peer">
-                        <div class="w-11 h-6 bg-gray-600 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-800 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-                    </label>
-                </div>
-                
-                <div x-show="config.ExposePort" x-transition class="mt-3">
+                <div class="mb-3">
+                    <h3 class="text-sm font-medium text-dark-text mb-2">Host Port (Optional)</h3>
+                    <p class="text-xs text-dark-muted mb-3">
+                        By default, services communicate internally via mediacheky-net network.<br>
+                        Set a port number here to expose the service to your host machine.
+                    </p>
+                    
                     <label class="block text-sm font-medium text-dark-text mb-1">
                         Host Port
                     </label>
                     <input type="number" x-model.number="config.HostPort" 
-                        :placeholder="config.Port ? config.Port.toString() : '7878'"
+                        placeholder="Leave empty for internal-only access"
                         min="1024" max="65535"
                         class="w-full px-3 py-2 border border-dark-border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-dark-bg text-dark-text">
                     <p class="text-xs text-dark-muted mt-1">
-                        Port to expose on host (leave empty to use same as service port)
+                        Examples: 7878 for Radarr, 8989 for Sonarr, 8096 for Jellyfin
                     </p>
                 </div>
             </div>
@@ -608,10 +583,8 @@
                 const defaults = {
                     radarr: {
                         Image: 'linuxserver/radarr:latest',
-                        Port: 7878,
                         ContainerName: 'radarr',
-                        ExposePort: false,
-                        HostPort: 0,
+                        HostPort: 0,  // 0 = no port exposure (internal only)
                         Paths: {
                             Config: '/data/config/radarr'
                             // Movies and Downloads are auto-calculated from MEDIACHEKY_MEDIA_PATH
@@ -619,10 +592,8 @@
                     },
                     sonarr: {
                         Image: 'linuxserver/sonarr:latest',
-                        Port: 8989,
                         ContainerName: 'sonarr',
-                        ExposePort: false,
-                        HostPort: 0,
+                        HostPort: 0,  // 0 = no port exposure (internal only)
                         Paths: {
                             Config: '/data/config/sonarr'
                             // TV and Downloads are auto-calculated from MEDIACHEKY_MEDIA_PATH
@@ -636,18 +607,12 @@
                     if (!this.config.Image || this.config.Image.trim() === '') {
                         this.config.Image = serviceDefaults.Image;
                     }
-                    if (!this.config.Port) {
-                        this.config.Port = serviceDefaults.Port;
-                    }
                     if (!this.config.ContainerName || this.config.ContainerName.trim() === '') {
                         this.config.ContainerName = serviceDefaults.ContainerName;
                     }
                     
-                    // FORCE port exposure defaults (ALWAYS set these values)
-                    if (this.config.ExposePort === undefined || this.config.ExposePort === null) {
-                        this.config.ExposePort = serviceDefaults.ExposePort;
-                    }
-                    if (!this.config.HostPort || this.config.HostPort === null) {
+                    // Apply host port default if not set
+                    if (this.config.HostPort === undefined || this.config.HostPort === null) {
                         this.config.HostPort = serviceDefaults.HostPort;
                     }
                     
@@ -664,13 +629,6 @@
                 this.errors[field] = '';
                 
                 switch (field) {
-                    case 'port':
-                        if (!this.config.Port) {
-                            this.errors.port = 'Port is required';
-                        } else if (this.config.Port < 1024 || this.config.Port > 65535) {
-                            this.errors.port = 'Port must be between 1024 and 65535';
-                        }
-                        break;
                     case 'config_path':
                         if (!this.config.Paths.Config || this.config.Paths.Config.trim() === '') {
                             this.errors.config_path = 'Config path is required';
@@ -681,7 +639,6 @@
             },
 
             validateAll() {
-                this.validateField('port');
                 this.validateField('config_path');
                 // Don't validate media_path and downloads_path as they're read-only auto-calculated
                 

@@ -42,8 +42,7 @@ type TemplateData struct {
 	Image         string
 	ContainerName string
 	Port          int
-	ExposePort    bool // Whether to expose port to host
-	HostPort      int  // Port to expose on host (if different from Port)
+	HostPort      int // Port to expose on host (0 or empty = no exposure, >0 = expose this port)
 	Paths         map[string]string
 	Umask         string
 	Network       string
@@ -112,14 +111,18 @@ func (te *TemplateEngine) GenerateCompose(serviceName string, config models.Serv
 
 // needsDynamicCompose returns true if config contains fields requiring template processing.
 func needsDynamicCompose(config models.ServiceConfig) bool {
-	// ExposePort or HostPort set
-	if expose, ok := config["ExposePort"].(bool); ok && expose {
-		return true
-	}
+	// HostPort field exists and is > 0 (port exposure requested)
 	if hostPortFloat, ok := config["HostPort"].(float64); ok && int(hostPortFloat) > 0 {
 		return true
 	}
 	if hostPortInt, ok := config["HostPort"].(int); ok && hostPortInt > 0 {
+		return true
+	}
+	// HostPort exists and is 0 or empty (no port exposure - also needs template to omit ports section)
+	if _, ok := config["HostPort"].(float64); ok {
+		return true
+	}
+	if _, ok := config["HostPort"].(int); ok {
 		return true
 	}
 	// Future: add more conditional triggers here (environment overrides, optional volumes, etc.)
@@ -347,18 +350,13 @@ func (te *TemplateEngine) buildTemplateData(config models.ServiceConfig, globalC
 		data.Port = port
 	}
 
-	// Extract port exposure configuration
-	if exposePort, ok := config["ExposePort"].(bool); ok {
-		data.ExposePort = exposePort
-	} else {
-		data.ExposePort = false // Default: do not expose
-	}
+	// Extract host port configuration (0 = no exposure, >0 = expose this port)
 	if hostPort, ok := config["HostPort"].(float64); ok {
 		data.HostPort = int(hostPort)
 	} else if hostPort, ok := config["HostPort"].(int); ok {
 		data.HostPort = hostPort
 	} else {
-		data.HostPort = 0 // 0 means use service Port
+		data.HostPort = 0 // 0 means no port exposure (internal network only)
 	}
 
 	// Extract paths

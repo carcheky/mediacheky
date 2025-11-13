@@ -10,7 +10,16 @@ services:
       - TZ=Europe/Madrid
     volumes:
       - ${CONFIG_BASE_PATH}/bazarr:/config
-  - ${MEDIACHEKY_MEDIA_PATH}:/MEDIACHEKY_LIBRARY
+      - ${MEDIACHEKY_MEDIA_PATH}:/MEDIACHEKY_LIBRARY
+    extra_hosts:
+      - "radarr.docker.internal:127.0.0.1"
+      - "sonarr.docker.internal:127.0.0.1"
+      - "bazarr.docker.internal:127.0.0.1"
+      - "prowlarr.docker.internal:127.0.0.1"
+      - "lidarr.docker.internal:127.0.0.1"
+      - "overseerr.docker.internal:127.0.0.1"
+      - "jellyfin.docker.internal:127.0.0.1"
+      - "jellyseerr.docker.internal:127.0.0.1"
     restart: unless-stopped
     networks:
       - mediacheky_mediacheky-net
