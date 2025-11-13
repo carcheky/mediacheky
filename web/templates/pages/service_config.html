@@ -156,7 +156,6 @@
             </svg>
             <h2 class="text-xl font-semibold text-dark-text">Docker Configuration</h2>
         </div>
-        <p class="text-sm text-dark-muted mb-6">Container settings, networking, and image configuration</p>
         
         <div class="space-y-4">
             <div>
@@ -165,29 +164,20 @@
                 </label>
                 <input type="text" x-model="config.Image" placeholder="linuxserver/radarr:latest"
                     class="w-full px-3 py-2 border border-dark-border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-dark-bg text-dark-text">
-                <p class="text-xs text-dark-muted mt-1">Docker image to use</p>
+                <p class="text-xs text-dark-muted mt-1">Docker image to use for this service</p>
             </div>
 
-            <!-- Port Exposure Configuration -->
-            <div class="border border-dark-border rounded-lg p-4 bg-dark-bg">
-                <div class="mb-3">
-                    <h3 class="text-sm font-medium text-dark-text mb-2">Host Port (Optional)</h3>
-                    <p class="text-xs text-dark-muted mb-3">
-                        By default, services communicate internally via mediacheky-net network.<br>
-                        Set a port number here to expose the service to your host machine.
-                    </p>
-                    
-                    <label class="block text-sm font-medium text-dark-text mb-1">
-                        Host Port
-                    </label>
-                    <input type="number" x-model.number="config.HostPort" 
-                        placeholder="Leave empty for internal-only access"
-                        min="1024" max="65535"
-                        class="w-full px-3 py-2 border border-dark-border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-dark-bg text-dark-text">
-                    <p class="text-xs text-dark-muted mt-1">
-                        Examples: 7878 for Radarr, 8989 for Sonarr, 8096 for Jellyfin
-                    </p>
-                </div>
+            <div>
+                <label class="block text-sm font-medium text-dark-text mb-1">
+                    Host Port (Optional)
+                </label>
+                <input type="number" x-model.number="config.HostPort" 
+                    placeholder="Leave empty for internal-only access"
+                    min="1024" max="65535"
+                    class="w-full px-3 py-2 border border-dark-border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-dark-bg text-dark-text">
+                <p class="text-xs text-dark-muted mt-1">
+                    Optional: expose service on host (e.g., 7878). Leave empty to use only internal network access via proxy.
+                </p>
             </div>
             
             <div>
@@ -201,197 +191,65 @@
                     <option value="on-failure">On Failure</option>
                     <option value="no">No</option>
                 </select>
+                <p class="text-xs text-dark-muted mt-1">Container restart behavior</p>
             </div>
 
-            <!-- Docker Config Paths -->
             <div>
                 <label class="block text-sm font-medium text-dark-text mb-1">
-                    Config Path
+                    Config Path (Host)
                     <span class="text-red-400">*</span>
                 </label>
                 <input type="text" x-model="config.Paths.Config" 
                     @input="validateField('config_path')"
-                    placeholder="/data/config/radarr"
+                    placeholder="./volumes/radarr/config"
                     class="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-dark-bg text-dark-text"
                     :class="errors.config_path ? 'border-red-500' : 'border-dark-border'">
                 <p x-show="errors.config_path" class="text-xs text-red-400 mt-1" x-text="errors.config_path"></p>
-                <p x-show="!errors.config_path" class="text-xs text-dark-muted mt-1">Host path for service configuration files</p>
+                <p x-show="!errors.config_path" class="text-xs text-dark-muted mt-1">
+                    Path on host machine (outside container) → mapped to <code class="px-1 bg-dark-surface rounded">/config</code> inside container
+                </p>
             </div>
         </div>
     </div>
 
-    <!-- Service Configuration -->
+    <!-- Media Library Information -->
     <div class="bg-dark-surface dark:bg-dark-surface rounded-lg shadow-lg border border-dark-border p-6">
-        <div class="flex items-center gap-2 mb-4">
-            <svg class="w-6 h-6 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+        <div class="flex items-start gap-2">
+            <svg class="w-5 h-5 text-blue-400 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
             </svg>
-            <h2 class="text-xl font-semibold text-dark-text">
-                <span x-text="serviceName.charAt(0).toUpperCase() + serviceName.slice(1)"></span> Configuration
-            </h2>
-        </div>
-        <p class="text-sm text-dark-muted mb-6">Service-specific settings and library paths</p>
-        
-        <div class="space-y-4">
-            <!-- Library Path (Read-only from MEDIACHEKY_MEDIA_PATH) -->
-            <div>
-                <label class="block text-sm font-medium text-dark-text mb-1">
-                    <span x-text="serviceName === 'radarr' ? 'Movies Library' : serviceName === 'sonarr' ? 'TV Shows Library' : 'Media Library'"></span> Path
-                    <span class="ml-2 px-2 py-0.5 text-xs bg-blue-900/50 text-blue-300 rounded">Read-only</span>
-                </label>
-                <div class="relative">
-                    <input type="text" 
-                        :value="globalConfig.MEDIACHEKY_MEDIA_PATH || '/MEDIACHEKY_LIBRARY'"
-                        disabled
-                        readonly
-                        class="w-full px-3 py-2 border border-dark-border rounded-md bg-dark-bg/50 text-dark-muted cursor-not-allowed">
-                    <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
-                        <svg class="w-5 h-5 text-dark-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
-                        </svg>
-                    </div>
-                </div>
-                <p class="text-xs text-dark-muted mt-1 flex items-center gap-1">
-                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                    </svg>
-                    Configured via <code class="px-1 py-0.5 bg-dark-surface rounded text-xs">MEDIACHEKY_MEDIA_PATH</code> environment variable in .env
+            <div class="flex-1">
+                <h3 class="text-sm font-medium text-dark-text mb-2">Media Library Path</h3>
+                <p class="text-xs text-dark-muted mb-3">
+                    Container has access to <code class="px-1 py-0.5 bg-dark-bg rounded text-blue-400">/MEDIACHEKY_LIBRARY</code> 
+                    (configured in Settings → Global Variables)
                 </p>
-            </div>
-
-            <!-- Downloads Path (Read-only, auto-configured) -->
-            <div>
-                <label class="block text-sm font-medium text-dark-text mb-1">
-                    Downloads Path
-                    <span class="ml-2 px-2 py-0.5 text-xs bg-blue-900/50 text-blue-300 rounded">Read-only</span>
-                </label>
-                <div class="relative">
-                    <input type="text" 
-                        :value="(globalConfig.MEDIACHEKY_MEDIA_PATH || '/MEDIACHEKY_LIBRARY') + '/downloads'"
-                        disabled
-                        readonly
-                        class="w-full px-3 py-2 border border-dark-border rounded-md bg-dark-bg/50 text-dark-muted cursor-not-allowed">
-                    <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
-                        <svg class="w-5 h-5 text-dark-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
+                <div class="text-xs font-mono text-dark-muted space-y-1 bg-dark-bg/50 p-3 rounded border border-dark-border">
+                    <div class="flex items-center gap-1">
+                        <svg class="w-3.5 h-3.5 text-yellow-500" fill="currentColor" viewBox="0 0 20 20">
+                            <path d="M2 6a2 2 0 012-2h5l2 2h5a2 2 0 012 2v6a2 2 0 01-2 2H4a2 2 0 01-2-2V6z"></path>
                         </svg>
+                        <span class="text-blue-400">/MEDIACHEKY_LIBRARY/</span>
                     </div>
-                </div>
-                <p class="text-xs text-dark-muted mt-1">Auto-configured within library path</p>
-            </div>
-
-            <!-- Library Structure Info -->
-            <div class="mt-4 p-4 bg-dark-bg/50 border border-dark-border rounded-lg">
-                <div class="flex items-start gap-2">
-                    <svg class="w-5 h-5 text-blue-400 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                    </svg>
-                    <div class="flex-1">
-                        <h4 class="text-sm font-medium text-dark-text mb-2">Library Structure</h4>
-                        <div class="text-xs font-mono text-dark-muted space-y-1">
-                            <div class="flex items-center gap-1">
-                                <svg class="w-3.5 h-3.5 text-yellow-500" fill="currentColor" viewBox="0 0 20 20">
-                                    <path d="M2 6a2 2 0 012-2h5l2 2h5a2 2 0 012 2v6a2 2 0 01-2 2H4a2 2 0 01-2-2V6z"></path>
-                                </svg>
-                                <span class="text-blue-400">/MEDIACHEKY_LIBRARY/</span>
-                            </div>
-                            <div class="ml-6 space-y-1">
-                                <div class="flex items-center gap-1">
-                                    <svg class="w-3.5 h-3.5 text-yellow-500" fill="currentColor" viewBox="0 0 20 20">
-                                        <path d="M2 6a2 2 0 012-2h5l2 2h5a2 2 0 012 2v6a2 2 0 01-2 2H4a2 2 0 01-2-2V6z"></path>
-                                    </svg>
-                                    <span>├── downloads/</span>
-                                </div>
-                                <div class="ml-6 text-dark-muted/70">
-                                    <div>│   ├── incomplete/</div>
-                                    <div>│   ├── movies/</div>
-                                    <div>│   ├── series/</div>
-                                    <div>│   └── {qbittorrent_category}/</div>
-                                </div>
-                                <div class="flex items-center gap-1">
-                                    <svg class="w-3.5 h-3.5 text-yellow-500" fill="currentColor" viewBox="0 0 20 20">
-                                        <path d="M2 6a2 2 0 012-2h5l2 2h5a2 2 0 012 2v6a2 2 0 01-2 2H4a2 2 0 01-2-2V6z"></path>
-                                    </svg>
-                                    <span>└── library/</span>
-                                </div>
-                                <div class="ml-6 text-dark-muted/70">
-                                    <div>    ├── movies/</div>
-                                    <div>    └── series/</div>
-                                </div>
-                            </div>
+                    <div class="ml-6 space-y-1">
+                        <div class="flex items-center gap-1">
+                            <svg class="w-3.5 h-3.5 text-yellow-500" fill="currentColor" viewBox="0 0 20 20">
+                                <path d="M2 6a2 2 0 012-2h5l2 2h5a2 2 0 012 2v6a2 2 0 01-2 2H4a2 2 0 01-2-2V6z"></path>
+                            </svg>
+                            <span>├── downloads/</span>
+                        </div>
+                        <div class="flex items-center gap-1">
+                            <svg class="w-3.5 h-3.5 text-yellow-500" fill="currentColor" viewBox="0 0 20 20">
+                                <path d="M2 6a2 2 0 012-2h5l2 2h5a2 2 0 012 2v6a2 2 0 01-2 2H4a2 2 0 01-2-2V6z"></path>
+                            </svg>
+                            <span>└── library/</span>
+                        </div>
+                        <div class="ml-6 text-dark-muted/70">
+                            <div>    ├── movies/</div>
+                            <div>    └── series/</div>
                         </div>
                     </div>
                 </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Environment Variables -->
-    <div class="bg-dark-surface dark:bg-dark-surface rounded-lg shadow-lg border border-dark-border p-6">
-        <h2 class="text-xl font-semibold text-dark-text mb-4">Environment Variables</h2>
-        <p class="text-sm text-dark-muted mb-4">Values from Global Configuration</p>
-        
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div class="bg-dark-bg rounded-lg p-4 border border-dark-border">
-                <label class="block text-xs font-medium text-dark-muted mb-1">PUID</label>
-                <p class="text-lg font-semibold text-dark-text" x-text="globalConfig.puid || '1000'"></p>
-            </div>
-            
-            <div class="bg-dark-bg rounded-lg p-4 border border-dark-border">
-                <label class="block text-xs font-medium text-dark-muted mb-1">PGID</label>
-                <p class="text-lg font-semibold text-dark-text" x-text="globalConfig.pgid || '1000'"></p>
-            </div>
-            
-            <div class="bg-dark-bg rounded-lg p-4 border border-dark-border">
-                <label class="block text-xs font-medium text-dark-muted mb-1">Timezone</label>
-                <p class="text-lg font-semibold text-dark-text" x-text="globalConfig.timezone || 'UTC'"></p>
-            </div>
-        </div>
-        
-        <div class="mt-4 p-3 bg-blue-900/20 border border-blue-700/50 rounded-lg">
-            <p class="text-sm text-blue-300">
-                💡 These values are inherited from <a href="/global" class="underline hover:text-blue-200">Global Variables</a>
-            </p>
-        </div>
-    </div>
-
-    <!-- Advanced Settings -->
-    <div class="bg-dark-surface dark:bg-dark-surface rounded-lg shadow-lg border border-dark-border p-6">
-        <h2 class="text-xl font-semibold text-dark-text mb-4">Advanced Settings</h2>
-        
-        <div class="space-y-4">
-            <div class="flex items-center justify-between p-4 bg-dark-bg rounded-lg border border-dark-border">
-                <div>
-                    <h3 class="font-medium text-dark-text">VPN Routing</h3>
-                    <p class="text-sm text-dark-muted">Route traffic through VPN container</p>
-                </div>
-                <label class="flex items-center cursor-pointer">
-                    <input type="checkbox" x-model="config.use_vpn" class="sr-only peer">
-                    <div class="relative w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600">
-                    </div>
-                </label>
-            </div>
-            
-            <div class="flex items-center justify-between p-4 bg-dark-bg rounded-lg border border-dark-border">
-                <div>
-                    <h3 class="font-medium text-dark-text">Custom Network</h3>
-                    <p class="text-sm text-dark-muted">Use custom Docker network</p>
-                </div>
-                <label class="flex items-center cursor-pointer">
-                    <input type="checkbox" x-model="config.custom_network" class="sr-only peer">
-                    <div class="relative w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600">
-                    </div>
-                </label>
-            </div>
-            
-            <div x-show="config.custom_network" x-transition>
-                <label class="block text-sm font-medium text-dark-text mb-1">
-                    Network Name
-                </label>
-                <input type="text" x-model="config.Network" 
-                    :placeholder="globalConfig.network_name || 'mediacheky-network'"
-                    class="w-full px-3 py-2 border border-dark-border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-dark-bg text-dark-text">
             </div>
         </div>
     </div>
@@ -469,19 +327,13 @@
             serviceName: serviceName,
             status: 'unknown',
             config: {
-                Port: null,
                 Image: '',
                 ContainerName: '',
                 RestartPolicy: 'unless-stopped',
                 Paths: {
-                    Config: '',
-                    Movies: '',
-                    Downloads: ''
-                },
-                Umask: '',
-                Network: '',
-                use_vpn: false,
-                custom_network: false
+                    Config: ''
+                }
+                // HostPort is NOT initialized - only added if user explicitly sets it
             },
             globalConfig: {},
             errors: {
@@ -566,16 +418,14 @@
                             this.proxyConfig.domain = data.domain || '';
                         }
                         
-                        // Set defaults for empty fields based on service type
-                        this.setDefaults();
-                        
                         this.status = data.status || 'stopped';
                     }
                 } catch (error) {
                     console.error('Error loading service data:', error);
-                    // Even on error, set defaults
-                    this.setDefaults();
                 }
+                
+                // ALWAYS set defaults after loading (fills empty fields)
+                this.setDefaults();
             },
 
             setDefaults() {
@@ -584,43 +434,47 @@
                     radarr: {
                         Image: 'linuxserver/radarr:latest',
                         ContainerName: 'radarr',
-                        HostPort: 0,  // 0 = no port exposure (internal only)
+                        RestartPolicy: 'unless-stopped',
                         Paths: {
-                            Config: '/data/config/radarr'
-                            // Movies and Downloads are auto-calculated from MEDIACHEKY_MEDIA_PATH
+                            Config: './volumes/radarr/config'
                         }
+                        // NO HostPort default - omit field to use static compose
                     },
                     sonarr: {
                         Image: 'linuxserver/sonarr:latest',
                         ContainerName: 'sonarr',
-                        HostPort: 0,  // 0 = no port exposure (internal only)
+                        RestartPolicy: 'unless-stopped',
                         Paths: {
-                            Config: '/data/config/sonarr'
-                            // TV and Downloads are auto-calculated from MEDIACHEKY_MEDIA_PATH
+                            Config: './volumes/sonarr/config'
                         }
+                        // NO HostPort default - omit field to use static compose
                     }
                 };
 
                 const serviceDefaults = defaults[this.serviceName.toLowerCase()];
-                if (serviceDefaults) {
-                    // Apply defaults only if field is empty
-                    if (!this.config.Image || this.config.Image.trim() === '') {
-                        this.config.Image = serviceDefaults.Image;
-                    }
-                    if (!this.config.ContainerName || this.config.ContainerName.trim() === '') {
-                        this.config.ContainerName = serviceDefaults.ContainerName;
-                    }
-                    
-                    // Apply host port default if not set
-                    if (this.config.HostPort === undefined || this.config.HostPort === null) {
-                        this.config.HostPort = serviceDefaults.HostPort;
-                    }
-                    
-                    // Apply path defaults
-                    for (const [key, value] of Object.entries(serviceDefaults.Paths)) {
-                        if (!this.config.Paths[key] || this.config.Paths[key].trim() === '') {
-                            this.config.Paths[key] = value;
-                        }
+                if (!serviceDefaults) return;
+
+                // Apply defaults only if field is empty or missing
+                if (!this.config.Image || this.config.Image.trim() === '') {
+                    this.config.Image = serviceDefaults.Image;
+                }
+                if (!this.config.ContainerName || this.config.ContainerName.trim() === '') {
+                    this.config.ContainerName = serviceDefaults.ContainerName;
+                }
+                if (!this.config.RestartPolicy || this.config.RestartPolicy.trim() === '') {
+                    this.config.RestartPolicy = serviceDefaults.RestartPolicy;
+                }
+                
+                // DO NOT set default HostPort - let it be undefined
+                // If user wants port exposure, they must explicitly set it
+                
+                // Apply path defaults - ALWAYS apply if empty
+                if (!this.config.Paths) {
+                    this.config.Paths = {};
+                }
+                for (const [key, value] of Object.entries(serviceDefaults.Paths)) {
+                    if (!this.config.Paths[key] || this.config.Paths[key].trim() === '') {
+                        this.config.Paths[key] = value;
                     }
                 }
             },
@@ -689,14 +543,11 @@
                 this.message = '';
 
                 try {
-                    // Auto-calculate Downloads path from MEDIACHEKY_MEDIA_PATH
-                    const configToSave = {
-                        ...this.config,
-                        Paths: {
-                            ...this.config.Paths,
-                            Downloads: (this.globalConfig.MEDIACHEKY_MEDIA_PATH || '/MEDIACHEKY_LIBRARY') + '/downloads'
-                        }
-                    };
+                    // Prepare config - remove HostPort if empty/0 (use static compose instead)
+                    const configToSave = { ...this.config };
+                    if (!configToSave.HostPort || configToSave.HostPort === 0) {
+                        delete configToSave.HostPort;
+                    }
 
                     const response = await fetch(`/api/services/${this.serviceName}/config`, {
                         method: 'PUT',

@@ -393,12 +393,31 @@ func (sm *ServiceManager) UpdateServiceConfig(ctx context.Context, serviceName s
 
 		// If exposure settings changed, restart to apply port mapping
 		if prevExpose != newExpose || prevHostPort != newHostPort {
-			sm.logger.Info("Port exposure settings changed, restarting service to apply", zap.String("service", serviceName))
-			if err := sm.RestartService(ctx, serviceName); err != nil {
-				sm.logAction(svc.ID, "config_update", "warning", fmt.Sprintf("Compose regenerated but restart failed: %v", err))
-				return fmt.Errorf("compose regenerated but failed to restart service: %w", err)
+			sm.logger.Info("Port exposure settings changed, recreating service to apply", zap.String("service", serviceName))
+
+			// Recreate service instead of restart (avoid docker compose down issues)
+			composePath := sm.templateEngine.GetComposePath(serviceName)
+			globalConfig, err := sm.templateEngine.LoadGlobalConfigPublic()
+			if err != nil {
+				sm.logAction(svc.ID, "config_update", "warning", fmt.Sprintf("Compose regenerated but failed to load config: %v", err))
+				return fmt.Errorf("compose regenerated but failed to load global config: %w", err)
 			}
-			sm.logAction(svc.ID, "config_update", "success", "Configuration updated, compose regenerated and service restarted (port changes applied)")
+
+			// Force recreate the container with new settings
+			result, err := sm.dockerCompose.ComposeUpRecreate(ctx, composePath, globalConfig)
+			if err != nil {
+				errMsg := fmt.Sprintf("Compose regenerated but recreate failed: %v | Output: %s | Error: %s",
+					err, result.Output, result.Error)
+				sm.logger.Error("Failed to recreate service",
+					zap.String("service", serviceName),
+					zap.String("output", result.Output),
+					zap.String("error", result.Error),
+					zap.Error(err))
+				sm.logAction(svc.ID, "config_update", "warning", errMsg)
+				return fmt.Errorf("compose regenerated but failed to recreate service: %s", errMsg)
+			}
+
+			sm.logAction(svc.ID, "config_update", "success", fmt.Sprintf("Configuration updated and service recreated (port changes applied): %s", result.Output))
 		} else {
 			sm.logAction(svc.ID, "config_update", "success", "Configuration updated and compose file regenerated")
 		}

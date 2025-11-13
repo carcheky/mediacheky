@@ -103,6 +103,16 @@ func (te *TemplateEngine) GenerateCompose(serviceName string, config models.Serv
 	if _, err := os.Stat(composePath); err != nil {
 		return "", fmt.Errorf("static compose file not found for service %s: %w", serviceName, err)
 	}
+
+	// Delete any dynamic compose file that may exist (avoid using stale generated files)
+	dynamicPath := filepath.Join(te.servicesDir, serviceName, "docker-compose.yml")
+	if _, err := os.Stat(dynamicPath); err == nil {
+		te.logger.Info("Removing stale dynamic compose file (using static instead)",
+			zap.String("service", serviceName),
+			zap.String("dynamic_path", dynamicPath))
+		os.Remove(dynamicPath) // Ignore errors - file may not exist
+	}
+
 	te.logger.Info("Using static compose file",
 		zap.String("service", serviceName),
 		zap.String("path", composePath))
@@ -326,6 +336,11 @@ func (te *TemplateEngine) loadTemplate(serviceName string) (string, error) {
 
 // buildTemplateData builds the template data from service config and global config
 func (te *TemplateEngine) buildTemplateData(config models.ServiceConfig, globalConfig GlobalConfig) (TemplateData, error) {
+	// Debug: Log input config
+	te.logger.Info("Building template data",
+		zap.Any("config", config),
+		zap.Any("config_paths", config["Paths"]))
+
 	data := TemplateData{
 		Global: globalConfig,
 		Custom: make(map[string]interface{}),
@@ -367,6 +382,21 @@ func (te *TemplateEngine) buildTemplateData(config models.ServiceConfig, globalC
 				data.Paths[k] = strVal
 			}
 		}
+		te.logger.Info("Extracted paths from config",
+			zap.Any("paths_interface", paths),
+			zap.Any("paths_string", data.Paths))
+	} else {
+		te.logger.Warn("Paths field missing or wrong type",
+			zap.Any("paths_value", config["Paths"]),
+			zap.String("paths_type", fmt.Sprintf("%T", config["Paths"])))
+	}
+
+	// Validate required paths for compose generation
+	if data.Paths == nil || len(data.Paths) == 0 {
+		return data, fmt.Errorf("paths configuration is missing - at least Config path is required")
+	}
+	if data.Paths["Config"] == "" {
+		return data, fmt.Errorf("Config path is required but was empty")
 	}
 
 	// Extract optional fields

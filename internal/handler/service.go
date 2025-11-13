@@ -330,6 +330,12 @@ func (h *ServiceHandler) UpdateServiceConfig(c *fiber.Ctx) error {
 		})
 	}
 
+	// Debug: Log received configuration
+	h.logger.Info("Received config update",
+		"name", name,
+		"config", configUpdate,
+		"paths", configUpdate["Paths"])
+
 	// Check if service manager is available
 	if h.serviceManager == nil {
 		return c.Status(fiber.StatusServiceUnavailable).JSON(APIResponse{
