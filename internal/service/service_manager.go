@@ -262,8 +262,9 @@ func (sm *ServiceManager) StopService(ctx context.Context, serviceName string) e
 		return fmt.Errorf("failed to load global config: %w", err)
 	}
 
-	// Execute docker compose down with config variables
-	result, err := sm.dockerCompose.ComposeDown(ctx, composePath, globalConfig)
+	// Execute docker compose stop (preserves container for auto-restart)
+	// Use stop instead of down to allow Docker restart policy to work
+	result, err := sm.dockerCompose.ComposeStop(ctx, composePath, globalConfig)
 	if err != nil {
 		sm.logAction(svc.ID, "stop", "error", fmt.Sprintf("Failed to stop: %v", err))
 		return fmt.Errorf("failed to stop service: %w", err)
@@ -554,7 +555,7 @@ func (sm *ServiceManager) AutoStartEnabledServices() error {
 		}
 
 		if svc.Enabled {
-			// Service is enabled → start it
+			// Service is enabled → always start it
 			sm.logger.Info("Auto-starting enabled service",
 				zap.String("service", serviceName))
 
@@ -567,9 +568,9 @@ func (sm *ServiceManager) AutoStartEnabledServices() error {
 				continue
 			}
 
-			// Start container
+			// Start container (docker compose up is idempotent - won't recreate if already running)
 			ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
-			result, err := sm.dockerCompose.ComposeUpRecreate(ctx, composePath, nil, serviceName)
+			result, err := sm.dockerCompose.ComposeUp(ctx, composePath, map[string]string{})
 			cancel()
 
 			if err != nil {
