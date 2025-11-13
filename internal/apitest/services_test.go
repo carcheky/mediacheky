@@ -22,8 +22,8 @@ func TestServiceEndpoints(t *testing.T) {
 		AssertStatusCode(t, resp, fiber.StatusOK)
 		result := AssertAPISuccess(t, resp)
 
-		services, ok := result["data"].([]interface{})
-		require.True(t, ok, "data should be an array")
+		require.IsType(t, []interface{}{}, result["data"], "data should be an array")
+		services := result["data"].([]interface{})
 		assert.GreaterOrEqual(t, len(services), 5, "should have at least 5 test services")
 	})
 
@@ -69,8 +69,12 @@ func TestServiceEndpoints(t *testing.T) {
 	t.Run("Enable service without containers", func(t *testing.T) {
 		resp := DoRequest(t, ta.App, POST("/api/services/jellyfin/enable", nil))
 
-		// May succeed or fail based on compose file availability
-		// In test environment, compose files may not exist
+		// Test enabling a service when Docker Compose files or containers may not exist in the test environment.
+		// Acceptable status codes:
+		//   - StatusOK: The operation succeeded (e.g., if the service is enabled in the database or the compose file exists).
+		//   - StatusInternalServerError or StatusServiceUnavailable: The operation failed due to missing Docker Compose files or containers,
+		//     which is expected in the test environment where actual Docker resources may not be present.
+		// This test ensures the API handles both success and expected error scenarios gracefully.
 		assert.Contains(t, []int{fiber.StatusOK, fiber.StatusInternalServerError, fiber.StatusServiceUnavailable}, resp.StatusCode)
 	})
 

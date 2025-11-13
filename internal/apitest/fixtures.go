@@ -2,6 +2,7 @@ package apitest
 
 import (
 	"github.com/carcheky/mediacheky/internal/models"
+	"gorm.io/gorm"
 )
 
 // SeedTestServices creates test services in the database
@@ -142,10 +143,10 @@ func GetTestGlobalConfig(ta *TestApp, key string) (*models.GlobalConfig, error) 
 
 // ClearTestServices removes all services from the test database
 func ClearTestServices(ta *TestApp) error {
-	return ta.DB.Unscoped().Delete(&models.Service{}, "1=1").Error
+	return ta.DB.Unscoped().Session(&gorm.Session{AllowGlobalUpdate: true}).Delete(&models.Service{}).Error
 }
 
 // ClearTestGlobalConfig removes all global config from the test database
 func ClearTestGlobalConfig(ta *TestApp) error {
-	return ta.DB.Unscoped().Delete(&models.GlobalConfig{}, "1=1").Error
+	return ta.DB.Unscoped().Session(&gorm.Session{AllowGlobalUpdate: true}).Delete(&models.GlobalConfig{}).Error
 }

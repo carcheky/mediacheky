@@ -180,7 +180,9 @@ func (ta *TestApp) Cleanup() {
 	if ta.DB != nil {
 		sqlDB, err := ta.DB.DB()
 		if err == nil {
-			sqlDB.Close()
+			if cerr := sqlDB.Close(); cerr != nil {
+				ta.Logger.Warn("Error closing test database", "error", cerr)
+			}
 		}
 	}
 }

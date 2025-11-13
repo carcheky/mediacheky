@@ -56,7 +56,8 @@ func TestProxyEndpoints(t *testing.T) {
 
 		resp := DoRequest(t, ta.App, PUT("/api/proxy/config", updateData))
 
-		// Should accept the update or return error based on validation
+		// The endpoint may succeed, fail validation, or return errors depending on the test environment
+		// (e.g., missing proxy config, invalid input, or internal error). Accept multiple status codes.
 		assert.Contains(t, []int{fiber.StatusOK, fiber.StatusBadRequest, fiber.StatusNotFound, fiber.StatusInternalServerError}, resp.StatusCode)
 	})
 

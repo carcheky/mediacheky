@@ -25,7 +25,6 @@ type HTTPRequest struct {
 type HTTPResponse struct {
 	StatusCode int
 	Body       []byte
-	Response   *httptest.ResponseRecorder
 }
 
 // DoRequest executes an HTTP request against the test app
@@ -77,7 +76,6 @@ func DoRequest(t *testing.T, app *fiber.App, req HTTPRequest) *HTTPResponse {
 	return &HTTPResponse{
 		StatusCode: resp.StatusCode,
 		Body:       bodyBytes,
-		Response:   nil,
 	}
 }
 
