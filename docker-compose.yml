@@ -42,19 +42,6 @@ services:
       - MEDIACHEKY_SERVER_PORT=${MEDIACHEKY_SERVER_PORT:-7369}
       - MEDIACHEKY_DATABASE_TYPE=${MEDIACHEKY_DATABASE_TYPE:-sqlite}
       - MEDIACHEKY_DATABASE_PATH=${MEDIACHEKY_DATABASE_PATH:-/app/data/mediacheky.db}
-    develop:
-      watch:
-        # Rebuild on go.mod changes or source code updates
-        - path: ./go.mod
-          action: rebuild
-        - path: ./go.sum
-          action: rebuild
-        - path: ./cmd
-          action: rebuild
-        - path: ./internal
-          action: rebuild
-        - path: ./pkg
-          action: rebuild
     networks:
       - mediacheky-net
     restart: unless-stopped
