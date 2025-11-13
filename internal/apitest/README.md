@@ -5,6 +5,7 @@ This package provides a comprehensive testing framework for MediaCheky's REST AP
 ## Overview
 
 The API testing framework provides:
+
 - **Automated test setup** with in-memory SQLite database
 - **Request helpers** for common HTTP operations
 - **Response assertions** for validating API responses
@@ -14,21 +15,25 @@ The API testing framework provides:
 ## Running Tests
 
 ### Run all API tests
+
 ```bash
 go test ./internal/apitest/...
 ```
 
 ### Run with verbose output
+
 ```bash
 go test -v ./internal/apitest/...
 ```
 
 ### Run specific test
+
 ```bash
 go test -v ./internal/apitest/ -run TestHealthEndpoint
 ```
 
 ### Run all tests (including API tests)
+
 ```bash
 make test
 ```
@@ -41,30 +46,30 @@ make test
 package apitest
 
 import (
-	"testing"
-	"github.com/gofiber/fiber/v2"
-	"github.com/stretchr/testify/assert"
+  "testing"
+  "github.com/gofiber/fiber/v2"
+  "github.com/stretchr/testify/assert"
 )
 
 func TestMyEndpoint(t *testing.T) {
-	// Setup test app with database
-	ta := SetupTestApp(t)
-	defer ta.Cleanup()
+  // Setup test app with database
+  ta := SetupTestApp(t)
+  defer ta.Cleanup()
 
-	// Seed test data if needed
-	require.NoError(t, SeedTestServices(ta))
+  // Seed test data if needed
+  require.NoError(t, SeedTestServices(ta))
 
-	t.Run("My test case", func(t *testing.T) {
-		// Make request
-		resp := DoRequest(t, ta.App, GET("/api/my-endpoint"))
+  t.Run("My test case", func(t *testing.T) {
+    // Make request
+    resp := DoRequest(t, ta.App, GET("/api/my-endpoint"))
 
-		// Assert response
-		AssertStatusCode(t, resp, fiber.StatusOK)
-		result := AssertAPISuccess(t, resp)
+    // Assert response
+    AssertStatusCode(t, resp, fiber.StatusOK)
+    result := AssertAPISuccess(t, resp)
 
-		// Additional assertions
-		assert.NotNil(t, result["data"])
-	})
+    // Additional assertions
+    assert.NotNil(t, result["data"])
+  })
 }
 ```
 
@@ -88,13 +93,13 @@ resp := DoRequest(t, ta.App, DELETE("/api/endpoint"))
 
 // Request with custom headers
 resp := DoRequest(t, ta.App, 
-	GET("/api/endpoint").WithHeaders(map[string]string{
-		"Authorization": "Bearer token",
-	}))
+  GET("/api/endpoint").WithHeaders(map[string]string{
+    "Authorization": "Bearer token",
+  }))
 
 // Request with custom content type
 resp := DoRequest(t, ta.App, 
-	POST("/api/endpoint", body).WithContentType("application/xml"))
+  POST("/api/endpoint", body).WithContentType("application/xml"))
 ```
 
 ### Response Assertions
@@ -154,53 +159,61 @@ Tests are organized by API domain:
 ## Best Practices
 
 ### 1. Use Sub-tests
+
 Group related tests using `t.Run()`:
+
 ```go
 func TestMyFeature(t *testing.T) {
-	ta := SetupTestApp(t)
-	defer ta.Cleanup()
+  ta := SetupTestApp(t)
+  defer ta.Cleanup()
 
-	t.Run("First scenario", func(t *testing.T) {
-		// Test code
-	})
+  t.Run("First scenario", func(t *testing.T) {
+    // Test code
+  })
 
-	t.Run("Second scenario", func(t *testing.T) {
-		// Test code
-	})
+  t.Run("Second scenario", func(t *testing.T) {
+    // Test code
+  })
 }
 ```
 
 ### 2. Clean Up Resources
+
 Always defer cleanup:
+
 ```go
 ta := SetupTestApp(t)
 defer ta.Cleanup()
 ```
 
 ### 3. Test Both Success and Error Cases
+
 ```go
 t.Run("Success case", func(t *testing.T) {
-	resp := DoRequest(t, ta.App, GET("/api/valid"))
-	AssertStatusCode(t, resp, fiber.StatusOK)
-	AssertAPISuccess(t, resp)
+  resp := DoRequest(t, ta.App, GET("/api/valid"))
+  AssertStatusCode(t, resp, fiber.StatusOK)
+  AssertAPISuccess(t, resp)
 })
 
 t.Run("Error case - not found", func(t *testing.T) {
-	resp := DoRequest(t, ta.App, GET("/api/invalid"))
-	AssertStatusCode(t, resp, fiber.StatusNotFound)
-	AssertAPIError(t, resp)
+  resp := DoRequest(t, ta.App, GET("/api/invalid"))
+  AssertStatusCode(t, resp, fiber.StatusNotFound)
+  AssertAPIError(t, resp)
 })
 ```
 
 ### 4. Use Descriptive Test Names
+
 ```go
 t.Run("Get service returns correct data for radarr", func(t *testing.T) {
-	// Test code
+  // Test code
 })
 ```
 
 ### 5. Verify Data Persistence
+
 After updates, verify the changes persisted to the database:
+
 ```go
 // Update
 resp := DoRequest(t, ta.App, PUT("/api/config/global/TZ", updateData))
@@ -219,18 +232,18 @@ To add new test fixtures, edit `fixtures.go`:
 ```go
 // Add new seeding function
 func SeedTestMedia(ta *TestApp) error {
-	media := []models.Media{
-		{Title: "Movie 1", Type: "movie"},
-		{Title: "Series 1", Type: "series"},
-	}
+  media := []models.Media{
+    {Title: "Movie 1", Type: "movie"},
+    {Title: "Series 1", Type: "series"},
+  }
 
-	for _, m := range media {
-		if err := ta.DB.Create(&m).Error; err != nil {
-			return err
-		}
-	}
+  for _, m := range media {
+    if err := ta.DB.Create(&m).Error; err != nil {
+      return err
+    }
+  }
 
-	return nil
+  return nil
 }
 ```
 
@@ -241,15 +254,16 @@ To add new helper functions, edit `helpers.go`:
 ```go
 // Add custom assertion
 func AssertServiceEnabled(t *testing.T, resp *HTTPResponse) {
-	result := AssertAPISuccess(t, resp)
-	data := result["data"].(map[string]interface{})
-	assert.True(t, data["enabled"].(bool))
+  result := AssertAPISuccess(t, resp)
+  data := result["data"].(map[string]interface{})
+  assert.True(t, data["enabled"].(bool))
 }
 ```
 
 ## CI/CD Integration
 
 These tests are designed to run in CI/CD without any special setup:
+
 - No external dependencies required
 - No Docker daemon needed
 - In-memory database (no file system writes)
@@ -258,19 +272,24 @@ These tests are designed to run in CI/CD without any special setup:
 ## Troubleshooting
 
 ### Tests fail with "database connection" errors
+
 Ensure GORM and SQLite driver are properly imported:
+
 ```go
 import (
-	"gorm.io/driver/sqlite"
-	"gorm.io/gorm"
+  "gorm.io/driver/sqlite"
+  "gorm.io/gorm"
 )
 ```
 
 ### Tests fail with "handler not found"
+
 Verify the route is properly registered in `setupTestRoutes()` in `setup.go`.
 
 ### JSON unmarshaling errors
+
 Use `AssertJSONResponse()` which provides better error messages:
+
 ```go
 var data MyStruct
 AssertJSONResponse(t, resp, &data)  // Shows response body on error
@@ -279,8 +298,10 @@ AssertJSONResponse(t, resp, &data)  // Shows response body on error
 ## Future Enhancements
 
 Potential improvements to the testing framework:
+
 - Add support for authenticated requests
 - Mock external service calls (Jellyfin, Radarr, etc.)
 - Add performance/load testing utilities
 - Generate test coverage reports
 - Add integration tests with Docker containers
+

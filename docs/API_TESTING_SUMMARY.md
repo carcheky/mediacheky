@@ -1,11 +1,13 @@
 # API Testing System - Summary
 
 ## Overview
+
 This document summarizes the API testing system implemented for MediaCheky.
 
 ## What Was Implemented
 
 ### 1. Test Infrastructure (`internal/apitest`)
+
 A complete testing framework for API endpoints with:
 
 - **Setup Module** (`setup.go`): Test application initialization with in-memory database
@@ -15,6 +17,7 @@ A complete testing framework for API endpoints with:
 ### 2. Test Coverage
 
 #### Core Tests Implemented
+
 - **Health Endpoint** (`health_test.go`): 2 test cases
   - Health check returns healthy status
   - Health check includes timestamp
@@ -23,7 +26,7 @@ A complete testing framework for API endpoints with:
   - List all services
   - Get specific services (radarr, sonarr)
   - Service enable/disable operations
-  - Container start/stop/restart operations  
+  - Container start/stop/restart operations
   - Service configuration updates
   - Error handling (invalid names, non-existent services)
 
@@ -52,6 +55,7 @@ A complete testing framework for API endpoints with:
 ### 3. Test Features
 
 #### Request Helpers
+
 ```go
 GET("/api/endpoint")
 POST("/api/endpoint", body)
@@ -61,6 +65,7 @@ PATCH("/api/endpoint", body)
 ```
 
 #### Assertion Helpers
+
 ```go
 AssertStatusCode(t, resp, 200)
 AssertAPISuccess(t, resp)
@@ -69,6 +74,7 @@ AssertJSONResponse(t, resp, &data)
 ```
 
 #### Fixtures
+
 ```go
 SeedTestServices(ta)
 SeedTestGlobalConfig(ta)
@@ -77,7 +83,9 @@ GetTestService(ta, "name")
 ```
 
 ### 4. Documentation
+
 Complete README.md in `internal/apitest/` with:
+
 - Quick start guide
 - How to write new tests
 - Request and assertion helper usage
@@ -86,17 +94,20 @@ Complete README.md in `internal/apitest/` with:
 
 ## Test Execution
 
-### Run API tests only:
+### Run API tests only
+
 ```bash
 go test ./internal/apitest/...
 ```
 
-### Run all tests:
+### Run all tests
+
 ```bash
 make test
 ```
 
-### Run with verbose output:
+### Run with verbose output
+
 ```bash
 go test -v ./internal/apitest/...
 ```
@@ -121,6 +132,7 @@ All 39+ test cases passing ✅
 ## Future Enhancements
 
 Potential improvements documented in the README:
+
 - Add support for authenticated requests
 - Mock external service calls (Jellyfin, Radarr, etc.)
 - Add performance/load testing utilities
@@ -155,3 +167,4 @@ Potential improvements documented in the README:
 ✅ Implemented system for adding future tests (documented in README)
 
 The testing system is production-ready and can be integrated into CI/CD pipelines.
+
