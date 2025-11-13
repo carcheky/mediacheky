@@ -10,6 +10,12 @@ import (
 	"github.com/carcheky/mediacheky/pkg/logger"
 )
 
+// Compile regex patterns once at package level for better performance
+var (
+	domainRegex    = regexp.MustCompile(`^(?:[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\.)*[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?$`)
+	subdomainRegex = regexp.MustCompile(`^[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?$`)
+)
+
 // ProxyService handles proxy configuration and management
 type ProxyService struct {
 	repos  *repository.Repositories
@@ -131,38 +137,35 @@ func (s *ProxyService) GetServiceEndpoint(serviceName string) (string, error) {
 
 // validateDomainName validates a domain name format
 func (s *ProxyService) validateDomainName(domain string) error {
-	if domain == "" {
-		return fmt.Errorf("domain name cannot be empty")
-	}
+if domain == "" {
+return fmt.Errorf("domain name cannot be empty")
+}
 
-	// Basic domain validation regex
-	// Allows: example.com, sub.example.com, localhost, example.local
-	domainRegex := regexp.MustCompile(`^(?:[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\.)*[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?$`)
+// Use pre-compiled regex pattern for better performance
+if !domainRegex.MatchString(domain) {
+return fmt.Errorf("invalid domain format: %s", domain)
+}
 
-	if !domainRegex.MatchString(domain) {
-		return fmt.Errorf("invalid domain format: %s", domain)
-	}
-
-	return nil
+return nil
 }
 
 // validateSubdomain validates a subdomain format
 func (s *ProxyService) validateSubdomain(subdomain string) error {
-	if subdomain == "" {
-		return fmt.Errorf("subdomain cannot be empty")
-	}
-
-	// Subdomain validation: alphanumeric and hyphens, must start with letter/number
-	subdomainRegex := regexp.MustCompile(`^[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?$`)
-
-	if !subdomainRegex.MatchString(subdomain) {
-		return fmt.Errorf("invalid subdomain format: %s (use alphanumeric and hyphens only)", subdomain)
-	}
-
-	return nil
+if subdomain == "" {
+return fmt.Errorf("subdomain cannot be empty")
 }
 
+// Use pre-compiled regex pattern for better performance
+if !subdomainRegex.MatchString(subdomain) {
+return fmt.Errorf("invalid subdomain format: %s (use alphanumeric and hyphens only)", subdomain)
+}
+
+return nil
+}
 // GenerateTraefikConfig generates Traefik configuration for enabled services
+// TODO: This is a placeholder implementation. Actual Traefik label generation
+// and dynamic configuration file creation will be implemented in a future PR.
+// Currently only generates comments for debugging purposes.
 func (s *ProxyService) GenerateTraefikConfig() (string, error) {
 	// Get all enabled services
 	services, err := s.repos.Service.GetAll()

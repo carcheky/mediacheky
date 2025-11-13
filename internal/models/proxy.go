@@ -17,9 +17,6 @@ type ProxyConfig struct {
 	ProxyType string `json:"proxy_type" gorm:"default:'traefik'"` // traefik, nginx, caddy
 	Enabled   bool   `json:"enabled" gorm:"default:false"`        // Whether proxy is enabled
 
-	// Global domains configuration
-	Domains string `json:"domains" gorm:"type:text"` // Comma-separated list of domains
-
 	// SSL/TLS configuration
 	SSLEnabled bool   `json:"ssl_enabled" gorm:"default:false"`
 	SSLEmail   string `json:"ssl_email"` // Email for Let's Encrypt
