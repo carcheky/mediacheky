@@ -228,19 +228,19 @@ services:
 	// We're testing that nil context doesn't cause a panic and is handled properly
 	emptyConfig := map[string]string{}
 	assert.NotPanics(t, func() {
-		_, _ = dcc.ComposeUp(nil, composePath, emptyConfig)
-	}, "ComposeUp with nil context should not panic")
+		_, _ = dcc.ComposeUp(context.TODO(), composePath, emptyConfig)
+	}, "ComposeUp with context.TODO should not panic")
 
 	assert.NotPanics(t, func() {
-		_, _ = dcc.ComposeDown(nil, composePath, emptyConfig)
-	}, "ComposeDown with nil context should not panic")
+		_, _ = dcc.ComposeDown(context.TODO(), composePath, emptyConfig)
+	}, "ComposeDown with context.TODO should not panic")
 
 	assert.NotPanics(t, func() {
-		_, _ = dcc.ComposeRestart(nil, composePath, "test")
-	}, "ComposeRestart with nil context should not panic")
+		_, _ = dcc.ComposeRestart(context.TODO(), composePath, "test")
+	}, "ComposeRestart with context.TODO should not panic")
 
 	assert.NotPanics(t, func() {
-		_, _ = dcc.ComposeLogs(nil, composePath, "test", 10)
+		_, _ = dcc.ComposeLogs(context.TODO(), composePath, "test", 10)
 	}, "ComposeLogs with nil context should not panic")
 }
 

@@ -55,7 +55,7 @@ MediaCheky es el panel de control centralizado que gestiona todos los servicios 
   - [ ] Timezone: desplegable con zonas horarias (por defecto: Europe/Madrid)
   - [ ] Language: desplegable de idiomas (por defecto: es-ES)
 
-- [ ] **Rutas base (Base Paths)** 
+- [ ] **Rutas base (Base Paths)**
   - [ ] quitar esta sección, mostrar las rutas internas, no se puede editar, en la sección información del sistema abajo del todo
 
 - [ ] **Red (Network)**
@@ -348,6 +348,7 @@ Página `/services/:name` para configuración específica de cada servicio. ``le
 ## 🎯 Prioridades de Desarrollo
 
 ### MVP (Fase 1)
+
 - Dashboard básico
 - Settings con servicios
 - Configuración de 1 servicio (Radarr)
@@ -355,12 +356,14 @@ Página `/services/:name` para configuración específica de cada servicio. ``le
 - Docker integration
 
 ### Core Features (Fase 2)
+
 - Los 8 servicios principales
 - Logs centralizados
 - Health checks
 - Templates completos
 
 ### Advanced Features (Fase 3)
+
 - Autenticación
 - Proxy/Reverse proxy automático
 - Backup/Restore

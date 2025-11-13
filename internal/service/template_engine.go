@@ -403,7 +403,7 @@ func (te *TemplateEngine) buildTemplateData(config models.ServiceConfig, globalC
 	}
 
 	// Validate required paths for compose generation
-	if data.Paths == nil || len(data.Paths) == 0 {
+	if len(data.Paths) == 0 {
 		return data, fmt.Errorf("paths configuration is missing - at least Config path is required")
 	}
 	if data.Paths["Config"] == "" {
