@@ -330,6 +330,14 @@ func (h *ServiceHandler) UpdateServiceConfig(c *fiber.Ctx) error {
 		})
 	}
 
+	// If HostPort is not provided or is 0, explicitly remove it from config
+	// This allows switching from dynamic (with port) to static (without port) compose
+	if hostPort, exists := configUpdate["HostPort"]; !exists || hostPort == nil || hostPort == 0 || hostPort == float64(0) {
+		// Explicitly mark for deletion by setting to nil
+		configUpdate["HostPort"] = nil
+		h.logger.Info("HostPort not provided or is 0, will be removed from config", "name", name)
+	}
+
 	// Debug: Log received configuration
 	h.logger.Info("Received config update",
 		"name", name,

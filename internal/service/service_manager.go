@@ -355,6 +355,14 @@ func (sm *ServiceManager) UpdateServiceConfig(ctx context.Context, serviceName s
 		prevHostPort = prevHostPortInt
 	}
 
+	// If HostPort is explicitly set to nil, remove it from the saved config
+	// This allows switching from dynamic (with port) to static (without port) compose
+	if hostPortValue, exists := config["HostPort"]; exists && hostPortValue == nil {
+		delete(config, "HostPort")
+		sm.logger.Info("Removing HostPort from configuration (switching to static compose)",
+			zap.String("service", serviceName))
+	}
+
 	// Update configuration in memory
 	svc.Config = config
 
@@ -500,4 +508,73 @@ func (sm *ServiceManager) logAction(serviceID uint, action, status, message stri
 			zap.String("action", action),
 			zap.Error(err))
 	}
+}
+
+// AutoStartEnabledServices starts all enabled services on app startup
+// and removes containers for disabled services
+func (sm *ServiceManager) AutoStartEnabledServices() error {
+	sm.logger.Info("Auto-starting enabled services on startup")
+
+	// Get all services from database
+	// We need to use the repository interface, which doesn't have ListAll
+	// So we'll try to get known services one by one
+	knownServices := []string{"radarr", "sonarr", "jellyfin", "prowlarr", "qbittorrent", "jellyseerr", "bazarr", "jellystat"}
+
+	for _, serviceName := range knownServices {
+		svc, err := sm.serviceRepo.GetByName(serviceName)
+		if err != nil {
+			// Service not in database yet, skip
+			continue
+		}
+
+		if svc.Enabled {
+			// Service is enabled → start it
+			sm.logger.Info("Auto-starting enabled service",
+				zap.String("service", serviceName))
+
+			// Generate compose file
+			composePath, err := sm.templateEngine.GenerateCompose(serviceName, svc.Config)
+			if err != nil {
+				sm.logger.Error("Failed to generate compose for auto-start",
+					zap.String("service", serviceName),
+					zap.Error(err))
+				continue
+			}
+
+			// Start container
+			ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
+			result, err := sm.dockerCompose.ComposeUpRecreate(ctx, composePath, nil, serviceName)
+			cancel()
+
+			if err != nil {
+				sm.logger.Error("Failed to auto-start service",
+					zap.String("service", serviceName),
+					zap.Error(err))
+				sm.logAction(svc.ID, "auto_start", "error", fmt.Sprintf("Failed: %v", err))
+				continue
+			}
+
+			if !result.Success {
+				sm.logger.Warn("Auto-start completed with errors",
+					zap.String("service", serviceName),
+					zap.String("error", result.Error))
+			} else {
+				sm.logger.Info("Service auto-started successfully",
+					zap.String("service", serviceName))
+				sm.logAction(svc.ID, "auto_start", "success", "Service started on app init")
+			}
+		} else {
+			// Service is disabled → kill and remove container if exists
+			sm.logger.Debug("Removing container for disabled service",
+				zap.String("service", serviceName))
+
+			// Use docker kill + docker rm for fast cleanup
+			ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+			_ = sm.dockerClient.StopContainer(ctx, serviceName, 0)
+			cancel()
+		}
+	}
+
+	sm.logger.Info("Auto-start process completed")
+	return nil
 }

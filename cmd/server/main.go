@@ -10,6 +10,7 @@ import (
 	"github.com/carcheky/mediacheky/internal/handler"
 	"github.com/carcheky/mediacheky/internal/middleware"
 	"github.com/carcheky/mediacheky/internal/repository"
+	"github.com/carcheky/mediacheky/internal/service"
 	"github.com/carcheky/mediacheky/internal/service/scheduler"
 	"github.com/carcheky/mediacheky/pkg/logger"
 	"github.com/gofiber/fiber/v2"
@@ -105,6 +106,11 @@ func main() {
 
 	// Initialize handlers
 	handlers := handler.NewHandlers(db, repos, appLogger, cfg)
+
+	// Auto-start enabled services on startup
+	if err := autoStartServices(handlers.ServiceManager, appLogger); err != nil {
+		appLogger.Error("Failed to auto-start services", "error", err)
+	}
 
 	// Setup routes
 	setupRoutes(app, handlers)
@@ -253,4 +259,20 @@ func getVersion() string {
 		return "dev"
 	}
 	return version
+}
+
+// autoStartServices starts all services marked as enabled in the database
+// and removes containers for disabled services
+func autoStartServices(sm *service.ServiceManager, logger *logger.Logger) error {
+	if sm == nil {
+		logger.Warn("Service manager not available, skipping auto-start")
+		return nil
+	}
+
+	logger.Info("Auto-starting enabled services...")
+	if err := sm.AutoStartEnabledServices(); err != nil {
+		return err
+	}
+
+	return nil
 }

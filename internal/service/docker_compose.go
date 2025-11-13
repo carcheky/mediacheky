@@ -117,22 +117,29 @@ func (dcc *DockerComposeClient) ComposeUpRecreate(ctx context.Context, composePa
 		zap.String("directory", composeDir),
 		zap.String("service", serviceName))
 
-	// First, do compose down to clean all metadata and state
-	downCmd := exec.CommandContext(ctx, "docker", "compose", "-f", cleanPath, "down")
-	downCmd.Dir = composeDir
-	var downStdout, downStderr bytes.Buffer
-	downCmd.Stdout = &downStdout
-	downCmd.Stderr = &downStderr
-
-	if err := downCmd.Run(); err != nil {
-		dcc.logger.Warn("docker compose down failed (may be expected if service not running)",
-			zap.String("service", serviceName),
-			zap.String("stderr", downStderr.String()),
-			zap.Error(err))
+	// ALWAYS force remove the container first
+	// Step 1: Kill immediately (faster than graceful stop)
+	killCmd := exec.CommandContext(ctx, "docker", "kill", serviceName)
+	if err := killCmd.Run(); err != nil {
+		dcc.logger.Debug("docker kill failed (container may not be running)",
+			zap.String("container", serviceName))
 	} else {
-		dcc.logger.Info("Successfully executed docker compose down",
-			zap.String("service", serviceName),
-			zap.String("output", downStdout.String()))
+		dcc.logger.Info("Killed container", zap.String("container", serviceName))
+	}
+
+	// Step 2: Force remove
+	removeCmd := exec.CommandContext(ctx, "docker", "rm", "-f", serviceName)
+	var removeStdout, removeStderr bytes.Buffer
+	removeCmd.Stdout = &removeStdout
+	removeCmd.Stderr = &removeStderr
+
+	if err := removeCmd.Run(); err != nil {
+		dcc.logger.Warn("docker rm -f failed (container may not exist)",
+			zap.String("container", serviceName),
+			zap.String("stderr", removeStderr.String()))
+	} else {
+		dcc.logger.Info("Force removed container",
+			zap.String("container", serviceName))
 	}
 
 	// Build command with --force-recreate flag
