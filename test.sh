@@ -4,6 +4,7 @@
 # Tests dynamic vs static compose switching based on HostPort field
 
 OUTPUT_LOG="./logs/test-output.log"
+API_BASE_URL="http://localhost:80"  # Proxy port exposed to host
 
 # Color codes
 GREEN='\033[0;32m'
@@ -18,14 +19,24 @@ echo "" | tee -a "$OUTPUT_LOG"
 
 # SETUP: Enable radarr service first
 echo -e "${YELLOW}=== SETUP: Habilitando servicio Radarr ===${NC}" | tee -a "$OUTPUT_LOG"
-ENABLE_RESPONSE=$(curl -s -X POST http://localhost:80/api/services/radarr/enable)
+ENABLE_RESPONSE=$(curl -s -X POST ${API_BASE_URL}/api/services/radarr/enable)
 
 echo "$ENABLE_RESPONSE" | jq . | tee -a "$OUTPUT_LOG"
 
 if echo "$ENABLE_RESPONSE" | jq -e '.success == true' > /dev/null; then
   echo -e "${GREEN}✓ Radarr enabled successfully${NC}" | tee -a "$OUTPUT_LOG"
+  
+  # Verificar en base de datos
+  DB_CHECK=$(docker compose exec -T mediacheky sqlite3 /app/data/mediacheky.db "SELECT enabled FROM services WHERE name = 'radarr';")
+  if [ "$DB_CHECK" = "1" ]; then
+    echo -e "${GREEN}✓ Radarr verified as enabled in database${NC}" | tee -a "$OUTPUT_LOG"
+  else
+    echo -e "${RED}✗ Radarr NOT enabled in database (DB value: $DB_CHECK)${NC}" | tee -a "$OUTPUT_LOG"
+    exit 1
+  fi
 else
-  echo -e "${YELLOW}⚠ Enable request completed (may already be enabled)${NC}" | tee -a "$OUTPUT_LOG"
+  echo -e "${RED}✗ Failed to enable Radarr${NC}" | tee -a "$OUTPUT_LOG"
+  exit 1
 fi
 
 echo "" | tee -a "$OUTPUT_LOG"
@@ -33,49 +44,11 @@ echo "Waiting 3 seconds for service to initialize..." | tee -a "$OUTPUT_LOG"
 sleep 3
 echo "" | tee -a "$OUTPUT_LOG"
 
-# TEST 1: Vaciar puerto (usar static compose)
-echo -e "${YELLOW}=== TEST 1: Vaciar puerto (sin HostPort) ===${NC}" | tee -a "$OUTPUT_LOG"
-RESPONSE=$(curl -s -X PUT http://localhost:80/api/services/radarr/config \
-  -H "Content-Type: application/json" \
-  -d '{
-    "Image": "linuxserver/radarr:latest",
-    "ContainerName": "radarr",
-    "RestartPolicy": "always",
-    "Paths": {
-      "Config": "./volumes/radarr/config"
-    }
-  }')
-
-echo "$RESPONSE" | jq . | tee -a "$OUTPUT_LOG"
-
-if echo "$RESPONSE" | jq -e '.success == true' > /dev/null; then
-  echo -e "${GREEN}✓ Request successful${NC}" | tee -a "$OUTPUT_LOG"
-else
-  echo -e "${RED}✗ Request failed${NC}" | tee -a "$OUTPUT_LOG"
-fi
-
-echo "" | tee -a "$OUTPUT_LOG"
-echo "Waiting 5 seconds..." | tee -a "$OUTPUT_LOG"
-sleep 5
-
-echo "" | tee -a "$OUTPUT_LOG"
-echo "Estado de radarr:" | tee -a "$OUTPUT_LOG"
-docker ps -a --filter name=radarr --format "table {{.Names}}\t{{.Ports}}\t{{.Status}}" | tee -a "$OUTPUT_LOG"
-
-echo "" | tee -a "$OUTPUT_LOG"
-echo "Compose file generado:" | tee -a "$OUTPUT_LOG"
-if [ -f "./volumes/mediacheky-data/services/radarr/docker-compose.yml" ]; then
-  echo -e "${RED}✗ Dynamic compose exists (debería usar static)${NC}" | tee -a "$OUTPUT_LOG"
-  cat ./volumes/mediacheky-data/services/radarr/docker-compose.yml | tee -a "$OUTPUT_LOG"
-else
-  echo -e "${GREEN}✓ No dynamic compose (usando static de services/radarr.yml)${NC}" | tee -a "$OUTPUT_LOG"
-fi
-
-# TEST 2: Rellenar puerto (usar dynamic compose)
+# TEST 1: Rellenar puerto (usar dynamic compose)
 echo "" | tee -a "$OUTPUT_LOG"
 echo "" | tee -a "$OUTPUT_LOG"
-echo -e "${YELLOW}=== TEST 2: Rellenar puerto 7878 (con HostPort) ===${NC}" | tee -a "$OUTPUT_LOG"
-RESPONSE=$(curl -s -X PUT http://localhost:80/api/services/radarr/config \
+echo -e "${YELLOW}=== TEST 1: Rellenar puerto 7878 (con HostPort) ===${NC}" | tee -a "$OUTPUT_LOG"
+RESPONSE=$(curl -s -X PUT ${API_BASE_URL}/api/services/radarr/config \
   -H "Content-Type: application/json" \
   -d '{
     "Image": "linuxserver/radarr:latest",
@@ -145,6 +118,44 @@ else
   echo -e "${RED}✗ No dynamic compose (debería existir)${NC}" | tee -a "$OUTPUT_LOG"
 fi
 
+# TEST 2: Vaciar puerto (usar static compose)
+echo -e "${YELLOW}=== TEST 2: Vaciar puerto (sin HostPort) ===${NC}" | tee -a "$OUTPUT_LOG"
+RESPONSE=$(curl -s -X PUT http://localhost:80/api/services/radarr/config \
+  -H "Content-Type: application/json" \
+  -d '{
+    "Image": "linuxserver/radarr:latest",
+    "ContainerName": "radarr",
+    "RestartPolicy": "always",
+    "Paths": {
+      "Config": "./volumes/radarr/config"
+    }
+  }')
+
+echo "$RESPONSE" | jq . | tee -a "$OUTPUT_LOG"
+
+if echo "$RESPONSE" | jq -e '.success == true' > /dev/null; then
+  echo -e "${GREEN}✓ Request successful${NC}" | tee -a "$OUTPUT_LOG"
+else
+  echo -e "${RED}✗ Request failed${NC}" | tee -a "$OUTPUT_LOG"
+fi
+
+echo "" | tee -a "$OUTPUT_LOG"
+echo "Waiting 5 seconds..." | tee -a "$OUTPUT_LOG"
+sleep 5
+
+echo "" | tee -a "$OUTPUT_LOG"
+echo "Estado de radarr:" | tee -a "$OUTPUT_LOG"
+docker ps -a --filter name=radarr --format "table {{.Names}}\t{{.Ports}}\t{{.Status}}" | tee -a "$OUTPUT_LOG"
+
+echo "" | tee -a "$OUTPUT_LOG"
+echo "Compose file generado:" | tee -a "$OUTPUT_LOG"
+if [ -f "./volumes/mediacheky-data/services/radarr/docker-compose.yml" ]; then
+  echo -e "${RED}✗ Dynamic compose exists (debería usar static)${NC}" | tee -a "$OUTPUT_LOG"
+  cat ./volumes/mediacheky-data/services/radarr/docker-compose.yml | tee -a "$OUTPUT_LOG"
+else
+  echo -e "${GREEN}✓ No dynamic compose (usando static de services/radarr.yml)${NC}" | tee -a "$OUTPUT_LOG"
+fi
+
 # TEST 3: Cambiar RestartPolicy
 echo "" | tee -a "$OUTPUT_LOG"
 echo "" | tee -a "$OUTPUT_LOG"
@@ -154,11 +165,10 @@ RESPONSE=$(curl -s -X PUT http://localhost:80/api/services/radarr/config \
   -d '{
     "Image": "linuxserver/radarr:latest",
     "ContainerName": "radarr",
-    "RestartPolicy": "unless-stopped",
+    "RestartPolicy": "always",
     "Paths": {
       "Config": "./volumes/radarr/config"
-    },
-    "HostPort": 7878
+    }
   }')
 
 echo "$RESPONSE" | jq . | tee -a "$OUTPUT_LOG"
