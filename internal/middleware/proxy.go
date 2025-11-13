@@ -23,13 +23,7 @@ func ReverseProxy(repos *repository.Repositories, log *logger.Logger) fiber.Hand
 
 		log.Debug("Proxy middleware checking host", "host", host)
 
-		// Check if proxy is enabled
-		proxyConfig, err := repos.Proxy.GetProxyConfig()
-		if err != nil || proxyConfig == nil || !proxyConfig.Enabled {
-			log.Debug("Proxy not enabled, skipping", "host", host)
-			return c.Next()
-		}
-
+		// Proxy is always enabled - no need to check database config
 		// Parse subdomain and domain from host
 		parts := strings.Split(host, ".")
 		if len(parts) < 2 {
@@ -91,12 +85,16 @@ func ReverseProxy(repos *repository.Repositories, log *logger.Logger) fiber.Hand
 				serviceSubdomain = service.Name
 			}
 
-			// Determine service domain (use primary if not set)
+			// Determine service domain (use primary if not set, fallback to docker.internal)
 			serviceDomain := service.Domain
 			if serviceDomain == "" {
 				primaryDomain, err := repos.Proxy.GetPrimaryDomain()
 				if err == nil && primaryDomain != nil {
 					serviceDomain = primaryDomain.Name
+				} else {
+					// Fallback to docker.internal if no primary domain configured
+					serviceDomain = "docker.internal"
+					log.Debug("Using fallback domain", "domain", serviceDomain)
 				}
 			}
 
@@ -194,7 +192,16 @@ func ReverseProxy(repos *repository.Repositories, log *logger.Logger) fiber.Hand
 		targetURL.Path = c.Path()
 		targetURL.RawQuery = string(c.Request().URI().QueryString())
 
-		// Use Fiber's built-in proxy middleware
+		// Set proxy headers to preserve original host and configure URL base
+		c.Request().Header.Set("X-Forwarded-Host", host)
+		c.Request().Header.Set("X-Forwarded-Proto", "http")
+		c.Request().Header.Set("X-Real-IP", c.IP())
+		c.Request().Header.Set("X-Forwarded-For", c.IP())
+
+		// Set Host header to target service (required for proper routing)
+		c.Request().Header.SetHost(targetURL.Host)
+
+		// Use Fiber's built-in proxy middleware (no redirect following to avoid localhost issues)
 		if err := proxy.Do(c, targetURL.String()); err != nil {
 			log.Error("Proxy request failed",
 				"target", targetURL.String(),

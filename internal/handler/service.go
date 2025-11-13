@@ -344,6 +344,16 @@ func (h *ServiceHandler) UpdateServiceConfig(c *fiber.Ctx) error {
 		"config", configUpdate,
 		"paths", configUpdate["Paths"])
 
+	// Force hardcoded paths - paths are NOT user-configurable
+	// All service configs must use /app/data/services/{serviceName}/config
+	// This path is accessible from host via ./volumes/mediacheky-data/services/
+	configUpdate["Paths"] = map[string]interface{}{
+		"Config": fmt.Sprintf("/app/data/services/%s/config", name),
+	}
+	h.logger.Info("Forced hardcoded service paths",
+		"name", name,
+		"config_path", configUpdate["Paths"])
+
 	// Check if service manager is available
 	if h.serviceManager == nil {
 		return c.Status(fiber.StatusServiceUnavailable).JSON(APIResponse{

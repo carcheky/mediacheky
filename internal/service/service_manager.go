@@ -72,7 +72,7 @@ func (sm *ServiceManager) EnableService(ctx context.Context, serviceName string)
 				"Image":         fmt.Sprintf("linuxserver/%s:latest", serviceName),
 				"ContainerName": serviceName,
 				"Paths": map[string]string{
-					"Config": fmt.Sprintf("./volumes/%s/config", serviceName),
+					"Config": fmt.Sprintf("/app/data/services/%s/config", serviceName),
 				},
 				"RestartPolicy": "unless-stopped",
 			}

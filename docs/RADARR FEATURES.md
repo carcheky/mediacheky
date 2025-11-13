@@ -14,8 +14,8 @@ La página de configuración de radar tendrá varias secciones de configuración
     - [ ] puerto expuesto: si está vacío no se expone, si está relleno se expone el puerto expuesto el puerto interno será del de radarr 7878
     - [ ] restart policy: desplegable con las opciones
     - [ ] config path: ruta a la configuración en el host, por defecto estará relleno y el valor será ./volumes/radarr/config, esta carpeta debe estar en la raiz de este repositorio
-  - [ ] Configuración de radarr (estas opciones configurarán directamente radarr !TODO)
-    - [ ] !TODO
+  - [ ] Configuración de radarr (estas opciones configurarán directamente radarr [!RADARR API](https://arrapi.kometa.wiki/en/latest/radarr.html))
+    - [ ] Revisa la configuración en radarr en el archivo ```` y captura los valores MEDIACHEKY_PLACEHOLDER_*, y crea tantos campos como valores encuentres. el formulario al guardar deberá guardar los valores aquí. esos valores serán los nombres de los campos, y los valores de los campos serán guardados en ese config.yml (haz un backup como referencia antes de que se sobreescriba)
   - [ ] Proxy/Acceso externo: configuración de dominio:
     - [ ] subdominio: si está vacío usará radarr, por defecto vacío
     - [ ] dominio: si está vacío usará la configuración global, por defecto vacío
