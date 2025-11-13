@@ -9,11 +9,10 @@ MediaCheky es el panel de control centralizado que gestiona todos los servicios 
 ## 📊 Dashboard
 
 - [ ] **Vista general de servicios**
-  - [ ] Tarjetas de estado para cada servicio configurado
-  - [ ] Indicadores visuales de estado (Running, Stopped, Error)
-  - [ ] Contador de servicios por estado (✅ Running, ⚠️ Issues, 📴 Off)
-  - [ ] Quick actions por servicio (Start, Stop, Restart, Configure)
-  - [ ] Links directos a la UI de cada servicio
+  - [ ] Tarjetas de estado para cada servicio configurado, al pulsar llevará a su subdominio, serán minimal con los iconos originales que se pueden conseguir en sus repositorios o webs oficiales
+  - [ ] minimos Indicadores visuales de estado (Running, Stopped, Error)
+  - [ ] minimo Contador de servicios por estado (✅ Running, ⚠️ Issues, 📴 Off)
+  - [ ] Quick actions por servicio (Restart, Configure, sin start/stop)
 
 - [ ] **Estadísticas del sistema**
   - [ ] Total de servicios configurados
@@ -35,11 +34,11 @@ MediaCheky es el panel de control centralizado que gestiona todos los servicios 
 - [ ] **Gestión de servicios**
   - [ ] Lista de todos los servicios disponibles
   - [ ] Toggle para habilitar/deshabilitar cada servicio
-  - [ ] Botones de control (Start, Stop, Restart)
-  - [ ] Botón Configure (redirige a `/services/:name`)
+  - [ ] Botones de control (Start/Stop, Restart, configure)
+  - [ ] Botón Configure (redirige a `/services/:name`) este sale siempre esté o no habilitado el servicio
   - [ ] Badge de estado en tiempo real
 
-- [ ] **Acciones globales**
+- [ ] **Acciones globales** en todas las páginas
   - [ ] Botón "Start All" (iniciar todos los habilitados)
   - [ ] Botón "Stop All" (detener todos los servicios)
   - [ ] Botón "Restart All" (reiniciar todos los habilitados)
@@ -48,19 +47,16 @@ MediaCheky es el panel de control centralizado que gestiona todos los servicios 
 ### Pestaña: Global Variables (Variables Globales)
 
 - [ ] **User & Group**
-  - [ ] PUID: User ID (por defecto: 1000)
-  - [ ] PGID: Group ID (por defecto: 1000)
+  - [ ] PUID: User ID (por defecto si está vacío leído del sistema host)
+  - [ ] PGID: Group ID (por defecto si está vacío leído del sistema host)
   - [ ] Validación de IDs numéricos
 
 - [ ] **Sistema**
   - [ ] Timezone: desplegable con zonas horarias (por defecto: Europe/Madrid)
   - [ ] Language: desplegable de idiomas (por defecto: es-ES)
 
-- [ ] **Rutas base (Base Paths)**
-  - [ ] Media: ruta a archivos multimedia (por defecto: /media)
-  - [ ] Downloads: ruta a descargas (por defecto: /downloads)
-  - [ ] Config: ruta a configuraciones (por defecto: /config)
-  - [ ] Validación de rutas absolutas
+- [ ] **Rutas base (Base Paths)** 
+  - [ ] quitar esta sección, mostrar las rutas internas, no se puede editar, en la sección información del sistema abajo del todo
 
 - [ ] **Red (Network)**
   - [ ] Network name: nombre de la red Docker (por defecto: mediacheky-net)
@@ -71,8 +67,10 @@ MediaCheky es el panel de control centralizado que gestiona todos los servicios 
   - [ ] Dominio base: dominio principal (ej: example.com)
   - [ ] Habilitar SSL/TLS automático
   - [ ] Email para certificados Let's Encrypt
-  - [ ] Puerto HTTP (por defecto: 80)
-  - [ ] Puerto HTTPS (por defecto: 443)
+  - [ ] Puerto HTTP (por defecto: 80) (interno será 7369)
+  - [ ] Puerto HTTPS (por defecto: 443) (interno será 7370)
+
+- [ ] **Información del sistema**
 
 - [ ] **Acciones**
   - [ ] Botón "Save Global Settings"
@@ -83,26 +81,8 @@ MediaCheky es el panel de control centralizado que gestiona todos los servicios 
 
 ## 🔧 Service Configuration (Configuración Individual)
 
-Página `/services/:name` para configuración específica de cada servicio.
+Página `/services/:name` para configuración específica de cada servicio. ``leer SERVICE FEATURES.md`` para info específica
 
-- [ ] **Header de servicio**
-  - [ ] Nombre y logo del servicio
-  - [ ] Estado actual (Running/Stopped/Error)
-  - [ ] Breadcrumb de navegación (Settings > [Service])
-
-- [ ] **Secciones comunes a todos los servicios**
-  - [ ] Configuración de Docker
-  - [ ] Configuración específica del servicio
-  - [ ] Proxy/Acceso externo
-  - [ ] Variables de entorno
-
-- [ ] **Botones de control**
-  - [ ] Toggle Enable/Disable (en header)
-  - [ ] Apply (guardar y aplicar cambios)
-  - [ ] Start/Stop (dinámico según estado)
-  - [ ] Restart (con --force-recreate)
-  - [ ] Reset (borrar config y recrear)
-  - [ ] Test Connection (verificar conectividad)
 
 ---
 
