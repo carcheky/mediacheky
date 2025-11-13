@@ -70,6 +70,8 @@ COPY cmd/ ./cmd/
 COPY internal/ ./internal/
 COPY pkg/ ./pkg/
 COPY web/ ./web/
+COPY templates/ ./templates/
+COPY services/ ./services/
 
 # Build binary with optimizations
 # - CGO_ENABLED=1: Required for SQLite (but using musl for static linking)
@@ -111,6 +113,10 @@ COPY --from=builder /app/bin/mediacheky /app/mediacheky
 
 # Copy web assets
 COPY --from=builder /app/web /app/web
+
+# Copy templates and service definitions
+COPY --from=builder /app/templates /app/templates
+COPY --from=builder /app/services /app/services
 
 # Create non-root user and switch to it
 USER 65534:65534

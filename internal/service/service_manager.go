@@ -358,6 +358,12 @@ func (sm *ServiceManager) UpdateServiceConfig(ctx context.Context, serviceName s
 	// Update configuration in memory
 	svc.Config = config
 
+	// Debug: Log what we're saving
+	sm.logger.Info("Saving configuration to database",
+		zap.String("service", serviceName),
+		zap.Any("config", config),
+		zap.Any("config_paths", config["Paths"]))
+
 	// Extract port and image for quick access
 	if port, ok := config["Port"].(float64); ok {
 		svc.Port = int(port)
@@ -404,7 +410,7 @@ func (sm *ServiceManager) UpdateServiceConfig(ctx context.Context, serviceName s
 			}
 
 			// Force recreate the container with new settings
-			result, err := sm.dockerCompose.ComposeUpRecreate(ctx, composePath, globalConfig)
+			result, err := sm.dockerCompose.ComposeUpRecreate(ctx, composePath, globalConfig, serviceName)
 			if err != nil {
 				errMsg := fmt.Sprintf("Compose regenerated but recreate failed: %v | Output: %s | Error: %s",
 					err, result.Output, result.Error)

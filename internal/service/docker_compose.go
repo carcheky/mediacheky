@@ -95,7 +95,7 @@ func (dcc *DockerComposeClient) ComposeUp(ctx context.Context, composePath strin
 }
 
 // ComposeUpRecreate executes 'docker compose up -d --force-recreate' to recreate containers
-func (dcc *DockerComposeClient) ComposeUpRecreate(ctx context.Context, composePath string, configMap map[string]string) (*ComposeResult, error) {
+func (dcc *DockerComposeClient) ComposeUpRecreate(ctx context.Context, composePath string, configMap map[string]string, serviceName string) (*ComposeResult, error) {
 	// Validate and sanitize path
 	if !filepath.IsAbs(composePath) {
 		return nil, fmt.Errorf("compose path must be absolute: %s", composePath)
@@ -114,10 +114,8 @@ func (dcc *DockerComposeClient) ComposeUpRecreate(ctx context.Context, composePa
 
 	dcc.logger.Info("Executing docker compose up --force-recreate",
 		zap.String("path", cleanPath),
-		zap.String("directory", composeDir))
-
-	// Extract service name from compose path
-	serviceName := filepath.Base(filepath.Dir(cleanPath))
+		zap.String("directory", composeDir),
+		zap.String("service", serviceName))
 
 	// First, force remove the container by name if it exists (more reliable than compose down)
 	removeCmd := exec.CommandContext(ctx, "docker", "rm", "-f", serviceName)

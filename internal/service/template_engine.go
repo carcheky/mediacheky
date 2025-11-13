@@ -170,12 +170,23 @@ func (te *TemplateEngine) generateComposeOld(serviceName string, config models.S
 		return "", fmt.Errorf("failed to parse template: %w", err)
 	}
 
+	// DEBUG: Log template data before execution
+	te.logger.Info("Executing template",
+		zap.String("service", serviceName),
+		zap.Any("template_data", templateData),
+		zap.Any("paths", templateData.Paths))
+
 	var buf bytes.Buffer
 	if err := tmpl.Execute(&buf, templateData); err != nil {
 		return "", fmt.Errorf("failed to execute template: %w", err)
 	}
 
 	composeContent := buf.String()
+
+	// DEBUG: Log generated compose content
+	te.logger.Info("Generated compose content",
+		zap.String("service", serviceName),
+		zap.String("content", composeContent))
 
 	// Validate generated YAML
 	if err := te.validateYAML(composeContent); err != nil {
