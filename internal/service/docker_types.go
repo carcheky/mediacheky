@@ -54,7 +54,7 @@ type ContainerStats struct {
 	NetworkTx     uint64
 }
 
-// ComposeResult represents the result of a docker-compose operation
+// ComposeResult represents the result of a docker compose operation
 type ComposeResult struct {
 	Success bool
 	Output  string

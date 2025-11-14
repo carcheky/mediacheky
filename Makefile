@@ -433,13 +433,14 @@ finaltest:
 	@echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 	@echo ""
 	@echo "📦 Step 1: Building production image with local tag..."
+	@echo "   💡 Usando BuildKit cache - solo reconstruye capas modificadas"
 	@echo ""
-	@DOCKER_BUILDKIT=1 docker build \
+	@docker build \
 		--target production \
+		--cache-from mediacheky:finaltest \
 		--build-arg VERSION=finaltest \
 		--build-arg COMMIT_SHA=$$(git rev-parse --short HEAD 2>/dev/null || echo "unknown") \
 		-t mediacheky:finaltest \
-		-t ghcr.io/carcheky/mediacheky:finaltest \
 		.
 	@echo ""
 	@echo "✅ Production image built: mediacheky:finaltest"
@@ -453,6 +454,11 @@ finaltest:
 	@echo ""
 	@cd quickstart-finaltest && docker compose up -d
 	@echo ""
+	@echo "📝 Step 4: Capturing logs to finaltest.log..."
+	@cd quickstart-finaltest && nohup docker compose logs -f &> finaltest.log & echo $$! > finaltest.pid
+	@sleep 2
+	@echo "✅ Logs being captured in background (PID: $$(cat quickstart-finaltest/finaltest.pid))"
+	@echo ""
 	@echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 	@echo "✅ FINAL TEST READY"
 	@echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
@@ -463,22 +469,36 @@ finaltest:
 	@echo "📊 Status:"
 	@cd quickstart-finaltest && docker compose ps
 	@echo ""
+	@echo "📝 Logs:"
+	@echo "   File: quickstart-finaltest/finaltest.log"
+	@echo "   Live: tail -f quickstart-finaltest/finaltest.log"
+	@echo ""
 	@echo "💡 Commands:"
-	@echo "   View logs:  cd quickstart-finaltest && docker compose logs -f"
+	@echo "   View logs:  tail -f quickstart-finaltest/finaltest.log"
 	@echo "   Stop test:  make finaltest-stop"
 	@echo "   Clean all:  make finaltest-clean"
 	@echo ""
 
 finaltest-stop:
 	@echo "🛑 Stopping final test environment..."
+	@if [ -f quickstart-finaltest/finaltest.pid ]; then \
+		echo "   Stopping log capture (PID: $$(cat quickstart-finaltest/finaltest.pid))..."; \
+		kill $$(cat quickstart-finaltest/finaltest.pid) 2>/dev/null || true; \
+		rm quickstart-finaltest/finaltest.pid; \
+	fi
 	@cd quickstart-finaltest && docker compose down
 	@echo "✅ Final test stopped"
 
 finaltest-clean:
 	@echo "🧹 Cleaning final test environment..."
+	@if [ -f quickstart-finaltest/finaltest.pid ]; then \
+		kill $$(cat quickstart-finaltest/finaltest.pid) 2>/dev/null || true; \
+		rm quickstart-finaltest/finaltest.pid; \
+	fi
 	@cd quickstart-finaltest && docker compose down -v
 	@rm -rf quickstart-finaltest/volumes/mediacheky-data
 	@rm -rf quickstart-finaltest/volumes/library
+	@rm -f quickstart-finaltest/finaltest.log
 	@docker rmi mediacheky:finaltest ghcr.io/carcheky/mediacheky:finaltest 2>/dev/null || true
 	@echo "✅ Final test environment cleaned"
 

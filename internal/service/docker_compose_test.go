@@ -52,7 +52,7 @@ services:
     ports:
       - "7878:7878"
 `,
-			filename:    "docker-compose.yml",
+			filename:    "docker compose.yml",
 			expectError: false,
 		},
 		{
@@ -62,7 +62,7 @@ services:
   test:
     image: test
 `,
-			filename:    "docker-compose-version.yml",
+			filename:    "docker compose-version.yml",
 			expectError: false,
 		},
 		{
@@ -215,7 +215,7 @@ func TestContextHandling(t *testing.T) {
 
 	// Create a temporary compose file
 	tmpDir := t.TempDir()
-	composePath := filepath.Join(tmpDir, "docker-compose.yml")
+	composePath := filepath.Join(tmpDir, "docker compose.yml")
 	content := `version: '3.8'
 services:
   test:
@@ -275,11 +275,11 @@ func TestPathTraversalPrevention(t *testing.T) {
 	emptyConfig := map[string]string{}
 
 	// Test path with traversal sequences
-	_, err = dcc.ComposeUp(ctx, "/tmp/../etc/docker-compose.yml", emptyConfig)
+	_, err = dcc.ComposeUp(ctx, "/tmp/../etc/docker compose.yml", emptyConfig)
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "invalid sequences")
 
-	_, err = dcc.ComposeDown(ctx, "/tmp/./../../docker-compose.yml", emptyConfig)
+	_, err = dcc.ComposeDown(ctx, "/tmp/./../../docker compose.yml", emptyConfig)
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "invalid sequences")
 }
@@ -294,7 +294,7 @@ func TestServiceNameValidation(t *testing.T) {
 	dcc := NewDockerComposeClient(logger)
 	ctx := context.Background()
 	tmpDir := t.TempDir()
-	composePath := filepath.Join(tmpDir, "docker-compose.yml")
+	composePath := filepath.Join(tmpDir, "docker compose.yml")
 
 	// Create a valid compose file
 	content := `version: '3.8'

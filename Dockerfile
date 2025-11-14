@@ -16,7 +16,20 @@ RUN apk add --no-cache \
     tzdata \
     gcc \
     musl-dev \
-    sqlite-dev
+    sqlite-dev \
+    curl
+
+# Install Docker CLI and Compose plugin (shared by dev and production)
+RUN DOCKER_VERSION="29.0.0" && \
+    COMPOSE_VERSION="v2.40.3" && \
+    # Install Docker CLI
+    curl -fsSL "https://download.docker.com/linux/static/stable/x86_64/docker-${DOCKER_VERSION}.tgz" | tar -xz -C /tmp && \
+    mv /tmp/docker/docker /usr/local/bin/ && \
+    rm -rf /tmp/docker && \
+    # Install Docker Compose plugin
+    mkdir -p /usr/local/lib/docker/cli-plugins && \
+    curl -fsSL "https://github.com/docker/compose/releases/download/${COMPOSE_VERSION}/docker-compose-linux-x86_64" -o /usr/local/lib/docker/cli-plugins/docker-compose && \
+    chmod +x /usr/local/lib/docker/cli-plugins/docker-compose
 
 # Copy go mod files first (separate layer for better caching)
 COPY go.mod go.sum ./
@@ -34,12 +47,9 @@ FROM base AS development
 RUN --mount=type=cache,target=/go/pkg/mod \
     go install github.com/air-verse/air@latest
 
-# Install Docker CLI and Docker Compose plugin (cached layer)
-RUN apk add --no-cache \
-    docker-cli \
-    docker-cli-compose
+# Docker CLI already installed in base stage
 
-# Don't copy source code here - it's mounted as volumes in docker-compose.yml
+# Don't copy source code here - it's mounted as volumes in docker compose.yml
 # This makes the image build MUCH faster since it doesn't rebuild on code changes
 
 # Create required directories
@@ -109,9 +119,9 @@ RUN apk add --no-cache \
     tzdata \
     wget
 
-# Create necessary directories with proper permissions
-RUN mkdir -p /app/data /app/config /app/logs && \
-    chown -R 65534:65534 /app
+# Copy Docker CLI and Compose plugin from base stage (already built there)
+COPY --from=base /usr/local/bin/docker /usr/local/bin/docker
+COPY --from=base /usr/local/lib/docker/cli-plugins/docker-compose /usr/local/lib/docker/cli-plugins/docker-compose
 
 # Set working directory
 WORKDIR /app
@@ -125,9 +135,6 @@ COPY --from=builder /app/web /app/web
 # Copy templates and service definitions
 COPY --from=builder /app/templates /app/templates
 COPY --from=builder /app/services /app/services
-
-# Create non-root user and switch to it
-USER 65534:65534
 
 # Expose port
 EXPOSE 7369

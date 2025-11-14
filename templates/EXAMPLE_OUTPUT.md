@@ -30,7 +30,7 @@ This document shows an example of what the template engine generates.
 }
 ```
 
-## Generated docker-compose.yml
+## Generated docker compose.yml
 
 ```yaml
 version: '3.8'
@@ -99,14 +99,14 @@ services:
 
 Generated files are saved to:
 ```
-volumes/services/radarr/docker-compose.yml
+volumes/services/radarr/docker compose.yml
 ```
 
 ## Backup Behavior
 
 When regenerating an existing compose file, the previous version is backed up:
 ```
-volumes/services/radarr/docker-compose.yml.backup.20231108-153045
+volumes/services/radarr/docker compose.yml.backup.20231108-153045
 ```
 
 ## Usage in Code
@@ -152,7 +152,7 @@ func main() {
         logger.Fatal("Validation failed", zap.Error(err))
     }
     
-    // Generate docker-compose file
+    // Generate docker compose file
     composePath, err := engine.GenerateCompose("radarr", config)
     if err != nil {
         logger.Fatal("Generation failed", zap.Error(err))

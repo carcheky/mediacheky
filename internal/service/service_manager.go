@@ -20,7 +20,7 @@ const (
 // getHostDataPath returns the host path that is mounted to /app/data
 // This allows us to build service config paths dynamically
 func getHostDataPath() string {
-	// First try environment variable (set by docker-compose.yml)
+	// First try environment variable (set by docker compose.yml)
 	if hostPath := os.Getenv("MEDIACHEKY_HOST_PATH"); hostPath != "" {
 		return filepath.Join(hostPath, "volumes", "mediacheky-data")
 	}
@@ -37,7 +37,7 @@ func buildServiceConfigPath(serviceName string) string {
 // getMediaLibraryPath returns the absolute host path for the media library
 // Uses the same logic as getHostDataPath: reads env var and constructs path
 func getMediaLibraryPath() string {
-	// Read from environment variable (set by docker-compose.yml)
+	// Read from environment variable (set by docker compose.yml)
 	mediaPath := os.Getenv("MEDIACHEKY_MEDIA_PATH")
 	if mediaPath == "" {
 		mediaPath = "./volumes/library" // Default
@@ -97,7 +97,7 @@ func NewServiceManager(
 	}
 }
 
-// EnableService enables a service and generates its docker-compose file
+// EnableService enables a service and generates its docker compose file
 func (sm *ServiceManager) EnableService(ctx context.Context, serviceName string) error {
 	sm.logger.Info("Enabling service", zap.String("service", serviceName))
 
@@ -138,7 +138,7 @@ func (sm *ServiceManager) EnableService(ctx context.Context, serviceName string)
 		return nil
 	}
 
-	// Generate docker-compose file
+	// Generate docker compose file
 	composePath, err := sm.templateEngine.GenerateCompose(serviceName, svc.Config)
 	if err != nil {
 		sm.logAction(svc.ID, "enable", "error", fmt.Sprintf("Failed to generate compose: %v", err))

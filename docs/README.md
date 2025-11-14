@@ -30,7 +30,7 @@
 **Enfoque Híbrido: Docker Socket + Docker Compose Templates**
 
 1. Usuario activa servicio en UI
-2. MediaCheky genera `docker-compose.yml` desde template
+2. MediaCheky genera `docker compose.yml` desde template
 3. MediaCheky ejecuta `docker compose up -d` vía Socket
 4. Dashboard muestra estado en tiempo real
 

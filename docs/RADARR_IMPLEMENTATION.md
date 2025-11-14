@@ -90,12 +90,12 @@ Service{
      - Loads global config (PUID, PGID, TZ)
      - Loads template from `templates/radarr.yml`
      - Merges service config with global config
-     - Generates docker-compose.yml at `volumes/services/radarr/docker-compose.yml`
+     - Generates docker compose.yml at `volumes/services/radarr/docker compose.yml`
    - Updates service.Enabled = true in database
    - Logs action to ServiceLog
 4. Returns success response
 
-**Generated File**: `volumes/services/radarr/docker-compose.yml`
+**Generated File**: `volumes/services/radarr/docker compose.yml`
 
 ```yaml
 version: '3.8'
@@ -126,7 +126,7 @@ services:
 3. Service Manager:
    - Gets compose file path
    - Calls `DockerComposeClient.ComposeUp()`
-   - Docker Compose Client executes: `docker compose -f /path/to/docker-compose.yml up -d`
+   - Docker Compose Client executes: `docker compose -f /path/to/docker compose.yml up -d`
    - Waits for container creation
    - Finds container by name using Docker Client
    - Updates service.Status = "running" and service.ContainerID in database
@@ -135,7 +135,7 @@ services:
 
 **Docker Command Executed**:
 ```bash
-docker compose -f volumes/services/radarr/docker-compose.yml up -d
+docker compose -f volumes/services/radarr/docker compose.yml up -d
 ```
 
 ### 4. Stop Service Flow
@@ -148,7 +148,7 @@ docker compose -f volumes/services/radarr/docker-compose.yml up -d
 3. Service Manager:
    - Gets compose file path
    - Calls `DockerComposeClient.ComposeDown()`
-   - Docker Compose Client executes: `docker compose -f /path/to/docker-compose.yml down`
+   - Docker Compose Client executes: `docker compose -f /path/to/docker compose.yml down`
    - Updates service.Status = "stopped" and clears ContainerID in database
    - Logs action to ServiceLog
 4. Returns success response
@@ -162,7 +162,7 @@ docker compose -f volumes/services/radarr/docker-compose.yml up -d
 2. Calls `ServiceManager.UpdateServiceConfig()`
 3. Service Manager:
    - Updates service.Config in database
-   - If service is enabled, regenerates docker-compose.yml with new config
+   - If service is enabled, regenerates docker compose.yml with new config
    - Logs action to ServiceLog
 4. Returns success response
 
@@ -229,7 +229,7 @@ docker compose -f volumes/services/radarr/docker-compose.yml up -d
 **Verify**:
 ```bash
 # Check that compose file was generated
-cat volumes/services/radarr/docker-compose.yml
+cat volumes/services/radarr/docker compose.yml
 
 # Check that container is running
 docker ps | grep radarr
@@ -253,7 +253,7 @@ docker logs radarr
 **Verify**:
 ```bash
 # Check updated compose file
-cat volumes/services/radarr/docker-compose.yml | grep 7879
+cat volumes/services/radarr/docker compose.yml | grep 7879
 
 # Check container port mapping
 docker ps | grep radarr | grep 7879
@@ -275,7 +275,7 @@ docker ps | grep radarr
 # (should return nothing)
 
 # Compose file should still exist
-ls -la volumes/services/radarr/docker-compose.yml
+ls -la volumes/services/radarr/docker compose.yml
 ```
 
 ### Test Scenario 4: Service Logs

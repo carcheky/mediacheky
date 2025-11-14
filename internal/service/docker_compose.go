@@ -17,7 +17,7 @@ import (
 // serviceNameRegex validates that service names only contain safe characters
 var serviceNameRegex = regexp.MustCompile(`^[a-zA-Z0-9_-]+$`)
 
-// DockerComposeClient handles docker-compose operations
+// DockerComposeClient handles docker compose operations
 type DockerComposeClient struct {
 	logger  *zap.Logger
 	timeout time.Duration
@@ -54,7 +54,7 @@ func (dcc *DockerComposeClient) ComposeUp(ctx context.Context, composePath strin
 		zap.String("directory", composeDir))
 
 	// Build command
-	// Note: Using 'docker compose' (new) instead of 'docker-compose' (old)
+	// Note: Using 'docker compose' (new) instead of 'docker compose' (old)
 	cmd := exec.CommandContext(ctx, "docker", "compose", "-f", cleanPath, "up", "-d")
 	cmd.Dir = composeDir // Run from the directory containing the compose file
 
@@ -220,7 +220,7 @@ func (dcc *DockerComposeClient) extractServiceName(composePath string) (string, 
 }
 
 // ComposeDown executes 'docker compose down' with multiple compose files.
-// The first file should be the main docker-compose.yml, subsequent files override/extend it.
+// The first file should be the main docker compose.yml, subsequent files override/extend it.
 // If ctx is nil, a default timeout context (2 minutes) will be created automatically.
 // To maintain control over operation cancellation, pass a valid context.
 func (dcc *DockerComposeClient) ComposeDown(ctx context.Context, composePath string, configMap map[string]string) (*ComposeResult, error) {
@@ -381,7 +381,7 @@ func (dcc *DockerComposeClient) ComposePull(ctx context.Context, composePath str
 		return nil, fmt.Errorf("compose file not found: %s: %w", cleanPath, err)
 	}
 
-	// Get project root (where main docker-compose.yml is)
+	// Get project root (where main docker compose.yml is)
 	projectRoot := filepath.Dir(composeDir) // services/ -> project root
 
 	dcc.logger.Info("Executing docker compose pull",
@@ -569,7 +569,7 @@ func (dcc *DockerComposeClient) ComposeLogs(ctx context.Context, composePath str
 	return stdout.String(), nil
 }
 
-// ValidateComposeFile validates that a docker-compose.yml file is well-formed
+// ValidateComposeFile validates that a docker compose.yml file is well-formed
 func (dcc *DockerComposeClient) ValidateComposeFile(composePath string) error {
 	// Validate and sanitize path
 	if !filepath.IsAbs(composePath) {

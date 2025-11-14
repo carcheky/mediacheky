@@ -44,7 +44,7 @@ func TestTemplateRepository_GetByName(t *testing.T) {
 	template := &models.Template{
 		Name:    "sonarr",
 		Version: "1.0.0",
-		Content: "docker-compose content",
+		Content: "docker compose content",
 	}
 	err := repo.Create(template)
 	require.NoError(t, err)
@@ -54,7 +54,7 @@ func TestTemplateRepository_GetByName(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, "sonarr", retrieved.Name)
 	assert.Equal(t, "1.0.0", retrieved.Version)
-	assert.Equal(t, "docker-compose content", retrieved.Content)
+	assert.Equal(t, "docker compose content", retrieved.Content)
 }
 
 func TestTemplateRepository_GetAll(t *testing.T) {

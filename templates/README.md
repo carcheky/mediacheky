@@ -1,6 +1,6 @@
 # Docker Compose Templates
 
-This directory contains templates for generating docker-compose.yml files for MediaCheky services.
+This directory contains templates for generating docker compose.yml files for MediaCheky services.
 
 ## Template Structure
 
@@ -86,12 +86,12 @@ The template engine (`internal/service/template_engine.go`) provides:
 
 Docker compose files are generated in:
 ```
-volumes/services/{service}/docker-compose.yml
+volumes/services/{service}/docker compose.yml
 ```
 
 When a compose file is regenerated, the previous version is automatically backed up to:
 ```
-volumes/services/{service}/docker-compose.yml.backup.{timestamp}
+volumes/services/{service}/docker compose.yml.backup.{timestamp}
 ```
 
 ## Validation

@@ -109,7 +109,7 @@ networks:
 	radarrService.Config = newConfig
 	require.NoError(t, repos.Service.Update(radarrService))
 
-	// Test 3: Generate docker-compose file
+	// Test 3: Generate docker compose file
 	composePath, err := templateEngine.GenerateCompose("radarr", newConfig)
 	require.NoError(t, err)
 	assert.FileExists(t, composePath)

@@ -120,8 +120,8 @@ Página `/services/:name` para configuración específica de cada servicio. ``le
   - [ ] Leer logs de contenedores
 
 - [ ] **Docker Compose**
-  - [ ] Generar archivos docker-compose.yml desde templates
-  - [ ] Guardar en ./volumes/services/[service_name]/docker-compose.yml
+  - [ ] Generar archivos docker compose.yml desde templates
+  - [ ] Guardar en ./volumes/services/[service_name]/docker compose.yml
   - [ ] Ejecutar docker compose up/down/restart
   - [ ] Pull de imágenes
 
@@ -141,7 +141,7 @@ Página `/services/:name` para configuración específica de cada servicio. ``le
 - [ ] **Generación de configuración**
   - [ ] Merge de variables globales + específicas
   - [ ] Validación contra JSON Schema
-  - [ ] Generación de docker-compose.yml
+  - [ ] Generación de docker compose.yml
   - [ ] Backup de configuración anterior
 
 ---
@@ -200,7 +200,7 @@ Página `/services/:name` para configuración específica de cada servicio. ``le
 
 - [ ] **Modelos**
   - [ ] Service: configuración de servicios
-  - [ ] Template: plantillas de docker-compose
+  - [ ] Template: plantillas de docker compose
   - [ ] GlobalConfig: variables globales
   - [ ] ServiceLog: logs de operaciones
   - [ ] User: usuarios (fase 3)
@@ -316,7 +316,7 @@ Página `/services/:name` para configuración específica de cada servicio. ``le
   - [ ] Puertos disponibles
 
 - [ ] **Instalación**
-  - [ ] docker-compose.yml ejemplo
+  - [ ] docker compose.yml ejemplo
   - [ ] Script de instalación rápida
   - [ ] Documentación completa
   - [ ] Troubleshooting guide

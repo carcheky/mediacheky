@@ -76,7 +76,7 @@ Implementar un sistema de proxy/reverse-proxy automático para los servicios ges
 - [ ] Actualizar templates de servicios con labels Traefik
 
 #### 7. Integración con Docker Compose
-- [ ] Añadir servicio Traefik a docker-compose.yml
+- [ ] Añadir servicio Traefik a docker compose.yml
 - [ ] Configurar volúmenes para certificados SSL
 - [ ] Configurar red compartida
 - [ ] Implementar lógica de reinicio selectivo

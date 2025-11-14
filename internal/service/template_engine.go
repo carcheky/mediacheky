@@ -1,6 +1,6 @@
 package service
 
-// TemplateEngine generates docker-compose files from templates
+// TemplateEngine generates docker compose files from templates
 
 import (
 	"bytes"
@@ -17,12 +17,12 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-// TemplateEngine handles template parsing and docker-compose generation
+// TemplateEngine handles template parsing and docker compose generation
 type TemplateEngine struct {
 	logger       *zap.Logger
 	templatesDir string
 	servicesDir  string
-	baseDir      string // Base directory where MediaCheky docker-compose.yml is located
+	baseDir      string // Base directory where MediaCheky docker compose.yml is located
 	configRepo   ConfigRepository
 	templateRepo TemplateRepository
 }
@@ -196,7 +196,7 @@ func (te *TemplateEngine) generateComposeOld(serviceName string, config models.S
 		return "", fmt.Errorf("failed to write compose file: %w", err)
 	}
 
-	te.logger.Info("Successfully generated docker-compose",
+	te.logger.Info("Successfully generated docker compose",
 		zap.String("service", serviceName),
 		zap.String("path", composePath))
 
@@ -450,7 +450,7 @@ func (te *TemplateEngine) writeComposeFile(serviceName, content string) (string,
 		return "", fmt.Errorf("failed to create service directory: %w", err)
 	}
 
-	composePath := filepath.Join(serviceDir, "docker-compose.yml")
+	composePath := filepath.Join(serviceDir, "docker compose.yml")
 
 	// Backup existing file if it exists
 	if _, err := os.Stat(composePath); err == nil {
@@ -496,10 +496,10 @@ func (te *TemplateEngine) backupComposeFile(composePath string) error {
 	return nil
 }
 
-// GetComposePath returns the path to a service's docker-compose.yml file
+// GetComposePath returns the path to a service's docker compose.yml file
 func (te *TemplateEngine) GetComposePath(serviceName string) string {
 	// Prefer dynamically generated compose if it exists
-	dynamicPath := filepath.Join(te.servicesDir, serviceName, "docker-compose.yml")
+	dynamicPath := filepath.Join(te.servicesDir, serviceName, "docker compose.yml")
 	if _, err := os.Stat(dynamicPath); err == nil {
 		abs, err2 := filepath.Abs(dynamicPath)
 		if err2 == nil {
@@ -543,7 +543,7 @@ func (te *TemplateEngine) LoadTemplatesFromFS(fs embed.FS, templatesPath string)
 	return nil
 }
 
-// ExtractVolumePaths parses a docker-compose file and extracts host volume paths
+// ExtractVolumePaths parses a docker compose file and extracts host volume paths
 // It expands environment variables using the provided config map
 func (te *TemplateEngine) ExtractVolumePaths(composePath string, configMap map[string]string) ([]string, error) {
 	content, err := os.ReadFile(composePath)

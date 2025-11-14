@@ -14,7 +14,7 @@
 ### Problema que Resuelve
 
 Configurar y gestionar múltiples servicios multimedia (Jellyfin, Sonarr, Radarr, etc.) requiere:
-- Editar múltiples archivos `docker-compose.yml`
+- Editar múltiples archivos `docker compose.yml`
 - Recordar puertos, rutas y configuraciones de cada servicio
 - Configurar variables de entorno repetitivas (PUID, PGID, TZ)
 - Monitorear el estado de cada servicio individualmente
@@ -82,7 +82,7 @@ MediaCheky centraliza todo en una interfaz web donde puedes:
 ### Flujo de Trabajo
 
 1. **Usuario activa Radarr en UI** → Click en toggle "Enable Radarr"
-2. **MediaCheky genera config** → Usa template + configuración del usuario → Crea `/volumes/services/radarr/docker-compose.yml`
+2. **MediaCheky genera config** → Usa template + configuración del usuario → Crea `/volumes/services/radarr/docker compose.yml`
 3. **MediaCheky levanta servicio** → Ejecuta `docker compose up -d` vía Docker Socket
 4. **MediaCheky monitorea** → Verifica estado del contenedor cada 30s
 5. **Dashboard actualiza** → ✅ Radarr (Running)
@@ -281,12 +281,12 @@ type Service struct {
     Template    Template  `json:"template" gorm:"foreignKey:TemplateID"`
 }
 
-// Template - Plantilla de docker-compose para un servicio
+// Template - Plantilla de docker compose para un servicio
 type Template struct {
     ID          uint      `json:"id" gorm:"primaryKey"`
     Name        string    `json:"name" gorm:"unique;not null"`
     Version     string    `json:"version"`
-    Content     string    `json:"content" gorm:"type:text"`     // Template de docker-compose
+    Content     string    `json:"content" gorm:"type:text"`     // Template de docker compose
     Schema      JSON      `json:"schema" gorm:"type:json"`      // JSON Schema para validación
 }
 
@@ -435,9 +435,9 @@ GET    /api/docker/containers     # Listar contenedores
 - [ ] UI básica (header + navegación + pestañas)
 - [ ] Dashboard simple (lista de servicios)
 - [ ] Integración Docker Socket (lectura de contenedores)
-- [ ] Template Engine para docker-compose
+- [ ] Template Engine para docker compose
 - [ ] Implementar 1 servicio completo: **Radarr**
-  - [ ] Template de docker-compose
+  - [ ] Template de docker compose
   - [ ] Formulario de configuración
   - [ ] Start/Stop/Restart
   - [ ] Mostrar estado en Dashboard
@@ -547,13 +547,13 @@ mediacheky/
 │           ├── dashboard.js        # Alpine.js components
 │           └── services.js
 ├── templates/
-│   ├── radarr.yml                  # Template docker-compose Radarr
-│   ├── sonarr.yml                  # Template docker-compose Sonarr
+│   ├── radarr.yml                  # Template docker compose Radarr
+│   ├── sonarr.yml                  # Template docker compose Sonarr
 │   └── ...                         # Más templates
 ├── volumes/
 │   ├── services/                   # Generados por MediaCheky
 │   │   ├── radarr/
-│   │   │   └── docker-compose.yml
+│   │   │   └── docker compose.yml
 │   │   └── ...
 │   ├── config/                     # Configuración de MediaCheky
 │   └── data/                       # Base de datos SQLite

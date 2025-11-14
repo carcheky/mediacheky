@@ -48,8 +48,8 @@ reference-repos/
 media-library/
 
 # Docker Compose files
-docker-compose*.yml
-!docker-compose.yml
+docker compose*.yml
+!docker compose.yml
 
 # Dockerfiles de desarrollo
 *.dev

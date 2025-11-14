@@ -233,7 +233,7 @@ func TestValidateYAML(t *testing.T) {
 		expectError bool
 	}{
 		{
-			name: "valid docker-compose",
+			name: "valid docker compose",
 			content: `version: '3.8'
 services:
   radarr:
@@ -290,7 +290,7 @@ services:
 	// Test writing new file
 	composePath, err := te.writeComposeFile("radarr", content)
 	assert.NoError(t, err)
-	assert.Equal(t, filepath.Join(servicesDir, "radarr", "docker-compose.yml"), composePath)
+	assert.Equal(t, filepath.Join(servicesDir, "radarr", "docker compose.yml"), composePath)
 
 	// Verify file was created
 	assert.FileExists(t, composePath)
@@ -322,7 +322,7 @@ services:
 
 	backupFound := false
 	for _, entry := range entries {
-		if filepath.Ext(entry.Name()) != ".yml" && entry.Name() != "docker-compose.yml" {
+		if filepath.Ext(entry.Name()) != ".yml" && entry.Name() != "docker compose.yml" {
 			backupFound = true
 			break
 		}
@@ -338,7 +338,7 @@ func TestGetComposePath(t *testing.T) {
 	te := NewTemplateEngine(logger, "/tmp/templates", "/data/services", configRepo, templateRepo)
 
 	path := te.GetComposePath("radarr")
-	assert.Equal(t, "/data/services/radarr/docker-compose.yml", path)
+	assert.Equal(t, "/data/services/radarr/docker compose.yml", path)
 }
 
 func TestGenerateCompose_Integration(t *testing.T) {

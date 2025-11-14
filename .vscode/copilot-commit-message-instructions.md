@@ -60,7 +60,7 @@ Use these types strategically to avoid unnecessary builds.
 - ✅ Update dependencies in go.mod
 - ✅ Update .gitignore
 - ✅ Update Makefile
-- ✅ Update docker-compose.yml (non-functional)
+- ✅ Update docker compose.yml (non-functional)
 - ✅ Cleanup temporary files
 
 ### `refactor` - Code restructuring without changing behavior

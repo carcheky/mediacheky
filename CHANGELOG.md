@@ -92,7 +92,7 @@
 
 ### Features
 
-* **templates:** implement docker-compose template system with validation ([#18](https://github.com/carcheky/mediacheky/issues/18)) ([def15d8](https://github.com/carcheky/mediacheky/commit/def15d80cc2697c511a317978702b64dcae851da))
+* **templates:** implement docker compose template system with validation ([#18](https://github.com/carcheky/mediacheky/issues/18)) ([def15d8](https://github.com/carcheky/mediacheky/commit/def15d80cc2697c511a317978702b64dcae851da))
 
 # [1.0.0-dev.4](https://github.com/carcheky/mediacheky/compare/v1.0.0-dev.3...v1.0.0-dev.4) (2025-11-08)
 
@@ -292,7 +292,7 @@ services, not a library cleanup tool.
 
 ### Bug Fixes
 
-* **docker-compose:** update container name and improve environment variable handling ([5d9e35c](https://github.com/carcheky/mediacheky/commit/5d9e35c378a7d6516c8c63c26a319af1c093e03a))
+* **docker compose:** update container name and improve environment variable handling ([5d9e35c](https://github.com/carcheky/mediacheky/commit/5d9e35c378a7d6516c8c63c26a319af1c093e03a))
 
 # [1.0.0-dev.2](https://github.com/carcheky/mediacheky/compare/v1.0.0-dev.1...v1.0.0-dev.2) (2025-10-29)
 

@@ -4,7 +4,7 @@ Este documento describe cómo configurar y usar el entorno de desarrollo con ser
 
 ## Descripción General
 
-El `docker-compose.yml` incluye los siguientes servicios de prueba:
+El `docker compose.yml` incluye los siguientes servicios de prueba:
 
 ### MediaCheky (Puerto 8000)
 - **URL**: http://localhost:8000
@@ -59,7 +59,7 @@ El `docker-compose.yml` incluye los siguientes servicios de prueba:
 ### 1. Levantar todos los servicios
 
 ```bash
-docker compose -f docker-compose.yml up -d
+docker compose -f docker compose.yml up -d
 ```
 
 ### 2. Configuración Inicial de Servicios
@@ -124,7 +124,7 @@ Hay dos formas de configurar las API keys reales:
 
 #### Opción A: Variables de Entorno (Recomendado)
 
-Edita `docker-compose.yml` y actualiza las variables:
+Edita `docker compose.yml` y actualiza las variables:
 
 ```yaml
 environment:
@@ -140,7 +140,7 @@ environment:
 Luego reinicia el contenedor:
 
 ```bash
-docker compose -f docker-compose.yml restart app
+docker compose -f docker compose.yml restart app
 ```
 
 #### Opción B: Configuración Web
@@ -225,33 +225,33 @@ curl http://localhost:8000/api/stats | jq .
 ### Ver logs de todos los servicios
 
 ```bash
-docker compose -f docker-compose.yml logs -f
+docker compose -f docker compose.yml logs -f
 ```
 
 ### Ver logs de un servicio específico
 
 ```bash
-docker compose -f docker-compose.yml logs -f app
-docker compose -f docker-compose.yml logs -f radarr
-docker compose -f docker-compose.yml logs -f sonarr
+docker compose -f docker compose.yml logs -f app
+docker compose -f docker compose.yml logs -f radarr
+docker compose -f docker compose.yml logs -f sonarr
 ```
 
 ### Reiniciar un servicio
 
 ```bash
-docker compose -f docker-compose.yml restart app
+docker compose -f docker compose.yml restart app
 ```
 
 ### Detener todos los servicios
 
 ```bash
-docker compose -f docker-compose.yml down
+docker compose -f docker compose.yml down
 ```
 
 ### Detener y eliminar volúmenes (reset completo)
 
 ```bash
-docker compose -f docker-compose.yml down -v
+docker compose -f docker compose.yml down -v
 ```
 
 ## 🐛 Troubleshooting
@@ -260,14 +260,14 @@ docker compose -f docker-compose.yml down -v
 
 1. Verifica que todos los contenedores estén corriendo:
    ```bash
-   docker compose -f docker-compose.yml ps
+   docker compose -f docker compose.yml ps
    ```
 
 2. Verifica las API keys en la configuración web
 
 3. Verifica los logs:
    ```bash
-   docker compose -f docker-compose.yml logs app
+   docker compose -f docker compose.yml logs app
    ```
 
 ### No aparecen medias en MediaCheky

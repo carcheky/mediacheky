@@ -80,36 +80,36 @@ docker ps -a --filter name=radarr --format "table {{.Names}}\t{{.Ports}}\t{{.Sta
 
 echo "" | tee -a "$OUTPUT_LOG"
 echo "Compose file generado:" | tee -a "$OUTPUT_LOG"
-if [ -f "./volumes/mediacheky-data/services/radarr/docker-compose.yml" ]; then
+if [ -f "./volumes/mediacheky-data/services/radarr/docker compose.yml" ]; then
   echo -e "${GREEN}✓ Dynamic compose exists${NC}" | tee -a "$OUTPUT_LOG"
-  cat ./volumes/mediacheky-data/services/radarr/docker-compose.yml | tee -a "$OUTPUT_LOG"
+  cat ./volumes/mediacheky-data/services/radarr/docker compose.yml | tee -a "$OUTPUT_LOG"
   
   echo "" | tee -a "$OUTPUT_LOG"
   echo "Verificando contenido:" | tee -a "$OUTPUT_LOG"
   
   # Check for version (should not exist)
-  if grep -q "^version:" ./volumes/mediacheky-data/services/radarr/docker-compose.yml; then
+  if grep -q "^version:" ./volumes/mediacheky-data/services/radarr/docker compose.yml; then
     echo -e "${RED}✗ Tiene 'version:' (obsoleto)${NC}" | tee -a "$OUTPUT_LOG"
   else
     echo -e "${GREEN}✓ Sin 'version:' (correcto)${NC}" | tee -a "$OUTPUT_LOG"
   fi
   
   # Check for <no value>
-  if grep -q "<no value>" ./volumes/mediacheky-data/services/radarr/docker-compose.yml; then
+  if grep -q "<no value>" ./volumes/mediacheky-data/services/radarr/docker compose.yml; then
     echo -e "${RED}✗ Tiene '<no value>' en volumes${NC}" | tee -a "$OUTPUT_LOG"
   else
     echo -e "${GREEN}✓ Sin '<no value>' (correcto)${NC}" | tee -a "$OUTPUT_LOG"
   fi
   
   # Check for correct port
-  if grep -q '"7878:7878"' ./volumes/mediacheky-data/services/radarr/docker-compose.yml; then
+  if grep -q '"7878:7878"' ./volumes/mediacheky-data/services/radarr/docker compose.yml; then
     echo -e "${GREEN}✓ Puerto correcto: 7878:7878${NC}" | tee -a "$OUTPUT_LOG"
   else
     echo -e "${RED}✗ Puerto incorrecto${NC}" | tee -a "$OUTPUT_LOG"
   fi
   
   # Check for correct network
-  if grep -q "mediacheky_mediacheky-net" ./volumes/mediacheky-data/services/radarr/docker-compose.yml; then
+  if grep -q "mediacheky_mediacheky-net" ./volumes/mediacheky-data/services/radarr/docker compose.yml; then
     echo -e "${GREEN}✓ Red correcta: mediacheky_mediacheky-net${NC}" | tee -a "$OUTPUT_LOG"
   else
     echo -e "${RED}✗ Red incorrecta${NC}" | tee -a "$OUTPUT_LOG"
@@ -149,9 +149,9 @@ docker ps -a --filter name=radarr --format "table {{.Names}}\t{{.Ports}}\t{{.Sta
 
 echo "" | tee -a "$OUTPUT_LOG"
 echo "Compose file generado:" | tee -a "$OUTPUT_LOG"
-if [ -f "./volumes/mediacheky-data/services/radarr/docker-compose.yml" ]; then
+if [ -f "./volumes/mediacheky-data/services/radarr/docker compose.yml" ]; then
   echo -e "${RED}✗ Dynamic compose exists (debería usar static)${NC}" | tee -a "$OUTPUT_LOG"
-  cat ./volumes/mediacheky-data/services/radarr/docker-compose.yml | tee -a "$OUTPUT_LOG"
+  cat ./volumes/mediacheky-data/services/radarr/docker compose.yml | tee -a "$OUTPUT_LOG"
 else
   echo -e "${GREEN}✓ No dynamic compose (usando static de services/radarr.yml)${NC}" | tee -a "$OUTPUT_LOG"
 fi
@@ -191,9 +191,9 @@ docker ps -a --filter name=radarr --format "table {{.Names}}\t{{.Ports}}\t{{.Sta
 
 echo "" | tee -a "$OUTPUT_LOG"
 echo "Verificando RestartPolicy:" | tee -a "$OUTPUT_LOG"
-if [ -f "./volumes/mediacheky-data/services/radarr/docker-compose.yml" ]; then
+if [ -f "./volumes/mediacheky-data/services/radarr/docker compose.yml" ]; then
   # Check restart policy in compose file
-  RESTART_POLICY=$(grep "restart:" ./volumes/mediacheky-data/services/radarr/docker-compose.yml | awk '{print $2}')
+  RESTART_POLICY=$(grep "restart:" ./volumes/mediacheky-data/services/radarr/docker compose.yml | awk '{print $2}')
   if [ "$RESTART_POLICY" = "unless-stopped" ]; then
     echo -e "${GREEN}✓ RestartPolicy en compose: unless-stopped${NC}" | tee -a "$OUTPUT_LOG"
   else
@@ -211,7 +211,7 @@ if [ -f "./volumes/mediacheky-data/services/radarr/docker-compose.yml" ]; then
   
   echo "" | tee -a "$OUTPUT_LOG"
   echo "Compose completo:" | tee -a "$OUTPUT_LOG"
-  cat ./volumes/mediacheky-data/services/radarr/docker-compose.yml | tee -a "$OUTPUT_LOG"
+  cat ./volumes/mediacheky-data/services/radarr/docker compose.yml | tee -a "$OUTPUT_LOG"
 else
   echo -e "${RED}✗ No existe compose dinámico${NC}" | tee -a "$OUTPUT_LOG"
 fi

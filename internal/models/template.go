@@ -40,7 +40,7 @@ func (js JSONSchema) Value() (driver.Value, error) {
 	return json.Marshal(js)
 }
 
-// Template represents a docker-compose template for a service
+// Template represents a docker compose template for a service
 type Template struct {
 	ID        uint           `json:"id" gorm:"primaryKey"`
 	CreatedAt time.Time      `json:"created_at"`

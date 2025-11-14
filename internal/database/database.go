@@ -2,6 +2,8 @@ package database
 
 import (
 	"fmt"
+	"os"
+	"path/filepath"
 
 	"github.com/carcheky/mediacheky/pkg/logger"
 	"gorm.io/driver/sqlite"
@@ -20,6 +22,12 @@ func Initialize(cfg Config, log *logger.Logger) (*gorm.DB, error) {
 	}
 
 	log.Info("Initializing database", "path", cfg.Path)
+
+	// Ensure the directory exists
+	dir := filepath.Dir(cfg.Path)
+	if err := os.MkdirAll(dir, 0755); err != nil {
+		return nil, fmt.Errorf("failed to create database directory: %w", err)
+	}
 
 	db, err := gorm.Open(sqlite.Open(cfg.Path), &gorm.Config{})
 	if err != nil {

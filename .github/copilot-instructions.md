@@ -12,7 +12,7 @@
 **YOU MUST NEVER EVER UNDER ANY CIRCUMSTANCES:**
 
 - Run `make dev`, `make run`, or ANY make command that starts services
-- Run `docker-compose up/down/restart/stop/start`
+- Run `docker compose up/down/restart/stop/start`
 - Run `docker compose up/down/restart/stop/start`
 - Run `docker restart/stop/start/kill/rm` on ANY container
 - Execute ANY command that manages Docker containers lifecycle
@@ -20,7 +20,7 @@
 - Suggest restarting containers to the user
 - Tell the user to restart services
 - Execute `docker compose restart` or any variant
-- Execute `docker-compose restart` or any variant
+- Execute `docker compose restart` or any variant
 - Stop, start, or restart the mediacheky container or ANY service container
 
 **THE USER IS ALREADY RUNNING `make dev` WITH WATCH MODE.**
@@ -31,7 +31,7 @@
 
 **IF YOU VIOLATE THIS RULE, YOU WILL BE TERMINATED.**
 
-**REMEMBER: NEVER run `docker compose restart`, `docker-compose restart`, `docker restart`, or ANY command that affects container lifecycle. EVER.**
+**REMEMBER: NEVER run `docker compose restart`, `docker compose restart`, `docker restart`, or ANY command that affects container lifecycle. EVER.**
 
 **WHAT YOU CAN DO:**
 
@@ -67,7 +67,7 @@ Centralized interface to:
 
 ### How It Works
 
-1. User enables service (e.g., Radarr) → MediaCheky generates `docker-compose.yml`
+1. User enables service (e.g., Radarr) → MediaCheky generates `docker compose.yml`
 
 2. MediaCheky starts container via Docker Socket
 
@@ -101,7 +101,7 @@ User Action → Template Generation → docker compose up -d → Status Monitori
 
 - **Service Manager** - Lifecycle management
 
-- **Template Engine** - Generate docker-compose from templates
+- **Template Engine** - Generate docker compose from templates
 
 - **Docker Client** - Interact with Docker Socket
 

@@ -106,14 +106,14 @@ Variables compartidas entre todos los servicios:
 MediaCheky utiliza una arquitectura híbrida para gestionar servicios:
 
 1. **Templates de Docker Compose** - Cada servicio tiene un template predefinido
-2. **Generación dinámica** - MediaCheky genera archivos `docker-compose.yml` basados en tu configuración
+2. **Generación dinámica** - MediaCheky genera archivos `docker compose.yml` basados en tu configuración
 3. **Docker Socket API** - Controla contenedores usando el socket de Docker del host
 4. **Base de datos local** - SQLite para almacenar configuraciones
 
 ```
 mediacheky/
 ├── volumes/
-│   ├── services/          # Archivos docker-compose.yml generados
+│   ├── services/          # Archivos docker compose.yml generados
 │   │   ├── radarr/
 │   │   ├── sonarr/
 │   │   └── jellyfin/
