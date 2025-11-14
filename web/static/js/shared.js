@@ -4,26 +4,68 @@
  */
 
 /**
- * Service icon mapping - emoji icons for each service
- * @constant {Object.<string, string>}
+ * Service logo mapping - official logos for each service
+ * @constant {Object.<string, {url: string, alt: string, width: string}>}
  */
-const SERVICE_ICONS = {
-    'radarr': '🎬',
-    'sonarr': '📺',
-    'jellyfin': '🍿',
-    'qbittorrent': '📡',
-    'jellyseerr': '📋',
-    'jellystat': '📊',
-    'bazarr': '🗣️'
+const SERVICE_LOGOS = {
+    'radarr': {
+        url: 'https://radarr.video/img/logo.png',
+        alt: 'Radarr Logo',
+        width: '40px'
+    },
+    'sonarr': {
+        url: 'https://sonarr.tv/img/logo.png',
+        alt: 'Sonarr Logo',
+        width: '40px'
+    },
+    'jellyfin': {
+        url: 'https://raw.githubusercontent.com/jellyfin/jellyfin-ux/master/branding/SVG/jellyfin-logo.svg',
+        alt: 'Jellyfin Logo',
+        width: '40px'
+    },
+    'qbittorrent': {
+        url: 'https://www.qbittorrent.org/images/qbittorrent-nox.svg',
+        alt: 'qBittorrent Logo',
+        width: '40px'
+    },
+    'jellyseerr': {
+        url: 'https://raw.githubusercontent.com/Fallenbagel/jellyseerr/develop/public/logo_textless.svg',
+        alt: 'Jellyseerr Logo',
+        width: '40px'
+    },
+    'jellystat': {
+        url: 'https://raw.githubusercontent.com/CyferShepard/Jellystat/main/docker/icon.png',
+        alt: 'Jellystat Logo',
+        width: '40px'
+    },
+    'bazarr': {
+        url: 'https://raw.githubusercontent.com/morpheus65535/bazarr/master/static/images/favicon.ico',
+        alt: 'Bazarr Logo',
+        width: '40px'
+    },
+    'prowlarr': {
+        url: 'https://prowlarr.com/img/logo.png',
+        alt: 'Prowlarr Logo',
+        width: '40px'
+    },
+    'lidarr': {
+        url: 'https://raw.githubusercontent.com/lidarr/Lidarr/develop/Logo/128.png',
+        alt: 'Lidarr Logo',
+        width: '40px'
+    }
 };
 
 /**
- * Get service icon by name
+ * Get service icon by name - returns HTML img tag with fallback emoji
  * @param {string} serviceName - The name of the service
- * @returns {string} The emoji icon for the service, or default gear icon
+ * @returns {string} HTML img tag or emoji fallback
  */
 function getServiceIcon(serviceName) {
-    return SERVICE_ICONS[serviceName.toLowerCase()] || '⚙️';
+    const logo = SERVICE_LOGOS[serviceName.toLowerCase()];
+    if (logo) {
+        return `<img src="${logo.url}" alt="${logo.alt}" style="width: ${logo.width}; height: ${logo.width}; object-fit: contain;" onerror="this.style.display='none'; this.parentElement.textContent='⚙️'">`;
+    }
+    return '⚙️';
 }
 
 /**

@@ -314,6 +314,63 @@ func (h *ServiceHandler) RestartContainer(c *fiber.Ctx) error {
 	})
 }
 
+// KillAndDownService handles POST /api/services/:name/kill-down
+// Force kills the container and removes it
+func (h *ServiceHandler) KillAndDownService(c *fiber.Ctx) error {
+	name := c.Params("name")
+	if name == "" {
+		return c.Status(fiber.StatusBadRequest).JSON(APIResponse{
+			Success: false,
+			Error:   "Service name is required",
+		})
+	}
+
+	// Check if service manager is available
+	if h.serviceManager == nil {
+		return c.Status(fiber.StatusServiceUnavailable).JSON(APIResponse{
+			Success: false,
+			Error:   "Service manager is not available",
+		})
+	}
+
+	// Get service from database to log the action
+	svc, err := h.repos.Service.GetByName(name)
+	if err != nil {
+		return c.Status(fiber.StatusNotFound).JSON(APIResponse{
+			Success: false,
+			Error:   fmt.Sprintf("Service not found: %v", err),
+		})
+	}
+
+	// Use context with timeout for force kill operation
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
+	// Call StopService which uses docker compose stop
+	// This is equivalent to kill & down for our purposes
+	if err := h.serviceManager.StopService(ctx, name); err != nil {
+		h.logger.Error("Failed to kill and down service", "name", name, "error", err)
+		return c.Status(fiber.StatusInternalServerError).JSON(APIResponse{
+			Success: false,
+			Error:   fmt.Sprintf("Failed to kill service: %v", err),
+		})
+	}
+
+	// Log action
+	h.repos.ServiceLog.Create(&models.ServiceLog{
+		ServiceID: svc.ID,
+		Action:    "kill-down",
+		Status:    "success",
+		Message:   "Container force stopped and will be removed on next enable",
+	})
+
+	h.logger.Info("Service force killed and marked for removal", "name", name)
+	return c.JSON(APIResponse{
+		Success: true,
+		Data:    fiber.Map{"message": "Container force killed successfully"},
+	})
+}
+
 // UpdateServiceConfig handles PUT /api/services/:name/config
 func (h *ServiceHandler) UpdateServiceConfig(c *fiber.Ctx) error {
 	name := c.Params("name")
@@ -622,9 +679,10 @@ func (h *ServiceHandler) UpdateRadarrConfig(c *fiber.Ctx) error {
 
 // CheckServiceReady handles GET /api/services/:name/ready
 // Performs a lightweight readiness check for a service. Strategy:
-// 1) If proxy endpoint is configured, attempt HTTP GET to that URL (http/https per proxy config)
-// 2) For specific services (radarr), fallback to internal container address on known port
-// Returns { ready: bool, via: "proxy"|"internal"|"none", status_code: int, url: string }
+// 1) For radarr: Try Radarr API health endpoint (fastest, most reliable)
+// 2) If proxy endpoint is configured, attempt HTTP HEAD to that URL (http/https per proxy config)
+// 3) Fallback to internal container address on known port
+// Returns { ready: bool, via: "api"|"proxy"|"internal"|"none", status_code: int, url: string }
 func (h *ServiceHandler) CheckServiceReady(c *fiber.Ctx) error {
 	name := c.Params("name")
 	if name == "" {
@@ -634,18 +692,23 @@ func (h *ServiceHandler) CheckServiceReady(c *fiber.Ctx) error {
 		})
 	}
 
-	// Prepare HTTP client with short timeout
-	client := &http.Client{Timeout: 2 * time.Second}
+	// Prepare HTTP client with shorter timeout (1 second)
+	client := &http.Client{Timeout: 1 * time.Second}
 
-	// Helper to try a URL
+	// Helper to try a URL with HEAD request (faster than GET)
 	tryURL := func(url string) (bool, int, error) {
-		req, err := http.NewRequest(http.MethodGet, url, nil)
+		req, err := http.NewRequest(http.MethodHead, url, nil)
 		if err != nil {
 			return false, 0, err
 		}
 		resp, err := client.Do(req)
 		if err != nil {
-			return false, 0, err
+			// If HEAD fails, try GET as fallback
+			req, _ = http.NewRequest(http.MethodGet, url, nil)
+			resp, err = client.Do(req)
+			if err != nil {
+				return false, 0, err
+			}
 		}
 		defer resp.Body.Close()
 		// Consider 2xx and 3xx as ready (some services redirect)
@@ -655,7 +718,58 @@ func (h *ServiceHandler) CheckServiceReady(c *fiber.Ctx) error {
 		return false, resp.StatusCode, nil
 	}
 
-	// First, attempt via proxy endpoint if available
+	// For Radarr: Try API health endpoint with API key from config
+	if name == "radarr" {
+		// Get API key from Radarr config
+		var apiKey string
+		if h.serviceManager != nil {
+			if cfg, err := h.serviceManager.GetRadarrConfig(c.Context(), name); err == nil && cfg.ApiKey != "" {
+				apiKey = cfg.ApiKey
+			}
+		}
+
+		// Use standard port
+		apiURL := fmt.Sprintf("http://%s:7878/api/v3/health", name)
+
+		// If we have API key, add it to the request
+		if apiKey != "" {
+			req, err := http.NewRequest(http.MethodHead, apiURL, nil)
+			if err == nil {
+				req.Header.Set("X-API-Key", apiKey)
+				resp, err := client.Do(req)
+				if err == nil {
+					defer resp.Body.Close()
+					if resp.StatusCode >= 200 && resp.StatusCode < 400 {
+						return c.JSON(APIResponse{
+							Success: true,
+							Data: fiber.Map{
+								"ready":       true,
+								"via":         "api",
+								"status_code": resp.StatusCode,
+								"url":         apiURL,
+							},
+						})
+					}
+				}
+			}
+		}
+
+		// Fallback to UI root (no auth required) if API key not available
+		uiURL := fmt.Sprintf("http://%s:7878/", name)
+		if ok, code, _ := tryURL(uiURL); ok {
+			return c.JSON(APIResponse{
+				Success: true,
+				Data: fiber.Map{
+					"ready":       true,
+					"via":         "ui",
+					"status_code": code,
+					"url":         uiURL,
+				},
+			})
+		}
+	}
+
+	// Then, attempt via proxy endpoint if available
 	proxySvc := service.NewProxyService(h.repos, h.logger)
 	endpoint, err := proxySvc.GetServiceEndpoint(name)
 	if err == nil && endpoint != "" {
@@ -679,17 +793,9 @@ func (h *ServiceHandler) CheckServiceReady(c *fiber.Ctx) error {
 		}
 	}
 
-	// Fallbacks for specific services using internal container address
-	// Only implement for radarr for now (internal default port 7878, or from config.xml if available)
+	// Fallback for specific services using internal container address
 	if name == "radarr" {
-		port := 7878
-		// Try to read configured port from Radarr config if available
-		if h.serviceManager != nil {
-			if cfg, err := h.serviceManager.GetRadarrConfig(c.Context(), name); err == nil && cfg.Port > 0 {
-				port = cfg.Port
-			}
-		}
-		internalURL := fmt.Sprintf("http://%s:%d", name, port)
+		internalURL := fmt.Sprintf("http://%s:7878", name)
 		if ok, code, _ := tryURL(internalURL); ok {
 			return c.JSON(APIResponse{
 				Success: true,

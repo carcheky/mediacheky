@@ -198,6 +198,7 @@ func setupRoutes(app *fiber.App, h *handler.Handlers) {
 		services.Post("/:name/start", middleware.ValidateServiceName(), h.Service.StartContainer)
 		services.Post("/:name/stop", middleware.ValidateServiceName(), h.Service.StopContainer)
 		services.Post("/:name/restart", middleware.ValidateServiceName(), h.Service.RestartContainer)
+		services.Post("/:name/kill-down", middleware.ValidateServiceName(), h.Service.KillAndDownService)
 		services.Post("/:name/update", middleware.ValidateServiceName(), h.Service.UpdateService)
 		services.Put("/:name/config", middleware.ValidateServiceName(), h.Service.UpdateServiceConfig)
 		services.Get("/:name/logs", middleware.ValidateServiceName(), h.Service.GetContainerLogs)
