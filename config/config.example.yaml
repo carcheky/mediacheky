@@ -1,5 +1,5 @@
 # MediaCheky Configuration Example
-# Copy this file to /app/config/config.yaml (or ./volumes/mediacheky-config/config.yaml)
+# Copy this file to /app/config/config.yaml (or ./volumes/mediacheky-data/config.yaml)
 # and adjust values for your setup
 
 # Application Settings

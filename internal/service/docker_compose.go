@@ -180,6 +180,45 @@ func (dcc *DockerComposeClient) ComposeUpRecreate(ctx context.Context, composePa
 	return result, nil
 }
 
+// ComposeUpForceRecreate is a convenience wrapper for ComposeUpRecreate
+// It extracts the service name from the compose file and calls ComposeUpRecreate
+func (dcc *DockerComposeClient) ComposeUpForceRecreate(ctx context.Context, composePath string, configMap map[string]string) (*ComposeResult, error) {
+	// Extract service name from compose file
+	serviceName, err := dcc.extractServiceName(composePath)
+	if err != nil {
+		return nil, fmt.Errorf("failed to extract service name: %w", err)
+	}
+
+	return dcc.ComposeUpRecreate(ctx, composePath, configMap, serviceName)
+}
+
+// extractServiceName reads the compose file and returns the first service name
+func (dcc *DockerComposeClient) extractServiceName(composePath string) (string, error) {
+	data, err := os.ReadFile(composePath)
+	if err != nil {
+		return "", fmt.Errorf("failed to read compose file: %w", err)
+	}
+
+	var compose struct {
+		Services map[string]interface{} `yaml:"services"`
+	}
+
+	if err := yaml.Unmarshal(data, &compose); err != nil {
+		return "", fmt.Errorf("failed to parse compose file: %w", err)
+	}
+
+	if len(compose.Services) == 0 {
+		return "", fmt.Errorf("no services found in compose file")
+	}
+
+	// Return the first service name
+	for serviceName := range compose.Services {
+		return serviceName, nil
+	}
+
+	return "", fmt.Errorf("no services found")
+}
+
 // ComposeDown executes 'docker compose down' with multiple compose files.
 // The first file should be the main docker-compose.yml, subsequent files override/extend it.
 // If ctx is nil, a default timeout context (2 minutes) will be created automatically.

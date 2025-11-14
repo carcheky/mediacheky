@@ -293,19 +293,113 @@ func (sm *ServiceManager) RestartService(ctx context.Context, serviceName string
 		return fmt.Errorf("failed to get service: %w", err)
 	}
 
-	// Stop then start
+	// Get compose file path
+	composePath := sm.templateEngine.GetComposePath(serviceName)
+
+	// Load global config for docker compose execution
+	globalConfig, err := sm.templateEngine.LoadGlobalConfigPublic()
+	if err != nil {
+		sm.logAction(svc.ID, "restart", "error", fmt.Sprintf("Failed to load global config: %v", err))
+		return fmt.Errorf("failed to load global config: %w", err)
+	}
+
+	// Stop the service
 	if err := sm.StopService(ctx, serviceName); err != nil {
 		sm.logAction(svc.ID, "restart", "error", fmt.Sprintf("Failed to stop during restart: %v", err))
 		return fmt.Errorf("failed to stop service during restart: %w", err)
 	}
 
-	if err := sm.StartService(ctx, serviceName); err != nil {
-		sm.logAction(svc.ID, "restart", "error", fmt.Sprintf("Failed to start during restart: %v", err))
-		return fmt.Errorf("failed to start service during restart: %w", err)
+	// Use docker compose up --force-recreate to recreate the container
+	sm.logger.Info("Recreating container", zap.String("service", serviceName))
+	result, err := sm.dockerCompose.ComposeUpForceRecreate(ctx, composePath, globalConfig)
+	if err != nil {
+		sm.logAction(svc.ID, "restart", "error", fmt.Sprintf("Failed to recreate container: %v", err))
+		return fmt.Errorf("failed to recreate container: %w", err)
 	}
 
-	sm.logAction(svc.ID, "restart", "success", "Service restarted")
+	if !result.Success {
+		sm.logAction(svc.ID, "restart", "error", result.Error)
+		return fmt.Errorf("container recreation failed: %s", result.Error)
+	}
+
+	sm.logAction(svc.ID, "restart", "success", "Service restarted and container recreated")
 	sm.logger.Info("Service restarted successfully", zap.String("service", serviceName))
+
+	return nil
+}
+
+// ResetService deletes the service's config directory and recreates the container
+// This will wipe all service configuration data (NOT media files)
+func (sm *ServiceManager) ResetService(ctx context.Context, serviceName string) error {
+	sm.logger.Info("Resetting service (deleting config and recreating container)", zap.String("service", serviceName))
+
+	// Get service from database
+	svc, err := sm.serviceRepo.GetByName(serviceName)
+	if err != nil {
+		return fmt.Errorf("failed to get service: %w", err)
+	}
+
+	// Get compose file path
+	composePath := sm.templateEngine.GetComposePath(serviceName)
+
+	// Load global config
+	globalConfig, err := sm.templateEngine.LoadGlobalConfigPublic()
+	if err != nil {
+		sm.logAction(svc.ID, "reset", "error", fmt.Sprintf("Failed to load global config: %v", err))
+		return fmt.Errorf("failed to load global config: %w", err)
+	}
+
+	// Stop the service first
+	sm.logger.Info("Stopping service before config deletion", zap.String("service", serviceName))
+	if err := sm.StopService(ctx, serviceName); err != nil {
+		sm.logger.Warn("Failed to stop service, continuing anyway",
+			zap.String("service", serviceName),
+			zap.Error(err))
+	}
+
+	// Get config path from service config
+	configPath := ""
+	if svc.Config != nil {
+		if paths, ok := svc.Config["Paths"].(map[string]interface{}); ok {
+			if cp, ok := paths["Config"].(string); ok {
+				configPath = cp
+			}
+		}
+	}
+
+	if configPath == "" {
+		// Use default path
+		configPath = fmt.Sprintf("/app/data/services/%s/config", serviceName)
+	}
+
+	sm.logger.Info("Deleting service config directory",
+		zap.String("service", serviceName),
+		zap.String("path", configPath))
+
+	// Delete the config directory
+	if err := sm.templateEngine.RemoveDirectory(configPath); err != nil {
+		sm.logAction(svc.ID, "reset", "error", fmt.Sprintf("Failed to delete config directory: %v", err))
+		return fmt.Errorf("failed to delete config directory: %w", err)
+	}
+
+	sm.logger.Info("Config directory deleted, recreating container",
+		zap.String("service", serviceName))
+	sm.logAction(svc.ID, "reset", "info", "Config directory deleted, recreating container...")
+
+	// Recreate the container with fresh config
+	result, err := sm.dockerCompose.ComposeUpForceRecreate(ctx, composePath, globalConfig)
+	if err != nil {
+		sm.logAction(svc.ID, "reset", "error", fmt.Sprintf("Failed to recreate container: %v", err))
+		return fmt.Errorf("failed to recreate container: %w", err)
+	}
+
+	if !result.Success {
+		sm.logAction(svc.ID, "reset", "error", result.Error)
+		return fmt.Errorf("container recreation failed: %s", result.Error)
+	}
+
+	sm.logAction(svc.ID, "reset", "success", "Service configuration deleted and container recreated with fresh config")
+	sm.logger.Info("Service reset completed successfully", zap.String("service", serviceName))
 
 	return nil
 }

@@ -344,15 +344,27 @@ func (h *ServiceHandler) UpdateServiceConfig(c *fiber.Ctx) error {
 		"config", configUpdate,
 		"paths", configUpdate["Paths"])
 
-	// Force hardcoded paths - paths are NOT user-configurable
-	// All service configs must use /app/data/services/{serviceName}/config
-	// This path is accessible from host via ./volumes/mediacheky-data/services/
-	configUpdate["Paths"] = map[string]interface{}{
-		"Config": fmt.Sprintf("/app/data/services/%s/config", name),
+	// Ensure Paths exists and has Config path
+	if configUpdate["Paths"] == nil {
+		configUpdate["Paths"] = make(map[string]interface{})
 	}
-	h.logger.Info("Forced hardcoded service paths",
-		"name", name,
-		"config_path", configUpdate["Paths"])
+	paths, ok := configUpdate["Paths"].(map[string]interface{})
+	if !ok {
+		paths = make(map[string]interface{})
+		configUpdate["Paths"] = paths
+	}
+
+	// Set default Config path if not provided
+	if paths["Config"] == nil || paths["Config"] == "" {
+		paths["Config"] = fmt.Sprintf("./volumes/service-configs/%s/", name)
+		h.logger.Info("Using default config path",
+			"name", name,
+			"config_path", paths["Config"])
+	} else {
+		h.logger.Info("Using user-provided config path",
+			"name", name,
+			"config_path", paths["Config"])
+	}
 
 	// Check if service manager is available
 	if h.serviceManager == nil {
@@ -473,7 +485,7 @@ func (h *ServiceHandler) ConfigPage(c *fiber.Ctx) error {
 }
 
 // ResetService handles POST /api/services/:name/reset
-// Removes the config volume and recreates the container
+// Deletes the config directory and recreates the container with fresh config
 func (h *ServiceHandler) ResetService(c *fiber.Ctx) error {
 	name := c.Params("name")
 	if name == "" {
@@ -496,51 +508,18 @@ func (h *ServiceHandler) ResetService(c *fiber.Ctx) error {
 
 	h.logger.Info("Resetting service configuration", "name", name)
 
-	// Get service to find config path
-	svc, err := h.repos.Service.GetByName(name)
-	if err != nil {
-		if err == gorm.ErrRecordNotFound {
-			return c.Status(fiber.StatusNotFound).JSON(APIResponse{
-				Success: false,
-				Error:   fmt.Sprintf("Service '%s' not found", name),
-			})
-		}
-		h.logger.Error("Failed to get service", "name", name, "error", err)
+	// Use service manager to reset service (deletes config and recreates container)
+	if err := h.serviceManager.ResetService(ctx, name); err != nil {
+		h.logger.Error("Failed to reset service", "name", name, "error", err)
 		return c.Status(fiber.StatusInternalServerError).JSON(APIResponse{
 			Success: false,
-			Error:   "Failed to retrieve service",
-		})
-	}
-
-	// Stop the service first
-	if err := h.serviceManager.StopService(ctx, name); err != nil {
-		h.logger.Error("Failed to stop service during reset", "name", name, "error", err)
-		// Continue anyway - service might not be running
-	}
-
-	// Delete config volume content if path is specified
-	if svc.Config != nil {
-		if paths, ok := svc.Config["Paths"].(map[string]interface{}); ok {
-			if configPath, ok := paths["Config"].(string); ok && configPath != "" {
-				h.logger.Info("Config volume will be recreated on next start", "name", name, "path", configPath)
-				// Note: Actual deletion should be done via host system or volume management
-				// For now, we just log and rely on service restart with fresh config
-			}
-		}
-	}
-
-	// Restart the service to recreate with fresh config
-	if err := h.serviceManager.StartService(ctx, name); err != nil {
-		h.logger.Error("Failed to start service after reset", "name", name, "error", err)
-		return c.Status(fiber.StatusInternalServerError).JSON(APIResponse{
-			Success: false,
-			Error:   fmt.Sprintf("Failed to start service after reset: %v", err),
+			Error:   fmt.Sprintf("Failed to reset service: %v", err),
 		})
 	}
 
 	h.logger.Info("Service reset completed", "name", name)
 	return c.JSON(APIResponse{
 		Success: true,
-		Data:    fiber.Map{"message": "Service configuration reset and container recreated successfully"},
+		Data:    fiber.Map{"message": "Service configuration deleted and container recreated successfully"},
 	})
 }

@@ -13,7 +13,7 @@ This directory contains configuration examples for MediaCheky.
 
 When running with Docker, your config is stored in:
 ```
-./volumes/mediacheky-config/config.yaml
+./volumes/mediacheky-data/config.yaml
 ```
 
 The container automatically:

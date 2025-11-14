@@ -22,6 +22,7 @@ type TemplateEngine struct {
 	logger       *zap.Logger
 	templatesDir string
 	servicesDir  string
+	baseDir      string // Base directory where MediaCheky docker-compose.yml is located
 	configRepo   ConfigRepository
 	templateRepo TemplateRepository
 }
@@ -76,10 +77,29 @@ func NewTemplateEngine(logger *zap.Logger, templatesDir, servicesDir string, con
 		absServicesDir = servicesDir
 	}
 
+	// Get base directory from environment variable (host path) or fallback to working directory
+	baseDir := os.Getenv("MEDIACHEKY_HOST_PATH")
+	if baseDir == "" {
+		// Fallback to current working directory (for development/testing)
+		var err error
+		baseDir, err = os.Getwd()
+		if err != nil {
+			logger.Warn("Failed to get working directory, using current dir",
+				zap.Error(err))
+			baseDir = "."
+		}
+		logger.Warn("MEDIACHEKY_HOST_PATH not set, using working directory",
+			zap.String("baseDir", baseDir))
+	} else {
+		logger.Info("Using MEDIACHEKY_HOST_PATH for base directory",
+			zap.String("baseDir", baseDir))
+	}
+
 	return &TemplateEngine{
 		logger:       logger,
 		templatesDir: templatesDir,
 		servicesDir:  absServicesDir,
+		baseDir:      baseDir,
 		configRepo:   configRepo,
 		templateRepo: templateRepo,
 	}
@@ -133,6 +153,10 @@ func needsDynamicCompose(config models.ServiceConfig) bool {
 		return true
 	}
 	if _, ok := config["HostPort"].(int); ok {
+		return true
+	}
+	// Paths field exists - need dynamic generation to resolve absolute paths
+	if paths, ok := config["Paths"].(map[string]interface{}); ok && len(paths) > 0 {
 		return true
 	}
 	// Future: add more conditional triggers here (environment overrides, optional volumes, etc.)
@@ -276,17 +300,12 @@ func (te *TemplateEngine) LoadGlobalConfigPublic() (map[string]string, error) {
 		configMap["TZ"] = "UTC"
 	}
 
-	// Path defaults - convert relative paths to absolute based on project root
+	// Path defaults - convert relative paths to absolute based on MediaCheky base directory
 	if configMap["CONFIG_BASE_PATH"] == "" {
 		configMap["CONFIG_BASE_PATH"] = "./volumes"
 	}
-	// Convert to absolute path if relative
-	if !filepath.IsAbs(configMap["CONFIG_BASE_PATH"]) {
-		absPath, err := filepath.Abs(configMap["CONFIG_BASE_PATH"])
-		if err == nil {
-			configMap["CONFIG_BASE_PATH"] = absPath
-		}
-	}
+	// Convert to absolute path if relative (relative to MediaCheky base dir)
+	configMap["CONFIG_BASE_PATH"] = te.toAbsolutePath(configMap["CONFIG_BASE_PATH"])
 
 	// New canonical key for shared media root
 	if configMap["MEDIACHEKY_MEDIA_PATH"] == "" {
@@ -298,13 +317,8 @@ func (te *TemplateEngine) LoadGlobalConfigPublic() (map[string]string, error) {
 			configMap["MEDIACHEKY_MEDIA_PATH"] = "./volumes"
 		}
 	}
-	// Convert to absolute path if relative
-	if !filepath.IsAbs(configMap["MEDIACHEKY_MEDIA_PATH"]) {
-		absPath, err := filepath.Abs(configMap["MEDIACHEKY_MEDIA_PATH"])
-		if err == nil {
-			configMap["MEDIACHEKY_MEDIA_PATH"] = absPath
-		}
-	}
+	// Convert to absolute path if relative (relative to MediaCheky base dir)
+	configMap["MEDIACHEKY_MEDIA_PATH"] = te.toAbsolutePath(configMap["MEDIACHEKY_MEDIA_PATH"])
 
 	if configMap["DOWNLOADS_PATH"] == "" {
 		configMap["DOWNLOADS_PATH"] = "downloads"
@@ -343,6 +357,28 @@ func (te *TemplateEngine) loadTemplate(serviceName string) (string, error) {
 		zap.String("path", templatePath))
 
 	return string(content), nil
+}
+
+// toAbsolutePath converts a relative path to absolute based on MediaCheky's base directory
+// If the path is already absolute, it returns it unchanged
+func (te *TemplateEngine) toAbsolutePath(path string) string {
+	// Check if path is already absolute
+	if filepath.IsAbs(path) {
+		return path
+	}
+
+	// Convert relative path to absolute by joining with base directory
+	absPath := filepath.Join(te.baseDir, path)
+
+	// Clean the path to remove any .. or . components
+	absPath = filepath.Clean(absPath)
+
+	te.logger.Debug("Converted relative path to absolute",
+		zap.String("relative", path),
+		zap.String("absolute", absPath),
+		zap.String("base_dir", te.baseDir))
+
+	return absPath
 }
 
 // buildTemplateData builds the template data from service config and global config
@@ -385,17 +421,18 @@ func (te *TemplateEngine) buildTemplateData(config models.ServiceConfig, globalC
 		data.HostPort = 0 // 0 means no port exposure (internal network only)
 	}
 
-	// Extract paths
+	// Extract paths and convert to absolute paths
 	if paths, ok := config["Paths"].(map[string]interface{}); ok {
 		data.Paths = make(map[string]string)
 		for k, v := range paths {
 			if strVal, ok := v.(string); ok {
-				data.Paths[k] = strVal
+				// Convert to absolute path if relative
+				data.Paths[k] = te.toAbsolutePath(strVal)
 			}
 		}
-		te.logger.Info("Extracted paths from config",
+		te.logger.Info("Extracted and converted paths to absolute",
 			zap.Any("paths_interface", paths),
-			zap.Any("paths_string", data.Paths))
+			zap.Any("paths_absolute", data.Paths))
 	} else {
 		te.logger.Warn("Paths field missing or wrong type",
 			zap.Any("paths_value", config["Paths"]),
@@ -635,5 +672,27 @@ func (te *TemplateEngine) EnsureDirectoryExists(path string) error {
 			return fmt.Errorf("failed to create directory: %w", err)
 		}
 	}
+	return nil
+}
+
+// RemoveDirectory removes a directory and all its contents
+func (te *TemplateEngine) RemoveDirectory(path string) error {
+	// Security check: ensure path is within allowed directories
+	if !strings.HasPrefix(path, "/app/data/services/") && !strings.HasPrefix(path, "./volumes/mediacheky-data/services/") {
+		return fmt.Errorf("refusing to delete directory outside of services config area: %s", path)
+	}
+
+	// Check if directory exists
+	if _, err := os.Stat(path); os.IsNotExist(err) {
+		te.logger.Debug("Directory does not exist, nothing to remove", zap.String("path", path))
+		return nil
+	}
+
+	te.logger.Info("Removing directory", zap.String("path", path))
+	if err := os.RemoveAll(path); err != nil {
+		return fmt.Errorf("failed to remove directory: %w", err)
+	}
+
+	te.logger.Info("Directory removed successfully", zap.String("path", path))
 	return nil
 }

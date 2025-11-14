@@ -268,7 +268,7 @@
                 </label>
                 <input type="text" x-model="config.Paths.Config" 
                     @input="validateField('config_path')"
-                    placeholder="./volumes/radarr/config"
+                    placeholder="./volumes/service-configs/radarr/"
                     class="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-dark-bg text-dark-text"
                     :class="errors.config_path ? 'border-red-500' : 'border-dark-border'">
                 <p x-show="errors.config_path" class="text-xs text-red-400 mt-1" x-text="errors.config_path"></p>
@@ -519,7 +519,7 @@
                         ContainerName: 'radarr',
                         RestartPolicy: 'unless-stopped',
                         Paths: {
-                            Config: './volumes/radarr/config'
+                            Config: './volumes/service-configs/radarr/'
                         }
                         // NO HostPort default - omit field to use static compose
                     },
@@ -528,7 +528,7 @@
                         ContainerName: 'sonarr',
                         RestartPolicy: 'unless-stopped',
                         Paths: {
-                            Config: './volumes/sonarr/config'
+                            Config: './volumes/service-configs/sonarr/'
                         }
                         // NO HostPort default - omit field to use static compose
                     }
