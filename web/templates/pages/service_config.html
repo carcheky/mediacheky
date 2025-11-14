@@ -155,134 +155,33 @@
              x-transition:leave-end="opacity-0 transform -translate-y-2"
              class="px-6 pb-6">
             
-            <!-- Tabs Navigation -->
-            <div x-data="{ activeAppTab: 'general' }" class="space-y-6">
-                <div class="border-b border-dark-border">
-                    <nav class="-mb-px flex space-x-8 items-center">
-                        <button @click="activeAppTab = 'general'"
-                            :class="activeAppTab === 'general' ? 'border-blue-500 text-blue-400' : 'border-transparent text-dark-muted hover:text-dark-text hover:border-slate-600'"
-                            class="whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors flex items-center gap-2">
-                            General
-                            <!-- Link to Radarr Settings (Icon only) -->
-                            <a x-show="enabled && status === 'running' && serviceEndpoint" :href="(proxyConfig.sslEnabled ? 'https://' : 'http://') + serviceEndpoint + '/settings/general'" 
-                               target="_blank" rel="noopener"
-                               class="text-blue-400 hover:text-blue-300 transition-colors"
-                               title="Open Radarr Settings">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path>
-                                </svg>
-                            </a>
-                        </button>
-                    </nav>
-                </div>
-                
-                <!-- General Tab Content -->
-                <div x-show="activeAppTab === 'general'" class="space-y-6">
-                    
-                    <!-- Host Section -->
-                    <div>
-                        <h3 class="text-sm font-semibold text-purple-400 mb-3 uppercase tracking-wide">Host</h3>
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div>
-                                <label class="block text-sm font-medium text-dark-text mb-1">
-                                    Host Address
-                                    <span class="ml-2 inline-block px-2 py-0.5 bg-blue-900/40 border border-blue-700/50 text-blue-300 rounded text-xs font-normal italic">config.xml</span>
-                                </label>
-                                <input type="text" x-model="radarrConfig.BindAddress" 
-                                    class="w-full px-3 py-2 border border-dark-border rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 bg-dark-bg text-dark-text">
-                                <p class="text-xs text-dark-muted mt-1">* = all interfaces, 127.0.0.1 = localhost only</p>
-                            </div>
-
-                            <div>
-                                <label class="block text-sm font-medium text-dark-text mb-1">
-                                    Port Number
-                                    <span class="ml-2 inline-block px-2 py-0.5 bg-blue-900/40 border border-blue-700/50 text-blue-300 rounded text-xs font-normal italic">config.xml</span>
-                                </label>
-                                <input type="number" x-model.number="radarrConfig.Port" 
-                                    min="1024" max="65535"
-                                    class="w-full px-3 py-2 border border-dark-border rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 bg-dark-bg text-dark-text">
-                                <p class="text-xs text-dark-muted mt-1">HTTP port (internal container port)</p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- URL Base Section -->
-                    <div>
-                        <h3 class="text-sm font-semibold text-purple-400 mb-3 uppercase tracking-wide">URL Base <span class="ml-2 inline-block px-2 py-0.5 bg-blue-900/40 border border-blue-700/50 text-blue-300 rounded text-xs font-normal italic">config.xml</span></h3>
+            <div class="space-y-8">
+                <div>
+                    <div class="flex items-center justify-between mb-4">
                         <div>
-                            <input type="text" x-model="radarrConfig.UrlBase" 
-                                placeholder="/radarr"
-                                class="w-full px-3 py-2 border border-dark-border rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 bg-dark-bg text-dark-text">
-                            <p class="text-xs text-dark-muted mt-1">For reverse proxy support, default is empty</p>
+                            <h3 class="text-sm font-semibold text-purple-400 uppercase tracking-wide">Config.xml values</h3>
+                            <p class="text-xs text-dark-muted">MediaCheky reads/writes Radarr's config.xml directly.</p>
                         </div>
+                        <a x-show="enabled && status === 'running' && serviceEndpoint" :href="(proxyConfig.sslEnabled ? 'https://' : 'http://') + serviceEndpoint + '/settings/general'" 
+                           target="_blank" rel="noopener"
+                           class="text-blue-400 hover:text-blue-300 transition-colors flex items-center gap-1 text-xs"
+                           title="Open Radarr">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path>
+                            </svg>
+                            Radarr Settings
+                        </a>
                     </div>
 
-                    <!-- Security Section -->
-                    <div class="border-t border-dark-border pt-6">
-                        <h3 class="text-sm font-semibold text-purple-400 mb-3 uppercase tracking-wide">Security</h3>
-                        
-                        <!-- Authentication -->
-                        <div class="mb-4">
-                            <h4 class="text-xs font-semibold text-dark-muted mb-3 uppercase">Authentication</h4>
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div>
-                                    <label class="block text-sm font-medium text-dark-text mb-1">
-                                        Require Username and Password to access Radarr
-                                        <span class="ml-2 inline-block px-2 py-0.5 bg-blue-900/40 border border-blue-700/50 text-blue-300 rounded text-xs font-normal italic">config.xml</span>
-                                    </label>
-                                    <select x-model="radarrConfig.AuthenticationMethod"
-                                        class="w-full px-3 py-2 border border-dark-border rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 bg-dark-bg text-dark-text">
-                                        <option value="None">None</option>
-                                        <option value="Basic">Basic (Browser popup)</option>
-                                        <option value="Forms">Forms (Login page)</option>
-                                        <option value="External">External</option>
-                                    </select>
-                                    <p class="text-xs text-dark-muted mt-1">How users authenticate</p>
-                                </div>
-
-                                <div>
-                                    <label class="block text-sm font-medium text-dark-text mb-1">
-                                        Authentication Required
-                                        <span class="ml-2 inline-block px-2 py-0.5 bg-blue-900/40 border border-blue-700/50 text-blue-300 rounded text-xs font-normal italic">config.xml</span>
-                                    </label>
-                                    <select x-model="radarrConfig.AuthenticationRequired"
-                                        class="w-full px-3 py-2 border border-dark-border rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 bg-dark-bg text-dark-text">
-                                        <option value="Enabled">Enabled (Always require auth)</option>
-                                        <option value="DisabledForLocalAddresses">Disabled for Local Addresses</option>
-                                    </select>
-                                    <p class="text-xs text-dark-muted mt-1">When authentication is required</p>
-                                </div>
-
-                                <div>
-                                    <label class="block text-sm font-medium text-dark-text mb-1">
-                                        Username
-                                        <span class="ml-2 inline-block px-2 py-0.5 bg-amber-900/40 border border-amber-700/50 text-amber-300 rounded text-xs font-normal italic">auth API</span>
-                                    </label>
-                                    <input type="text" id="radarr-username" 
-                                        class="w-full px-3 py-2 border border-dark-border rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 bg-dark-bg text-dark-text">
-                                    <p class="text-xs text-dark-muted mt-1">Radarr API authentication username</p>
-                                </div>
-
-                                <div>
-                                    <label class="block text-sm font-medium text-dark-text mb-1">
-                                        Password
-                                        <span class="ml-2 inline-block px-2 py-0.5 bg-amber-900/40 border border-amber-700/50 text-amber-300 rounded text-xs font-normal italic">auth API</span>
-                                    </label>
-                                    <input type="password" id="radarr-password" 
-                                        class="w-full px-3 py-2 border border-dark-border rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 bg-dark-bg text-dark-text">
-                                    <p class="text-xs text-dark-muted mt-1">Radarr API authentication password</p>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- API Key -->
-                        <div class="mb-4">
-                            <h4 class="text-xs font-semibold text-dark-muted mb-3 uppercase">API Key <span class="ml-2 inline-block px-2 py-0.5 bg-blue-900/40 border border-blue-700/50 text-blue-300 rounded text-xs font-normal italic">config.xml</span></h4>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="md:col-span-2">
+                            <label class="block text-sm font-medium text-dark-text mb-1">Api Key
+                                <span class="ml-2 inline-block px-2 py-0.5 bg-blue-900/40 border border-blue-700/50 text-blue-300 rounded text-xs font-normal italic">config.xml</span>
+                            </label>
                             <div class="flex gap-2">
-                                <input type="text" x-model="radarrConfig.ApiKey" 
-                                    readonly
+                                <input type="text" x-model="radarrConfig.ApiKey" readonly
                                     class="flex-1 px-3 py-2 border border-dark-border rounded-md bg-dark-surface text-dark-muted cursor-not-allowed">
-                                <button @click="copyToClipboard(radarrConfig.ApiKey)" 
+                                <button @click="copyToClipboard(radarrConfig.ApiKey)"
                                     class="px-3 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 flex items-center gap-2">
                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
@@ -290,33 +189,37 @@
                                     Copy
                                 </button>
                             </div>
-                            <p class="text-xs text-dark-muted mt-1">Auto-generated by Radarr</p>
+                            <p class="text-xs text-dark-muted mt-1">Radarr-generated value for API integrations.</p>
                         </div>
 
-                        <!-- Certificate Validation -->
                         <div>
-                            <h4 class="text-xs font-semibold text-dark-muted mb-3 uppercase">Certificate Validation <span class="ml-2 inline-block px-2 py-0.5 bg-blue-900/40 border border-blue-700/50 text-blue-300 rounded text-xs font-normal italic">config.xml</span></h4>
-                            <label class="flex items-center cursor-pointer p-2 hover:bg-dark-bg/50 rounded">
-                                <input type="checkbox" x-model="radarrConfig.EnableSsl" class="w-4 h-4 text-purple-600 bg-dark-bg border-dark-border rounded focus:ring-purple-500 focus:ring-2">
-                                <span class="ml-2 text-sm text-dark-text">Enable SSL/HTTPS <span class="ml-2 inline-block px-2 py-0.5 bg-blue-900/40 border border-blue-700/50 text-blue-300 rounded text-xs font-normal italic">config.xml</span></span>
+                            <label class="block text-sm font-medium text-dark-text mb-1">
+                                Authentication Method
+                                <span class="ml-2 inline-block px-2 py-0.5 bg-blue-900/40 border border-blue-700/50 text-blue-300 rounded text-xs font-normal italic">config.xml</span>
                             </label>
-                            <p class="text-xs text-dark-muted mt-1">Requires valid certificate configuration</p>
+                            <select x-model="radarrConfig.AuthenticationMethod"
+                                class="w-full px-3 py-2 border border-dark-border rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 bg-dark-bg text-dark-text">
+                                <option value="None">None</option>
+                                <option value="Basic">Basic (Browser popup)</option>
+                                <option value="Forms">Forms (Login page)</option>
+                                <option value="External">External</option>
+                            </select>
+                            <p class="text-xs text-dark-muted mt-1">Choose the native authentication mechanism.</p>
                         </div>
-                    </div>
 
-                    <!-- Proxy Section -->
-                    <div class="border-t border-dark-border pt-6">
-                        <h3 class="text-sm font-semibold text-purple-400 mb-3 uppercase tracking-wide">Proxy</h3>
-                        <label class="flex items-center cursor-pointer p-2 hover:bg-dark-bg/50 rounded">
-                            <input type="checkbox" x-model="radarrConfig.UseProxy" class="w-4 h-4 text-purple-600 bg-dark-bg border-dark-border rounded focus:ring-purple-500 focus:ring-2">
-                            <span class="ml-2 text-sm text-dark-text">Use Proxy</span>
-                        </label>
-                        <p class="text-xs text-dark-muted mt-1">Enable proxy support for HTTP requests</p>
-                    </div>
+                        <div>
+                            <label class="block text-sm font-medium text-dark-text mb-1">
+                                Authentication Required
+                                <span class="ml-2 inline-block px-2 py-0.5 bg-blue-900/40 border border-blue-700/50 text-blue-300 rounded text-xs font-normal italic">config.xml</span>
+                            </label>
+                            <select x-model="radarrConfig.AuthenticationRequired"
+                                class="w-full px-3 py-2 border border-dark-border rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 bg-dark-bg text-dark-text">
+                                <option value="Enabled">Enabled (Always require auth)</option>
+                                <option value="DisabledForLocalAddresses">Disabled for Local Addresses</option>
+                            </select>
+                            <p class="text-xs text-dark-muted mt-1">Controls when Radarr enforces authentication.</p>
+                        </div>
 
-                    <!-- Logging Section -->
-                    <div class="border-t border-dark-border pt-6">
-                        <h3 class="text-sm font-semibold text-purple-400 mb-3 uppercase tracking-wide">Logging</h3>
                         <div>
                             <label class="block text-sm font-medium text-dark-text mb-1">
                                 Log Level
@@ -330,18 +233,44 @@
                                 <option value="warn">Warning</option>
                                 <option value="error">Error</option>
                             </select>
-                            <p class="text-xs text-dark-muted mt-1">Logging verbosity level</p>
+                            <p class="text-xs text-dark-muted mt-1">Logging verbosity level.</p>
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-dark-text mb-1">
+                                Instance Name
+                                <span class="ml-2 inline-block px-2 py-0.5 bg-blue-900/40 border border-blue-700/50 text-blue-300 rounded text-xs font-normal italic">config.xml</span>
+                            </label>
+                            <input type="text" x-model="radarrConfig.InstanceName"
+                                class="w-full px-3 py-2 border border-dark-border rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 bg-dark-bg text-dark-text">
+                            <p class="text-xs text-dark-muted mt-1">Friendly name displayed across Radarr UI.</p>
                         </div>
                     </div>
+                </div>
 
-                    <!-- Analytics Section -->
-                    <div class="border-t border-dark-border pt-6">
-                        <h3 class="text-sm font-semibold text-purple-400 mb-3 uppercase tracking-wide">Analytics</h3>
-                        <label class="flex items-center cursor-pointer p-2 hover:bg-dark-bg/50 rounded">
-                            <input type="checkbox" x-model="radarrConfig.SendAnonymousUsageData" class="w-4 h-4 text-purple-600 bg-dark-bg border-dark-border rounded focus:ring-purple-500 focus:ring-2">
-                            <span class="ml-2 text-sm text-dark-text">Send Anonymous Usage Data</span>
-                        </label>
-                        <p class="text-xs text-dark-muted mt-1">Help improve Radarr by sending anonymous usage statistics</p>
+                <div class="border-t border-dark-border pt-6">
+                    <h3 class="text-sm font-semibold text-purple-400 uppercase tracking-wide mb-3">Radarr Auth API</h3>
+                    <p class="text-xs text-dark-muted mb-4">These credentials are persisted through Radarr's /config/auth endpoint.</p>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-dark-text mb-1">
+                                Username
+                                <span class="ml-2 inline-block px-2 py-0.5 bg-amber-900/40 border border-amber-700/50 text-amber-300 rounded text-xs font-normal italic">auth API</span>
+                            </label>
+                            <input type="text" id="radarr-username"
+                                class="w-full px-3 py-2 border border-dark-border rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 bg-dark-bg text-dark-text">
+                            <p class="text-xs text-dark-muted mt-1">Username used to access the Radarr UI.</p>
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-dark-text mb-1">
+                                Password
+                                <span class="ml-2 inline-block px-2 py-0.5 bg-amber-900/40 border border-amber-700/50 text-amber-300 rounded text-xs font-normal italic">auth API</span>
+                            </label>
+                            <input type="password" id="radarr-password"
+                                class="w-full px-3 py-2 border border-dark-border rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 bg-dark-bg text-dark-text">
+                            <p class="text-xs text-dark-muted mt-1">Password sent to Radarr via API.</p>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -753,7 +682,7 @@
                 this.loadProxySettings().catch(e => console.error('Failed to load proxy settings:', e));
                 this.loadServiceEndpoint().catch(e => console.error('Failed to load service endpoint:', e));
                 this.loadRadarrConfig().catch(e => console.error('Failed to load Radarr config:', e));
-                this.loadRadarrAuthSettings().catch(e => console.error('Failed to load Radarr auth settings:', e));
+                // Don't load auth settings on init - they require API key which may not be ready yet
                 
                 // Poll service status every 5 seconds
                 this.statusInterval = setInterval(async () => {
@@ -1201,8 +1130,17 @@
                     if (restartResponse.ok) {
                         this.updateProgress(2); // Update to step 3: Reloading data
                         this.showMessage('Configuration applied and container recreated successfully!', 'success');
+                        
+                        // Wait for container to start
                         await new Promise(resolve => setTimeout(resolve, 2000));
+                        
+                        // Reload all data including service status
                         await this.reloadAllData();
+                        await this.updateServiceStatus();
+                        
+                        // Re-enable action buttons
+                        this.actionInProgress = false;
+                        
                         this.endProgress();
                     } else {
                         const data = await restartResponse.json();
@@ -1558,16 +1496,11 @@
                 }
             },
 
-            // Load Radarr authentication settings from API
+            // Load Radarr authentication settings from API (manual trigger only)
             async loadRadarrAuthSettings() {
                 if (this.serviceName.toLowerCase() !== 'radarr') return;
                 
                 try {
-                    this.startProgress('Loading authentication settings', [
-                        'Connecting to Radarr',
-                        'Retrieving credentials'
-                    ]);
-
                     const response = await fetch(`/api/services/${this.serviceName}/radarr/auth`);
                     
                     if (response.ok) {
@@ -1576,22 +1509,16 @@
                         
                         // Update form fields with loaded values
                         if (authConfig.username) {
-                            document.querySelector('#radarr-username').value = authConfig.username;
+                            const usernameField = document.querySelector('#radarr-username');
+                            if (usernameField) usernameField.value = authConfig.username;
                         }
                         // Note: password is not returned by API for security
-                        
-                        this.updateProgress(1);
-                        this.endProgress();
-                        this.showMessage('Authentication settings loaded successfully', 'success');
-                    } else {
-                        const data = await response.json();
-                        this.showMessage(data.error || 'Failed to load authentication settings', 'error');
-                        this.endProgress();
+                        return true;
                     }
                 } catch (error) {
-                    this.showMessage('Error loading authentication settings: ' + error.message, 'error');
-                    this.endProgress();
+                    console.error('Error loading authentication settings:', error);
                 }
+                return false;
             },
 
             // Save Radarr authentication settings to API

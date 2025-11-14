@@ -7,6 +7,7 @@ import (
 	"encoding/xml"
 	"fmt"
 	"io"
+	"net"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -440,6 +441,8 @@ func (h *ServiceHandler) UpdateServiceConfig(c *fiber.Ctx) error {
 			"config_path", paths["Config"])
 	}
 
+	configPathStr, _ := paths["Config"].(string)
+
 	// Check if service manager is available
 	if h.serviceManager == nil {
 		return c.Status(fiber.StatusServiceUnavailable).JSON(APIResponse{
@@ -466,7 +469,7 @@ func (h *ServiceHandler) UpdateServiceConfig(c *fiber.Ctx) error {
 		password, _ := radarrAuth["password"].(string)
 
 		if username != "" && password != "" {
-			updateRadarrAuthInBackground(username, password, h.logger)
+			updateRadarrAuthInBackground(username, password, configPathStr, h.logger)
 		}
 	}
 
@@ -752,14 +755,12 @@ func (h *ServiceHandler) CheckServiceReady(c *fiber.Ctx) error {
 			}
 		}
 
-		// Use standard port
-		apiURL := fmt.Sprintf("http://%s:7878/api/v3/health", name)
-
-		// If we have API key, add it to the request
+		// Only try API endpoint if we have the API key
 		if apiKey != "" {
-			req, err := http.NewRequest(http.MethodHead, apiURL, nil)
+			apiURL := fmt.Sprintf("http://%s:7878/api/v3/health", name)
+			req, err := http.NewRequest(http.MethodGet, apiURL, nil)
 			if err == nil {
-				req.Header.Set("X-API-Key", apiKey)
+				req.Header.Set("X-Api-Key", apiKey)
 				resp, err := client.Do(req)
 				if err == nil {
 					defer resp.Body.Close()
@@ -778,16 +779,18 @@ func (h *ServiceHandler) CheckServiceReady(c *fiber.Ctx) error {
 			}
 		}
 
-		// Fallback to UI root (no auth required) if API key not available
-		uiURL := fmt.Sprintf("http://%s:7878/", name)
-		if ok, code, _ := tryURL(uiURL); ok {
+		// If API check didn't work, just check if port is responding (TCP check only)
+		// This avoids authentication challenges
+		conn, err := net.DialTimeout("tcp", fmt.Sprintf("%s:7878", name), 1*time.Second)
+		if err == nil {
+			conn.Close()
 			return c.JSON(APIResponse{
 				Success: true,
 				Data: fiber.Map{
 					"ready":       true,
-					"via":         "ui",
-					"status_code": code,
-					"url":         uiURL,
+					"via":         "tcp",
+					"status_code": 0,
+					"url":         fmt.Sprintf("http://%s:7878", name),
 				},
 			})
 		}
@@ -844,6 +847,36 @@ func (h *ServiceHandler) CheckServiceReady(c *fiber.Ctx) error {
 	})
 }
 
+// getServiceConfigPath attempts to extract the config path from the stored service configuration
+func getServiceConfigPath(svc *models.Service) string {
+	if svc == nil || svc.Config == nil {
+		return ""
+	}
+
+	if pathsRaw, ok := svc.Config["Paths"]; ok && pathsRaw != nil {
+		switch paths := pathsRaw.(type) {
+		case map[string]interface{}:
+			if configPath, ok := paths["Config"].(string); ok {
+				return configPath
+			}
+		case models.ServiceConfig:
+			if configPath, ok := paths["Config"].(string); ok {
+				return configPath
+			}
+		case map[string]string:
+			if configPath, ok := paths["Config"]; ok {
+				return configPath
+			}
+		}
+	}
+
+	if configPath, ok := svc.Config["ConfigPath"].(string); ok {
+		return configPath
+	}
+
+	return ""
+}
+
 // RadarrAuthConfig handles GET /api/services/:name/radarr/auth
 // Retrieves authentication configuration from Radarr
 func (h *ServiceHandler) RadarrAuthConfig(c *fiber.Ctx) error {
@@ -880,7 +913,7 @@ func (h *ServiceHandler) RadarrAuthConfig(c *fiber.Ctx) error {
 	}
 
 	// Get API key from config.xml
-	configPath := filepath.Join(os.Getenv("HOME"), ".config/Radarr", "config.xml")
+	configPath := getServiceConfigPath(svc)
 	apiKey, err := extractRadarrAPIKey(configPath)
 	if err != nil {
 		h.logger.Error("Failed to get Radarr API key", "error", err)
@@ -993,7 +1026,7 @@ func (h *ServiceHandler) UpdateRadarrAuthConfig(c *fiber.Ctx) error {
 	}
 
 	// Get API key from config.xml
-	configPath := filepath.Join(os.Getenv("HOME"), ".config/Radarr", "config.xml")
+	configPath := getServiceConfigPath(svc)
 	apiKey, err := extractRadarrAPIKey(configPath)
 	if err != nil {
 		h.logger.Error("Failed to get Radarr API key", "error", err)
@@ -1049,10 +1082,10 @@ func (h *ServiceHandler) UpdateRadarrAuthConfig(c *fiber.Ctx) error {
 }
 
 // updateRadarrAuthInBackground updates Radarr authentication asynchronously
-func updateRadarrAuthInBackground(username, password string, logger *logger.Logger) {
+func updateRadarrAuthInBackground(username, password, configPath string, logger *logger.Logger) {
 	// Use a goroutine to avoid blocking the response
 	go func() {
-		apiKey, err := extractRadarrAPIKey("")
+		apiKey, err := extractRadarrAPIKey(configPath)
 		if err != nil || apiKey == "" {
 			logger.Warn("Failed to extract Radarr API key for auth update", "error", err)
 			return
@@ -1119,15 +1152,30 @@ func extractRadarrAPIKey(configPath string) (string, error) {
 		return apiKey, nil
 	}
 
+	var possiblePaths []string
+
+	if configPath != "" {
+		cleanPath := filepath.Clean(configPath)
+		if filepath.Ext(cleanPath) == ".xml" {
+			possiblePaths = append(possiblePaths, cleanPath)
+		} else {
+			possiblePaths = append(possiblePaths, filepath.Join(cleanPath, "config.xml"))
+		}
+	}
+
 	// Possible paths where config.xml might be located
-	possiblePaths := []string{
+	possiblePaths = append(possiblePaths,
 		// Docker volumes path (most common in docker-compose setup)
 		"./volumes/services-volumes/radarr/config.xml",
 		"/root/volumes/services-volumes/radarr/config.xml",
-		"/config/config.xml",                    // Inside radarr container
-		filepath.Join(configPath, "config.xml"), // Passed config path
-		filepath.Join(os.Getenv("HOME"), ".config/Radarr/config.xml"),
+		"/config/config.xml", // Inside radarr container
+	)
+
+	if configPath != "" {
+		possiblePaths = append(possiblePaths, filepath.Join(configPath, "config.xml"))
 	}
+
+	possiblePaths = append(possiblePaths, filepath.Join(os.Getenv("HOME"), ".config/Radarr/config.xml"))
 
 	for _, path := range possiblePaths {
 		if fileInfo, err := os.Stat(path); err == nil && !fileInfo.IsDir() {
