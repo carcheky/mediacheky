@@ -389,57 +389,42 @@ func (sm *ServiceManager) ResetService(ctx context.Context, serviceName string) 
 		return fmt.Errorf("failed to load global config: %w", err)
 	}
 
-	// Stop the service first
-	sm.logger.Info("Stopping service before config deletion", zap.String("service", serviceName))
-	if err := sm.StopService(ctx, serviceName); err != nil {
-		sm.logger.Warn("Failed to stop service, continuing anyway",
+	// Stop the service and remove volumes with docker compose down -v
+	sm.logger.Info("Stopping service and removing volumes (docker compose down -v)", zap.String("service", serviceName))
+	downResult, downErr := sm.dockerCompose.ComposeDownWithVolumes(ctx, composePath, globalConfig)
+	if downErr != nil {
+		sm.logger.Warn("Failed to stop service with docker compose down -v, continuing anyway",
 			zap.String("service", serviceName),
-			zap.Error(err))
+			zap.Error(downErr))
+	} else if !downResult.Success {
+		sm.logger.Warn("docker compose down -v reported error, continuing anyway",
+			zap.String("service", serviceName),
+			zap.String("error", downResult.Error))
 	}
 
-	// Get config path from service config
-	configPath := ""
-	if svc.Config != nil {
-		if paths, ok := svc.Config["Paths"].(map[string]interface{}); ok {
-			if cp, ok := paths["Config"].(string); ok {
-				configPath = cp
-			}
+	// Delete both directories: services/radarr and services-volumes/radarr
+	serviceDirs := []string{
+		filepath.Join("/app/data/services", serviceName),         // docker compose files
+		filepath.Join("/app/data/services-volumes", serviceName), // config data
+	}
+
+	for _, dirPath := range serviceDirs {
+		sm.logger.Info("Deleting service directory",
+			zap.String("service", serviceName),
+			zap.String("path", dirPath))
+
+		if err := sm.templateEngine.RemoveDirectory(dirPath); err != nil {
+			sm.logger.Warn("Failed to delete directory, continuing",
+				zap.String("path", dirPath),
+				zap.Error(err))
 		}
 	}
 
-	if configPath == "" {
-		// Use default path
-		configPath = buildServiceConfigPath(serviceName)
-	}
-
-	sm.logger.Info("Deleting service config directory",
-		zap.String("service", serviceName),
-		zap.String("path", configPath))
-
-	// Delete the config directory
-	if err := sm.templateEngine.RemoveDirectory(configPath); err != nil {
-		sm.logAction(svc.ID, "reset", "error", fmt.Sprintf("Failed to delete config directory: %v", err))
-		return fmt.Errorf("failed to delete config directory: %w", err)
-	}
-
-	sm.logger.Info("Config directory deleted, recreating container",
+	sm.logger.Info("Service directories deleted",
 		zap.String("service", serviceName))
-	sm.logAction(svc.ID, "reset", "info", "Config directory deleted, recreating container...")
 
-	// Recreate the container with fresh config
-	result, err := sm.dockerCompose.ComposeUpForceRecreate(ctx, composePath, globalConfig)
-	if err != nil {
-		sm.logAction(svc.ID, "reset", "error", fmt.Sprintf("Failed to recreate container: %v", err))
-		return fmt.Errorf("failed to recreate container: %w", err)
-	}
-
-	if !result.Success {
-		sm.logAction(svc.ID, "reset", "error", result.Error)
-		return fmt.Errorf("container recreation failed: %s", result.Error)
-	}
-
-	sm.logAction(svc.ID, "reset", "success", "Service configuration deleted and container recreated with fresh config")
-	sm.logger.Info("Service reset completed successfully", zap.String("service", serviceName))
+	sm.logAction(svc.ID, "reset", "success", "Service configuration pruned successfully (down -v + deleted directories)")
+	sm.logger.Info("Service prune completed successfully", zap.String("service", serviceName))
 
 	return nil
 }

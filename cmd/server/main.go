@@ -203,6 +203,7 @@ func setupRoutes(app *fiber.App, h *handler.Handlers) {
 		services.Get("/:name/logs", middleware.ValidateServiceName(), h.Service.GetContainerLogs)
 		services.Put("/:name/subdomain", middleware.ValidateServiceName(), h.Proxy.UpdateServiceSubdomain)
 		services.Get("/:name/endpoint", middleware.ValidateServiceName(), h.Proxy.GetServiceEndpoint)
+		services.Get("/:name/config-exists", middleware.ValidateServiceName(), h.Service.CheckConfigExists)
 		services.Post("/:name/reset", middleware.ValidateServiceName(), h.Service.ResetService)
 
 		// Global configuration endpoints with validation

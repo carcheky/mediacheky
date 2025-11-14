@@ -28,10 +28,12 @@ La página de configuración de radar tendrá varias secciones de configuración
 ### Comportamiento de Botones
 
 - **Apply**: Aplica cambios **sin confirmación**. Si cambia configuración de Docker, recrea el contenedor. **Solo visible cuando el servicio está habilitado**
-- **Reset**: **Requiere confirmación** antes de ejecutar. **Siempre visible**, independientemente del estado del servicio. Al pulsar:
-  1. Deshabilita el servicio si está habilitado
-  2. Borra el volumen de configuración de Radarr
-  3. Actualiza el estado de la UI a "deshabilitado"
+- **Prune**: **Requiere confirmación** antes de ejecutar. **Solo visible cuando existen archivos de configuración**. Al pulsar:
+  1. Ejecuta `docker compose down -v` (para y elimina volúmenes)
+  2. Borra la carpeta `services/radarr` (docker compose files)
+  3. Borra la carpeta `services-volumes/radarr` (datos de configuración)
+  4. Actualiza el estado de la UI a "deshabilitado"
+  5. El botón desaparece al completarse (ya no hay archivos que limpiar)
 - **Test Connection**: **ELIMINADO** - no se muestra en la UI
 - **Start/Stop**: Se intercambian dinámicamente según el estado del contenedor. **Solo visibles cuando el servicio está habilitado**
 - **Restart**: Se lanza con `--force-recreate`, haciendo kill y down antes. **Solo visible cuando el servicio está habilitado**

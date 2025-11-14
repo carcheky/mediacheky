@@ -3,6 +3,8 @@ package handler
 import (
 	"context"
 	"fmt"
+	"os"
+	"path/filepath"
 	"time"
 
 	"github.com/carcheky/mediacheky/internal/models"
@@ -482,6 +484,39 @@ func (h *ServiceHandler) ConfigPage(c *fiber.Ctx) error {
 		"ServiceName": name,
 		"Version":     "dev",
 	}, "layouts/main")
+}
+
+// CheckConfigExists handles GET /api/services/:name/config-exists
+// Checks if the service's config directory exists and has files
+func (h *ServiceHandler) CheckConfigExists(c *fiber.Ctx) error {
+	name := c.Params("name")
+	if name == "" {
+		return c.Status(fiber.StatusBadRequest).JSON(APIResponse{
+			Success: false,
+			Error:   "Service name is required",
+		})
+	}
+
+	// Build config path (inside container)
+	configPath := filepath.Join("/app/data/services-volumes", name)
+
+	// Check if directory exists and has files
+	exists := false
+	if info, err := os.Stat(configPath); err == nil && info.IsDir() {
+		// Check if directory has any files (not just empty directory)
+		entries, err := os.ReadDir(configPath)
+		if err == nil && len(entries) > 0 {
+			exists = true
+		}
+	}
+
+	return c.JSON(APIResponse{
+		Success: true,
+		Data: fiber.Map{
+			"exists": exists,
+			"path":   configPath,
+		},
+	})
 }
 
 // ResetService handles POST /api/services/:name/reset
