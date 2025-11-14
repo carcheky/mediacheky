@@ -495,18 +495,18 @@ func Save(cfg *Config) error {
 }
 
 func setDefaults() {
-	// App defaults
-	viper.SetDefault("app.environment", "development")
+	// App defaults (production values by default)
+	viper.SetDefault("app.environment", "production")
 	viper.SetDefault("app.log_level", "info")
 	viper.SetDefault("app.scheduler_enabled", false)
 
 	// Server defaults
-	viper.SetDefault("server.port", "8000")
+	viper.SetDefault("server.port", "7369")
 	viper.SetDefault("server.host", "0.0.0.0")
 
-	// Database defaults
+	// Database defaults (hardcoded, no variable needed)
 	viper.SetDefault("database.type", "sqlite")
-	viper.SetDefault("database.path", "./data/mediacheky.db")
+	viper.SetDefault("database.path", "/app/data/mediacheky.db")
 
 	// Cleanup defaults
 	viper.SetDefault("cleanup.dry_run", true)
@@ -523,16 +523,16 @@ func setDefaults() {
 	viper.SetDefault("clients.qbittorrent.enabled", false)
 	viper.SetDefault("clients.bazarr.enabled", false)
 
-	// Filesystem defaults
+	// Filesystem defaults (matches quickstart volume mount)
 	viper.SetDefault("filesystem.scan_enabled", false)
-	viper.SetDefault("filesystem.root_paths", []string{"/BibliotecaMultimedia"})
+	viper.SetDefault("filesystem.root_paths", []string{"/MEDIACHEKY_LIBRARY"})
 	viper.SetDefault("filesystem.library_paths", []string{
-		"/BibliotecaMultimedia/Peliculas",
-		"/BibliotecaMultimedia/Series",
+		"/MEDIACHEKY_LIBRARY/Movies",
+		"/MEDIACHEKY_LIBRARY/Series",
 	})
 	viper.SetDefault("filesystem.download_paths", []string{
-		"/BibliotecaMultimedia/Descargas/Peliculas",
-		"/BibliotecaMultimedia/Descargas/Series",
+		"/MEDIACHEKY_LIBRARY/Downloads/Movies",
+		"/MEDIACHEKY_LIBRARY/Downloads/Series",
 	})
 	viper.SetDefault("filesystem.video_extensions", []string{".mkv", ".mp4", ".avi", ".m4v", ".ts", ".m2ts"})
 	viper.SetDefault("filesystem.min_size_mb", 100)

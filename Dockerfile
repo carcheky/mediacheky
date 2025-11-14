@@ -48,10 +48,14 @@ RUN mkdir -p /app/data /app/config /app/logs /app/tmp
 # Expose port
 EXPOSE 7369
 
-# Set development environment
+# Set development environment (hardcoded for dev build)
 ENV MEDIACHEKY_APP_ENVIRONMENT=development \
+    MEDIACHEKY_APP_LOG_LEVEL=debug \
+    MEDIACHEKY_APP_DRY_RUN=false \
     MEDIACHEKY_SERVER_PORT=7369 \
-    MEDIACHEKY_SERVER_HOST=0.0.0.0
+    MEDIACHEKY_SERVER_HOST=0.0.0.0 \
+    MEDIACHEKY_DATABASE_TYPE=sqlite \
+    MEDIACHEKY_DATABASE_PATH=/app/data/mediacheky.db
 
 # Run with Air for hot-reload
 CMD ["air", "-c", ".air.toml"]
@@ -128,10 +132,14 @@ USER 65534:65534
 # Expose port
 EXPOSE 7369
 
-# Set environment
-ENV KEEPERCHEKY_APP_ENVIRONMENT=production \
-    KEEPERCHEKY_SERVER_PORT=7369 \
-    KEEPERCHEKY_SERVER_HOST=0.0.0.0
+# Set production environment (hardcoded for production build)
+ENV MEDIACHEKY_APP_ENVIRONMENT=production \
+    MEDIACHEKY_APP_LOG_LEVEL=info \
+    MEDIACHEKY_APP_DRY_RUN=false \
+    MEDIACHEKY_SERVER_PORT=7369 \
+    MEDIACHEKY_SERVER_HOST=0.0.0.0 \
+    MEDIACHEKY_DATABASE_TYPE=sqlite \
+    MEDIACHEKY_DATABASE_PATH=/app/data/mediacheky.db
 
 # Run
 ENTRYPOINT ["/app/mediacheky"]
