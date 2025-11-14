@@ -1,3 +1,10 @@
+# [1.0.0-dev.16](https://github.com/carcheky/mediacheky/compare/v1.0.0-dev.15...v1.0.0-dev.16) (2025-11-14)
+
+
+### Bug Fixes
+
+* **env:** update .env.example to streamline configuration options ([ccb245b](https://github.com/carcheky/mediacheky/commit/ccb245bbcfeacae4f6c88fc4117d7ddbe4b5c7e7))
+
 # [1.0.0-dev.15](https://github.com/carcheky/mediacheky/compare/v1.0.0-dev.14...v1.0.0-dev.15) (2025-11-14)
 
 
