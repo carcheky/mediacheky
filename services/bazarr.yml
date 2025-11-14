@@ -9,7 +9,7 @@ services:
       - PGID=1000
       - TZ=Europe/Madrid
     volumes:
-      - ${CONFIG_BASE_PATH}/bazarr:/config
+      - ${CONFIG_BASE_PATH}/services-volumes/bazarr:/config
       - ${MEDIACHEKY_MEDIA_PATH}:/MEDIACHEKY_LIBRARY
     restart: unless-stopped
     networks:

@@ -226,24 +226,9 @@ func (te *TemplateEngine) loadGlobalConfig() (GlobalConfig, error) {
 		timezone = "UTC"
 	}
 
-	// Resolve MediaPath from new env key, with deprecated fallback
-	mediaPath := configMap["MEDIACHEKY_MEDIA_PATH"]
-	if mediaPath == "" {
-		// Backward compatibility: fallback to BASE_MEDIA_PATH if present
-		if legacy := configMap["BASE_MEDIA_PATH"]; legacy != "" {
-			te.logger.Warn("BASE_MEDIA_PATH is deprecated; please use MEDIACHEKY_MEDIA_PATH",
-				zap.String("legacy", legacy))
-			mediaPath = legacy
-		} else {
-			mediaPath = "./volumes"
-		}
-	}
-	// Convert to absolute path if relative
-	if !filepath.IsAbs(mediaPath) {
-		if absPath, err := filepath.Abs(mediaPath); err == nil {
-			mediaPath = absPath
-		}
-	}
+	// Get MediaPath using the same logic as service config paths
+	// This ensures we use the exact same path mounted in MediaCheky container
+	mediaPath := getMediaLibraryPath()
 
 	return GlobalConfig{
 		PUID:      puid,
@@ -280,18 +265,12 @@ func (te *TemplateEngine) LoadGlobalConfigPublic() (map[string]string, error) {
 	// Convert to absolute path if relative (relative to MediaCheky base dir)
 	configMap["CONFIG_BASE_PATH"] = te.toAbsolutePath(configMap["CONFIG_BASE_PATH"])
 
-	// New canonical key for shared media root
-	if configMap["MEDIACHEKY_MEDIA_PATH"] == "" {
-		if legacy := configMap["BASE_MEDIA_PATH"]; legacy != "" {
-			// Backward compatibility: migrate legacy key to new one
-			te.logger.Warn("Using deprecated BASE_MEDIA_PATH; prefer MEDIACHEKY_MEDIA_PATH")
-			configMap["MEDIACHEKY_MEDIA_PATH"] = legacy
-		} else {
-			configMap["MEDIACHEKY_MEDIA_PATH"] = "./volumes"
-		}
-	}
-	// Convert to absolute path if relative (relative to MediaCheky base dir)
-	configMap["MEDIACHEKY_MEDIA_PATH"] = te.toAbsolutePath(configMap["MEDIACHEKY_MEDIA_PATH"])
+	// Media library path - always use the global function to ensure consistency
+	// This reads from MEDIACHEKY_MEDIA_PATH env var and converts relative to absolute
+	configMap["MEDIACHEKY_MEDIA_PATH"] = getMediaLibraryPath()
+
+	te.logger.Info("Using media library path",
+		zap.String("path", configMap["MEDIACHEKY_MEDIA_PATH"]))
 
 	if configMap["DOWNLOADS_PATH"] == "" {
 		configMap["DOWNLOADS_PATH"] = "downloads"

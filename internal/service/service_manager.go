@@ -34,6 +34,26 @@ func buildServiceConfigPath(serviceName string) string {
 	return filepath.Join(getHostDataPath(), "services-volumes", serviceName)
 }
 
+// getMediaLibraryPath returns the absolute host path for the media library
+// Uses the same logic as getHostDataPath: reads env var and constructs path
+func getMediaLibraryPath() string {
+	// Read from environment variable (set by docker-compose.yml)
+	mediaPath := os.Getenv("MEDIACHEKY_MEDIA_PATH")
+	if mediaPath == "" {
+		mediaPath = "./volumes/library" // Default
+	}
+
+	// If path is relative, make it absolute using MEDIACHEKY_HOST_PATH
+	if !filepath.IsAbs(mediaPath) {
+		if hostPath := os.Getenv("MEDIACHEKY_HOST_PATH"); hostPath != "" {
+			return filepath.Join(hostPath, mediaPath)
+		}
+	}
+
+	// Already absolute or no MEDIACHEKY_HOST_PATH set
+	return mediaPath
+}
+
 // ServiceRepository defines the interface for service data access
 type ServiceRepository interface {
 	GetByName(name string) (*models.Service, error)
@@ -92,6 +112,7 @@ func (sm *ServiceManager) EnableService(ctx context.Context, serviceName string)
 				"ContainerName": serviceName,
 				"Paths": map[string]string{
 					"Config": buildServiceConfigPath(serviceName),
+					"Media":  getMediaLibraryPath(),
 				},
 				"RestartPolicy": "unless-stopped",
 			}
