@@ -272,21 +272,6 @@
                                         class="w-full px-3 py-2 border border-dark-border rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 bg-dark-bg text-dark-text">
                                     <p class="text-xs text-dark-muted mt-1">Radarr API authentication password</p>
                                 </div>
-
-                                <div class="md:col-span-2">
-                                    <button type="button" @click="saveRadarrAuthSettings()"
-                                        class="w-full px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-md font-medium transition-colors"
-                                        :disabled="savingAppConfig">
-                                        <span x-show="!savingAppConfig">Update Credentials</span>
-                                        <span x-show="savingAppConfig" class="flex items-center justify-center">
-                                            <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                            </svg>
-                                            Updating...
-                                        </span>
-                                    </button>
-                                </div>
                             </div>
                         </div>
 
@@ -361,23 +346,11 @@
                 </div>
             </div>
 
-            <!-- Save Button -->
-            <div class="mt-6 pt-6 border-t border-dark-border flex justify-end">
-                <button @click="saveRadarrConfig()" :disabled="savingAppConfig || !enabled"
-                    class="px-6 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2">
-                    <svg x-show="!savingAppConfig" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M5 13l4 4L19 7">
-                        </path>
-                    </svg>
-                    <svg x-show="savingAppConfig" class="animate-spin w-5 h-5" fill="none" viewBox="0 0 24 24">
-                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                        <path class="opacity-75" fill="currentColor"
-                            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
-                        </path>
-                    </svg>
-                    <span x-text="savingAppConfig ? 'Saving...' : 'Save Application Settings'"></span>
-                </button>
+            <!-- Apply Changes Section -->
+            <div x-show="serviceName.toLowerCase() === 'radarr'" class="mt-6 pt-6 border-t border-dark-border">
+                <div class="flex justify-between items-center">
+                    <p class="text-sm text-dark-muted">Changes to Radarr configuration are saved via the Apply button</p>
+                </div>
             </div>
         </div>
     </div>
@@ -1188,6 +1161,23 @@
                         delete configToSave.HostPort;
                     }
 
+                    // For Radarr, include auth settings in config
+                    if (this.serviceName.toLowerCase() === 'radarr') {
+                        const usernameField = document.querySelector('#radarr-username');
+                        const passwordField = document.querySelector('#radarr-password');
+                        
+                        if (usernameField && passwordField) {
+                            const username = usernameField.value.trim();
+                            const password = passwordField.value.trim();
+                            
+                            // Include credentials in config payload
+                            configToSave.radarrAuth = {
+                                username: username,
+                                password: password
+                            };
+                        }
+                    }
+
                     const saveResponse = await fetch(`/api/services/${this.serviceName}/config`, {
                         method: 'PUT',
                         headers: { 'Content-Type': 'application/json' },
@@ -1568,32 +1558,6 @@
                 }
             },
 
-            async saveRadarrConfig() {
-                if (this.serviceName.toLowerCase() !== 'radarr') return;
-                
-                this.savingAppConfig = true;
-                
-                try {
-                    const response = await fetch(`/api/services/${this.serviceName}/radarr-config`, {
-                        method: 'PUT',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(this.radarrConfig)
-                    });
-
-                    if (response.ok) {
-                        this.showMessage('Radarr application settings saved successfully!', 'success');
-                        await this.loadRadarrConfig(); // Reload to confirm
-                    } else {
-                        const data = await response.json();
-                        this.showMessage(data.error || 'Failed to save Radarr settings', 'error');
-                    }
-                } catch (error) {
-                    this.showMessage('Error saving Radarr settings: ' + error.message, 'error');
-                } finally {
-                    this.savingAppConfig = false;
-                }
-            },
-
             // Load Radarr authentication settings from API
             async loadRadarrAuthSettings() {
                 if (this.serviceName.toLowerCase() !== 'radarr') return;
@@ -1631,81 +1595,6 @@
             },
 
             // Save Radarr authentication settings to API
-            async saveRadarrAuthSettings() {
-                if (this.serviceName.toLowerCase() !== 'radarr') return;
-                
-                const usernameField = document.querySelector('#radarr-username');
-                const passwordField = document.querySelector('#radarr-password');
-                
-                if (!usernameField || !passwordField) {
-                    this.showMessage('Form fields not found', 'error');
-                    return;
-                }
-
-                const username = usernameField.value.trim();
-                const password = passwordField.value.trim();
-
-                // Validate inputs
-                if (!username) {
-                    this.showMessage('Username is required', 'error');
-                    return;
-                }
-
-                if (!password) {
-                    this.showMessage('Password is required', 'error');
-                    return;
-                }
-
-                try {
-                    this.startProgress('Updating authentication', [
-                        'Validating credentials',
-                        'Updating Radarr',
-                        'Reloading data'
-                    ]);
-
-                    // First load current config to get all fields
-                    const getResponse = await fetch(`/api/services/${this.serviceName}/radarr/auth`);
-                    if (!getResponse.ok) {
-                        throw new Error('Failed to load current authentication config');
-                    }
-
-                    const currentConfig = await getResponse.json();
-                    const authConfig = currentConfig.data || currentConfig;
-
-                    this.updateProgress(0);
-
-                    // Update with new values
-                    authConfig.username = username;
-                    authConfig.password = password;
-
-                    // Send update
-                    const putResponse = await fetch(`/api/services/${this.serviceName}/radarr/auth`, {
-                        method: 'PUT',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(authConfig)
-                    });
-
-                    this.updateProgress(1);
-
-                    if (putResponse.ok) {
-                        this.updateProgress(2);
-                        this.showMessage('Authentication updated successfully! You may need to log in again.', 'success');
-                        
-                        // Clear password field for security
-                        passwordField.value = '';
-                        
-                        this.endProgress();
-                    } else {
-                        const data = await putResponse.json();
-                        this.showMessage(data.error || 'Failed to update authentication', 'error');
-                        this.endProgress();
-                    }
-                } catch (error) {
-                    this.showMessage('Error: ' + error.message, 'error');
-                    this.endProgress();
-                }
-            },
-
             async copyToClipboard(text) {
                 try {
                     await navigator.clipboard.writeText(text);

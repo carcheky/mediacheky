@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"encoding/xml"
 	"fmt"
 	"io"
 	"net/http"
@@ -407,6 +408,16 @@ func (h *ServiceHandler) UpdateServiceConfig(c *fiber.Ctx) error {
 		"config", configUpdate,
 		"paths", configUpdate["Paths"])
 
+	// Extract and handle Radarr auth if provided
+	var radarrAuth map[string]interface{}
+	if auth, exists := configUpdate["radarrAuth"]; exists {
+		if authMap, ok := auth.(map[string]interface{}); ok {
+			radarrAuth = authMap
+			// Remove from config before saving to database
+			delete(configUpdate, "radarrAuth")
+		}
+	}
+
 	// Ensure Paths exists and has Config path
 	if configUpdate["Paths"] == nil {
 		configUpdate["Paths"] = make(map[string]interface{})
@@ -447,6 +458,16 @@ func (h *ServiceHandler) UpdateServiceConfig(c *fiber.Ctx) error {
 			Success: false,
 			Error:   fmt.Sprintf("Failed to update service configuration: %v", err),
 		})
+	}
+
+	// If Radarr auth was provided, update it asynchronously
+	if name == "radarr" && radarrAuth != nil {
+		username, _ := radarrAuth["username"].(string)
+		password, _ := radarrAuth["password"].(string)
+
+		if username != "" && password != "" {
+			updateRadarrAuthInBackground(username, password, h.logger)
+		}
 	}
 
 	h.logger.Info("Service config updated", "name", name)
@@ -1027,15 +1048,109 @@ func (h *ServiceHandler) UpdateRadarrAuthConfig(c *fiber.Ctx) error {
 	})
 }
 
+// updateRadarrAuthInBackground updates Radarr authentication asynchronously
+func updateRadarrAuthInBackground(username, password string, logger *logger.Logger) {
+	// Use a goroutine to avoid blocking the response
+	go func() {
+		apiKey, err := extractRadarrAPIKey("")
+		if err != nil || apiKey == "" {
+			logger.Warn("Failed to extract Radarr API key for auth update", "error", err)
+			return
+		}
+
+		const url = "http://radarr:7878/api/v3/config/auth"
+		req, err := http.NewRequest("GET", url, nil)
+		if err != nil {
+			logger.Warn("Failed to create Radarr auth request", "error", err)
+			return
+		}
+
+		req.Header.Set("X-Api-Key", apiKey)
+		client := &http.Client{Timeout: 10 * time.Second}
+		resp, err := client.Do(req)
+		if err != nil {
+			logger.Warn("Failed to get Radarr auth config", "error", err)
+			return
+		}
+		defer resp.Body.Close()
+
+		if resp.StatusCode != http.StatusOK {
+			logger.Warn("Radarr auth config returned non-OK status", "status", resp.StatusCode)
+			return
+		}
+
+		var currentConfig map[string]interface{}
+		body, _ := io.ReadAll(resp.Body)
+		if err := json.Unmarshal(body, &currentConfig); err != nil {
+			logger.Warn("Failed to parse Radarr auth config", "error", err)
+			return
+		}
+
+		// Update with new credentials
+		currentConfig["username"] = username
+		currentConfig["password"] = password
+
+		// Send PUT request
+		bodyBytes, _ := json.Marshal(currentConfig)
+		putReq, _ := http.NewRequest("PUT", url, bytes.NewReader(bodyBytes))
+		putReq.Header.Set("X-Api-Key", apiKey)
+		putReq.Header.Set("Content-Type", "application/json")
+
+		putResp, err := client.Do(putReq)
+		if err != nil {
+			logger.Warn("Failed to update Radarr auth", "error", err)
+			return
+		}
+		putResp.Body.Close()
+
+		if putResp.StatusCode == http.StatusOK {
+			logger.Info("Radarr auth credentials updated successfully")
+		} else {
+			logger.Warn("Failed to update Radarr auth", "status", putResp.StatusCode)
+		}
+	}()
+}
+
 // extractRadarrAPIKey extracts the API key from Radarr's config.xml
 func extractRadarrAPIKey(configPath string) (string, error) {
-	// This is a placeholder - in producción se lee del config.xml de Radarr
-	// Por ahora se lee de una variable de entorno o se obtiene del contenedor
+	// First try environment variable
 	apiKey := os.Getenv("RADARR_API_KEY")
-	if apiKey == "" {
-		// Fallback: intentar leer del archivo config.xml
-		// (implementar lectura XML si es necesario)
-		return "", fmt.Errorf("RADARR_API_KEY not set")
+	if apiKey != "" {
+		return apiKey, nil
 	}
-	return apiKey, nil
+
+	// Possible paths where config.xml might be located
+	possiblePaths := []string{
+		// Docker volumes path (most common in docker-compose setup)
+		"./volumes/services-volumes/radarr/config.xml",
+		"/root/volumes/services-volumes/radarr/config.xml",
+		"/config/config.xml",                    // Inside radarr container
+		filepath.Join(configPath, "config.xml"), // Passed config path
+		filepath.Join(os.Getenv("HOME"), ".config/Radarr/config.xml"),
+	}
+
+	for _, path := range possiblePaths {
+		if fileInfo, err := os.Stat(path); err == nil && !fileInfo.IsDir() {
+			// File exists, try to read it
+			content, err := os.ReadFile(path)
+			if err != nil {
+				continue
+			}
+
+			// Parse XML to find ApiKey
+			type Config struct {
+				ApiKey string `xml:"ApiKey"`
+			}
+			var cfg Config
+			if err := xml.Unmarshal(content, &cfg); err != nil {
+				continue
+			}
+
+			if cfg.ApiKey != "" {
+				return cfg.ApiKey, nil
+			}
+		}
+	}
+
+	return "", fmt.Errorf("RADARR_API_KEY not found in environment or config.xml")
 }
