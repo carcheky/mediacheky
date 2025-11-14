@@ -106,10 +106,36 @@
     </div>
 
     <!-- Proxy & Domain Configuration -->
-    <div class="bg-dark-surface dark:bg-dark-surface rounded-lg shadow-lg border border-dark-border p-6"
+    <div class="bg-dark-surface dark:bg-dark-surface rounded-lg shadow-lg border border-dark-border"
          :class="!enabled && 'opacity-50 pointer-events-none'">
-        <h2 class="text-xl font-semibold text-dark-text mb-4">Proxy & Domain Access</h2>
-        <p class="text-sm text-dark-muted mb-4">Configure subdomain and domain for this service</p>
+        <!-- Header (always visible) -->
+        <button @click="collapsed.proxy = !collapsed.proxy" 
+                class="w-full px-6 py-4 flex items-center justify-between hover:bg-dark-bg/30 transition-colors">
+            <div class="flex items-center gap-3">
+                <svg class="w-6 h-6 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"></path>
+                </svg>
+                <div class="text-left">
+                    <h2 class="text-xl font-semibold text-dark-text">Proxy & Domain Access</h2>
+                    <p class="text-sm text-dark-muted">Configure subdomain and domain for this service</p>
+                </div>
+            </div>
+            <svg class="w-5 h-5 text-dark-muted transition-transform duration-200" 
+                 :class="collapsed.proxy && 'transform rotate-180'"
+                 fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"></path>
+            </svg>
+        </button>
+        
+        <!-- Content (collapsible) -->
+        <div x-show="!collapsed.proxy" 
+             x-transition:enter="transition ease-out duration-200"
+             x-transition:enter-start="opacity-0 transform -translate-y-2"
+             x-transition:enter-end="opacity-100 transform translate-y-0"
+             x-transition:leave="transition ease-in duration-150"
+             x-transition:leave-start="opacity-100 transform translate-y-0"
+             x-transition:leave-end="opacity-0 transform -translate-y-2"
+             class="px-6 pb-6">
         
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
             <div>
@@ -158,18 +184,40 @@
                 <span x-text="proxyUpdating ? 'Updating...' : 'Update Proxy'"></span>
             </button>
         </div>
+        </div>
     </div>
 
     <!-- Docker Configuration -->
-    <div class="bg-dark-surface dark:bg-dark-surface rounded-lg shadow-lg border border-dark-border p-6"
+    <div class="bg-dark-surface dark:bg-dark-surface rounded-lg shadow-lg border border-dark-border"
          :class="!enabled && 'opacity-50 pointer-events-none'">
-        <div class="flex items-center gap-2 mb-4">
-            <svg class="w-6 h-6 text-blue-400" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M13.983 11.078h2.119a.186.186 0 00.186-.185V9.006a.186.186 0 00-.186-.186h-2.119a.185.185 0 00-.185.185v1.888c0 .102.083.185.185.185m-2.954-5.43h2.118a.186.186 0 00.186-.186V3.574a.186.186 0 00-.186-.185h-2.118a.185.185 0 00-.185.185v1.888c0 .102.082.185.185.185m0 2.716h2.118a.187.187 0 00.186-.186V6.29a.186.186 0 00-.186-.185h-2.118a.185.185 0 00-.185.185v1.887c0 .102.082.185.185.186m-2.93 0h2.12a.186.186 0 00.184-.186V6.29a.185.185 0 00-.185-.185H8.1a.185.185 0 00-.185.185v1.887c0 .102.083.185.185.186m-2.964 0h2.119a.186.186 0 00.185-.186V6.29a.185.185 0 00-.185-.185H5.136a.186.186 0 00-.186.185v1.887c0 .102.084.185.186.186m5.893 2.715h2.118a.186.186 0 00.186-.185V9.006a.186.186 0 00-.186-.186h-2.118a.185.185 0 00-.185.185v1.888c0 .102.082.185.185.185m-2.93 0h2.12a.185.185 0 00.184-.185V9.006a.185.185 0 00-.184-.186h-2.12a.185.185 0 00-.184.185v1.888c0 .102.083.185.185.185m-2.964 0h2.119a.185.185 0 00.185-.185V9.006a.185.185 0 00-.184-.186h-2.12a.186.186 0 00-.186.186v1.887c0 .102.084.185.186.185m-2.92 0h2.12a.185.185 0 00.184-.185V9.006a.185.185 0 00-.184-.186h-2.12a.185.185 0 00-.184.185v1.888c0 .102.082.185.185.185M23.763 9.89c-.065-.051-.672-.51-1.954-.51-.338 0-.676.03-1.01.091-1.308-2.580-4.038-4.16-6.955-4.16-.656 0-1.326.082-1.99.245-.494.122-.66.346-.66.638v13.687c0 .337.228.646.558.724.313.071 6.356.064 6.356.064 1.315 0 2.415-.449 3.272-1.336.784-.806 1.182-1.877 1.182-3.183 0-1.268-.375-2.317-1.117-3.122a5.085 5.085 0 00-.835-.668c.504-.302.934-.693 1.27-1.164.471-.654.71-1.402.71-2.223 0-.82-.192-1.525-.574-2.098-.312-.468-.722-.843-1.218-1.115"/>
+        <!-- Header (always visible) -->
+        <button @click="collapsed.docker = !collapsed.docker" 
+                class="w-full px-6 py-4 flex items-center justify-between hover:bg-dark-bg/30 transition-colors">
+            <div class="flex items-center gap-3">
+                <svg class="w-6 h-6 text-blue-400" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M13.983 11.078h2.119a.186.186 0 00.186-.185V9.006a.186.186 0 00-.186-.186h-2.119a.185.185 0 00-.185.185v1.888c0 .102.083.185.185.185m-2.954-5.43h2.118a.186.186 0 00.186-.186V3.574a.186.186 0 00-.186-.185h-2.118a.185.185 0 00-.185.185v1.888c0 .102.082.185.185.185m0 2.716h2.118a.187.187 0 00.186-.186V6.29a.186.186 0 00-.186-.185h-2.118a.185.185 0 00-.185.185v1.887c0 .102.082.185.185.186m-2.93 0h2.12a.186.186 0 00.184-.186V6.29a.185.185 0 00-.185-.185H8.1a.185.185 0 00-.185.185v1.887c0 .102.083.185.185.186m-2.964 0h2.119a.186.186 0 00.185-.186V6.29a.185.185 0 00-.185-.185H5.136a.186.186 0 00-.186.185v1.887c0 .102.084.185.186.186m5.893 2.715h2.118a.186.186 0 00.186-.185V9.006a.186.186 0 00-.186-.186h-2.118a.185.185 0 00-.185.185v1.888c0 .102.082.185.185.185m-2.93 0h2.12a.185.185 0 00.184-.185V9.006a.185.185 0 00-.184-.186h-2.12a.185.185 0 00-.184.185v1.888c0 .102.083.185.185.185m-2.964 0h2.119a.185.185 0 00.185-.185V9.006a.185.185 0 00-.184-.186h-2.12a.186.186 0 00-.186.186v1.887c0 .102.084.185.186.185m-2.92 0h2.12a.185.185 0 00.184-.185V9.006a.185.185 0 00-.184-.186h-2.12a.185.185 0 00-.184.185v1.888c0 .102.082.185.185.185M23.763 9.89c-.065-.051-.672-.51-1.954-.51-.338 0-.676.03-1.01.091-1.308-2.580-4.038-4.16-6.955-4.16-.656 0-1.326.082-1.99.245-.494.122-.66.346-.66.638v13.687c0 .337.228.646.558.724.313.071 6.356.064 6.356.064 1.315 0 2.415-.449 3.272-1.336.784-.806 1.182-1.877 1.182-3.183 0-1.268-.375-2.317-1.117-3.122a5.085 5.085 0 00-.835-.668c.504-.302.934-.693 1.27-1.164.471-.654.71-1.402.71-2.223 0-.82-.192-1.525-.574-2.098-.312-.468-.722-.843-1.218-1.115"/>
+                </svg>
+                <div class="text-left">
+                    <h2 class="text-xl font-semibold text-dark-text">Docker Configuration</h2>
+                    <p class="text-sm text-dark-muted">Image, ports, and restart policy</p>
+                </div>
+            </div>
+            <svg class="w-5 h-5 text-dark-muted transition-transform duration-200" 
+                 :class="collapsed.docker && 'transform rotate-180'"
+                 fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"></path>
             </svg>
-            <h2 class="text-xl font-semibold text-dark-text">Docker Configuration</h2>
-        </div>
+        </button>
         
+        <!-- Content (collapsible) -->
+        <div x-show="!collapsed.docker" 
+             x-transition:enter="transition ease-out duration-200"
+             x-transition:enter-start="opacity-0 transform -translate-y-2"
+             x-transition:enter-end="opacity-100 transform translate-y-0"
+             x-transition:leave="transition ease-in duration-150"
+             x-transition:leave-start="opacity-100 transform translate-y-0"
+             x-transition:leave-end="opacity-0 transform -translate-y-2"
+             class="px-6 pb-6">
         <div class="space-y-4">
             <div>
                 <label class="block text-sm font-medium text-dark-text mb-1">
@@ -254,6 +302,7 @@
                     ℹ️ Volume paths are automatically configured and cannot be modified
                 </p>
             </div>
+        </div>
         </div>
     </div>
 
@@ -348,6 +397,14 @@
             errors: {},  // No validation errors needed
             testing: false,
             saving: false,
+            // Collapse states for sections (default: collapsed)
+            collapsed: {
+                proxy: true,
+                docker: true,
+                paths: true,
+                environment: true,
+                advanced: true
+            },
             applying: false,
             pruning: false,
             configPathExists: false,
