@@ -3,6 +3,7 @@ package handler
 import (
 	"context"
 	"fmt"
+	"net/http"
 	"os"
 	"path/filepath"
 	"time"
@@ -520,7 +521,7 @@ func (h *ServiceHandler) CheckConfigExists(c *fiber.Ctx) error {
 }
 
 // ResetService handles POST /api/services/:name/reset
-// Deletes the config directory and recreates the container with fresh config
+// Prunes service: docker compose down -v, deletes config directories and disables the service
 func (h *ServiceHandler) ResetService(c *fiber.Ctx) error {
 	name := c.Params("name")
 	if name == "" {
@@ -552,9 +553,163 @@ func (h *ServiceHandler) ResetService(c *fiber.Ctx) error {
 		})
 	}
 
-	h.logger.Info("Service reset completed", "name", name)
+	h.logger.Info("Service prune completed", "name", name)
 	return c.JSON(APIResponse{
 		Success: true,
-		Data:    fiber.Map{"message": "Service configuration deleted and container recreated successfully"},
+		Data:    fiber.Map{"message": "Service pruned and disabled successfully"},
+	})
+}
+
+// GetRadarrConfig handles GET /api/services/:name/radarr-config
+func (h *ServiceHandler) GetRadarrConfig(c *fiber.Ctx) error {
+	name := c.Params("name")
+
+	if name != "radarr" {
+		return c.Status(fiber.StatusBadRequest).JSON(APIResponse{
+			Success: false,
+			Error:   "This endpoint is only available for Radarr service",
+		})
+	}
+
+	config, err := h.serviceManager.GetRadarrConfig(c.Context(), name)
+	if err != nil {
+		h.logger.Error("Failed to get Radarr config", "error", err)
+		return c.Status(fiber.StatusInternalServerError).JSON(APIResponse{
+			Success: false,
+			Error:   fmt.Sprintf("Failed to get Radarr config: %v", err),
+		})
+	}
+
+	return c.JSON(APIResponse{
+		Success: true,
+		Data:    fiber.Map{"config": config},
+	})
+}
+
+// UpdateRadarrConfig handles PUT /api/services/:name/radarr-config
+func (h *ServiceHandler) UpdateRadarrConfig(c *fiber.Ctx) error {
+	name := c.Params("name")
+
+	if name != "radarr" {
+		return c.Status(fiber.StatusBadRequest).JSON(APIResponse{
+			Success: false,
+			Error:   "This endpoint is only available for Radarr service",
+		})
+	}
+
+	var config models.RadarrConfig
+	if err := c.BodyParser(&config); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(APIResponse{
+			Success: false,
+			Error:   "Invalid request body",
+		})
+	}
+
+	if err := h.serviceManager.UpdateRadarrConfig(c.Context(), name, config); err != nil {
+		h.logger.Error("Failed to update Radarr config", "error", err)
+		return c.Status(fiber.StatusInternalServerError).JSON(APIResponse{
+			Success: false,
+			Error:   fmt.Sprintf("Failed to update Radarr config: %v", err),
+		})
+	}
+
+	h.logger.Info("Radarr config updated successfully", "name", name)
+	return c.JSON(APIResponse{
+		Success: true,
+		Data:    fiber.Map{"message": "Radarr configuration updated successfully"},
+	})
+}
+
+// CheckServiceReady handles GET /api/services/:name/ready
+// Performs a lightweight readiness check for a service. Strategy:
+// 1) If proxy endpoint is configured, attempt HTTP GET to that URL (http/https per proxy config)
+// 2) For specific services (radarr), fallback to internal container address on known port
+// Returns { ready: bool, via: "proxy"|"internal"|"none", status_code: int, url: string }
+func (h *ServiceHandler) CheckServiceReady(c *fiber.Ctx) error {
+	name := c.Params("name")
+	if name == "" {
+		return c.Status(fiber.StatusBadRequest).JSON(APIResponse{
+			Success: false,
+			Error:   "Service name is required",
+		})
+	}
+
+	// Prepare HTTP client with short timeout
+	client := &http.Client{Timeout: 2 * time.Second}
+
+	// Helper to try a URL
+	tryURL := func(url string) (bool, int, error) {
+		req, err := http.NewRequest(http.MethodGet, url, nil)
+		if err != nil {
+			return false, 0, err
+		}
+		resp, err := client.Do(req)
+		if err != nil {
+			return false, 0, err
+		}
+		defer resp.Body.Close()
+		// Consider 2xx and 3xx as ready (some services redirect)
+		if resp.StatusCode >= 200 && resp.StatusCode < 400 {
+			return true, resp.StatusCode, nil
+		}
+		return false, resp.StatusCode, nil
+	}
+
+	// First, attempt via proxy endpoint if available
+	proxySvc := service.NewProxyService(h.repos, h.logger)
+	endpoint, err := proxySvc.GetServiceEndpoint(name)
+	if err == nil && endpoint != "" {
+		// Determine scheme from proxy config
+		proxyCfg, _ := proxySvc.GetProxyConfig()
+		scheme := "http"
+		if proxyCfg != nil && proxyCfg.SSLEnabled {
+			scheme = "https"
+		}
+		url := fmt.Sprintf("%s://%s", scheme, endpoint)
+		if ok, code, _ := tryURL(url); ok {
+			return c.JSON(APIResponse{
+				Success: true,
+				Data: fiber.Map{
+					"ready":       true,
+					"via":         "proxy",
+					"status_code": code,
+					"url":         url,
+				},
+			})
+		}
+	}
+
+	// Fallbacks for specific services using internal container address
+	// Only implement for radarr for now (internal default port 7878, or from config.xml if available)
+	if name == "radarr" {
+		port := 7878
+		// Try to read configured port from Radarr config if available
+		if h.serviceManager != nil {
+			if cfg, err := h.serviceManager.GetRadarrConfig(c.Context(), name); err == nil && cfg.Port > 0 {
+				port = cfg.Port
+			}
+		}
+		internalURL := fmt.Sprintf("http://%s:%d", name, port)
+		if ok, code, _ := tryURL(internalURL); ok {
+			return c.JSON(APIResponse{
+				Success: true,
+				Data: fiber.Map{
+					"ready":       true,
+					"via":         "internal",
+					"status_code": code,
+					"url":         internalURL,
+				},
+			})
+		}
+	}
+
+	// Not ready
+	return c.JSON(APIResponse{
+		Success: true,
+		Data: fiber.Map{
+			"ready":       false,
+			"via":         "none",
+			"status_code": 0,
+		},
 	})
 }

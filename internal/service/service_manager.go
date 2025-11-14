@@ -236,6 +236,14 @@ func (sm *ServiceManager) StartService(ctx context.Context, serviceName string) 
 		return fmt.Errorf("failed to ensure volumes exist: %w", err)
 	}
 
+	// Initialize Radarr config.xml with defaults if needed
+	if serviceName == "radarr" {
+		if err := sm.initializeRadarrConfig(ctx, serviceName); err != nil {
+			sm.logger.Warn("Failed to initialize Radarr config", zap.Error(err))
+			// Don't fail the start, just log the warning
+		}
+	}
+
 	// Execute docker compose up with config variables
 	result, err := sm.dockerCompose.ComposeUp(ctx, composePath, globalConfig)
 	if err != nil {
@@ -423,7 +431,21 @@ func (sm *ServiceManager) ResetService(ctx context.Context, serviceName string) 
 	sm.logger.Info("Service directories deleted",
 		zap.String("service", serviceName))
 
-	sm.logAction(svc.ID, "reset", "success", "Service configuration pruned successfully (down -v + deleted directories)")
+	// Disable service after prune and set status to stopped
+	if err := sm.serviceRepo.SetEnabled(svc.ID, false); err != nil {
+		sm.logger.Warn("Failed to disable service after prune",
+			zap.String("service", serviceName),
+			zap.Error(err))
+	} else {
+		sm.logger.Info("Service disabled after prune", zap.String("service", serviceName))
+	}
+	if err := sm.serviceRepo.UpdateStatus(svc.ID, "stopped", ""); err != nil {
+		sm.logger.Warn("Failed to update service status after prune",
+			zap.String("service", serviceName),
+			zap.Error(err))
+	}
+
+	sm.logAction(svc.ID, "reset", "success", "Service pruned: down -v, deleted directories, disabled service")
 	sm.logger.Info("Service prune completed successfully", zap.String("service", serviceName))
 
 	return nil
@@ -723,4 +745,262 @@ func (sm *ServiceManager) AutoStartEnabledServices() error {
 
 	sm.logger.Info("Auto-start process completed")
 	return nil
+}
+
+// GetRadarrConfig reads and parses Radarr's config.xml file
+func (sm *ServiceManager) GetRadarrConfig(ctx context.Context, serviceName string) (models.RadarrConfig, error) {
+	var config models.RadarrConfig
+
+	// Build path to config.xml inside the container
+	configPath := filepath.Join("/app/data/services-volumes", serviceName, "config.xml")
+
+	// Read the config file
+	data, err := os.ReadFile(configPath)
+	if err != nil {
+		if os.IsNotExist(err) {
+			sm.logger.Info("Radarr config.xml not found, returning defaults", zap.String("path", configPath))
+			// Return default config
+			return models.RadarrConfig{
+				BindAddress:            "*",
+				Port:                   7878,
+				SslPort:                9898,
+				EnableSsl:              false,
+				LaunchBrowser:          true,
+				ApiKey:                 "",
+				AuthenticationMethod:   "Forms",
+				AuthenticationRequired: "DisabledForLocalAddresses",
+				Username:               "",
+				Password:               "",
+				PasswordConfirmation:   "",
+				Branch:                 "master",
+				LogLevel:               "debug",
+				SslCertPath:            "",
+				SslCertPassword:        "",
+				UrlBase:                "",
+				InstanceName:           "Radarr",
+				UpdateMechanism:        "Docker",
+				UseProxy:               false,
+				SendAnonymousUsageData: true,
+			}, nil
+		}
+		return config, fmt.Errorf("failed to read config file: %w", err)
+	}
+
+	// Parse XML
+	if err := parseRadarrConfig(data, &config); err != nil {
+		return config, fmt.Errorf("failed to parse config XML: %w", err)
+	}
+
+	return config, nil
+}
+
+// UpdateRadarrConfig updates Radarr's config.xml file
+func (sm *ServiceManager) UpdateRadarrConfig(ctx context.Context, serviceName string, config models.RadarrConfig) error {
+	// Build path to config.xml inside the container
+	configPath := filepath.Join("/app/data/services-volumes", serviceName, "config.xml")
+
+	// Check if directory exists
+	configDir := filepath.Dir(configPath)
+	if _, err := os.Stat(configDir); os.IsNotExist(err) {
+		return fmt.Errorf("Radarr config directory does not exist: %s. Make sure the service is enabled and started at least once", configDir)
+	}
+
+	// Generate XML content
+	xmlContent, err := generateRadarrConfigXML(config)
+	if err != nil {
+		return fmt.Errorf("failed to generate config XML: %w", err)
+	}
+
+	// Write to file
+	if err := os.WriteFile(configPath, []byte(xmlContent), 0644); err != nil {
+		return fmt.Errorf("failed to write config file: %w", err)
+	}
+
+	sm.logger.Info("Radarr config.xml updated successfully", zap.String("path", configPath))
+	return nil
+}
+
+// parseRadarrConfig parses the XML config into RadarrConfig struct
+func parseRadarrConfig(data []byte, config *models.RadarrConfig) error {
+	// Simple XML parsing - extract values between tags
+	content := string(data)
+
+	// Helper function to extract value between tags
+	extractValue := func(tag string) string {
+		start := fmt.Sprintf("<%s>", tag)
+		end := fmt.Sprintf("</%s>", tag)
+		startIdx := indexOf(content, start)
+		if startIdx == -1 {
+			return ""
+		}
+		startIdx += len(start)
+		endIdx := indexOf(content[startIdx:], end)
+		if endIdx == -1 {
+			return ""
+		}
+		return content[startIdx : startIdx+endIdx]
+	}
+
+	config.BindAddress = extractValue("BindAddress")
+	config.Port = parseInt(extractValue("Port"), 7878)
+	config.SslPort = parseInt(extractValue("SslPort"), 9898)
+	config.EnableSsl = extractValue("EnableSsl") == "True"
+	config.LaunchBrowser = extractValue("LaunchBrowser") == "True"
+	config.ApiKey = extractValue("ApiKey")
+	config.AuthenticationMethod = extractValue("AuthenticationMethod")
+	config.AuthenticationRequired = extractValue("AuthenticationRequired")
+	config.Username = extractValue("Username")
+	config.Password = extractValue("Password")
+	config.PasswordConfirmation = extractValue("PasswordConfirmation")
+	config.Branch = extractValue("Branch")
+	config.LogLevel = extractValue("LogLevel")
+	config.SslCertPath = extractValue("SslCertPath")
+	config.SslCertPassword = extractValue("SslCertPassword")
+	config.UrlBase = extractValue("UrlBase")
+	config.InstanceName = extractValue("InstanceName")
+	config.UpdateMechanism = extractValue("UpdateMechanism")
+	config.UseProxy = extractValue("UseProxy") == "True"
+	config.SendAnonymousUsageData = extractValue("SendAnonymousUsageData") == "True"
+
+	return nil
+}
+
+// generateRadarrConfigXML generates XML content from RadarrConfig
+func generateRadarrConfigXML(config models.RadarrConfig) (string, error) {
+	boolToStr := func(b bool) string {
+		if b {
+			return "True"
+		}
+		return "False"
+	}
+
+	xml := fmt.Sprintf(`<Config>
+  <BindAddress>%s</BindAddress>
+  <Port>%d</Port>
+  <SslPort>%d</SslPort>
+  <EnableSsl>%s</EnableSsl>
+  <LaunchBrowser>%s</LaunchBrowser>
+  <ApiKey>%s</ApiKey>
+  <AuthenticationMethod>%s</AuthenticationMethod>
+  <AuthenticationRequired>%s</AuthenticationRequired>
+  <Branch>%s</Branch>
+  <LogLevel>%s</LogLevel>
+  <SslCertPath>%s</SslCertPath>
+  <SslCertPassword>%s</SslCertPassword>
+  <UrlBase>%s</UrlBase>
+  <InstanceName>%s</InstanceName>
+  <UpdateMechanism>%s</UpdateMechanism>
+</Config>`,
+		config.BindAddress,
+		config.Port,
+		config.SslPort,
+		boolToStr(config.EnableSsl),
+		boolToStr(config.LaunchBrowser),
+		config.ApiKey,
+		config.AuthenticationMethod,
+		config.AuthenticationRequired,
+		config.Branch,
+		config.LogLevel,
+		config.SslCertPath,
+		config.SslCertPassword,
+		config.UrlBase,
+		config.InstanceName,
+		config.UpdateMechanism,
+	)
+
+	return xml, nil
+}
+
+// initializeRadarrConfig creates config.xml with default values if it doesn't exist
+// or if it has default/empty values
+func (sm *ServiceManager) initializeRadarrConfig(ctx context.Context, serviceName string) error {
+	configPath := filepath.Join("/app/data/services-volumes", serviceName, "config.xml")
+
+	// Check if config file exists
+	if _, err := os.Stat(configPath); err == nil {
+		// File exists, check if it has valid content
+		data, readErr := os.ReadFile(configPath)
+		if readErr == nil && len(data) > 0 {
+			// File exists and has content, check if ApiKey is set
+			content := string(data)
+			if indexOf(content, "<ApiKey>") != -1 && indexOf(content, "</ApiKey>") != -1 {
+				// Extract ApiKey value
+				start := indexOf(content, "<ApiKey>") + 8
+				end := indexOf(content[start:], "</ApiKey>")
+				if end > 0 {
+					apiKey := content[start : start+end]
+					// If ApiKey has value (not empty), assume config is valid
+					if len(apiKey) > 0 {
+						sm.logger.Debug("Radarr config.xml already exists with valid ApiKey", zap.String("path", configPath))
+						return nil
+					}
+				}
+			}
+		}
+		// If we reach here, file exists but is invalid/empty, will overwrite
+		sm.logger.Info("Radarr config.xml exists but is invalid, reinitializing", zap.String("path", configPath))
+	}
+
+	// Create default config
+	defaultConfig := models.RadarrConfig{
+		BindAddress:            "*",
+		Port:                   7878,
+		SslPort:                9898,
+		EnableSsl:              false,
+		LaunchBrowser:          true,
+		ApiKey:                 "", // Radarr will generate this on first start
+		AuthenticationMethod:   "Forms",
+		AuthenticationRequired: "DisabledForLocalAddresses",
+		Username:               "",
+		Password:               "",
+		PasswordConfirmation:   "",
+		Branch:                 "master",
+		LogLevel:               "debug",
+		SslCertPath:            "",
+		SslCertPassword:        "",
+		UrlBase:                "",
+		InstanceName:           "Radarr",
+		UpdateMechanism:        "Docker",
+		UseProxy:               false,
+		SendAnonymousUsageData: true,
+	}
+
+	// Generate XML content
+	xmlContent, err := generateRadarrConfigXML(defaultConfig)
+	if err != nil {
+		return fmt.Errorf("failed to generate default config XML: %w", err)
+	}
+
+	// Ensure config directory exists
+	configDir := filepath.Dir(configPath)
+	if err := os.MkdirAll(configDir, 0755); err != nil {
+		return fmt.Errorf("failed to create config directory: %w", err)
+	}
+
+	// Write config file
+	if err := os.WriteFile(configPath, []byte(xmlContent), 0644); err != nil {
+		return fmt.Errorf("failed to write default config file: %w", err)
+	}
+
+	sm.logger.Info("Radarr config.xml initialized with default values", zap.String("path", configPath))
+	return nil
+}
+
+// Helper functions
+func indexOf(s, substr string) int {
+	for i := 0; i <= len(s)-len(substr); i++ {
+		if s[i:i+len(substr)] == substr {
+			return i
+		}
+	}
+	return -1
+}
+
+func parseInt(s string, defaultVal int) int {
+	var result int
+	_, err := fmt.Sscanf(s, "%d", &result)
+	if err != nil {
+		return defaultVal
+	}
+	return result
 }
