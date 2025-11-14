@@ -105,38 +105,11 @@ func NewTemplateEngine(logger *zap.Logger, templatesDir, servicesDir string, con
 	}
 }
 
-// GenerateCompose decides between static compose file usage and dynamic template rendering.
-// If the configuration requires conditional sections (like ExposePort/HostPort) we render
-// a fresh docker-compose.yml using the legacy template path. Otherwise we validate static file.
+// GenerateCompose always generates a dynamic compose file from templates.
+// This ensures all paths and configuration are correctly applied from the database config.
 func (te *TemplateEngine) GenerateCompose(serviceName string, config models.ServiceConfig) (string, error) {
-	te.logger.Info("Preparing compose for service", zap.String("service", serviceName))
-
-	// Determine if we need dynamic generation
-	if needsDynamicCompose(config) {
-		te.logger.Info("Dynamic compose generation required (conditional settings detected)",
-			zap.String("service", serviceName))
-		return te.generateComposeOld(serviceName, config)
-	}
-
-	// Static path fallback
-	composePath := te.GetComposePath(serviceName)
-	if _, err := os.Stat(composePath); err != nil {
-		return "", fmt.Errorf("static compose file not found for service %s: %w", serviceName, err)
-	}
-
-	// Delete any dynamic compose file that may exist (avoid using stale generated files)
-	dynamicPath := filepath.Join(te.servicesDir, serviceName, "docker-compose.yml")
-	if _, err := os.Stat(dynamicPath); err == nil {
-		te.logger.Info("Removing stale dynamic compose file (using static instead)",
-			zap.String("service", serviceName),
-			zap.String("dynamic_path", dynamicPath))
-		os.Remove(dynamicPath) // Ignore errors - file may not exist
-	}
-
-	te.logger.Info("Using static compose file",
-		zap.String("service", serviceName),
-		zap.String("path", composePath))
-	return composePath, nil
+	te.logger.Info("Generating dynamic compose for service", zap.String("service", serviceName))
+	return te.generateComposeOld(serviceName, config)
 }
 
 // needsDynamicCompose returns true if config contains fields requiring template processing.

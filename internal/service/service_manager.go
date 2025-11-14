@@ -72,7 +72,7 @@ func (sm *ServiceManager) EnableService(ctx context.Context, serviceName string)
 				"Image":         fmt.Sprintf("linuxserver/%s:latest", serviceName),
 				"ContainerName": serviceName,
 				"Paths": map[string]string{
-					"Config": fmt.Sprintf("/app/data/services/%s/config", serviceName),
+					"Config": fmt.Sprintf("./volumes/service-configs/%s/", serviceName),
 				},
 				"RestartPolicy": "unless-stopped",
 			}
@@ -369,7 +369,7 @@ func (sm *ServiceManager) ResetService(ctx context.Context, serviceName string) 
 
 	if configPath == "" {
 		// Use default path
-		configPath = fmt.Sprintf("/app/data/services/%s/config", serviceName)
+		configPath = fmt.Sprintf("./volumes/service-configs/%s/", serviceName)
 	}
 
 	sm.logger.Info("Deleting service config directory",
