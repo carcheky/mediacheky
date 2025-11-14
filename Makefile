@@ -1,4 +1,4 @@
-.PHONY: help dev dev-watch build test clean docker-build docker-run shell logs stop check-deps validate validate-quick lint-check lint-fix vet check-and-fix mod-tidy install-hooks uninstall-hooks clean-branches clean-branches-force
+.PHONY: help dev dev-watch build test clean docker-build docker-run shell logs stop check-deps validate validate-quick lint-check lint-fix vet check-and-fix mod-tidy install-hooks uninstall-hooks clean-branches clean-branches-force finaltest finaltest-stop finaltest-clean
 
 # Default target
 help:
@@ -18,8 +18,11 @@ help:
 	@echo "  make docker-build-dev - Build development Docker image (with hot-reload)"
 	@echo ""
 	@echo "Testing:"
-	@echo "  make test         - Run all tests"
+	@echo "  make test          - Run all tests"
 	@echo "  make test-coverage - Run tests with coverage"
+	@echo "  make finaltest     - 🧪 Build production & test with quickstart"
+	@echo "  make finaltest-stop - Stop final test environment"
+	@echo "  make finaltest-clean - Clean final test (volumes + image)"
 	@echo ""
 	@echo "Validation (run before commit):"
 	@echo "  make validate      - 🔍 Full validation (format, vet, test, lint)"
@@ -419,6 +422,65 @@ clean-all:
 	@docker compose down -v
 	@rm -rf volumes/
 	@echo "✅ Complete cleanup done"
+
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+# 🧪 FINAL TEST - Production build + quickstart test
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+finaltest:
+	@echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+	@echo "🧪 FINAL TEST - Building production image and testing quickstart"
+	@echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+	@echo ""
+	@echo "📦 Step 1: Building production image with local tag..."
+	@echo ""
+	@DOCKER_BUILDKIT=1 docker build \
+		--target production \
+		--build-arg VERSION=finaltest \
+		--build-arg COMMIT_SHA=$$(git rev-parse --short HEAD 2>/dev/null || echo "unknown") \
+		-t mediacheky:finaltest \
+		-t ghcr.io/carcheky/mediacheky:finaltest \
+		.
+	@echo ""
+	@echo "✅ Production image built: mediacheky:finaltest"
+	@echo ""
+	@echo "📋 Step 2: Preparing finaltest environment..."
+	@mkdir -p quickstart-finaltest/volumes/mediacheky-data
+	@mkdir -p quickstart-finaltest/volumes/library
+	@echo "✅ Directories created"
+	@echo ""
+	@echo "🚀 Step 3: Starting finaltest with local image..."
+	@echo ""
+	@cd quickstart-finaltest && docker compose up -d
+	@echo ""
+	@echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+	@echo "✅ FINAL TEST READY"
+	@echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+	@echo ""
+	@echo "🌐 Access:"
+	@echo "   URL: http://localhost:80"
+	@echo ""
+	@echo "📊 Status:"
+	@cd quickstart-finaltest && docker compose ps
+	@echo ""
+	@echo "💡 Commands:"
+	@echo "   View logs:  cd quickstart-finaltest && docker compose logs -f"
+	@echo "   Stop test:  make finaltest-stop"
+	@echo "   Clean all:  make finaltest-clean"
+	@echo ""
+
+finaltest-stop:
+	@echo "🛑 Stopping final test environment..."
+	@cd quickstart-finaltest && docker compose down
+	@echo "✅ Final test stopped"
+
+finaltest-clean:
+	@echo "🧹 Cleaning final test environment..."
+	@cd quickstart-finaltest && docker compose down -v
+	@rm -rf quickstart-finaltest/volumes/mediacheky-data
+	@rm -rf quickstart-finaltest/volumes/library
+	@docker rmi mediacheky:finaltest ghcr.io/carcheky/mediacheky:finaltest 2>/dev/null || true
+	@echo "✅ Final test environment cleaned"
 
 # Initialize development environment
 init:
