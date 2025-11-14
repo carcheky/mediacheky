@@ -1,8 +1,11 @@
 package handler
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -818,4 +821,221 @@ func (h *ServiceHandler) CheckServiceReady(c *fiber.Ctx) error {
 			"status_code": 0,
 		},
 	})
+}
+
+// RadarrAuthConfig handles GET /api/services/:name/radarr/auth
+// Retrieves authentication configuration from Radarr
+func (h *ServiceHandler) RadarrAuthConfig(c *fiber.Ctx) error {
+	name := c.Params("name")
+	if name == "" {
+		return c.Status(fiber.StatusBadRequest).JSON(APIResponse{
+			Success: false,
+			Error:   "Service name is required",
+		})
+	}
+
+	// Only Radarr has this endpoint
+	if name != "radarr" {
+		return c.Status(fiber.StatusBadRequest).JSON(APIResponse{
+			Success: false,
+			Error:   "This endpoint is only available for Radarr",
+		})
+	}
+
+	// Get service config
+	svc, err := h.repos.Service.GetByName(name)
+	if err != nil {
+		return c.Status(fiber.StatusNotFound).JSON(APIResponse{
+			Success: false,
+			Error:   "Service not found",
+		})
+	}
+
+	if !svc.Enabled {
+		return c.Status(fiber.StatusBadRequest).JSON(APIResponse{
+			Success: false,
+			Error:   "Service is not enabled",
+		})
+	}
+
+	// Get API key from config.xml
+	configPath := filepath.Join(os.Getenv("HOME"), ".config/Radarr", "config.xml")
+	apiKey, err := extractRadarrAPIKey(configPath)
+	if err != nil {
+		h.logger.Error("Failed to get Radarr API key", "error", err)
+		return c.Status(fiber.StatusInternalServerError).JSON(APIResponse{
+			Success: false,
+			Error:   "Failed to retrieve API key from Radarr",
+		})
+	}
+
+	// Call Radarr API
+	url := fmt.Sprintf("http://radarr:7878/api/v3/config/auth")
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		h.logger.Error("Failed to create request", "error", err)
+		return c.Status(fiber.StatusInternalServerError).JSON(APIResponse{
+			Success: false,
+			Error:   "Failed to create API request",
+		})
+	}
+
+	req.Header.Set("X-Api-Key", apiKey)
+	req.Header.Set("Accept", "application/json")
+
+	client := &http.Client{Timeout: 10 * time.Second}
+	resp, err := client.Do(req)
+	if err != nil {
+		h.logger.Error("Failed to call Radarr API", "error", err)
+		return c.Status(fiber.StatusInternalServerError).JSON(APIResponse{
+			Success: false,
+			Error:   "Failed to connect to Radarr",
+		})
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		h.logger.Error("Radarr API returned error", "status", resp.StatusCode)
+		return c.Status(fiber.StatusInternalServerError).JSON(APIResponse{
+			Success: false,
+			Error:   fmt.Sprintf("Radarr returned status %d", resp.StatusCode),
+		})
+	}
+
+	// Parse response
+	var authConfig map[string]interface{}
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		h.logger.Error("Failed to read response body", "error", err)
+		return c.Status(fiber.StatusInternalServerError).JSON(APIResponse{
+			Success: false,
+			Error:   "Failed to read Radarr response",
+		})
+	}
+
+	if err := json.Unmarshal(body, &authConfig); err != nil {
+		h.logger.Error("Failed to parse Radarr response", "error", err)
+		return c.Status(fiber.StatusInternalServerError).JSON(APIResponse{
+			Success: false,
+			Error:   "Failed to parse Radarr response",
+		})
+	}
+
+	return c.JSON(APIResponse{
+		Success: true,
+		Data:    authConfig,
+	})
+}
+
+// UpdateRadarrAuthConfig handles PUT /api/services/:name/radarr/auth
+// Updates authentication configuration in Radarr
+func (h *ServiceHandler) UpdateRadarrAuthConfig(c *fiber.Ctx) error {
+	name := c.Params("name")
+	if name == "" {
+		return c.Status(fiber.StatusBadRequest).JSON(APIResponse{
+			Success: false,
+			Error:   "Service name is required",
+		})
+	}
+
+	// Only Radarr has this endpoint
+	if name != "radarr" {
+		return c.Status(fiber.StatusBadRequest).JSON(APIResponse{
+			Success: false,
+			Error:   "This endpoint is only available for Radarr",
+		})
+	}
+
+	// Parse request body
+	var authConfig map[string]interface{}
+	if err := c.BodyParser(&authConfig); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(APIResponse{
+			Success: false,
+			Error:   "Invalid request body",
+		})
+	}
+
+	// Get service config
+	svc, err := h.repos.Service.GetByName(name)
+	if err != nil {
+		return c.Status(fiber.StatusNotFound).JSON(APIResponse{
+			Success: false,
+			Error:   "Service not found",
+		})
+	}
+
+	if !svc.Enabled {
+		return c.Status(fiber.StatusBadRequest).JSON(APIResponse{
+			Success: false,
+			Error:   "Service is not enabled",
+		})
+	}
+
+	// Get API key from config.xml
+	configPath := filepath.Join(os.Getenv("HOME"), ".config/Radarr", "config.xml")
+	apiKey, err := extractRadarrAPIKey(configPath)
+	if err != nil {
+		h.logger.Error("Failed to get Radarr API key", "error", err)
+		return c.Status(fiber.StatusInternalServerError).JSON(APIResponse{
+			Success: false,
+			Error:   "Failed to retrieve API key from Radarr",
+		})
+	}
+
+	// Convert to JSON
+	bodyBytes, _ := json.Marshal(authConfig)
+
+	// Call Radarr API
+	url := fmt.Sprintf("http://radarr:7878/api/v3/config/auth")
+	req, err := http.NewRequest("PUT", url, bytes.NewReader(bodyBytes))
+	if err != nil {
+		h.logger.Error("Failed to create request", "error", err)
+		return c.Status(fiber.StatusInternalServerError).JSON(APIResponse{
+			Success: false,
+			Error:   "Failed to create API request",
+		})
+	}
+
+	req.Header.Set("X-Api-Key", apiKey)
+	req.Header.Set("Content-Type", "application/json")
+
+	client := &http.Client{Timeout: 10 * time.Second}
+	resp, err := client.Do(req)
+	if err != nil {
+		h.logger.Error("Failed to call Radarr API", "error", err)
+		return c.Status(fiber.StatusInternalServerError).JSON(APIResponse{
+			Success: false,
+			Error:   "Failed to connect to Radarr",
+		})
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		h.logger.Error("Radarr API returned error", "status", resp.StatusCode)
+		return c.Status(fiber.StatusInternalServerError).JSON(APIResponse{
+			Success: false,
+			Error:   fmt.Sprintf("Radarr returned status %d", resp.StatusCode),
+		})
+	}
+
+	// Log success
+	h.logger.Info("Radarr auth config updated successfully", "service", name)
+
+	return c.JSON(APIResponse{
+		Success: true,
+		Data:    authConfig,
+	})
+}
+
+// extractRadarrAPIKey extracts the API key from Radarr's config.xml
+func extractRadarrAPIKey(configPath string) (string, error) {
+	// This is a placeholder - in producción se lee del config.xml de Radarr
+	// Por ahora se lee de una variable de entorno o se obtiene del contenedor
+	apiKey := os.Getenv("RADARR_API_KEY")
+	if apiKey == "" {
+		// Fallback: intentar leer del archivo config.xml
+		// (implementar lectura XML si es necesario)
+		return "", fmt.Errorf("RADARR_API_KEY not set")
+	}
+	return apiKey, nil
 }

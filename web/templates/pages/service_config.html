@@ -256,28 +256,36 @@
                                 <div>
                                     <label class="block text-sm font-medium text-dark-text mb-1">
                                         Username
+                                        <span class="ml-2 inline-block px-2 py-0.5 bg-amber-900/40 border border-amber-700/50 text-amber-300 rounded text-xs font-normal italic">auth API</span>
                                     </label>
-                                    <input type="text" x-model="radarrConfig.Username" 
+                                    <input type="text" id="radarr-username" 
                                         class="w-full px-3 py-2 border border-dark-border rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 bg-dark-bg text-dark-text">
-                                    <p class="text-xs text-dark-muted mt-1">Authentication username</p>
+                                    <p class="text-xs text-dark-muted mt-1">Radarr API authentication username</p>
                                 </div>
 
                                 <div>
                                     <label class="block text-sm font-medium text-dark-text mb-1">
                                         Password
+                                        <span class="ml-2 inline-block px-2 py-0.5 bg-amber-900/40 border border-amber-700/50 text-amber-300 rounded text-xs font-normal italic">auth API</span>
                                     </label>
-                                    <input type="password" x-model="radarrConfig.Password" 
+                                    <input type="password" id="radarr-password" 
                                         class="w-full px-3 py-2 border border-dark-border rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 bg-dark-bg text-dark-text">
-                                    <p class="text-xs text-dark-muted mt-1">Authentication password</p>
+                                    <p class="text-xs text-dark-muted mt-1">Radarr API authentication password</p>
                                 </div>
 
-                                <div>
-                                    <label class="block text-sm font-medium text-dark-text mb-1">
-                                        Password Confirmation
-                                    </label>
-                                    <input type="password" x-model="radarrConfig.PasswordConfirmation" 
-                                        class="w-full px-3 py-2 border border-dark-border rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 bg-dark-bg text-dark-text">
-                                    <p class="text-xs text-dark-muted mt-1">Confirm your password</p>
+                                <div class="md:col-span-2">
+                                    <button type="button" @click="saveRadarrAuthSettings()"
+                                        class="w-full px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-md font-medium transition-colors"
+                                        :disabled="savingAppConfig">
+                                        <span x-show="!savingAppConfig">Update Credentials</span>
+                                        <span x-show="savingAppConfig" class="flex items-center justify-center">
+                                            <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                            </svg>
+                                            Updating...
+                                        </span>
+                                    </button>
                                 </div>
                             </div>
                         </div>
@@ -772,6 +780,7 @@
                 this.loadProxySettings().catch(e => console.error('Failed to load proxy settings:', e));
                 this.loadServiceEndpoint().catch(e => console.error('Failed to load service endpoint:', e));
                 this.loadRadarrConfig().catch(e => console.error('Failed to load Radarr config:', e));
+                this.loadRadarrAuthSettings().catch(e => console.error('Failed to load Radarr auth settings:', e));
                 
                 // Poll service status every 5 seconds
                 this.statusInterval = setInterval(async () => {
@@ -1582,6 +1591,118 @@
                     this.showMessage('Error saving Radarr settings: ' + error.message, 'error');
                 } finally {
                     this.savingAppConfig = false;
+                }
+            },
+
+            // Load Radarr authentication settings from API
+            async loadRadarrAuthSettings() {
+                if (this.serviceName.toLowerCase() !== 'radarr') return;
+                
+                try {
+                    this.startProgress('Loading authentication settings', [
+                        'Connecting to Radarr',
+                        'Retrieving credentials'
+                    ]);
+
+                    const response = await fetch(`/api/services/${this.serviceName}/radarr/auth`);
+                    
+                    if (response.ok) {
+                        const result = await response.json();
+                        const authConfig = result.data || result;
+                        
+                        // Update form fields with loaded values
+                        if (authConfig.username) {
+                            document.querySelector('#radarr-username').value = authConfig.username;
+                        }
+                        // Note: password is not returned by API for security
+                        
+                        this.updateProgress(1);
+                        this.endProgress();
+                        this.showMessage('Authentication settings loaded successfully', 'success');
+                    } else {
+                        const data = await response.json();
+                        this.showMessage(data.error || 'Failed to load authentication settings', 'error');
+                        this.endProgress();
+                    }
+                } catch (error) {
+                    this.showMessage('Error loading authentication settings: ' + error.message, 'error');
+                    this.endProgress();
+                }
+            },
+
+            // Save Radarr authentication settings to API
+            async saveRadarrAuthSettings() {
+                if (this.serviceName.toLowerCase() !== 'radarr') return;
+                
+                const usernameField = document.querySelector('#radarr-username');
+                const passwordField = document.querySelector('#radarr-password');
+                
+                if (!usernameField || !passwordField) {
+                    this.showMessage('Form fields not found', 'error');
+                    return;
+                }
+
+                const username = usernameField.value.trim();
+                const password = passwordField.value.trim();
+
+                // Validate inputs
+                if (!username) {
+                    this.showMessage('Username is required', 'error');
+                    return;
+                }
+
+                if (!password) {
+                    this.showMessage('Password is required', 'error');
+                    return;
+                }
+
+                try {
+                    this.startProgress('Updating authentication', [
+                        'Validating credentials',
+                        'Updating Radarr',
+                        'Reloading data'
+                    ]);
+
+                    // First load current config to get all fields
+                    const getResponse = await fetch(`/api/services/${this.serviceName}/radarr/auth`);
+                    if (!getResponse.ok) {
+                        throw new Error('Failed to load current authentication config');
+                    }
+
+                    const currentConfig = await getResponse.json();
+                    const authConfig = currentConfig.data || currentConfig;
+
+                    this.updateProgress(0);
+
+                    // Update with new values
+                    authConfig.username = username;
+                    authConfig.password = password;
+
+                    // Send update
+                    const putResponse = await fetch(`/api/services/${this.serviceName}/radarr/auth`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(authConfig)
+                    });
+
+                    this.updateProgress(1);
+
+                    if (putResponse.ok) {
+                        this.updateProgress(2);
+                        this.showMessage('Authentication updated successfully! You may need to log in again.', 'success');
+                        
+                        // Clear password field for security
+                        passwordField.value = '';
+                        
+                        this.endProgress();
+                    } else {
+                        const data = await putResponse.json();
+                        this.showMessage(data.error || 'Failed to update authentication', 'error');
+                        this.endProgress();
+                    }
+                } catch (error) {
+                    this.showMessage('Error: ' + error.message, 'error');
+                    this.endProgress();
                 }
             },
 
