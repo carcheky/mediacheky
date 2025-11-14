@@ -40,6 +40,9 @@ services:
       - MEDIACHEKY_APP_LOG_LEVEL=${MEDIACHEKY_APP_LOG_LEVEL:-debug}
       # REQUIRED TO PROD Host path for resolving service volume mounts
       - MEDIACHEKY_HOST_PATH=${PWD}
+      # User and Group IDs for file permissions
+      - PUID=${PUID:-1000}
+      - PGID=${PGID:-1000}
     networks:
       - mediacheky-net
     restart: always

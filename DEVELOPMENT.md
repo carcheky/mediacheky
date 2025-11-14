@@ -205,6 +205,37 @@ KEEPERCHEKY_DATABASE_TYPE=sqlite
 KEEPERCHEKY_DATABASE_PATH=./data/dev.db
 ```
 
+### User/Group Configuration (PUID/PGID)
+
+**IMPORTANTE**: MediaCheky y todos los servicios que gestiona deben ejecutarse con el mismo UID/GID que tu usuario del host para evitar problemas de permisos.
+
+**Configurar en `.env`:**
+
+```bash
+# Obtener tus valores
+id -u  # Tu PUID
+id -g  # Tu PGID
+
+# Agregar al .env
+PUID=1000
+PGID=1000
+```
+
+**Cómo funciona:**
+- MediaCheky lee `PUID` y `PGID` del entorno o usa el usuario actual
+- Todos los archivos y directorios creados usan estos permisos
+- Los servicios gestionados (Radarr, Sonarr, etc.) reciben estas variables
+- Por defecto usa `1000:1000` si no se especifica
+
+**Verificar permisos:**
+
+```bash
+# Ver permisos de archivos creados
+ls -la ./volumes/mediacheky-data/
+
+# Deben ser propiedad de tu usuario, no de root
+```
+
 ### Configuration File
 
 Alternatively, create `config/config.yaml`:
