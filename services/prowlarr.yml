@@ -9,7 +9,7 @@ services:
       - PGID=1000
       - TZ=Europe/Madrid
     volumes:
-      - ${CONFIG_BASE_PATH}/prowlarr:/config
+      - ${CONFIG_BASE_PATH}/services-volumes/prowlarr:/config
     restart: unless-stopped
     networks:
       - mediacheky_mediacheky-net

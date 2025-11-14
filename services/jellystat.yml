@@ -12,7 +12,7 @@ services:
       - POSTGRES_PORT=5432
       - JWT_SECRET=my-secret-jwt-key
     volumes:
-      - ${CONFIG_BASE_PATH}/jellystat:/app/backend/backup-data
+      - ${CONFIG_BASE_PATH}/services-volumes/jellystat:/app/backend/backup-data
     restart: unless-stopped
     networks:
       - mediacheky_mediacheky-net
@@ -27,7 +27,7 @@ services:
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=mypassword
     volumes:
-      - ${CONFIG_BASE_PATH}/jellystat-db:/var/lib/postgresql/data
+      - ${CONFIG_BASE_PATH}/services-volumes/jellystat-db:/var/lib/postgresql/data
     restart: unless-stopped
     networks:
       - mediacheky_mediacheky-net

@@ -10,8 +10,8 @@ services:
       - TZ=Europe/Madrid
       - WEBUI_PORT=8080
     volumes:
-      - ${CONFIG_BASE_PATH}/qbittorrent:/config
-  - ${MEDIACHEKY_MEDIA_PATH}:/MEDIACHEKY_LIBRARY
+      - ${CONFIG_BASE_PATH}/services-volumes/qbittorrent:/config
+      - ${MEDIACHEKY_MEDIA_PATH}:/MEDIACHEKY_LIBRARY
     restart: unless-stopped
     networks:
       - mediacheky_mediacheky-net

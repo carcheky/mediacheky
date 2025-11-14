@@ -22,6 +22,7 @@ type TemplateEngine struct {
 	logger       *zap.Logger
 	templatesDir string
 	servicesDir  string
+	baseDir      string // Base directory where MediaCheky docker-compose.yml is located
 	configRepo   ConfigRepository
 	templateRepo TemplateRepository
 }
@@ -42,8 +43,7 @@ type TemplateData struct {
 	Image         string
 	ContainerName string
 	Port          int
-	ExposePort    bool // Whether to expose port to host
-	HostPort      int  // Port to expose on host (if different from Port)
+	HostPort      int // Port to expose on host (0 or empty = no exposure, >0 = expose this port)
 	Paths         map[string]string
 	Umask         string
 	Network       string
@@ -77,49 +77,59 @@ func NewTemplateEngine(logger *zap.Logger, templatesDir, servicesDir string, con
 		absServicesDir = servicesDir
 	}
 
+	// Get base directory from environment variable (host path) or fallback to working directory
+	baseDir := os.Getenv("MEDIACHEKY_HOST_PATH")
+	if baseDir == "" {
+		// Fallback to current working directory (for development/testing)
+		var err error
+		baseDir, err = os.Getwd()
+		if err != nil {
+			logger.Warn("Failed to get working directory, using current dir",
+				zap.Error(err))
+			baseDir = "."
+		}
+		logger.Warn("MEDIACHEKY_HOST_PATH not set, using working directory",
+			zap.String("baseDir", baseDir))
+	} else {
+		logger.Info("Using MEDIACHEKY_HOST_PATH for base directory",
+			zap.String("baseDir", baseDir))
+	}
+
 	return &TemplateEngine{
 		logger:       logger,
 		templatesDir: templatesDir,
 		servicesDir:  absServicesDir,
+		baseDir:      baseDir,
 		configRepo:   configRepo,
 		templateRepo: templateRepo,
 	}
 }
 
-// GenerateCompose decides between static compose file usage and dynamic template rendering.
-// If the configuration requires conditional sections (like ExposePort/HostPort) we render
-// a fresh docker-compose.yml using the legacy template path. Otherwise we validate static file.
+// GenerateCompose always generates a dynamic compose file from templates.
+// This ensures all paths and configuration are correctly applied from the database config.
 func (te *TemplateEngine) GenerateCompose(serviceName string, config models.ServiceConfig) (string, error) {
-	te.logger.Info("Preparing compose for service", zap.String("service", serviceName))
-
-	// Determine if we need dynamic generation
-	if needsDynamicCompose(config) {
-		te.logger.Info("Dynamic compose generation required (conditional settings detected)",
-			zap.String("service", serviceName))
-		return te.generateComposeOld(serviceName, config)
-	}
-
-	// Static path fallback
-	composePath := te.GetComposePath(serviceName)
-	if _, err := os.Stat(composePath); err != nil {
-		return "", fmt.Errorf("static compose file not found for service %s: %w", serviceName, err)
-	}
-	te.logger.Info("Using static compose file",
-		zap.String("service", serviceName),
-		zap.String("path", composePath))
-	return composePath, nil
+	te.logger.Info("Generating dynamic compose for service", zap.String("service", serviceName))
+	return te.generateComposeOld(serviceName, config)
 }
 
 // needsDynamicCompose returns true if config contains fields requiring template processing.
 func needsDynamicCompose(config models.ServiceConfig) bool {
-	// ExposePort or HostPort set
-	if expose, ok := config["ExposePort"].(bool); ok && expose {
-		return true
-	}
+	// HostPort field exists and is > 0 (port exposure requested)
 	if hostPortFloat, ok := config["HostPort"].(float64); ok && int(hostPortFloat) > 0 {
 		return true
 	}
 	if hostPortInt, ok := config["HostPort"].(int); ok && hostPortInt > 0 {
+		return true
+	}
+	// HostPort exists and is 0 or empty (no port exposure - also needs template to omit ports section)
+	if _, ok := config["HostPort"].(float64); ok {
+		return true
+	}
+	if _, ok := config["HostPort"].(int); ok {
+		return true
+	}
+	// Paths field exists - need dynamic generation to resolve absolute paths
+	if paths, ok := config["Paths"].(map[string]interface{}); ok && len(paths) > 0 {
 		return true
 	}
 	// Future: add more conditional triggers here (environment overrides, optional volumes, etc.)
@@ -157,12 +167,23 @@ func (te *TemplateEngine) generateComposeOld(serviceName string, config models.S
 		return "", fmt.Errorf("failed to parse template: %w", err)
 	}
 
+	// DEBUG: Log template data before execution
+	te.logger.Info("Executing template",
+		zap.String("service", serviceName),
+		zap.Any("template_data", templateData),
+		zap.Any("paths", templateData.Paths))
+
 	var buf bytes.Buffer
 	if err := tmpl.Execute(&buf, templateData); err != nil {
 		return "", fmt.Errorf("failed to execute template: %w", err)
 	}
 
 	composeContent := buf.String()
+
+	// DEBUG: Log generated compose content
+	te.logger.Info("Generated compose content",
+		zap.String("service", serviceName),
+		zap.String("content", composeContent))
 
 	// Validate generated YAML
 	if err := te.validateYAML(composeContent); err != nil {
@@ -205,24 +226,9 @@ func (te *TemplateEngine) loadGlobalConfig() (GlobalConfig, error) {
 		timezone = "UTC"
 	}
 
-	// Resolve MediaPath from new env key, with deprecated fallback
-	mediaPath := configMap["MEDIACHEKY_MEDIA_PATH"]
-	if mediaPath == "" {
-		// Backward compatibility: fallback to BASE_MEDIA_PATH if present
-		if legacy := configMap["BASE_MEDIA_PATH"]; legacy != "" {
-			te.logger.Warn("BASE_MEDIA_PATH is deprecated; please use MEDIACHEKY_MEDIA_PATH",
-				zap.String("legacy", legacy))
-			mediaPath = legacy
-		} else {
-			mediaPath = "./volumes"
-		}
-	}
-	// Convert to absolute path if relative
-	if !filepath.IsAbs(mediaPath) {
-		if absPath, err := filepath.Abs(mediaPath); err == nil {
-			mediaPath = absPath
-		}
-	}
+	// Get MediaPath using the same logic as service config paths
+	// This ensures we use the exact same path mounted in MediaCheky container
+	mediaPath := getMediaLibraryPath()
 
 	return GlobalConfig{
 		PUID:      puid,
@@ -252,35 +258,19 @@ func (te *TemplateEngine) LoadGlobalConfigPublic() (map[string]string, error) {
 		configMap["TZ"] = "UTC"
 	}
 
-	// Path defaults - convert relative paths to absolute based on project root
+	// Path defaults - convert relative paths to absolute based on MediaCheky base directory
 	if configMap["CONFIG_BASE_PATH"] == "" {
 		configMap["CONFIG_BASE_PATH"] = "./volumes"
 	}
-	// Convert to absolute path if relative
-	if !filepath.IsAbs(configMap["CONFIG_BASE_PATH"]) {
-		absPath, err := filepath.Abs(configMap["CONFIG_BASE_PATH"])
-		if err == nil {
-			configMap["CONFIG_BASE_PATH"] = absPath
-		}
-	}
+	// Convert to absolute path if relative (relative to MediaCheky base dir)
+	configMap["CONFIG_BASE_PATH"] = te.toAbsolutePath(configMap["CONFIG_BASE_PATH"])
 
-	// New canonical key for shared media root
-	if configMap["MEDIACHEKY_MEDIA_PATH"] == "" {
-		if legacy := configMap["BASE_MEDIA_PATH"]; legacy != "" {
-			// Backward compatibility: migrate legacy key to new one
-			te.logger.Warn("Using deprecated BASE_MEDIA_PATH; prefer MEDIACHEKY_MEDIA_PATH")
-			configMap["MEDIACHEKY_MEDIA_PATH"] = legacy
-		} else {
-			configMap["MEDIACHEKY_MEDIA_PATH"] = "./volumes"
-		}
-	}
-	// Convert to absolute path if relative
-	if !filepath.IsAbs(configMap["MEDIACHEKY_MEDIA_PATH"]) {
-		absPath, err := filepath.Abs(configMap["MEDIACHEKY_MEDIA_PATH"])
-		if err == nil {
-			configMap["MEDIACHEKY_MEDIA_PATH"] = absPath
-		}
-	}
+	// Media library path - always use the global function to ensure consistency
+	// This reads from MEDIACHEKY_MEDIA_PATH env var and converts relative to absolute
+	configMap["MEDIACHEKY_MEDIA_PATH"] = getMediaLibraryPath()
+
+	te.logger.Info("Using media library path",
+		zap.String("path", configMap["MEDIACHEKY_MEDIA_PATH"]))
 
 	if configMap["DOWNLOADS_PATH"] == "" {
 		configMap["DOWNLOADS_PATH"] = "downloads"
@@ -321,8 +311,35 @@ func (te *TemplateEngine) loadTemplate(serviceName string) (string, error) {
 	return string(content), nil
 }
 
+// toAbsolutePath converts a relative path to absolute based on MediaCheky's base directory
+// If the path is already absolute, it returns it unchanged
+func (te *TemplateEngine) toAbsolutePath(path string) string {
+	// Check if path is already absolute
+	if filepath.IsAbs(path) {
+		return path
+	}
+
+	// Convert relative path to absolute by joining with base directory
+	absPath := filepath.Join(te.baseDir, path)
+
+	// Clean the path to remove any .. or . components
+	absPath = filepath.Clean(absPath)
+
+	te.logger.Debug("Converted relative path to absolute",
+		zap.String("relative", path),
+		zap.String("absolute", absPath),
+		zap.String("base_dir", te.baseDir))
+
+	return absPath
+}
+
 // buildTemplateData builds the template data from service config and global config
 func (te *TemplateEngine) buildTemplateData(config models.ServiceConfig, globalConfig GlobalConfig) (TemplateData, error) {
+	// Debug: Log input config
+	te.logger.Info("Building template data",
+		zap.Any("config", config),
+		zap.Any("config_paths", config["Paths"]))
+
 	data := TemplateData{
 		Global: globalConfig,
 		Custom: make(map[string]interface{}),
@@ -347,28 +364,39 @@ func (te *TemplateEngine) buildTemplateData(config models.ServiceConfig, globalC
 		data.Port = port
 	}
 
-	// Extract port exposure configuration
-	if exposePort, ok := config["ExposePort"].(bool); ok {
-		data.ExposePort = exposePort
-	} else {
-		data.ExposePort = false // Default: do not expose
-	}
+	// Extract host port configuration (0 = no exposure, >0 = expose this port)
 	if hostPort, ok := config["HostPort"].(float64); ok {
 		data.HostPort = int(hostPort)
 	} else if hostPort, ok := config["HostPort"].(int); ok {
 		data.HostPort = hostPort
 	} else {
-		data.HostPort = 0 // 0 means use service Port
+		data.HostPort = 0 // 0 means no port exposure (internal network only)
 	}
 
-	// Extract paths
+	// Extract paths and convert to absolute paths
 	if paths, ok := config["Paths"].(map[string]interface{}); ok {
 		data.Paths = make(map[string]string)
 		for k, v := range paths {
 			if strVal, ok := v.(string); ok {
-				data.Paths[k] = strVal
+				// Convert to absolute path if relative
+				data.Paths[k] = te.toAbsolutePath(strVal)
 			}
 		}
+		te.logger.Info("Extracted and converted paths to absolute",
+			zap.Any("paths_interface", paths),
+			zap.Any("paths_absolute", data.Paths))
+	} else {
+		te.logger.Warn("Paths field missing or wrong type",
+			zap.Any("paths_value", config["Paths"]),
+			zap.String("paths_type", fmt.Sprintf("%T", config["Paths"])))
+	}
+
+	// Validate required paths for compose generation
+	if len(data.Paths) == 0 {
+		return data, fmt.Errorf("paths configuration is missing - at least Config path is required")
+	}
+	if data.Paths["Config"] == "" {
+		return data, fmt.Errorf("Config path is required but was empty")
 	}
 
 	// Extract optional fields
@@ -596,5 +624,27 @@ func (te *TemplateEngine) EnsureDirectoryExists(path string) error {
 			return fmt.Errorf("failed to create directory: %w", err)
 		}
 	}
+	return nil
+}
+
+// RemoveDirectory removes a directory and all its contents
+func (te *TemplateEngine) RemoveDirectory(path string) error {
+	// Security check: ensure path is within allowed directories
+	if !strings.HasPrefix(path, "/app/data/services/") && !strings.HasPrefix(path, "./volumes/mediacheky-data/services/") {
+		return fmt.Errorf("refusing to delete directory outside of services config area: %s", path)
+	}
+
+	// Check if directory exists
+	if _, err := os.Stat(path); os.IsNotExist(err) {
+		te.logger.Debug("Directory does not exist, nothing to remove", zap.String("path", path))
+		return nil
+	}
+
+	te.logger.Info("Removing directory", zap.String("path", path))
+	if err := os.RemoveAll(path); err != nil {
+		return fmt.Errorf("failed to remove directory: %w", err)
+	}
+
+	te.logger.Info("Directory removed successfully", zap.String("path", path))
 	return nil
 }

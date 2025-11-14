@@ -330,6 +330,42 @@ func (h *ServiceHandler) UpdateServiceConfig(c *fiber.Ctx) error {
 		})
 	}
 
+	// If HostPort is not provided or is 0, explicitly remove it from config
+	// This allows switching from dynamic (with port) to static (without port) compose
+	if hostPort, exists := configUpdate["HostPort"]; !exists || hostPort == nil || hostPort == 0 || hostPort == float64(0) {
+		// Explicitly mark for deletion by setting to nil
+		configUpdate["HostPort"] = nil
+		h.logger.Info("HostPort not provided or is 0, will be removed from config", "name", name)
+	}
+
+	// Debug: Log received configuration
+	h.logger.Info("Received config update",
+		"name", name,
+		"config", configUpdate,
+		"paths", configUpdate["Paths"])
+
+	// Ensure Paths exists and has Config path
+	if configUpdate["Paths"] == nil {
+		configUpdate["Paths"] = make(map[string]interface{})
+	}
+	paths, ok := configUpdate["Paths"].(map[string]interface{})
+	if !ok {
+		paths = make(map[string]interface{})
+		configUpdate["Paths"] = paths
+	}
+
+	// Set default Config path if not provided
+	if paths["Config"] == nil || paths["Config"] == "" {
+		paths["Config"] = fmt.Sprintf("./volumes/service-configs/%s/", name)
+		h.logger.Info("Using default config path",
+			"name", name,
+			"config_path", paths["Config"])
+	} else {
+		h.logger.Info("Using user-provided config path",
+			"name", name,
+			"config_path", paths["Config"])
+	}
+
 	// Check if service manager is available
 	if h.serviceManager == nil {
 		return c.Status(fiber.StatusServiceUnavailable).JSON(APIResponse{
@@ -446,4 +482,44 @@ func (h *ServiceHandler) ConfigPage(c *fiber.Ctx) error {
 		"ServiceName": name,
 		"Version":     "dev",
 	}, "layouts/main")
+}
+
+// ResetService handles POST /api/services/:name/reset
+// Deletes the config directory and recreates the container with fresh config
+func (h *ServiceHandler) ResetService(c *fiber.Ctx) error {
+	name := c.Params("name")
+	if name == "" {
+		return c.Status(fiber.StatusBadRequest).JSON(APIResponse{
+			Success: false,
+			Error:   "Service name is required",
+		})
+	}
+
+	// Check if service manager is available
+	if h.serviceManager == nil {
+		return c.Status(fiber.StatusServiceUnavailable).JSON(APIResponse{
+			Success: false,
+			Error:   "Service manager is not available",
+		})
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 90*time.Second)
+	defer cancel()
+
+	h.logger.Info("Resetting service configuration", "name", name)
+
+	// Use service manager to reset service (deletes config and recreates container)
+	if err := h.serviceManager.ResetService(ctx, name); err != nil {
+		h.logger.Error("Failed to reset service", "name", name, "error", err)
+		return c.Status(fiber.StatusInternalServerError).JSON(APIResponse{
+			Success: false,
+			Error:   fmt.Sprintf("Failed to reset service: %v", err),
+		})
+	}
+
+	h.logger.Info("Service reset completed", "name", name)
+	return c.JSON(APIResponse{
+		Success: true,
+		Data:    fiber.Map{"message": "Service configuration deleted and container recreated successfully"},
+	})
 }

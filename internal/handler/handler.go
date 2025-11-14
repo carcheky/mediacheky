@@ -9,13 +9,15 @@ import (
 )
 
 type Handlers struct {
-	Health    *HealthHandler
-	Dashboard *DashboardHandler
-	Settings  *SettingsHandler
-	Logs      *LogsHandler
-	Service   *ServiceHandler
-	Config    *ConfigHandler
-	Docker    *DockerHandler
+	Health         *HealthHandler
+	Dashboard      *DashboardHandler
+	Settings       *SettingsHandler
+	Logs           *LogsHandler
+	Service        *ServiceHandler
+	Config         *ConfigHandler
+	Docker         *DockerHandler
+	Proxy          *ProxyHandler
+	ServiceManager *service.ServiceManager // Exposed for auto-start on app init
 }
 
 func NewHandlers(db *gorm.DB, repos *repository.Repositories, logger *logger.Logger, cfg *config.Config) *Handlers {
@@ -57,12 +59,14 @@ func NewHandlers(db *gorm.DB, repos *repository.Repositories, logger *logger.Log
 	}
 
 	return &Handlers{
-		Health:    NewHealthHandler(db, logger),
-		Dashboard: NewDashboardHandler(repos, logger, cfg, syncSvc, dockerClient),
-		Settings:  NewSettingsHandler(repos, logger, cfg, syncSvc),
-		Logs:      NewLogsHandler(repos, logger),
-		Service:   NewServiceHandler(repos, logger, dockerClient, serviceManager),
-		Config:    NewConfigHandler(repos, logger),
-		Docker:    NewDockerHandler(logger, dockerClient),
+		Health:         NewHealthHandler(db, logger),
+		Dashboard:      NewDashboardHandler(repos, logger, cfg, syncSvc, dockerClient),
+		Settings:       NewSettingsHandler(repos, logger, cfg, syncSvc),
+		Logs:           NewLogsHandler(repos, logger),
+		Service:        NewServiceHandler(repos, logger, dockerClient, serviceManager),
+		Config:         NewConfigHandler(repos, logger),
+		Docker:         NewDockerHandler(logger, dockerClient),
+		Proxy:          NewProxyHandler(repos, logger),
+		ServiceManager: serviceManager, // Expose for auto-start
 	}
 }

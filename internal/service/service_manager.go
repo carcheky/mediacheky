@@ -3,6 +3,8 @@ package service
 import (
 	"context"
 	"fmt"
+	"os"
+	"path/filepath"
 	"time"
 
 	"github.com/carcheky/mediacheky/internal/models"
@@ -15,9 +17,47 @@ const (
 	MediaChekyNetwork = "mediacheky_mediacheky-net"
 )
 
+// getHostDataPath returns the host path that is mounted to /app/data
+// This allows us to build service config paths dynamically
+func getHostDataPath() string {
+	// First try environment variable (set by docker-compose.yml)
+	if hostPath := os.Getenv("MEDIACHEKY_HOST_PATH"); hostPath != "" {
+		return filepath.Join(hostPath, "volumes", "mediacheky-data")
+	}
+
+	// Fallback: relative path (works in most cases)
+	return "./volumes/mediacheky-data"
+}
+
+// buildServiceConfigPath constructs the full host path for a service's config directory
+func buildServiceConfigPath(serviceName string) string {
+	return filepath.Join(getHostDataPath(), "services-volumes", serviceName)
+}
+
+// getMediaLibraryPath returns the absolute host path for the media library
+// Uses the same logic as getHostDataPath: reads env var and constructs path
+func getMediaLibraryPath() string {
+	// Read from environment variable (set by docker-compose.yml)
+	mediaPath := os.Getenv("MEDIACHEKY_MEDIA_PATH")
+	if mediaPath == "" {
+		mediaPath = "./volumes/library" // Default
+	}
+
+	// If path is relative, make it absolute using MEDIACHEKY_HOST_PATH
+	if !filepath.IsAbs(mediaPath) {
+		if hostPath := os.Getenv("MEDIACHEKY_HOST_PATH"); hostPath != "" {
+			return filepath.Join(hostPath, mediaPath)
+		}
+	}
+
+	// Already absolute or no MEDIACHEKY_HOST_PATH set
+	return mediaPath
+}
+
 // ServiceRepository defines the interface for service data access
 type ServiceRepository interface {
 	GetByName(name string) (*models.Service, error)
+	Create(service *models.Service) error
 	Update(service *models.Service) error
 	UpdateStatus(id uint, status string, containerID string) error
 	SetEnabled(id uint, enabled bool) error
@@ -61,10 +101,36 @@ func NewServiceManager(
 func (sm *ServiceManager) EnableService(ctx context.Context, serviceName string) error {
 	sm.logger.Info("Enabling service", zap.String("service", serviceName))
 
-	// Get service from database
+	// Get service from database, create if doesn't exist
 	svc, err := sm.serviceRepo.GetByName(serviceName)
 	if err != nil {
-		return fmt.Errorf("failed to get service: %w", err)
+		if err.Error() == "record not found" || err.Error() == "failed to get service: record not found" {
+			// Create service with default configuration
+			sm.logger.Info("Service not found, creating with defaults", zap.String("service", serviceName))
+			defaultConfig := map[string]interface{}{
+				"Image":         fmt.Sprintf("linuxserver/%s:latest", serviceName),
+				"ContainerName": serviceName,
+				"Paths": map[string]string{
+					"Config": buildServiceConfigPath(serviceName),
+					"Media":  getMediaLibraryPath(),
+				},
+				"RestartPolicy": "unless-stopped",
+			}
+
+			svc = &models.Service{
+				Name:    serviceName,
+				Enabled: false,
+				Status:  "stopped",
+				Config:  defaultConfig,
+			}
+
+			if err := sm.serviceRepo.Create(svc); err != nil {
+				return fmt.Errorf("failed to create service: %w", err)
+			}
+			sm.logger.Info("Service created successfully", zap.String("service", serviceName))
+		} else {
+			return fmt.Errorf("failed to get service: %w", err)
+		}
 	}
 
 	if svc.Enabled {
@@ -236,8 +302,9 @@ func (sm *ServiceManager) StopService(ctx context.Context, serviceName string) e
 		return fmt.Errorf("failed to load global config: %w", err)
 	}
 
-	// Execute docker compose down with config variables
-	result, err := sm.dockerCompose.ComposeDown(ctx, composePath, globalConfig)
+	// Execute docker compose stop (preserves container for auto-restart)
+	// Use stop instead of down to allow Docker restart policy to work
+	result, err := sm.dockerCompose.ComposeStop(ctx, composePath, globalConfig)
 	if err != nil {
 		sm.logAction(svc.ID, "stop", "error", fmt.Sprintf("Failed to stop: %v", err))
 		return fmt.Errorf("failed to stop service: %w", err)
@@ -266,19 +333,113 @@ func (sm *ServiceManager) RestartService(ctx context.Context, serviceName string
 		return fmt.Errorf("failed to get service: %w", err)
 	}
 
-	// Stop then start
+	// Get compose file path
+	composePath := sm.templateEngine.GetComposePath(serviceName)
+
+	// Load global config for docker compose execution
+	globalConfig, err := sm.templateEngine.LoadGlobalConfigPublic()
+	if err != nil {
+		sm.logAction(svc.ID, "restart", "error", fmt.Sprintf("Failed to load global config: %v", err))
+		return fmt.Errorf("failed to load global config: %w", err)
+	}
+
+	// Stop the service
 	if err := sm.StopService(ctx, serviceName); err != nil {
 		sm.logAction(svc.ID, "restart", "error", fmt.Sprintf("Failed to stop during restart: %v", err))
 		return fmt.Errorf("failed to stop service during restart: %w", err)
 	}
 
-	if err := sm.StartService(ctx, serviceName); err != nil {
-		sm.logAction(svc.ID, "restart", "error", fmt.Sprintf("Failed to start during restart: %v", err))
-		return fmt.Errorf("failed to start service during restart: %w", err)
+	// Use docker compose up --force-recreate to recreate the container
+	sm.logger.Info("Recreating container", zap.String("service", serviceName))
+	result, err := sm.dockerCompose.ComposeUpForceRecreate(ctx, composePath, globalConfig)
+	if err != nil {
+		sm.logAction(svc.ID, "restart", "error", fmt.Sprintf("Failed to recreate container: %v", err))
+		return fmt.Errorf("failed to recreate container: %w", err)
 	}
 
-	sm.logAction(svc.ID, "restart", "success", "Service restarted")
+	if !result.Success {
+		sm.logAction(svc.ID, "restart", "error", result.Error)
+		return fmt.Errorf("container recreation failed: %s", result.Error)
+	}
+
+	sm.logAction(svc.ID, "restart", "success", "Service restarted and container recreated")
 	sm.logger.Info("Service restarted successfully", zap.String("service", serviceName))
+
+	return nil
+}
+
+// ResetService deletes the service's config directory and recreates the container
+// This will wipe all service configuration data (NOT media files)
+func (sm *ServiceManager) ResetService(ctx context.Context, serviceName string) error {
+	sm.logger.Info("Resetting service (deleting config and recreating container)", zap.String("service", serviceName))
+
+	// Get service from database
+	svc, err := sm.serviceRepo.GetByName(serviceName)
+	if err != nil {
+		return fmt.Errorf("failed to get service: %w", err)
+	}
+
+	// Get compose file path
+	composePath := sm.templateEngine.GetComposePath(serviceName)
+
+	// Load global config
+	globalConfig, err := sm.templateEngine.LoadGlobalConfigPublic()
+	if err != nil {
+		sm.logAction(svc.ID, "reset", "error", fmt.Sprintf("Failed to load global config: %v", err))
+		return fmt.Errorf("failed to load global config: %w", err)
+	}
+
+	// Stop the service first
+	sm.logger.Info("Stopping service before config deletion", zap.String("service", serviceName))
+	if err := sm.StopService(ctx, serviceName); err != nil {
+		sm.logger.Warn("Failed to stop service, continuing anyway",
+			zap.String("service", serviceName),
+			zap.Error(err))
+	}
+
+	// Get config path from service config
+	configPath := ""
+	if svc.Config != nil {
+		if paths, ok := svc.Config["Paths"].(map[string]interface{}); ok {
+			if cp, ok := paths["Config"].(string); ok {
+				configPath = cp
+			}
+		}
+	}
+
+	if configPath == "" {
+		// Use default path
+		configPath = buildServiceConfigPath(serviceName)
+	}
+
+	sm.logger.Info("Deleting service config directory",
+		zap.String("service", serviceName),
+		zap.String("path", configPath))
+
+	// Delete the config directory
+	if err := sm.templateEngine.RemoveDirectory(configPath); err != nil {
+		sm.logAction(svc.ID, "reset", "error", fmt.Sprintf("Failed to delete config directory: %v", err))
+		return fmt.Errorf("failed to delete config directory: %w", err)
+	}
+
+	sm.logger.Info("Config directory deleted, recreating container",
+		zap.String("service", serviceName))
+	sm.logAction(svc.ID, "reset", "info", "Config directory deleted, recreating container...")
+
+	// Recreate the container with fresh config
+	result, err := sm.dockerCompose.ComposeUpForceRecreate(ctx, composePath, globalConfig)
+	if err != nil {
+		sm.logAction(svc.ID, "reset", "error", fmt.Sprintf("Failed to recreate container: %v", err))
+		return fmt.Errorf("failed to recreate container: %w", err)
+	}
+
+	if !result.Success {
+		sm.logAction(svc.ID, "reset", "error", result.Error)
+		return fmt.Errorf("container recreation failed: %s", result.Error)
+	}
+
+	sm.logAction(svc.ID, "reset", "success", "Service configuration deleted and container recreated with fresh config")
+	sm.logger.Info("Service reset completed successfully", zap.String("service", serviceName))
 
 	return nil
 }
@@ -355,8 +516,22 @@ func (sm *ServiceManager) UpdateServiceConfig(ctx context.Context, serviceName s
 		prevHostPort = prevHostPortInt
 	}
 
+	// If HostPort is explicitly set to nil, remove it from the saved config
+	// This allows switching from dynamic (with port) to static (without port) compose
+	if hostPortValue, exists := config["HostPort"]; exists && hostPortValue == nil {
+		delete(config, "HostPort")
+		sm.logger.Info("Removing HostPort from configuration (switching to static compose)",
+			zap.String("service", serviceName))
+	}
+
 	// Update configuration in memory
 	svc.Config = config
+
+	// Debug: Log what we're saving
+	sm.logger.Info("Saving configuration to database",
+		zap.String("service", serviceName),
+		zap.Any("config", config),
+		zap.Any("config_paths", config["Paths"]))
 
 	// Extract port and image for quick access
 	if port, ok := config["Port"].(float64); ok {
@@ -393,12 +568,31 @@ func (sm *ServiceManager) UpdateServiceConfig(ctx context.Context, serviceName s
 
 		// If exposure settings changed, restart to apply port mapping
 		if prevExpose != newExpose || prevHostPort != newHostPort {
-			sm.logger.Info("Port exposure settings changed, restarting service to apply", zap.String("service", serviceName))
-			if err := sm.RestartService(ctx, serviceName); err != nil {
-				sm.logAction(svc.ID, "config_update", "warning", fmt.Sprintf("Compose regenerated but restart failed: %v", err))
-				return fmt.Errorf("compose regenerated but failed to restart service: %w", err)
+			sm.logger.Info("Port exposure settings changed, recreating service to apply", zap.String("service", serviceName))
+
+			// Recreate service instead of restart (avoid docker compose down issues)
+			composePath := sm.templateEngine.GetComposePath(serviceName)
+			globalConfig, err := sm.templateEngine.LoadGlobalConfigPublic()
+			if err != nil {
+				sm.logAction(svc.ID, "config_update", "warning", fmt.Sprintf("Compose regenerated but failed to load config: %v", err))
+				return fmt.Errorf("compose regenerated but failed to load global config: %w", err)
 			}
-			sm.logAction(svc.ID, "config_update", "success", "Configuration updated, compose regenerated and service restarted (port changes applied)")
+
+			// Force recreate the container with new settings
+			result, err := sm.dockerCompose.ComposeUpRecreate(ctx, composePath, globalConfig, serviceName)
+			if err != nil {
+				errMsg := fmt.Sprintf("Compose regenerated but recreate failed: %v | Output: %s | Error: %s",
+					err, result.Output, result.Error)
+				sm.logger.Error("Failed to recreate service",
+					zap.String("service", serviceName),
+					zap.String("output", result.Output),
+					zap.String("error", result.Error),
+					zap.Error(err))
+				sm.logAction(svc.ID, "config_update", "warning", errMsg)
+				return fmt.Errorf("compose regenerated but failed to recreate service: %s", errMsg)
+			}
+
+			sm.logAction(svc.ID, "config_update", "success", fmt.Sprintf("Configuration updated and service recreated (port changes applied): %s", result.Output))
 		} else {
 			sm.logAction(svc.ID, "config_update", "success", "Configuration updated and compose file regenerated")
 		}
@@ -475,4 +669,73 @@ func (sm *ServiceManager) logAction(serviceID uint, action, status, message stri
 			zap.String("action", action),
 			zap.Error(err))
 	}
+}
+
+// AutoStartEnabledServices starts all enabled services on app startup
+// and removes containers for disabled services
+func (sm *ServiceManager) AutoStartEnabledServices() error {
+	sm.logger.Info("Auto-starting enabled services on startup")
+
+	// Get all services from database
+	// We need to use the repository interface, which doesn't have ListAll
+	// So we'll try to get known services one by one
+	knownServices := []string{"radarr", "sonarr", "jellyfin", "prowlarr", "qbittorrent", "jellyseerr", "bazarr", "jellystat"}
+
+	for _, serviceName := range knownServices {
+		svc, err := sm.serviceRepo.GetByName(serviceName)
+		if err != nil {
+			// Service not in database yet, skip
+			continue
+		}
+
+		if svc.Enabled {
+			// Service is enabled → always start it
+			sm.logger.Info("Auto-starting enabled service",
+				zap.String("service", serviceName))
+
+			// Generate compose file
+			composePath, err := sm.templateEngine.GenerateCompose(serviceName, svc.Config)
+			if err != nil {
+				sm.logger.Error("Failed to generate compose for auto-start",
+					zap.String("service", serviceName),
+					zap.Error(err))
+				continue
+			}
+
+			// Start container (docker compose up is idempotent - won't recreate if already running)
+			ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
+			result, err := sm.dockerCompose.ComposeUp(ctx, composePath, map[string]string{})
+			cancel()
+
+			if err != nil {
+				sm.logger.Error("Failed to auto-start service",
+					zap.String("service", serviceName),
+					zap.Error(err))
+				sm.logAction(svc.ID, "auto_start", "error", fmt.Sprintf("Failed: %v", err))
+				continue
+			}
+
+			if !result.Success {
+				sm.logger.Warn("Auto-start completed with errors",
+					zap.String("service", serviceName),
+					zap.String("error", result.Error))
+			} else {
+				sm.logger.Info("Service auto-started successfully",
+					zap.String("service", serviceName))
+				sm.logAction(svc.ID, "auto_start", "success", "Service started on app init")
+			}
+		} else {
+			// Service is disabled → kill and remove container if exists
+			sm.logger.Debug("Removing container for disabled service",
+				zap.String("service", serviceName))
+
+			// Use docker kill + docker rm for fast cleanup
+			ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+			_ = sm.dockerClient.StopContainer(ctx, serviceName, 0)
+			cancel()
+		}
+	}
+
+	sm.logger.Info("Auto-start process completed")
+	return nil
 }

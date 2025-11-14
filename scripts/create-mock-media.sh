@@ -10,7 +10,7 @@
 set -e
 
 # Directorios principales
-MEDIA_BASE="./volumes/media-library"
+MEDIA_BASE="./volumes/library"
 DOWNLOADS_DIR="$MEDIA_BASE/downloads"
 DOWNLOADS_INCOMPLETE_DIR="$DOWNLOADS_DIR/incomplete"
 DOWNLOADS_MOVIES_DIR="$DOWNLOADS_DIR/movies"

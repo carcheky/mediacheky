@@ -64,6 +64,10 @@ type Service struct {
 	// Service configuration (stored as JSON)
 	Config ServiceConfig `json:"config" gorm:"type:json"`
 
+	// Proxy configuration
+	Subdomain string `json:"subdomain" gorm:"index"` // Custom subdomain for the service (e.g., "radarr")
+	Domain    string `json:"domain"`                 // Domain to use (if different from global)
+
 	// Relationship to template
 	TemplateID uint      `json:"template_id" gorm:"index"`
 	Template   *Template `json:"template,omitempty" gorm:"foreignKey:TemplateID"`

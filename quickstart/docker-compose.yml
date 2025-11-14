@@ -11,7 +11,7 @@ services:
       - "${KEEPERCHEKY_PORT:-8780}:8000"
     volumes:
       - ./volumes/mediacheky-data:/app/data
-      - ./volumes/mediacheky-config:/app/config
+      - ./volumes/mediacheky-data:/app/config
       - ./volumes/mediacheky-logs:/app/logs
       - ${RASPIMEDIA}:/BibliotecaMultimedia:rw
     environment:

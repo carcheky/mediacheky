@@ -7,7 +7,7 @@ services:
     environment:
       - TZ=Europe/Madrid
     volumes:
-      - ${CONFIG_BASE_PATH}/jellyseerr:/app/config
+      - ${CONFIG_BASE_PATH}/services-volumes/jellyseerr:/app/config
     restart: unless-stopped
     networks:
       - mediacheky_mediacheky-net

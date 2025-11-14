@@ -10,6 +10,7 @@ import (
 	"github.com/carcheky/mediacheky/internal/handler"
 	"github.com/carcheky/mediacheky/internal/middleware"
 	"github.com/carcheky/mediacheky/internal/repository"
+	"github.com/carcheky/mediacheky/internal/service"
 	"github.com/carcheky/mediacheky/internal/service/scheduler"
 	"github.com/carcheky/mediacheky/pkg/logger"
 	"github.com/gofiber/fiber/v2"
@@ -100,11 +101,20 @@ func main() {
 	app.Use(middleware.RequestID())
 	app.Use(middleware.CORS())
 
+	// Reverse proxy middleware - MUST be before static files and routes
+	// This intercepts requests based on Host header and proxies to services
+	app.Use(middleware.ReverseProxy(repos, appLogger))
+
 	// Static files
 	app.Static("/static", "./web/static")
 
 	// Initialize handlers
 	handlers := handler.NewHandlers(db, repos, appLogger, cfg)
+
+	// Auto-start enabled services on startup
+	if err := autoStartServices(handlers.ServiceManager, appLogger); err != nil {
+		appLogger.Error("Failed to auto-start services", "error", err)
+	}
 
 	// Setup routes
 	setupRoutes(app, handlers)
@@ -117,10 +127,9 @@ func main() {
 	}
 
 	// Start server
-	port := cfg.Server.Port
-	if port == "" {
-		port = "8000"
-	}
+	// Internal port is always 7369 (fixed)
+	// External port mapping is handled by Docker Compose
+	port := "7369"
 
 	appLogger.Info("Server starting", "port", port)
 	if err := app.Listen(":" + port); err != nil {
@@ -192,6 +201,9 @@ func setupRoutes(app *fiber.App, h *handler.Handlers) {
 		services.Post("/:name/update", middleware.ValidateServiceName(), h.Service.UpdateService)
 		services.Put("/:name/config", middleware.ValidateServiceName(), h.Service.UpdateServiceConfig)
 		services.Get("/:name/logs", middleware.ValidateServiceName(), h.Service.GetContainerLogs)
+		services.Put("/:name/subdomain", middleware.ValidateServiceName(), h.Proxy.UpdateServiceSubdomain)
+		services.Get("/:name/endpoint", middleware.ValidateServiceName(), h.Proxy.GetServiceEndpoint)
+		services.Post("/:name/reset", middleware.ValidateServiceName(), h.Service.ResetService)
 
 		// Global configuration endpoints with validation
 		globalConfig := api.Group("/config/global")
@@ -200,9 +212,18 @@ func setupRoutes(app *fiber.App, h *handler.Handlers) {
 		globalConfig.Get("/:key", middleware.ValidateConfigKey(), h.Config.GetConfigValue)
 		globalConfig.Put("/:key", middleware.ValidateConfigKey(), h.Config.UpdateConfigValue)
 
+		// Proxy endpoints
+		proxy := api.Group("/proxy")
+		proxy.Get("/config", h.Proxy.GetProxyConfig)
+		proxy.Put("/config", h.Proxy.UpdateProxyConfig)
+		proxy.Get("/domains", h.Proxy.GetDomains)
+		proxy.Post("/domains", h.Proxy.AddDomain)
+		proxy.Delete("/domains/:name", h.Proxy.DeleteDomain)
+
 		// Docker endpoints
 		api.Get("/docker/info", h.Docker.GetDockerInfo)
 		api.Get("/docker/containers", h.Docker.ListContainers)
+		api.Get("/docker/tags", h.Docker.GetDockerTags)
 
 		// Configuration (Settings) - legacy endpoints
 		api.Get("/config", h.Settings.Get)
@@ -243,4 +264,20 @@ func getVersion() string {
 		return "dev"
 	}
 	return version
+}
+
+// autoStartServices starts all services marked as enabled in the database
+// and removes containers for disabled services
+func autoStartServices(sm *service.ServiceManager, logger *logger.Logger) error {
+	if sm == nil {
+		logger.Warn("Service manager not available, skipping auto-start")
+		return nil
+	}
+
+	logger.Info("Auto-starting enabled services...")
+	if err := sm.AutoStartEnabledServices(); err != nil {
+		return err
+	}
+
+	return nil
 }

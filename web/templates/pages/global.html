@@ -139,6 +139,90 @@
         </div>
     </div>
 
+    <!-- Proxy & Domains Configuration -->
+    <div class="bg-dark-surface dark:bg-dark-surface rounded-lg shadow-lg border border-dark-border p-6">
+        <div class="flex justify-between items-start mb-4">
+            <div>
+                <h2 class="text-xl font-semibold text-dark-text">Proxy & Domains</h2>
+                <p class="text-sm text-dark-muted mt-1">Configure reverse proxy and domain routing for services</p>
+            </div>
+            <button @click="proxyEnabled = !proxyEnabled; updateProxyConfig()" 
+                :class="proxyEnabled ? 'bg-green-600 hover:bg-green-700' : 'bg-gray-600 hover:bg-gray-700'"
+                class="px-4 py-2 text-white rounded-lg text-sm flex items-center gap-2">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                </svg>
+                <span x-text="proxyEnabled ? 'Enabled' : 'Disabled'"></span>
+            </button>
+        </div>
+
+        <!-- Domain List -->
+        <div class="space-y-3 mb-4">
+            <label class="block text-sm font-medium text-dark-text mb-2">
+                Configured Domains
+            </label>
+            <div x-show="domains.length === 0" class="text-sm text-dark-muted italic">
+                No domains configured. Add a domain to enable proxy routing.
+            </div>
+            <template x-for="domain in domains" :key="domain.id">
+                <div class="flex items-center justify-between p-3 bg-dark-bg rounded-lg border border-dark-border">
+                    <div class="flex items-center gap-3">
+                        <span class="text-dark-text font-medium" x-text="domain.name"></span>
+                        <span x-show="domain.is_primary" 
+                            class="px-2 py-1 bg-blue-600/20 text-blue-400 text-xs rounded">
+                            Primary
+                        </span>
+                    </div>
+                    <button @click="deleteDomain(domain.name)" 
+                        class="text-red-400 hover:text-red-300">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                        </svg>
+                    </button>
+                </div>
+            </template>
+        </div>
+
+        <!-- Add Domain Form -->
+        <div class="space-y-3">
+            <label class="block text-sm font-medium text-dark-text">
+                Add Domain
+            </label>
+            <div class="flex gap-3">
+                <input type="text" x-model="newDomain" placeholder="example.com or media.local"
+                    @keyup.enter="addDomain()"
+                    class="flex-1 px-3 py-2 border border-dark-border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-dark-bg text-dark-text">
+                <label class="flex items-center gap-2 px-3 py-2 bg-dark-bg border border-dark-border rounded-md">
+                    <input type="checkbox" x-model="newDomainPrimary"
+                        class="w-4 h-4 text-blue-600 bg-dark-bg border-dark-border rounded focus:ring-blue-500">
+                    <span class="text-sm text-dark-text">Primary</span>
+                </label>
+                <button @click="addDomain()" :disabled="!newDomain"
+                    class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed">
+                    Add
+                </button>
+            </div>
+            <p class="text-xs text-dark-muted">
+                Examples: <code class="text-blue-400">mediacheky.local</code>, <code class="text-blue-400">media.home</code>, <code class="text-blue-400">example.com</code>
+            </p>
+        </div>
+
+        <!-- Proxy Info -->
+        <div x-show="proxyEnabled && domains.length > 0" class="mt-4 p-4 bg-blue-900/20 border border-blue-700/50 rounded-lg">
+            <div class="flex items-start gap-3">
+                <svg class="w-6 h-6 text-blue-400 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd" />
+                </svg>
+                <div class="flex-1">
+                    <h3 class="font-semibold text-blue-300 mb-1">Proxy Routing Enabled</h3>
+                    <p class="text-sm text-blue-200">
+                        Services can now be accessed via subdomains. Configure individual service subdomains in their respective service configuration pages.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Affected Services Preview -->
     <div x-show="affectedServices.length > 0" class="bg-yellow-900/20 border border-yellow-700/50 rounded-lg p-6">
         <div class="flex items-start gap-3">
@@ -220,6 +304,11 @@
             },
             affectedServices: [],
             saving: false,
+            // Proxy configuration
+            proxyEnabled: false,
+            domains: [],
+            newDomain: '',
+            newDomainPrimary: false,
             toast: {
                 show: false,
                 message: '',
@@ -229,6 +318,8 @@
             async init() {
                 await this.loadConfig();
                 await this.loadAffectedServices();
+                await this.loadProxyConfig();
+                await this.loadDomains();
             },
 
             async loadConfig() {
@@ -280,6 +371,108 @@
                     this.showToast('Error: ' + error.message, 'error');
                 } finally {
                     this.saving = false;
+                }
+            },
+
+            async loadProxyConfig() {
+                try {
+                    const response = await fetch('/api/proxy/config');
+                    if (response.ok) {
+                        const result = await response.json();
+                        if (result.success && result.data) {
+                            this.proxyEnabled = result.data.enabled || false;
+                        }
+                    }
+                } catch (error) {
+                    console.error('Error loading proxy config:', error);
+                }
+            },
+
+            async updateProxyConfig() {
+                try {
+                    const response = await fetch('/api/proxy/config', {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            enabled: this.proxyEnabled,
+                            proxy_type: 'traefik'
+                        })
+                    });
+
+                    if (response.ok) {
+                        this.showToast(`Proxy ${this.proxyEnabled ? 'enabled' : 'disabled'} successfully!`, 'success');
+                    } else {
+                        const data = await response.json();
+                        this.showToast(data.error || 'Failed to update proxy config', 'error');
+                    }
+                } catch (error) {
+                    this.showToast('Error: ' + error.message, 'error');
+                }
+            },
+
+            async loadDomains() {
+                try {
+                    const response = await fetch('/api/proxy/domains');
+                    if (response.ok) {
+                        const result = await response.json();
+                        if (result.success) {
+                            this.domains = result.data || [];
+                        }
+                    }
+                } catch (error) {
+                    console.error('Error loading domains:', error);
+                }
+            },
+
+            async addDomain() {
+                if (!this.newDomain.trim()) {
+                    this.showToast('Please enter a domain name', 'error');
+                    return;
+                }
+
+                try {
+                    const response = await fetch('/api/proxy/domains', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            name: this.newDomain.trim(),
+                            is_primary: this.newDomainPrimary
+                        })
+                    });
+
+                    if (response.ok) {
+                        this.showToast('Domain added successfully!', 'success');
+                        this.newDomain = '';
+                        this.newDomainPrimary = false;
+                        await this.loadDomains();
+                    } else {
+                        const data = await response.json();
+                        this.showToast(data.error || 'Failed to add domain', 'error');
+                    }
+                } catch (error) {
+                    this.showToast('Error: ' + error.message, 'error');
+                }
+            },
+
+            async deleteDomain(name) {
+                if (!confirm(`Are you sure you want to delete domain "${name}"?`)) {
+                    return;
+                }
+
+                try {
+                    const response = await fetch(`/api/proxy/domains/${encodeURIComponent(name)}`, {
+                        method: 'DELETE'
+                    });
+
+                    if (response.ok) {
+                        this.showToast('Domain deleted successfully!', 'success');
+                        await this.loadDomains();
+                    } else {
+                        const data = await response.json();
+                        this.showToast(data.error || 'Failed to delete domain', 'error');
+                    }
+                } catch (error) {
+                    this.showToast('Error: ' + error.message, 'error');
                 }
             },
 

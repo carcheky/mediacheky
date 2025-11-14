@@ -1,4 +1,4 @@
-.PHONY: help dev dev-watch build test clean docker-build docker-run shell logs stop check-deps validate validate-quick lint-check lint-fix vet check-and-fix mod-tidy install-hooks uninstall-hooks
+.PHONY: help dev dev-watch build test clean docker-build docker-run shell logs stop check-deps validate validate-quick lint-check lint-fix vet check-and-fix mod-tidy install-hooks uninstall-hooks clean-branches clean-branches-force
 
 # Default target
 help:
@@ -34,6 +34,7 @@ help:
 	@echo "  make lint         - Run linter (golangci-lint)"
 	@echo "  make check-deps   - Check required dependencies"
 	@echo "  make install-hooks - Install pre-commit git hook"
+	@echo "  make clean-branches - Remove local branches that don't exist in remote"
 	@echo ""
 
 # Check dependencies
@@ -77,12 +78,12 @@ setup-env:
 		echo "✅ .env already exists"; \
 	fi
 	@echo "📁 Creating required directories..."
-	@mkdir -p volumes/mediacheky-go-modules
+	@mkdir -p tmp
 	@mkdir -p volumes/mediacheky-data
-	@mkdir -p volumes/mediacheky-config
-	@mkdir -p volumes/media-library/downloads
-	@mkdir -p volumes/media-library/library/movies
-	@mkdir -p volumes/media-library/library/tv
+	@mkdir -p volumes/mediacheky-data
+	@mkdir -p volumes/library/downloads
+	@mkdir -p volumes/library/library/movies
+	@mkdir -p volumes/library/library/tv
 	@mkdir -p logs
 	@mkdir -p data
 	@mkdir -p config
@@ -102,23 +103,29 @@ dev: check-deps setup-env
 	@echo ""
 	@echo "📊 Status:"
 	@echo "  • Environment: Development"
-	@echo "  • URL: http://localhost:8000"
-	@echo "  • Logs: logs/mediacheky-dev.log"
-	@echo "  • Hot-reload: Enabled (via Docker Compose Watch)"
+	@echo "  • URL: http://localhost:7369"
+	@echo "  • Hot-reload: Enabled (Air watches file changes)"
 	@echo ""
 	@echo "💡 Tips:"
 	@echo "  • Press Ctrl+C to stop"
-	@echo "  • Run 'make logs' in another terminal to see logs"
+	@echo "  • Run 'make logs' to see live logs"
 	@echo "  • Run 'make shell' to open a shell in the container"
-	@echo "  • Edit code and it will auto-reload"
+	@echo "  • Edit code and Air will auto-reload (no rebuild needed!)"
+	@echo "  • First start builds image (slow), subsequent starts are instant"
 	@echo ""
 	@echo "Starting containers..."
-	@docker compose up --build --watch
+	@DOCKER_BUILDKIT=1 docker compose up
+
+# Rebuild development image (only needed after Dockerfile changes)
+dev-rebuild:
+	@echo "🔨 Rebuilding development image..."
+	@DOCKER_BUILDKIT=1 docker compose build --no-cache development
+	@echo "✅ Image rebuilt. Run 'make dev' to start"
 
 # Development with Docker Compose Watch (Docker 28+)
 dev-watch:
 	@echo "🚀 Starting development server with Docker Compose Watch..."
-	@docker compose watch
+	@DOCKER_BUILDKIT=1 docker compose watch
 
 # Show development logs
 logs:
@@ -141,8 +148,8 @@ stop-clean:
 # Clean mock media library
 clean-media:
 	@echo "🧹 Cleaning mock media library..."
-	@rm -rf volumes/media-library/downloads
-	@rm -rf volumes/media-library/library
+	@rm -rf volumes/library/downloads
+	@rm -rf volumes/library/library
 	@echo "✅ Media library cleaned"
 	@echo "   Run './scripts/create-mock-media.sh' or 'make dev' to recreate it"
 
@@ -349,6 +356,54 @@ uninstall-hooks:
 	@rm -f .git/hooks/pre-commit
 	@echo "✅ Hook removed"
 
+# Clean local branches that don't exist in remote
+clean-branches:
+	@echo "🧹 Cleaning local branches that don't exist in remote..."
+	@echo ""
+	@echo "📡 Fetching from remote and pruning deleted branches..."
+	@git fetch --prune
+	@echo ""
+	@echo "🔍 Finding local branches to delete..."
+	@BRANCHES=$$(git branch -vv | grep ': gone]' | awk '{print $$1}'); \
+	if [ -z "$$BRANCHES" ]; then \
+		echo "✅ No stale branches found - all local branches are in sync"; \
+	else \
+		echo "Found the following branches to delete:"; \
+		echo "$$BRANCHES" | sed 's/^/  - /'; \
+		echo ""; \
+		printf "Delete these branches? [y/N] "; \
+		read REPLY; \
+		case $$REPLY in \
+			[Yy]*) \
+				echo "$$BRANCHES" | xargs git branch -D; \
+				echo ""; \
+				echo "✅ Branches deleted successfully"; \
+				;; \
+			*) \
+				echo "❌ Operation cancelled"; \
+				;; \
+		esac; \
+	fi
+
+# Force clean local branches (no confirmation)
+clean-branches-force:
+	@echo "🧹 Force cleaning local branches that don't exist in remote..."
+	@echo ""
+	@echo "📡 Fetching from remote and pruning deleted branches..."
+	@git fetch --prune
+	@echo ""
+	@BRANCHES=$$(git branch -vv | grep ': gone]' | awk '{print $$1}'); \
+	if [ -z "$$BRANCHES" ]; then \
+		echo "✅ No stale branches found - all local branches are in sync"; \
+	else \
+		echo "Deleting the following branches:"; \
+		echo "$$BRANCHES" | sed 's/^/  - /'; \
+		echo ""; \
+		echo "$$BRANCHES" | xargs git branch -D; \
+		echo ""; \
+		echo "✅ Branches deleted successfully"; \
+	fi
+
 # Clean build artifacts
 clean:
 	@echo "🧹 Cleaning build artifacts..."
@@ -377,9 +432,9 @@ init:
 	@mkdir -p volumes/qbittorrent-config
 	@mkdir -p volumes/bazarr-config
 	@mkdir -p volumes/jellystat-config
-	@mkdir -p volumes/media-library/library/movies
-	@mkdir -p volumes/media-library/library/tv
-	@mkdir -p volumes/media-library/downloads
+	@mkdir -p volumes/library/library/movies
+	@mkdir -p volumes/library/library/tv
+	@mkdir -p volumes/library/downloads
 	@echo "✅ Development environment initialized"
 	@echo "🎬 Creating mock media library..."
 	@./scripts/create-mock-media.sh

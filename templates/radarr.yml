@@ -1,4 +1,3 @@
-version: '3.8'
 services:
   radarr:
     image: {{ .Image }}
@@ -12,15 +11,24 @@ services:
       {{- end }}
     volumes:
       - {{ .Paths.Config }}:/config
-  - {{ .Global.MediaPath }}:/MEDIACHEKY_LIBRARY
-    {{- if .ExposePort }}
+      - {{ .Global.MediaPath }}:/MEDIACHEKY_LIBRARY
+    {{- if and .HostPort (gt .HostPort 0) }}
     ports:
-      - "{{ if .HostPort }}{{ .HostPort }}{{ else }}{{ .Port }}{{ end }}:7878"
+      - "{{ .HostPort }}:7878"
     {{- end }}
+    extra_hosts:
+      - "radarr.docker.internal:127.0.0.1"
+      - "sonarr.docker.internal:127.0.0.1"
+      - "bazarr.docker.internal:127.0.0.1"
+      - "prowlarr.docker.internal:127.0.0.1"
+      - "lidarr.docker.internal:127.0.0.1"
+      - "overseerr.docker.internal:127.0.0.1"
+      - "jellyfin.docker.internal:127.0.0.1"
+      - "jellyseerr.docker.internal:127.0.0.1"
     networks:
-      - mediacheky-net
+      - mediacheky_mediacheky-net
     restart: {{ .RestartPolicy }}
 
 networks:
-  mediacheky-net:
+  mediacheky_mediacheky-net:
     external: true

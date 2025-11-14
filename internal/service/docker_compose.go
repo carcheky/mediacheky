@@ -49,17 +49,14 @@ func (dcc *DockerComposeClient) ComposeUp(ctx context.Context, composePath strin
 		return nil, fmt.Errorf("compose file not found: %s: %w", cleanPath, err)
 	}
 
-	// Get project root (where main docker-compose.yml is)
-	projectRoot := filepath.Dir(composeDir) // services/ -> project root
-
 	dcc.logger.Info("Executing docker compose up",
 		zap.String("path", cleanPath),
-		zap.String("directory", projectRoot))
+		zap.String("directory", composeDir))
 
 	// Build command
 	// Note: Using 'docker compose' (new) instead of 'docker-compose' (old)
 	cmd := exec.CommandContext(ctx, "docker", "compose", "-f", cleanPath, "up", "-d")
-	cmd.Dir = projectRoot
+	cmd.Dir = composeDir // Run from the directory containing the compose file
 
 	// Set environment variables from config (will be used by docker compose)
 	cmd.Env = os.Environ()
@@ -95,7 +92,134 @@ func (dcc *DockerComposeClient) ComposeUp(ctx context.Context, composePath strin
 		zap.String("output", result.Output))
 
 	return result, nil
-} // ComposeDown executes 'docker compose down' with multiple compose files.
+}
+
+// ComposeUpRecreate executes 'docker compose up -d --force-recreate' to recreate containers
+func (dcc *DockerComposeClient) ComposeUpRecreate(ctx context.Context, composePath string, configMap map[string]string, serviceName string) (*ComposeResult, error) {
+	// Validate and sanitize path
+	if !filepath.IsAbs(composePath) {
+		return nil, fmt.Errorf("compose path must be absolute: %s", composePath)
+	}
+
+	// Sanitize path to prevent traversal
+	cleanPath := filepath.Clean(composePath)
+	if cleanPath != composePath {
+		return nil, fmt.Errorf("compose path contains invalid sequences: %s", composePath)
+	}
+
+	composeDir := filepath.Dir(cleanPath)
+	if _, err := os.Stat(cleanPath); err != nil {
+		return nil, fmt.Errorf("compose file not found: %s: %w", cleanPath, err)
+	}
+
+	dcc.logger.Info("Executing docker compose up --force-recreate",
+		zap.String("path", cleanPath),
+		zap.String("directory", composeDir),
+		zap.String("service", serviceName))
+
+	// ALWAYS force remove the container first
+	// Step 1: Kill immediately (faster than graceful stop)
+	killCmd := exec.CommandContext(ctx, "docker", "kill", serviceName)
+	if err := killCmd.Run(); err != nil {
+		dcc.logger.Debug("docker kill failed (container may not be running)",
+			zap.String("container", serviceName))
+	} else {
+		dcc.logger.Info("Killed container", zap.String("container", serviceName))
+	}
+
+	// Step 2: Force remove
+	removeCmd := exec.CommandContext(ctx, "docker", "rm", "-f", serviceName)
+	var removeStdout, removeStderr bytes.Buffer
+	removeCmd.Stdout = &removeStdout
+	removeCmd.Stderr = &removeStderr
+
+	if err := removeCmd.Run(); err != nil {
+		dcc.logger.Warn("docker rm -f failed (container may not exist)",
+			zap.String("container", serviceName),
+			zap.String("stderr", removeStderr.String()))
+	} else {
+		dcc.logger.Info("Force removed container",
+			zap.String("container", serviceName))
+	}
+
+	// Build command with --force-recreate flag
+	cmd := exec.CommandContext(ctx, "docker", "compose", "-f", cleanPath, "up", "-d", "--force-recreate")
+	cmd.Dir = composeDir // Run from the directory containing the compose file	// Set environment variables from config
+	cmd.Env = os.Environ()
+	for key, value := range configMap {
+		cmd.Env = append(cmd.Env, key+"="+value)
+	}
+
+	// Capture output
+	var stdout, stderr bytes.Buffer
+	cmd.Stdout = &stdout
+	cmd.Stderr = &stderr
+
+	// Execute command
+	err := cmd.Run()
+
+	result := &ComposeResult{
+		Success: err == nil,
+		Output:  stdout.String(),
+		Error:   stderr.String(),
+	}
+
+	if err != nil {
+		dcc.logger.Error("Failed to execute docker compose up --force-recreate",
+			zap.String("path", cleanPath),
+			zap.String("stdout", result.Output),
+			zap.String("stderr", result.Error),
+			zap.Error(err))
+		return result, fmt.Errorf("docker compose up --force-recreate failed: %w", err)
+	}
+
+	dcc.logger.Info("Docker compose up --force-recreate executed successfully",
+		zap.String("path", cleanPath),
+		zap.String("output", result.Output))
+
+	return result, nil
+}
+
+// ComposeUpForceRecreate is a convenience wrapper for ComposeUpRecreate
+// It extracts the service name from the compose file and calls ComposeUpRecreate
+func (dcc *DockerComposeClient) ComposeUpForceRecreate(ctx context.Context, composePath string, configMap map[string]string) (*ComposeResult, error) {
+	// Extract service name from compose file
+	serviceName, err := dcc.extractServiceName(composePath)
+	if err != nil {
+		return nil, fmt.Errorf("failed to extract service name: %w", err)
+	}
+
+	return dcc.ComposeUpRecreate(ctx, composePath, configMap, serviceName)
+}
+
+// extractServiceName reads the compose file and returns the first service name
+func (dcc *DockerComposeClient) extractServiceName(composePath string) (string, error) {
+	data, err := os.ReadFile(composePath)
+	if err != nil {
+		return "", fmt.Errorf("failed to read compose file: %w", err)
+	}
+
+	var compose struct {
+		Services map[string]interface{} `yaml:"services"`
+	}
+
+	if err := yaml.Unmarshal(data, &compose); err != nil {
+		return "", fmt.Errorf("failed to parse compose file: %w", err)
+	}
+
+	if len(compose.Services) == 0 {
+		return "", fmt.Errorf("no services found in compose file")
+	}
+
+	// Return the first service name
+	for serviceName := range compose.Services {
+		return serviceName, nil
+	}
+
+	return "", fmt.Errorf("no services found")
+}
+
+// ComposeDown executes 'docker compose down' with multiple compose files.
 // The first file should be the main docker-compose.yml, subsequent files override/extend it.
 // If ctx is nil, a default timeout context (2 minutes) will be created automatically.
 // To maintain control over operation cancellation, pass a valid context.
@@ -122,19 +246,14 @@ func (dcc *DockerComposeClient) ComposeDown(ctx context.Context, composePath str
 		return nil, fmt.Errorf("compose file not found: %s: %w", cleanPath, err)
 	}
 
-	// Get project root (where main docker-compose.yml is)
-	projectRoot := filepath.Dir(composeDir) // services/ -> project root
-	mainCompose := filepath.Join(projectRoot, "docker-compose.yml")
-
-	dcc.logger.Info("Executing docker compose down with multiple files",
-		zap.String("main", mainCompose),
-		zap.String("service", cleanPath),
-		zap.String("directory", projectRoot))
+	dcc.logger.Info("Executing docker compose down",
+		zap.String("path", cleanPath),
+		zap.String("directory", composeDir))
 
 	// Prepare command: Only use the service file, NOT the main compose
 	// Each service is an independent project but shares the external network
 	cmd := exec.CommandContext(ctx, "docker", "compose", "-f", cleanPath, "down")
-	cmd.Dir = projectRoot
+	cmd.Dir = composeDir // Run from the directory containing the compose file
 
 	// Set environment variables from config (will be used by docker compose)
 	cmd.Env = os.Environ()
@@ -166,6 +285,72 @@ func (dcc *DockerComposeClient) ComposeDown(ctx context.Context, composePath str
 	}
 
 	dcc.logger.Info("Docker compose down executed successfully",
+		zap.String("path", cleanPath),
+		zap.String("output", result.Output))
+
+	return result, nil
+}
+
+// ComposeStop executes 'docker compose stop' to stop containers without removing them.
+// This preserves the container so Docker can auto-restart it based on restart policy.
+func (dcc *DockerComposeClient) ComposeStop(ctx context.Context, composePath string, configMap map[string]string) (*ComposeResult, error) {
+	if ctx == nil {
+		var cancel context.CancelFunc
+		ctx, cancel = context.WithTimeout(context.Background(), dcc.timeout)
+		defer cancel()
+	}
+
+	// Validate and sanitize path
+	if !filepath.IsAbs(composePath) {
+		return nil, fmt.Errorf("compose path must be absolute: %s", composePath)
+	}
+
+	cleanPath := filepath.Clean(composePath)
+	if cleanPath != composePath {
+		return nil, fmt.Errorf("compose path contains invalid sequences: %s", composePath)
+	}
+
+	composeDir := filepath.Dir(cleanPath)
+	if _, err := os.Stat(cleanPath); err != nil {
+		return nil, fmt.Errorf("compose file not found: %s: %w", cleanPath, err)
+	}
+
+	dcc.logger.Info("Executing docker compose stop",
+		zap.String("path", cleanPath),
+		zap.String("directory", composeDir))
+
+	// Execute: docker compose -f <file> stop
+	cmd := exec.CommandContext(ctx, "docker", "compose", "-f", cleanPath, "stop")
+	cmd.Dir = composeDir
+
+	// Set environment variables
+	cmd.Env = os.Environ()
+	for key, value := range configMap {
+		cmd.Env = append(cmd.Env, key+"="+value)
+	}
+
+	var stdout, stderr bytes.Buffer
+	cmd.Stdout = &stdout
+	cmd.Stderr = &stderr
+
+	err := cmd.Run()
+
+	result := &ComposeResult{
+		Success: err == nil,
+		Output:  stdout.String(),
+		Error:   stderr.String(),
+	}
+
+	if err != nil {
+		dcc.logger.Error("Failed to execute docker compose stop",
+			zap.String("path", cleanPath),
+			zap.String("stdout", result.Output),
+			zap.String("stderr", result.Error),
+			zap.Error(err))
+		return result, fmt.Errorf("docker compose stop failed: %w", err)
+	}
+
+	dcc.logger.Info("Docker compose stop executed successfully",
 		zap.String("path", cleanPath),
 		zap.String("output", result.Output))
 

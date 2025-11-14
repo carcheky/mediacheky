@@ -9,7 +9,7 @@ FROM golang:1.25-alpine AS base
 
 WORKDIR /app
 
-# Install common dependencies
+# Install common dependencies (this layer is cached)
 RUN apk add --no-cache \
     git \
     ca-certificates \
@@ -18,36 +18,40 @@ RUN apk add --no-cache \
     musl-dev \
     sqlite-dev
 
-# Copy go mod files
+# Copy go mod files first (separate layer for better caching)
 COPY go.mod go.sum ./
 
-# Download dependencies
-RUN go mod download && \
-    go mod verify
+# Download dependencies (this layer is cached unless go.mod/go.sum change)
+RUN --mount=type=cache,target=/go/pkg/mod \
+    go mod download
 
 # ============================================================================
 # Development stage - With hot-reload support
 # ============================================================================
 FROM base AS development
 
-# Install Air for hot-reload
-RUN go install github.com/air-verse/air@latest
+# Install Air for hot-reload (cached layer)
+RUN --mount=type=cache,target=/go/pkg/mod \
+    go install github.com/air-verse/air@latest
 
-# Install Docker CLI and Docker Compose plugin
+# Install Docker CLI and Docker Compose plugin (cached layer)
 RUN apk add --no-cache \
     docker-cli \
     docker-cli-compose
 
-# Copy source code
-COPY . .
+# Don't copy source code here - it's mounted as volumes in docker-compose.yml
+# This makes the image build MUCH faster since it doesn't rebuild on code changes
+
+# Create required directories
+RUN mkdir -p /app/data /app/config /app/logs /app/tmp
 
 # Expose port
 EXPOSE 7369
 
 # Set development environment
-ENV KEEPERCHEKY_APP_ENVIRONMENT=development \
-    KEEPERCHEKY_SERVER_PORT=7369 \
-    KEEPERCHEKY_SERVER_HOST=0.0.0.0
+ENV MEDIACHEKY_APP_ENVIRONMENT=development \
+    MEDIACHEKY_SERVER_PORT=7369 \
+    MEDIACHEKY_SERVER_HOST=0.0.0.0
 
 # Run with Air for hot-reload
 CMD ["air", "-c", ".air.toml"]
@@ -70,6 +74,8 @@ COPY cmd/ ./cmd/
 COPY internal/ ./internal/
 COPY pkg/ ./pkg/
 COPY web/ ./web/
+COPY templates/ ./templates/
+COPY services/ ./services/
 
 # Build binary with optimizations
 # - CGO_ENABLED=1: Required for SQLite (but using musl for static linking)
@@ -111,6 +117,10 @@ COPY --from=builder /app/bin/mediacheky /app/mediacheky
 
 # Copy web assets
 COPY --from=builder /app/web /app/web
+
+# Copy templates and service definitions
+COPY --from=builder /app/templates /app/templates
+COPY --from=builder /app/services /app/services
 
 # Create non-root user and switch to it
 USER 65534:65534
