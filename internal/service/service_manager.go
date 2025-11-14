@@ -3,6 +3,8 @@ package service
 import (
 	"context"
 	"fmt"
+	"os"
+	"path/filepath"
 	"time"
 
 	"github.com/carcheky/mediacheky/internal/models"
@@ -14,6 +16,23 @@ const (
 	// This is the Docker Compose prefixed name (project_networkname)
 	MediaChekyNetwork = "mediacheky_mediacheky-net"
 )
+
+// getHostDataPath returns the host path that is mounted to /app/data
+// This allows us to build service config paths dynamically
+func getHostDataPath() string {
+	// First try environment variable (set by docker-compose.yml)
+	if hostPath := os.Getenv("MEDIACHEKY_HOST_PATH"); hostPath != "" {
+		return filepath.Join(hostPath, "volumes", "mediacheky-data")
+	}
+
+	// Fallback: relative path (works in most cases)
+	return "./volumes/mediacheky-data"
+}
+
+// buildServiceConfigPath constructs the full host path for a service's config directory
+func buildServiceConfigPath(serviceName string) string {
+	return filepath.Join(getHostDataPath(), "services-volumes", serviceName)
+}
 
 // ServiceRepository defines the interface for service data access
 type ServiceRepository interface {
@@ -72,7 +91,7 @@ func (sm *ServiceManager) EnableService(ctx context.Context, serviceName string)
 				"Image":         fmt.Sprintf("linuxserver/%s:latest", serviceName),
 				"ContainerName": serviceName,
 				"Paths": map[string]string{
-					"Config": fmt.Sprintf("./volumes/service-configs/%s/", serviceName),
+					"Config": buildServiceConfigPath(serviceName),
 				},
 				"RestartPolicy": "unless-stopped",
 			}
@@ -369,7 +388,7 @@ func (sm *ServiceManager) ResetService(ctx context.Context, serviceName string) 
 
 	if configPath == "" {
 		// Use default path
-		configPath = fmt.Sprintf("./volumes/service-configs/%s/", serviceName)
+		configPath = buildServiceConfigPath(serviceName)
 	}
 
 	sm.logger.Info("Deleting service config directory",

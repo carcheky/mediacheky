@@ -261,19 +261,32 @@
                 <p class="text-xs text-dark-muted mt-1">Container restart behavior</p>
             </div>
 
-            <div>
-                <label class="block text-sm font-medium text-dark-text mb-1">
-                    Config Path (Host)
-                    <span class="text-red-400">*</span>
-                </label>
-                <input type="text" x-model="config.Paths.Config" 
-                    @input="validateField('config_path')"
-                    placeholder="./volumes/service-configs/radarr/"
-                    class="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-dark-bg text-dark-text"
-                    :class="errors.config_path ? 'border-red-500' : 'border-dark-border'">
-                <p x-show="errors.config_path" class="text-xs text-red-400 mt-1" x-text="errors.config_path"></p>
-                <p x-show="!errors.config_path" class="text-xs text-dark-muted mt-1">
-                    Path on host machine (outside container) → mapped to <code class="px-1 bg-dark-surface rounded">/config</code> inside container
+            <!-- Volume Mounts Information (Read-only) -->
+            <div class="bg-dark-bg/50 p-4 rounded-lg border border-dark-border">
+                <h3 class="text-sm font-medium text-dark-text mb-3 flex items-center gap-2">
+                    <svg class="w-5 h-5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 19a2 2 0 01-2-2V7a2 2 0 012-2h4l2 2h4a2 2 0 012 2v1M5 19h14a2 2 0 002-2v-5a2 2 0 00-2-2H9a2 2 0 00-2 2v5a2 2 0 01-2 2z"></path>
+                    </svg>
+                    Container Volume Mounts
+                </h3>
+                <div class="space-y-2 text-xs font-mono">
+                    <div class="flex items-start gap-2">
+                        <span class="text-yellow-400 flex-shrink-0">📁</span>
+                        <div>
+                            <div class="text-blue-400" x-text="mountedConfigPath"></div>
+                            <div class="text-dark-muted">→ <code class="text-green-400">/config</code> (inside container)</div>
+                        </div>
+                    </div>
+                    <div class="flex items-start gap-2">
+                        <span class="text-yellow-400 flex-shrink-0">📁</span>
+                        <div>
+                            <div class="text-blue-400" x-text="globalConfig.MEDIACHEKY_MEDIA_PATH || './volumes/library'"></div>
+                            <div class="text-dark-muted">→ <code class="text-green-400">/MEDIACHEKY_LIBRARY</code> (inside container)</div>
+                        </div>
+                    </div>
+                </div>
+                <p class="text-xs text-dark-muted mt-3 italic">
+                    ℹ️ Volume paths are automatically configured and cannot be modified
                 </p>
             </div>
         </div>
@@ -407,11 +420,8 @@
             availableTags: [],
             loadingTags: false,
             globalConfig: {},
-            errors: {
-                port: '',
-                config_path: ''
-                // media_path and downloads_path are auto-calculated, no errors needed
-            },
+            mountedConfigPath: '',  // Actual mounted path (read-only)
+            errors: {},  // No validation errors needed
             testing: false,
             saving: false,
             applying: false,
@@ -486,6 +496,11 @@
                                 ...data.config,
                                 Paths: { ...this.config.Paths, ...(data.config.Paths || {}) }
                             };
+                            
+                            // Set mounted path for display
+                            if (data.config.Paths && data.config.Paths.Config) {
+                                this.mountedConfigPath = data.config.Paths.Config;
+                            }
                         }
                         
                         // Extract tag from Image
@@ -512,6 +527,10 @@
             },
 
             setDefaults() {
+                // Build dynamic config path based on service name
+                // This matches the backend logic: ./volumes/mediacheky-data/services-volumes/{service}/
+                const buildConfigPath = (serviceName) => `./volumes/mediacheky-data/services-volumes/${serviceName}/`;
+                
                 // Set default values based on service name if fields are empty
                 const defaults = {
                     radarr: {
@@ -519,18 +538,16 @@
                         ContainerName: 'radarr',
                         RestartPolicy: 'unless-stopped',
                         Paths: {
-                            Config: './volumes/service-configs/radarr/'
+                            Config: buildConfigPath('radarr')
                         }
-                        // NO HostPort default - omit field to use static compose
                     },
                     sonarr: {
                         Image: 'linuxserver/sonarr:latest',
                         ContainerName: 'sonarr',
                         RestartPolicy: 'unless-stopped',
                         Paths: {
-                            Config: './volumes/service-configs/sonarr/'
+                            Config: buildConfigPath('sonarr')
                         }
-                        // NO HostPort default - omit field to use static compose
                     }
                 };
 
@@ -548,9 +565,6 @@
                     this.config.RestartPolicy = serviceDefaults.RestartPolicy;
                 }
                 
-                // DO NOT set default HostPort - let it be undefined
-                // If user wants port exposure, they must explicitly set it
-                
                 // Apply path defaults - ALWAYS apply if empty
                 if (!this.config.Paths) {
                     this.config.Paths = {};
@@ -559,6 +573,11 @@
                     if (!this.config.Paths[key] || this.config.Paths[key].trim() === '') {
                         this.config.Paths[key] = value;
                     }
+                }
+                
+                // Set display path
+                if (this.config.Paths.Config && !this.mountedConfigPath) {
+                    this.mountedConfigPath = this.config.Paths.Config;
                 }
             },
 
@@ -716,24 +735,9 @@
                 }
             },
 
-            validateField(field) {
-                this.errors[field] = '';
-                
-                switch (field) {
-                    case 'config_path':
-                        if (!this.config.Paths.Config || this.config.Paths.Config.trim() === '') {
-                            this.errors.config_path = 'Config path is required';
-                        }
-                        break;
-                    // media_path and downloads_path are auto-calculated, no validation needed
-                }
-            },
-
             validateAll() {
-                this.validateField('config_path');
-                // Don't validate media_path and downloads_path as they're read-only auto-calculated
-                
-                return Object.keys(this.errors).every(key => !this.errors[key]);
+                // No validation needed - all fields are either optional or auto-configured
+                return true;
             },
 
             async testConnection() {

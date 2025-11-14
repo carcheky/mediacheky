@@ -16,8 +16,8 @@ services:
       - "${MEDIACHEKY_SERVER_PORT_SSL:-7370}:7370"
     volumes:
       # Persistent data (production + development)
-      - ./volumes/mediacheky-data:/app/data
-      - ${MEDIACHEKY_MEDIA_PATH:-./volumes/MEDIACHEKY_MEDIA_PATH}:/MEDIACHEKY_LIBRARY
+      - ${MEDIACHEKY_APP_DATA:-./volumes/mediacheky-data}:/app/data
+      - ${MEDIACHEKY_MEDIA_PATH:-./volumes/library}:/MEDIACHEKY_LIBRARY
       -  mediacheky-local-volumes:/aaaamediacheky-local-volumes
       # Development only - Hot reload & debugging
       - go-modules-cache:/go/pkg/mod  # Go modules cache (named volume for speed)
