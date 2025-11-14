@@ -18,9 +18,9 @@ services:
       # Persistent data (production + development)
       - ${MEDIACHEKY_APP_DATA:-./volumes/mediacheky-data}:/app/data
       - ${MEDIACHEKY_MEDIA_PATH:-./volumes/library}:/MEDIACHEKY_LIBRARY
-      -  mediacheky-local-volumes:/aaaamediacheky-local-volumes
+
       # Development only - Hot reload & debugging
-      - go-modules-cache:/go/pkg/mod  # Go modules cache (named volume for speed)
+      - ./volumes/go-modules-cache:/go/pkg/mod  # Go modules cache (named volume for speed)
       - ./logs:/app/logs  # Logs accessible from host
       - ./.air.toml:/app/.air.toml  # Air configuration
       - ./go.mod:/app/go.mod  # Go modules
@@ -37,28 +37,17 @@ services:
     environment:
       # Application configuration
       - MEDIACHEKY_APP_ENVIRONMENT=${MEDIACHEKY_APP_ENVIRONMENT:-development}
-      - MEDIACHEKY_APP_LOG_LEVEL=${MEDIACHEKY_APP_LOG_LEVEL:-info}
+      - MEDIACHEKY_APP_LOG_LEVEL=${MEDIACHEKY_APP_LOG_LEVEL:-debug}
       - MEDIACHEKY_APP_DRY_RUN=${MEDIACHEKY_APP_DRY_RUN:-false}
       - MEDIACHEKY_SERVER_PORT=${MEDIACHEKY_SERVER_PORT:-7369}
       - MEDIACHEKY_DATABASE_TYPE=${MEDIACHEKY_DATABASE_TYPE:-sqlite}
       - MEDIACHEKY_DATABASE_PATH=${MEDIACHEKY_DATABASE_PATH:-/app/data/mediacheky.db}
-      - MEDIACHEKY_HOST_PROJECT_PATH=${MEDIACHEKY_HOST_PROJECT_PATH:-/home/user/projects/mediacheky}
+      - MEDIACHEKY_HOST_PROJECT_PATH=${PWD}
       # Host path for resolving service volume mounts
       - MEDIACHEKY_HOST_PATH=${PWD}
     networks:
       - mediacheky-net
-    restart: unless-stopped
-
-
-volumes:
-  go-modules-cache:
-    name: mediacheky-go-modules-cache
-  mediacheky-local-volumes:
-    driver: local
-    driver_opts:
-      type: none
-      o: bind
-      device: ./volumes/mediacheky-data
+    restart: always
 
 networks:
   mediacheky-net:
