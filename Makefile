@@ -80,10 +80,10 @@ setup-env:
 	@echo "📁 Creating required directories..."
 	@mkdir -p tmp
 	@mkdir -p volumes/mediacheky-data
-	@mkdir -p volumes/mediacheky-config
-	@mkdir -p volumes/media-library/downloads
-	@mkdir -p volumes/media-library/library/movies
-	@mkdir -p volumes/media-library/library/tv
+	@mkdir -p volumes/mediacheky-data
+	@mkdir -p volumes/library/downloads
+	@mkdir -p volumes/library/library/movies
+	@mkdir -p volumes/library/library/tv
 	@mkdir -p logs
 	@mkdir -p data
 	@mkdir -p config
@@ -148,8 +148,8 @@ stop-clean:
 # Clean mock media library
 clean-media:
 	@echo "🧹 Cleaning mock media library..."
-	@rm -rf volumes/media-library/downloads
-	@rm -rf volumes/media-library/library
+	@rm -rf volumes/library/downloads
+	@rm -rf volumes/library/library
 	@echo "✅ Media library cleaned"
 	@echo "   Run './scripts/create-mock-media.sh' or 'make dev' to recreate it"
 
@@ -432,9 +432,9 @@ init:
 	@mkdir -p volumes/qbittorrent-config
 	@mkdir -p volumes/bazarr-config
 	@mkdir -p volumes/jellystat-config
-	@mkdir -p volumes/media-library/library/movies
-	@mkdir -p volumes/media-library/library/tv
-	@mkdir -p volumes/media-library/downloads
+	@mkdir -p volumes/library/library/movies
+	@mkdir -p volumes/library/library/tv
+	@mkdir -p volumes/library/downloads
 	@echo "✅ Development environment initialized"
 	@echo "🎬 Creating mock media library..."
 	@./scripts/create-mock-media.sh
