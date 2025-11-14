@@ -1,3 +1,11 @@
+# [1.0.0-dev.18](https://github.com/carcheky/mediacheky/compare/v1.0.0-dev.17...v1.0.0-dev.18) (2025-11-14)
+
+
+### Features
+
+* **makefile:** add final test targets for production build and cleanup ([066f59d](https://github.com/carcheky/mediacheky/commit/066f59d4d09e9d02b51260ad4105a30cafa4bde5))
+* **network:** auto-detect MediaCheky's Docker network in configuration ([aabd956](https://github.com/carcheky/mediacheky/commit/aabd95646af4f8617eb758878c145e8192289185))
+
 # [1.0.0-dev.17](https://github.com/carcheky/mediacheky/compare/v1.0.0-dev.16...v1.0.0-dev.17) (2025-11-14)
 
 
