@@ -1,3 +1,15 @@
+# [1.0.0-dev.15](https://github.com/carcheky/mediacheky/compare/v1.0.0-dev.14...v1.0.0-dev.15) (2025-11-14)
+
+
+### Bug Fixes
+
+* **pr:** add CI workflow for pull requests with build, test, format, and lint jobs ([b9b7e1a](https://github.com/carcheky/mediacheky/commit/b9b7e1a26a07c0d88b23173fd05db37f10e3fe31))
+
+
+### Features
+
+* Implement automatic proxy/reverse-proxy system with domain and subdomain management ([#25](https://github.com/carcheky/mediacheky/issues/25)) ([a31efb7](https://github.com/carcheky/mediacheky/commit/a31efb7c6e67d4928f9028a3fcc085df5bfb7aa7)), closes [#27](https://github.com/carcheky/mediacheky/issues/27)
+
 # [1.0.0-dev.14](https://github.com/carcheky/mediacheky/compare/v1.0.0-dev.13...v1.0.0-dev.14) (2025-11-12)
 
 
