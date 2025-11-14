@@ -26,9 +26,9 @@ services:
       - "jellyfin.docker.internal:127.0.0.1"
       - "jellyseerr.docker.internal:127.0.0.1"
     networks:
-      - mediacheky_mediacheky-net
+      - {{ .Network }}
     restart: {{ .RestartPolicy }}
 
 networks:
-  mediacheky_mediacheky-net:
+  {{ .Network }}:
     external: true

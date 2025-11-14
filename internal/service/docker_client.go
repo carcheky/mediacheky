@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"os"
 	"strconv"
 	"time"
 
@@ -443,6 +444,48 @@ func (dc *DockerClient) mapDockerStateToStatus(state *types.ContainerState) Cont
 	}
 
 	return ContainerStatusStopped
+}
+
+// GetSelfNetwork detects the Docker network that MediaCheky is currently running on.
+// This is used to ensure services are created on the same network.
+// Returns empty string if running outside Docker or if detection fails.
+func (dc *DockerClient) GetSelfNetwork(ctx context.Context) (string, error) {
+	if ctx == nil {
+		var cancel context.CancelFunc
+		ctx, cancel = context.WithTimeout(context.Background(), dc.timeout)
+		defer cancel()
+	}
+
+	// Try to get our own hostname (container ID)
+	hostname, err := os.Hostname()
+	if err != nil {
+		dc.logger.Warn("Failed to get hostname, assuming not in Docker", zap.Error(err))
+		return "", nil
+	}
+
+	// Try to inspect our own container
+	inspect, err := dc.client.ContainerInspect(ctx, hostname)
+	if err != nil {
+		// Not running in Docker or can't access own container
+		dc.logger.Debug("Could not inspect self container (not in Docker or no access)",
+			zap.String("hostname", hostname),
+			zap.Error(err))
+		return "", nil
+	}
+
+	// Extract network names
+	if inspect.NetworkSettings != nil && len(inspect.NetworkSettings.Networks) > 0 {
+		// Return the first network found
+		for networkName := range inspect.NetworkSettings.Networks {
+			dc.logger.Info("Detected MediaCheky network",
+				zap.String("network", networkName),
+				zap.String("container_id", hostname))
+			return networkName, nil
+		}
+	}
+
+	dc.logger.Warn("No networks found for self container", zap.String("hostname", hostname))
+	return "", nil
 }
 
 // calculateCPUPercent calculates CPU usage percentage

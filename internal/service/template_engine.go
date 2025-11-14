@@ -4,6 +4,7 @@ package service
 
 import (
 	"bytes"
+	"context"
 	"embed"
 	"fmt"
 	"os"
@@ -403,9 +404,14 @@ func (te *TemplateEngine) buildTemplateData(config models.ServiceConfig, globalC
 	if umask, ok := config["Umask"].(string); ok {
 		data.Umask = umask
 	}
-	if network, ok := config["Network"].(string); ok {
-		data.Network = network
-	}
+
+	// Always auto-detect MediaCheky's network (not configurable by user)
+	detectedNetwork := te.detectSelfNetwork()
+	data.Network = detectedNetwork
+	te.logger.Info("Service will be created on MediaCheky network",
+		zap.String("network", detectedNetwork),
+		zap.String("service", data.ContainerName))
+
 	if restartPolicy, ok := config["RestartPolicy"].(string); ok {
 		data.RestartPolicy = restartPolicy
 	} else {
@@ -425,6 +431,29 @@ func (te *TemplateEngine) buildTemplateData(config models.ServiceConfig, globalC
 	}
 
 	return data, nil
+}
+
+// detectSelfNetwork detects the Docker network MediaCheky is running on.
+// Returns "mediacheky-net" as fallback if detection fails.
+func (te *TemplateEngine) detectSelfNetwork() string {
+	// Try to create a Docker client to query our own network
+	dockerClient, err := NewDockerClient(te.logger)
+	if err != nil {
+		te.logger.Warn("Failed to create Docker client for network detection, using fallback",
+			zap.Error(err))
+		return "mediacheky-net" // Fallback
+	}
+	defer dockerClient.Close()
+
+	// Detect network
+	network, err := dockerClient.GetSelfNetwork(context.Background())
+	if err != nil || network == "" {
+		te.logger.Warn("Failed to detect MediaCheky network, using fallback",
+			zap.Error(err))
+		return "mediacheky-net" // Fallback
+	}
+
+	return network
 }
 
 // validateYAML validates that the generated content is valid YAML

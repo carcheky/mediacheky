@@ -10,10 +10,10 @@ services:
       - ${CONFIG_BASE_PATH}/services-volumes/radarr:/config
       - ${MEDIACHEKY_MEDIA_PATH}:/MEDIACHEKY_LIBRARY
     networks:
-      - mediacheky_mediacheky-net
+      - {{ .Network }}
     restart: unless-stopped
     # NO ports section = internal network only
 
 networks:
-  mediacheky_mediacheky-net:
+  {{ .Network }}:
     external: true
