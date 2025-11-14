@@ -280,7 +280,7 @@
                     <div class="flex items-start gap-2">
                         <span class="text-yellow-400 flex-shrink-0">📁</span>
                         <div>
-                            <div class="text-blue-400" x-text="globalConfig.MEDIACHEKY_MEDIA_PATH || './volumes/library'"></div>
+                            <div class="text-blue-400" x-text="mountedMediaPath"></div>
                             <div class="text-dark-muted">→ <code class="text-green-400">/MEDIACHEKY_LIBRARY</code> (inside container)</div>
                         </div>
                     </div>
@@ -288,48 +288,6 @@
                 <p class="text-xs text-dark-muted mt-3 italic">
                     ℹ️ Volume paths are automatically configured and cannot be modified
                 </p>
-            </div>
-        </div>
-    </div>
-
-    <!-- Media Library Information -->
-    <div class="bg-dark-surface dark:bg-dark-surface rounded-lg shadow-lg border border-dark-border p-6">
-        <div class="flex items-start gap-2">
-            <svg class="w-5 h-5 text-blue-400 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-            </svg>
-            <div class="flex-1">
-                <h3 class="text-sm font-medium text-dark-text mb-2">Media Library Path</h3>
-                <p class="text-xs text-dark-muted mb-3">
-                    Container has access to <code class="px-1 py-0.5 bg-dark-bg rounded text-blue-400">/MEDIACHEKY_LIBRARY</code> 
-                    (configured in Settings → Global Variables)
-                </p>
-                <div class="text-xs font-mono text-dark-muted space-y-1 bg-dark-bg/50 p-3 rounded border border-dark-border">
-                    <div class="flex items-center gap-1">
-                        <svg class="w-3.5 h-3.5 text-yellow-500" fill="currentColor" viewBox="0 0 20 20">
-                            <path d="M2 6a2 2 0 012-2h5l2 2h5a2 2 0 012 2v6a2 2 0 01-2 2H4a2 2 0 01-2-2V6z"></path>
-                        </svg>
-                        <span class="text-blue-400">/MEDIACHEKY_LIBRARY/</span>
-                    </div>
-                    <div class="ml-6 space-y-1">
-                        <div class="flex items-center gap-1">
-                            <svg class="w-3.5 h-3.5 text-yellow-500" fill="currentColor" viewBox="0 0 20 20">
-                                <path d="M2 6a2 2 0 012-2h5l2 2h5a2 2 0 012 2v6a2 2 0 01-2 2H4a2 2 0 01-2-2V6z"></path>
-                            </svg>
-                            <span>├── downloads/</span>
-                        </div>
-                        <div class="flex items-center gap-1">
-                            <svg class="w-3.5 h-3.5 text-yellow-500" fill="currentColor" viewBox="0 0 20 20">
-                                <path d="M2 6a2 2 0 012-2h5l2 2h5a2 2 0 012 2v6a2 2 0 01-2 2H4a2 2 0 01-2-2V6z"></path>
-                            </svg>
-                            <span>└── library/</span>
-                        </div>
-                        <div class="ml-6 text-dark-muted/70">
-                            <div>    ├── movies/</div>
-                            <div>    └── series/</div>
-                        </div>
-                    </div>
-                </div>
             </div>
         </div>
     </div>
@@ -420,7 +378,8 @@
             availableTags: [],
             loadingTags: false,
             globalConfig: {},
-            mountedConfigPath: '',  // Actual mounted path (read-only)
+            mountedConfigPath: '',  // Actual mounted config path (read-only)
+            mountedMediaPath: '',   // Actual mounted media path (read-only)
             errors: {},  // No validation errors needed
             testing: false,
             saving: false,
@@ -497,9 +456,12 @@
                                 Paths: { ...this.config.Paths, ...(data.config.Paths || {}) }
                             };
                             
-                            // Set mounted path for display
+                            // Set mounted paths for display
                             if (data.config.Paths && data.config.Paths.Config) {
                                 this.mountedConfigPath = data.config.Paths.Config;
+                            }
+                            if (data.config.Paths && data.config.Paths.Media) {
+                                this.mountedMediaPath = data.config.Paths.Media;
                             }
                         }
                         
