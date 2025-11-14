@@ -1,3 +1,10 @@
+# [1.0.0-dev.17](https://github.com/carcheky/mediacheky/compare/v1.0.0-dev.16...v1.0.0-dev.17) (2025-11-14)
+
+
+### Bug Fixes
+
+* **config:** update default environment settings and database paths ([bbc592d](https://github.com/carcheky/mediacheky/commit/bbc592ddfc042289d507d688b5510b5d027a1adc))
+
 # [1.0.0-dev.16](https://github.com/carcheky/mediacheky/compare/v1.0.0-dev.15...v1.0.0-dev.16) (2025-11-14)
 
 
