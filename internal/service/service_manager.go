@@ -768,7 +768,7 @@ func (sm *ServiceManager) GetRadarrConfig(ctx context.Context, serviceName strin
 		if os.IsNotExist(err) {
 			sm.logger.Info("Radarr config.xml not found, returning defaults", zap.String("path", configPath))
 			// Return default config
-			return models.RadarrConfig{
+			config = models.RadarrConfig{
 				BindAddress:            "*",
 				Port:                   7878,
 				SslPort:                9898,
@@ -789,14 +789,43 @@ func (sm *ServiceManager) GetRadarrConfig(ctx context.Context, serviceName strin
 				UpdateMechanism:        "Docker",
 				UseProxy:               false,
 				SendAnonymousUsageData: true,
-			}, nil
+			}
+		} else {
+			return config, fmt.Errorf("failed to read config file: %w", err)
 		}
-		return config, fmt.Errorf("failed to read config file: %w", err)
+	} else {
+		// Parse XML
+		if err := parseRadarrConfig(data, &config); err != nil {
+			return config, fmt.Errorf("failed to parse config XML: %w", err)
+		}
 	}
 
-	// Parse XML
-	if err := parseRadarrConfig(data, &config); err != nil {
-		return config, fmt.Errorf("failed to parse config XML: %w", err)
+	// Load credentials from database or generate new ones
+	dbPath := filepath.Join("/app/data/services-volumes", serviceName, "radarr.db")
+	username, exists, err := sm.getRadarrCredentialsFromDB(dbPath)
+	
+	if err != nil {
+		sm.logger.Warn("Failed to read credentials from database", zap.Error(err))
+	} else if exists {
+		// Credentials exist in database - load them
+		config.Username = username
+		config.Password = "********" // Don't expose actual password
+		sm.logger.Info("Loaded existing credentials from Radarr database", zap.String("username", username))
+	} else {
+		// No credentials in database - generate random ones
+		generatedUser, generatedPass := generateRandomCredentials()
+		config.Username = generatedUser
+		config.Password = generatedPass
+		sm.logger.Info("Generated random credentials for Radarr",
+			zap.String("username", generatedUser),
+			zap.String("password_length", fmt.Sprintf("%d", len(generatedPass))))
+		
+		// Automatically save the generated credentials
+		if err := sm.updateRadarrCredentials(dbPath, generatedUser, generatedPass); err != nil {
+			sm.logger.Warn("Failed to save generated credentials", zap.Error(err))
+		} else {
+			sm.logger.Info("Generated credentials saved to database")
+		}
 	}
 
 	return config, nil
@@ -1027,6 +1056,48 @@ func indexOf(s, substr string) int {
 		}
 	}
 	return -1
+}
+
+// generateRandomCredentials generates random username and password
+func generateRandomCredentials() (username, password string) {
+	// Generate random username: "admin" + 4 random chars
+	usernameBytes := make([]byte, 4)
+	rand.Read(usernameBytes)
+	username = fmt.Sprintf("admin%x", usernameBytes)[:10] // max 10 chars
+
+	// Generate random password: 16 characters
+	passwordBytes := make([]byte, 12)
+	rand.Read(passwordBytes)
+	password = base64.URLEncoding.EncodeToString(passwordBytes)[:16]
+
+	return username, password
+}
+
+// getRadarrCredentialsFromDB reads existing credentials from Radarr's database
+func (sm *ServiceManager) getRadarrCredentialsFromDB(dbPath string) (username string, exists bool, err error) {
+	// Check if database exists
+	if _, err := os.Stat(dbPath); os.IsNotExist(err) {
+		return "", false, nil
+	}
+
+	// Open database
+	db, err := sql.Open("sqlite3", dbPath)
+	if err != nil {
+		return "", false, fmt.Errorf("failed to open database: %w", err)
+	}
+	defer db.Close()
+
+	// Query for existing user
+	var savedUsername string
+	err = db.QueryRow("SELECT Username FROM Users LIMIT 1").Scan(&savedUsername)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return "", false, nil // No user exists
+		}
+		return "", false, fmt.Errorf("failed to query users: %w", err)
+	}
+
+	return savedUsername, true, nil
 }
 
 // updateRadarrCredentials updates username and password in Radarr's database
