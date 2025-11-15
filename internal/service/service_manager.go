@@ -2,13 +2,21 @@ package service
 
 import (
 	"context"
+	"crypto/rand"
+	"crypto/sha512"
+	"database/sql"
+	"encoding/base64"
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/carcheky/mediacheky/internal/models"
+	"github.com/google/uuid"
+	_ "github.com/mattn/go-sqlite3"
 	"go.uber.org/zap"
+	"golang.org/x/crypto/pbkdf2"
 )
 
 const (
@@ -818,6 +826,20 @@ func (sm *ServiceManager) UpdateRadarrConfig(ctx context.Context, serviceName st
 
 	sm.logger.Info("Radarr config.xml updated successfully", zap.String("path", configPath))
 
+	// Update credentials in Radarr's database if provided
+	if config.Username != "" && config.Password != "" {
+		dbPath := filepath.Join("/app/data/services-volumes", serviceName, "radarr.db")
+		sm.logger.Info("Updating Radarr credentials in database",
+			zap.String("dbPath", dbPath),
+			zap.String("username", config.Username))
+		if err := sm.updateRadarrCredentials(dbPath, config.Username, config.Password); err != nil {
+			sm.logger.Warn("Failed to update Radarr credentials in database", zap.Error(err))
+			// Don't fail the entire operation - just log the warning
+		} else {
+			sm.logger.Info("Radarr credentials updated successfully in database")
+		}
+	}
+
 	// Restart Radarr container to apply changes
 	// Radarr only reads config.xml on startup, not in hot-reload
 	sm.logger.Info("Restarting Radarr to apply configuration changes", zap.String("service", serviceName))
@@ -1005,6 +1027,67 @@ func indexOf(s, substr string) int {
 		}
 	}
 	return -1
+}
+
+// updateRadarrCredentials updates username and password in Radarr's database
+func (sm *ServiceManager) updateRadarrCredentials(dbPath, username, password string) error {
+	// Open database
+	db, err := sql.Open("sqlite3", dbPath)
+	if err != nil {
+		return fmt.Errorf("failed to open database: %w", err)
+	}
+	defer db.Close()
+
+	// Generate salt and hash password (mimicking Radarr's UserService)
+	salt := make([]byte, 16) // 128 bits / 8
+	if _, err := rand.Read(salt); err != nil {
+		return fmt.Errorf("failed to generate salt: %w", err)
+	}
+
+	// PBKDF2-HMAC-SHA512 with 10000 iterations (same as Radarr)
+	hashedPassword := pbkdf2.Key([]byte(password), salt, 10000, 32, sha512.New)
+
+	saltB64 := base64.StdEncoding.EncodeToString(salt)
+	passwordB64 := base64.StdEncoding.EncodeToString(hashedPassword)
+
+	// Check if user exists
+	var count int
+	err = db.QueryRow("SELECT COUNT(*) FROM Users").Scan(&count)
+	if err != nil {
+		return fmt.Errorf("failed to query users: %w", err)
+	}
+
+	if count == 0 {
+		// Insert new user
+		identifier := uuid.New().String()
+		_, err = db.Exec(
+			"INSERT INTO Users (Identifier, Username, Password, Salt, Iterations) VALUES (?, ?, ?, ?, ?)",
+			identifier,
+			strings.ToLower(username),
+			passwordB64,
+			saltB64,
+			10000,
+		)
+		if err != nil {
+			return fmt.Errorf("failed to insert user: %w", err)
+		}
+		sm.logger.Info("Radarr user created in database", zap.String("username", username))
+	} else {
+		// Update existing user
+		_, err = db.Exec(
+			"UPDATE Users SET Username = ?, Password = ?, Salt = ?, Iterations = ? WHERE Id = (SELECT Id FROM Users LIMIT 1)",
+			strings.ToLower(username),
+			passwordB64,
+			saltB64,
+			10000,
+		)
+		if err != nil {
+			return fmt.Errorf("failed to update user: %w", err)
+		}
+		sm.logger.Info("Radarr user updated in database", zap.String("username", username))
+	}
+
+	return nil
 }
 
 func parseInt(s string, defaultVal int) int {

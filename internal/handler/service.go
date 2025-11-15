@@ -775,6 +775,11 @@ func (h *ServiceHandler) UpdateRadarrConfig(c *fiber.Ctx) error {
 		})
 	}
 
+	h.logger.Info("Received Radarr config update",
+		"name", name,
+		"username", config.Username,
+		"has_password", config.Password != "")
+
 	if err := h.serviceManager.UpdateRadarrConfig(c.Context(), name, config); err != nil {
 		h.logger.Error("Failed to update Radarr config", "error", err)
 		return c.Status(fiber.StatusInternalServerError).JSON(APIResponse{

@@ -34,7 +34,7 @@
 **REMEMBER: NEVER run `docker compose restart`, `docker compose restart`, `docker restart`, or ANY command that affects container lifecycle. EVER.**
 
 **WHAT YOU CAN DO:**
-
+- download oficial repositories to local machine for read documentation for radarr, sonarr, jellyfin, full arr suite, qbitorrent, etc
 - Read logs (`cat`, `tail`, `grep`)
 - Execute commands INSIDE running containers - **ALWAYS use this exact command:**
   ```bash

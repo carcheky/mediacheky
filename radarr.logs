@@ -40,73 +40,27 @@ Build-date: 2025-10-26T16:57:23+00:00
 [Info] FluentMigrator.Runner.MigrationRunner: PerformDBOperation  
 [Info] NzbDrone.Core.Datastore.Migration.Framework.NzbDroneSQLiteProcessor: Performing DB Operation 
 [Info] DatabaseEngineVersionCheck: SQLite 3.49.2 
-[Info] FluentMigrator.Runner.MigrationRunner: => 0.0399115s 
+[Info] FluentMigrator.Runner.MigrationRunner: => 0.0605182s 
 [Info] FluentMigrator.Runner.MigrationRunner: DatabaseEngineVersionCheck migrated 
-[Info] FluentMigrator.Runner.MigrationRunner: => 0.0417084s 
+[Info] FluentMigrator.Runner.MigrationRunner: => 0.063272s 
 [Info] MigrationController: *** Migrating data source=/config/logs.db;cache size=-20000;datetimekind=Utc;journal mode=Wal;pooling=True;version=3;busytimeout=100 *** 
 [Info] FluentMigrator.Runner.MigrationRunner: DatabaseEngineVersionCheck migrating 
 [Info] FluentMigrator.Runner.MigrationRunner: PerformDBOperation  
 [Info] NzbDrone.Core.Datastore.Migration.Framework.NzbDroneSQLiteProcessor: Performing DB Operation 
 [Info] DatabaseEngineVersionCheck: SQLite 3.49.2 
-[Info] FluentMigrator.Runner.MigrationRunner: => 0.0025408s 
+[Info] FluentMigrator.Runner.MigrationRunner: => 0.0046849s 
 [Info] FluentMigrator.Runner.MigrationRunner: DatabaseEngineVersionCheck migrated 
-[Info] FluentMigrator.Runner.MigrationRunner: => 0.0026651s 
+[Info] FluentMigrator.Runner.MigrationRunner: => 0.0048992s 
 [Info] Microsoft.Hosting.Lifetime: Now listening on: http://[::]:7878 
+[ls.io-init] done.
 [Info] CommandExecutor: Starting 2 threads for tasks. 
 [Info] Microsoft.Hosting.Lifetime: Application started. Press Ctrl+C to shut down. 
 [Info] Microsoft.Hosting.Lifetime: Hosting environment: Production 
 [Info] Microsoft.Hosting.Lifetime: Content root path: /app/radarr/bin 
-[ls.io-init] done.
 [Info] ManagedHttpDispatcher: IPv4 is available: True, IPv6 will be disabled 
-[Info] Radarr.Http.Authentication.BasicAuthenticationHandler: Basic was not authenticated. Failure message: Authorization header missing. 
-[Info] Radarr.Http.Authentication.BasicAuthenticationHandler: Basic was not authenticated. Failure message: Authorization header missing. 
-[Info] Radarr.Http.Authentication.BasicAuthenticationHandler: Basic was not authenticated. Failure message: Authorization header missing. 
-[Info] Radarr.Http.Authentication.BasicAuthenticationHandler: Basic was not authenticated. Failure message: Authorization header missing. 
-[Info] Radarr.Http.Authentication.BasicAuthenticationHandler: Basic was not authenticated. Failure message: Authorization header missing. 
-[Info] Radarr.Http.Authentication.BasicAuthenticationHandler: Basic was not authenticated. Failure message: Authorization header missing. 
-[Info] Radarr.Http.Authentication.BasicAuthenticationHandler: Basic was not authenticated. Failure message: Authorization header missing. 
-[Info] Radarr.Http.Authentication.BasicAuthenticationHandler: Basic was not authenticated. Failure message: Authorization header missing. 
-[Info] Radarr.Http.Authentication.BasicAuthenticationHandler: Basic was not authenticated. Failure message: Authorization header missing. 
-[Info] Radarr.Http.Authentication.BasicAuthenticationHandler: Basic was not authenticated. Failure message: Authorization header missing. 
-[Info] Radarr.Http.Authentication.BasicAuthenticationHandler: Basic was not authenticated. Failure message: Authorization header missing. 
-[Info] Radarr.Http.Authentication.BasicAuthenticationHandler: Basic was not authenticated. Failure message: Authorization header missing. 
-[Info] Radarr.Http.Authentication.BasicAuthenticationHandler: Basic was not authenticated. Failure message: Authorization header missing. 
-[Info] Radarr.Http.Authentication.BasicAuthenticationHandler: Basic was not authenticated. Failure message: Authorization header missing. 
-[Info] Radarr.Http.Authentication.BasicAuthenticationHandler: Basic was not authenticated. Failure message: Authorization header missing. 
-[Info] Radarr.Http.Authentication.BasicAuthenticationHandler: Basic was not authenticated. Failure message: Authorization header missing. 
-[Info] Radarr.Http.Authentication.BasicAuthenticationHandler: Basic was not authenticated. Failure message: Authorization header missing. 
-[Info] Radarr.Http.Authentication.BasicAuthenticationHandler: Basic was not authenticated. Failure message: Authorization header missing. 
-[Info] Radarr.Http.Authentication.BasicAuthenticationHandler: Basic was not authenticated. Failure message: Authorization header missing. 
-[Info] Radarr.Http.Authentication.BasicAuthenticationHandler: Basic was not authenticated. Failure message: Authorization header missing. 
-[Info] Radarr.Http.Authentication.BasicAuthenticationHandler: Basic was not authenticated. Failure message: Authorization header missing. 
-[Info] Radarr.Http.Authentication.BasicAuthenticationHandler: Basic was not authenticated. Failure message: Authorization header missing. 
-[Info] Radarr.Http.Authentication.BasicAuthenticationHandler: Basic was not authenticated. Failure message: Authorization header missing. 
-[Info] Radarr.Http.Authentication.BasicAuthenticationHandler: Basic was not authenticated. Failure message: Authorization header missing. 
-[Info] Radarr.Http.Authentication.BasicAuthenticationHandler: Basic was not authenticated. Failure message: Authorization header missing. 
-[Info] Radarr.Http.Authentication.BasicAuthenticationHandler: Basic was not authenticated. Failure message: Authorization header missing. 
-[Info] Radarr.Http.Authentication.BasicAuthenticationHandler: Basic was not authenticated. Failure message: Authorization header missing. 
-[Info] Radarr.Http.Authentication.BasicAuthenticationHandler: Basic was not authenticated. Failure message: Authorization header missing. 
-[Info] Radarr.Http.Authentication.BasicAuthenticationHandler: Basic was not authenticated. Failure message: Authorization header missing. 
-[Info] Radarr.Http.Authentication.BasicAuthenticationHandler: Basic was not authenticated. Failure message: Authorization header missing. 
-[Info] Radarr.Http.Authentication.BasicAuthenticationHandler: Basic was not authenticated. Failure message: Authorization header missing. 
-[Info] Radarr.Http.Authentication.BasicAuthenticationHandler: Basic was not authenticated. Failure message: Authorization header missing. 
-[Info] Radarr.Http.Authentication.BasicAuthenticationHandler: Basic was not authenticated. Failure message: Authorization header missing. 
-[Info] Radarr.Http.Authentication.BasicAuthenticationHandler: Basic was not authenticated. Failure message: Authorization header missing. 
-[Info] Radarr.Http.Authentication.BasicAuthenticationHandler: Basic was not authenticated. Failure message: Authorization header missing. 
-[Info] Radarr.Http.Authentication.BasicAuthenticationHandler: Basic was not authenticated. Failure message: Authorization header missing. 
-[Info] Radarr.Http.Authentication.BasicAuthenticationHandler: Basic was not authenticated. Failure message: Authorization header missing. 
-[Info] Radarr.Http.Authentication.BasicAuthenticationHandler: Basic was not authenticated. Failure message: Authorization header missing. 
-[Info] Radarr.Http.Authentication.BasicAuthenticationHandler: Basic was not authenticated. Failure message: Authorization header missing. 
-[Info] Radarr.Http.Authentication.BasicAuthenticationHandler: Basic was not authenticated. Failure message: Authorization header missing. 
-[Info] Radarr.Http.Authentication.BasicAuthenticationHandler: Basic was not authenticated. Failure message: Authorization header missing. 
-[Info] Radarr.Http.Authentication.BasicAuthenticationHandler: Basic was not authenticated. Failure message: Authorization header missing. 
-[Info] Radarr.Http.Authentication.BasicAuthenticationHandler: Basic was not authenticated. Failure message: Authorization header missing. 
-[Info] Radarr.Http.Authentication.BasicAuthenticationHandler: Basic was not authenticated. Failure message: Authorization header missing. 
-[Info] Radarr.Http.Authentication.BasicAuthenticationHandler: Basic was not authenticated. Failure message: Authorization header missing. 
-[Info] Radarr.Http.Authentication.BasicAuthenticationHandler: AuthenticationScheme: Basic was challenged. 
-[Info] Radarr.Http.Authentication.BasicAuthenticationHandler: Basic was not authenticated. Failure message: Authorization header missing. 
-[Info] Radarr.Http.Authentication.BasicAuthenticationHandler: Basic was not authenticated. Failure message: Authorization header missing. 
-[Info] Radarr.Http.Authentication.BasicAuthenticationHandler: Basic was not authenticated. Failure message: Authorization header missing. 
-[Info] Radarr.Http.Authentication.BasicAuthenticationHandler: AuthenticationScheme: Basic was challenged. 
-[Info] Microsoft.Hosting.Lifetime: Application is shutting down... 
-[Info] ConsoleApp: Exiting main. 
+[Info] Radarr.Http.Authentication.ApiKeyAuthenticationHandler: AuthenticationScheme: API was challenged. 
+[Info] Radarr.Http.Authentication.ApiKeyAuthenticationHandler: AuthenticationScheme: API was challenged. 
+[Info] RssSyncService: Starting RSS Sync 
+[Warn] FetchAndParseRssService: No available indexers. check your configuration. 
+[Info] DownloadDecisionMaker: No results found 
+[Info] RssSyncService: RSS Sync Completed. Reports found: 0, Reports grabbed: 0 
