@@ -960,6 +960,57 @@ func (h *ServiceHandler) CheckServiceReady(c *fiber.Ctx) error {
 		}
 	}
 
+	// For Sonarr: Try API health endpoint with API key from config
+	if name == "sonarr" {
+		// Get API key from Sonarr config
+		var apiKey string
+		if h.serviceManager != nil {
+			if cfg, err := h.serviceManager.GetSonarrConfig(c.Context(), name); err == nil && cfg.ApiKey != "" {
+				apiKey = cfg.ApiKey
+			}
+		}
+
+		// Only try API endpoint if we have the API key
+		if apiKey != "" {
+			apiURL := fmt.Sprintf("http://%s:8989/api/v3/health", name)
+			req, err := http.NewRequest(http.MethodGet, apiURL, nil)
+			if err == nil {
+				req.Header.Set("X-Api-Key", apiKey)
+				resp, err := client.Do(req)
+				if err == nil {
+					defer resp.Body.Close()
+					if resp.StatusCode >= 200 && resp.StatusCode < 400 {
+						return c.JSON(APIResponse{
+							Success: true,
+							Data: fiber.Map{
+								"ready":       true,
+								"via":         "api",
+								"status_code": resp.StatusCode,
+								"url":         apiURL,
+							},
+						})
+					}
+				}
+			}
+		}
+
+		// If API check didn't work, just check if port is responding (TCP check only)
+		// This avoids authentication challenges
+		conn, err := net.DialTimeout("tcp", fmt.Sprintf("%s:8989", name), 1*time.Second)
+		if err == nil {
+			conn.Close()
+			return c.JSON(APIResponse{
+				Success: true,
+				Data: fiber.Map{
+					"ready":       true,
+					"via":         "tcp",
+					"status_code": 0,
+					"url":         fmt.Sprintf("http://%s:8989", name),
+				},
+			})
+		}
+	}
+
 	// Then, attempt via proxy endpoint if available
 	proxySvc := service.NewProxyService(h.repos, h.logger)
 	endpoint, err := proxySvc.GetServiceEndpoint(name)

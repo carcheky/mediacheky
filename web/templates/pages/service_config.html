@@ -127,7 +127,8 @@
 
     <!-- Radarr Application Settings -->
     <div class="bg-dark-surface dark:bg-dark-surface rounded-lg shadow-lg border border-dark-border"
-         :class="!enabled && 'opacity-50 pointer-events-none'">
+         :class="!enabled && 'opacity-50 pointer-events-none'"
+         x-show="serviceName.toLowerCase() === 'radarr'">
         <!-- Header (always visible) -->
         <button @click="collapsed.appSettings = !collapsed.appSettings" 
                 class="w-full px-6 py-4 flex items-center justify-between hover:bg-dark-bg/30 transition-colors">
@@ -388,6 +389,275 @@
             <div x-show="serviceName.toLowerCase() === 'radarr'" class="mt-6 pt-6 border-t border-dark-border">
                 <div class="flex justify-between items-center">
                     <p class="text-sm text-dark-muted">Changes to Radarr configuration are saved via the Apply button</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Sonarr Application Settings -->
+    <div class="bg-dark-surface dark:bg-dark-surface rounded-lg shadow-lg border border-dark-border"
+         :class="!enabled && 'opacity-50 pointer-events-none'"
+         x-show="serviceName.toLowerCase() === 'sonarr'">
+        <!-- Header (always visible) -->
+        <button @click="collapsed.appSettings = !collapsed.appSettings" 
+                class="w-full px-6 py-4 flex items-center justify-between hover:bg-dark-bg/30 transition-colors">
+            <div class="flex items-center gap-3">
+                <svg class="w-6 h-6 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                </svg>
+                <div class="text-left">
+                    <h2 class="text-xl font-semibold text-dark-text">Sonarr Application Settings</h2>
+                    <p class="text-sm text-dark-muted">Configure Sonarr's config.xml settings</p>
+                </div>
+            </div>
+            <svg class="w-5 h-5 text-dark-muted transition-transform duration-200" 
+                 :class="collapsed.appSettings && 'transform rotate-180'"
+                 fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"></path>
+            </svg>
+        </button>
+        
+        <!-- Content (collapsible) -->
+        <div x-show="!collapsed.appSettings" 
+             x-transition:enter="transition ease-out duration-200"
+             x-transition:enter-start="opacity-0 transform -translate-y-2"
+             x-transition:enter-end="opacity-100 transform translate-y-0"
+             x-transition:leave="transition ease-in duration-150"
+             x-transition:leave-start="opacity-100 transform translate-y-0"
+             x-transition:leave-end="opacity-0 transform -translate-y-2"
+             class="px-6 pb-6">
+            
+            <!-- Tabs Navigation -->
+            <div class="border-b border-dark-border mb-6">
+                <nav class="-mb-px flex space-x-8">
+                    <button @click="sonarrTab = 'general'"
+                        :class="sonarrTab === 'general' ? 'border-purple-500 text-purple-400' : 'border-transparent text-dark-muted hover:text-dark-text hover:border-slate-600'"
+                        class="whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors">
+                        General
+                    </button>
+                    <button @click="sonarrTab = 'todo'"
+                        :class="sonarrTab === 'todo' ? 'border-purple-500 text-purple-400' : 'border-transparent text-dark-muted hover:text-dark-text hover:border-slate-600'"
+                        class="whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors">
+                        TODO
+                    </button>
+                </nav>
+            </div>
+
+            <!-- General Tab -->
+            <div x-show="sonarrTab === 'general'" class="space-y-6">
+                <div class="flex items-center justify-between mb-4">
+                    <div>
+                        <h3 class="text-sm font-semibold text-purple-400 uppercase tracking-wide">Config.xml values</h3>
+                        <p class="text-xs text-dark-muted">MediaCheky reads/writes Sonarr's config.xml directly.</p>
+                    </div>
+                    <button x-show="enabled && status === 'running' && serviceEndpoint" 
+                            @click="window.open((proxyConfig.sslEnabled ? 'https://' : 'http://') + serviceEndpoint + '/settings/general', '_blank')"
+                            class="text-blue-400 hover:text-blue-300 transition-colors flex items-center gap-1 text-xs"
+                            title="Open Sonarr Settings (manual login required)">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path>
+                        </svg>
+                        Open Sonarr Settings
+                    </button>
+                </div>
+
+                <!-- 1. API Key (lo más importante) -->
+                <div class="mb-6">
+                    <label class="block text-sm font-medium text-dark-text mb-1">Api Key
+                        <span class="ml-2 inline-block px-2 py-0.5 bg-blue-900/40 border border-blue-700/50 text-blue-300 rounded text-xs font-normal italic">config.xml</span>
+                    </label>
+                    <div class="flex gap-2">
+                        <input type="text" x-model="sonarrConfig.ApiKey" readonly
+                            class="flex-1 px-3 py-2 border border-dark-border rounded-md bg-dark-surface text-dark-muted cursor-not-allowed">
+                        <button @click="copyToClipboard(sonarrConfig.ApiKey)"
+                            class="px-3 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 flex items-center gap-2">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
+                            </svg>
+                            Copy
+                        </button>
+                    </div>
+                    <p class="text-xs text-dark-muted mt-1">Sonarr-generated value for API integrations.</p>
+                </div>
+
+                <!-- 2. Login Credentials (Username + Password) -->
+                <div class="mt-6 pt-6 border-t border-dark-border">
+                    <div class="flex items-center gap-3 mb-2">
+                        <svg class="w-5 h-5 text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
+                        </svg>
+                        <div>
+                            <h3 class="text-sm font-semibold text-yellow-400 uppercase tracking-wide">Login Credentials</h3>
+                            <p class="text-xs text-dark-muted">Stored securely in Sonarr's database with PBKDF2 encryption.</p>
+                        </div>
+                    </div>
+
+                    <!-- Info message for auto-generated credentials -->
+                        <div x-show="sonarrConfig.Password !== '********'" class="mb-4 p-3 bg-blue-900/20 border border-blue-700/30 rounded-md">
+                            <div class="flex items-start gap-2">
+                                <svg class="w-5 h-5 text-blue-400 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                </svg>
+                                <div class="text-sm">
+                                    <p class="text-blue-300 font-medium">Auto-generated credentials</p>
+                                    <p class="text-blue-200/80 text-xs mt-1">Random credentials have been generated. Save them or change them before applying.</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Existing credentials message -->
+                        <div x-show="sonarrConfig.Password === '********'" class="mb-4 p-3 bg-green-900/20 border border-green-700/30 rounded-md">
+                            <div class="flex items-start gap-2">
+                                <svg class="w-5 h-5 text-green-400 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                </svg>
+                                <div class="text-sm">
+                                    <p class="text-green-300 font-medium">Existing credentials loaded</p>
+                                    <p class="text-green-200/80 text-xs mt-1">Current username is shown. Password is hidden for security. Change only if needed.</p>
+                                </div>
+                            </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label for="sonarr-username" class="block text-sm font-medium text-dark-text mb-1">
+                                Username
+                                <span class="ml-2 inline-block px-2 py-0.5 bg-yellow-900/40 border border-yellow-700/50 text-yellow-300 rounded text-xs font-normal italic">database</span>
+                            </label>
+                            <div class="flex gap-2">
+                                <input type="text" id="sonarr-username" x-model="sonarrConfig.Username"
+                                    class="flex-1 px-3 py-2 border border-dark-border rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 bg-dark-bg text-dark-text"
+                                    placeholder="Enter username">
+                                <button @click="copyToClipboard(sonarrConfig.Username)"
+                                    class="px-3 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 flex items-center gap-2">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
+                                    </svg>
+                                </button>
+                            </div>
+                            <p class="text-xs text-dark-muted mt-1">Username for Sonarr web UI login.</p>
+                        </div>
+
+                        <div>
+                            <label for="sonarr-password" class="block text-sm font-medium text-dark-text mb-1">
+                                Password
+                                <span class="ml-2 inline-block px-2 py-0.5 bg-yellow-900/40 border border-yellow-700/50 text-yellow-300 rounded text-xs font-normal italic">database</span>
+                            </label>
+                            <div class="flex gap-2">
+                                <input type="password" id="sonarr-password" x-model="sonarrConfig.Password"
+                                    x-ref="sonarrPasswordField"
+                                    class="flex-1 px-3 py-2 border border-dark-border rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 bg-dark-bg text-dark-text"
+                                    placeholder="Enter password">
+                                <button @click="copyToClipboard(sonarrConfig.Password)"
+                                    class="px-3 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 flex items-center gap-2">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
+                                    </svg>
+                                </button>
+                                <button @click="$refs.sonarrPasswordField.type = $refs.sonarrPasswordField.type === 'password' ? 'text' : 'password'"
+                                    aria-label="Toggle password visibility"
+                                    class="px-3 py-2 bg-slate-700 text-white rounded-md hover:bg-slate-600">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+                                    </svg>
+                                </button>
+                            </div>
+                            <p class="text-xs text-dark-muted mt-1">Password will be hashed with PBKDF2-HMAC-SHA512.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 3. Authentication Settings -->
+                <div class="mt-6 pt-6 border-t border-dark-border">
+                    <h3 class="text-sm font-semibold text-purple-400 uppercase tracking-wide mb-4">Authentication Settings</h3>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-dark-text mb-1">
+                                Authentication Method
+                                <span class="ml-2 inline-block px-2 py-0.5 bg-blue-900/40 border border-blue-700/50 text-blue-300 rounded text-xs font-normal italic">config.xml</span>
+                            </label>
+                            <select x-model="sonarrConfig.AuthenticationMethod"
+                                class="w-full px-3 py-2 border border-dark-border rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 bg-dark-bg text-dark-text">
+                                <option value="None">None</option>
+                                <option value="Basic">Basic (Browser popup)</option>
+                                <option value="Forms">Forms (Login page)</option>
+                                <option value="External">External</option>
+                            </select>
+                            <p class="text-xs text-dark-muted mt-1">Choose the native authentication mechanism.</p>
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-dark-text mb-1">
+                                Authentication Required
+                                <span class="ml-2 inline-block px-2 py-0.5 bg-blue-900/40 border border-blue-700/50 text-blue-300 rounded text-xs font-normal italic">config.xml</span>
+                            </label>
+                            <select x-model="sonarrConfig.AuthenticationRequired"
+                                class="w-full px-3 py-2 border border-dark-border rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 bg-dark-bg text-dark-text">
+                                <option value="Enabled">Enabled (Always require auth)</option>
+                                <option value="DisabledForLocalAddresses">Disabled for Local Addresses</option>
+                            </select>
+                            <p class="text-xs text-dark-muted mt-1">Controls when Sonarr enforces authentication.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 4. General Settings -->
+                <div class="mt-6 pt-6 border-t border-dark-border">
+                    <h3 class="text-sm font-semibold text-purple-400 uppercase tracking-wide mb-4">General Settings</h3>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-dark-text mb-1">
+                                Instance Name
+                                <span class="ml-2 inline-block px-2 py-0.5 bg-blue-900/40 border border-blue-700/50 text-blue-300 rounded text-xs font-normal italic">config.xml</span>
+                            </label>
+                            <input type="text" x-model="sonarrConfig.InstanceName"
+                                class="w-full px-3 py-2 border border-dark-border rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 bg-dark-bg text-dark-text">
+                            <p class="text-xs text-dark-muted mt-1">Friendly name displayed across Sonarr UI.</p>
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-dark-text mb-1">
+                                Log Level
+                                <span class="ml-2 inline-block px-2 py-0.5 bg-blue-900/40 border border-blue-700/50 text-blue-300 rounded text-xs font-normal italic">config.xml</span>
+                            </label>
+                            <select x-model="sonarrConfig.LogLevel"
+                                class="w-full px-3 py-2 border border-dark-border rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 bg-dark-bg text-dark-text">
+                                <option value="trace">Trace</option>
+                                <option value="debug">Debug</option>
+                                <option value="info">Info</option>
+                                <option value="warn">Warning</option>
+                                <option value="error">Error</option>
+                            </select>
+                            <p class="text-xs text-dark-muted mt-1">Logging verbosity level.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TODO Tab -->
+            <div x-show="sonarrTab === 'todo'" class="space-y-6">
+                <div class="mb-4">
+                    <h3 class="text-sm font-semibold text-slate-400 uppercase tracking-wide">TODO</h3>
+                    <p class="text-xs text-dark-muted">Future settings will appear here</p>
+                </div>
+
+                <div class="p-8 text-center border-2 border-dashed border-dark-border rounded-lg">
+                    <svg class="w-12 h-12 mx-auto text-dark-muted mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                    </svg>
+                    <p class="text-dark-muted text-sm">No additional settings configured yet</p>
+                    <p class="text-dark-muted text-xs mt-2">This section is reserved for future functionality</p>
+                </div>
+            </div>
+
+            <!-- Apply Changes Section -->
+            <div x-show="serviceName.toLowerCase() === 'sonarr'" class="mt-6 pt-6 border-t border-dark-border">
+                <div class="flex justify-between items-center">
+                    <p class="text-sm text-dark-muted">Changes to Sonarr configuration are saved via the Apply button</p>
                 </div>
             </div>
         </div>
@@ -778,6 +1048,31 @@
                 UseProxy: false,
                 SendAnonymousUsageData: true
             },
+            // Sonarr tabs state
+            sonarrTab: 'general',  // Active tab: 'general', 'authentication', 'todo'
+            // Sonarr Application Settings
+            sonarrConfig: {
+                BindAddress: '*',
+                Port: 8989,
+                SslPort: 9898,
+                EnableSsl: false,
+                LaunchBrowser: true,
+                ApiKey: '',
+                AuthenticationMethod: 'Forms',
+                AuthenticationRequired: 'DisabledForLocalAddresses',
+                Username: '',
+                Password: '',
+                PasswordConfirmation: '',
+                Branch: 'master',
+                LogLevel: 'debug',
+                SslCertPath: '',
+                SslCertPassword: '',
+                UrlBase: '',
+                InstanceName: 'Sonarr',
+                UpdateMechanism: 'Docker',
+                UseProxy: false,
+                SendAnonymousUsageData: true
+            },
             savingAppConfig: false,
             applying: false,
             pruning: false,
@@ -814,6 +1109,7 @@
                 this.loadProxySettings().catch(e => console.error('Failed to load proxy settings:', e));
                 this.loadServiceEndpoint().catch(e => console.error('Failed to load service endpoint:', e));
                 this.loadRadarrConfig().catch(e => console.error('Failed to load Radarr config:', e));
+                this.loadSonarrConfig().catch(e => console.error('Failed to load Sonarr config:', e));
                 this.loadSavedDockerTags().catch(e => console.error('Failed to load saved Docker tags:', e));
                 // Don't load auth settings on init - they require API key which may not be ready yet
                 
@@ -1064,7 +1360,8 @@
                     this.checkConfigPathExists(),
                     this.loadProxySettings().catch(() => {}),
                     this.loadServiceEndpoint().catch(() => {}),
-                    this.loadRadarrConfig().catch(() => {})
+                    this.loadRadarrConfig().catch(() => {}),
+                    this.loadSonarrConfig().catch(() => {})
                 ]);
             },
 
@@ -1259,8 +1556,9 @@
 
                 try {
                     const isRadarr = this.serviceName.toLowerCase() === 'radarr';
-                    const steps = isRadarr 
-                        ? ['Saving Docker configuration', 'Saving Radarr config.xml', 'Restarting container', 'Reloading data']
+                    const isSonarr = this.serviceName.toLowerCase() === 'sonarr';
+                    const steps = (isRadarr || isSonarr)
+                        ? ['Saving Docker configuration', `Saving ${isRadarr ? 'Radarr' : 'Sonarr'} config.xml`, 'Restarting container', 'Reloading data']
                         : ['Saving configuration', 'Restarting container', 'Reloading data'];
                     
                     this.startProgress('Applying configuration', steps, 'Applying changes, container will restart...');
@@ -1311,6 +1609,34 @@
                         this.showMessage('Configuration applied! Radarr is restarting...', 'success');
                         
                         // Wait longer for Radarr to restart (it's done automatically by backend)
+                        await new Promise(resolve => setTimeout(resolve, 5000));
+                        
+                        this.updateProgress(3); // Reloading data
+                    } else if (isSonarr) {
+                        // For Sonarr: Also save config.xml which will trigger automatic restart
+                        console.log('📤 Sending Sonarr config:', {
+                            Username: this.sonarrConfig.Username,
+                            Password: this.sonarrConfig.Password ? '***' : '(empty)',
+                            ApiKey: this.sonarrConfig.ApiKey ? '***' : '(empty)',
+                            AuthenticationMethod: this.sonarrConfig.AuthenticationMethod
+                        });
+                        const sonarrSaveResponse = await fetch(`/api/services/${this.serviceName}/sonarr-config`, {
+                            method: 'PUT',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(this.sonarrConfig)
+                        });
+
+                        if (!sonarrSaveResponse.ok) {
+                            const data = await sonarrSaveResponse.json();
+                            this.showMessage(data.error || 'Failed to save Sonarr config.xml', 'error');
+                            this.endProgress();
+                            return;
+                        }
+
+                        this.updateProgress(2); // Sonarr is restarting automatically
+                        this.showMessage('Configuration applied! Sonarr is restarting...', 'success');
+                        
+                        // Wait longer for Sonarr to restart (it's done automatically by backend)
                         await new Promise(resolve => setTimeout(resolve, 5000));
                         
                         this.updateProgress(3); // Reloading data
@@ -1753,6 +2079,24 @@
                 }
             },
 
+            async loadSonarrConfig() {
+                if (this.serviceName.toLowerCase() !== 'sonarr') return;
+                
+                try {
+                    const response = await fetch(`/api/services/${this.serviceName}/sonarr-config`);
+                    if (response.ok) {
+                        const result = await response.json();
+                        const data = result.data || result;
+                        
+                        // Update sonarrConfig with loaded values
+                        if (data.config) {
+                            Object.assign(this.sonarrConfig, data.config);
+                        }
+                    }
+                } catch (error) {
+                    console.error('Error loading Sonarr config:', error);
+                }
+            },
 
             async copyToClipboard(text) {
                 try {

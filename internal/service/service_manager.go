@@ -1507,65 +1507,73 @@ func (sm *ServiceManager) GetSonarrConfig(ctx context.Context, serviceName strin
 	sm.logger.Info("Sonarr container is fully initialized, proceeding with configuration",
 		zap.String("service", serviceName))
 
-	// Database path for Sonarr
-	dbPath := filepath.Join("/app/data/services-volumes", serviceName, "sonarr.db")
-
-	// Try loading credentials from MediaCheky database first
-	if creds, err := sm.serviceRepo.GetServiceCredentials(serviceName); err == nil && creds.Username != "" {
-		config.Username = creds.Username
-		config.Password = creds.Password
-		sm.logger.Info("Loaded credentials from MediaCheky database", zap.String("username", creds.Username))
+	// Load credentials from our MediaCheky database first
+	credentials, err := sm.getServiceCredentials(serviceName)
+	if err == nil && credentials != nil {
+		// Credentials exist in MediaCheky database - use them
+		config.Username = credentials.Username
+		config.Password = credentials.Password // Return real password for copy/autologin
+		sm.logger.Info("Loaded existing credentials from MediaCheky database", zap.String("username", credentials.Username))
 	} else {
 		// Try loading from Sonarr's database as fallback
-		sm.logger.Debug("Credentials not in MediaCheky DB, checking Sonarr database", zap.String("path", dbPath))
+		dbPath := filepath.Join("/app/data/services-volumes", serviceName, "sonarr.db")
 		dbStatus, err := sm.getSonarrCredentialsFromDB(dbPath)
-		if err != nil {
-			if dbStatus != nil {
-				sm.logger.Warn("Failed to read credentials from Sonarr database", zap.Error(err))
 
-				if !dbStatus.DBExists {
-					// Database doesn't exist yet - Sonarr hasn't been started
-					// DO NOT generate credentials yet - wait for Sonarr to create its DB
-					sm.logger.Info("Sonarr database does not exist yet, waiting for first Sonarr startup")
-				} else if !dbStatus.TableExists {
-					// Database exists but Users table doesn't - Sonarr is initializing
-					// DO NOT generate credentials yet - wait for Sonarr to create the table
-					sm.logger.Info("Sonarr Users table does not exist yet, waiting for Sonarr initialization")
-				} else if !dbStatus.UserExists {
-					sm.logger.Info("Sonarr database ready but no user exists, generating credentials")
-					// Generate random credentials
-					generatedUser := "admin"
-					generatedPass, err := generateRandomPassword(16)
-					if err == nil {
-						sm.logger.Info("Generated random credentials for Sonarr",
-							zap.String("username", generatedUser),
-							zap.String("password", generatedPass))
-						config.Username = generatedUser
-						config.Password = generatedPass
-						if err := sm.updateSonarrCredentials(dbPath, generatedUser, generatedPass); err != nil {
-							sm.logger.Warn("Failed to save credentials to Sonarr database", zap.Error(err))
-						}
-						// Save to MediaCheky DB
-						if err := sm.serviceRepo.SaveServiceCredentials(serviceName, generatedUser, generatedPass); err != nil {
-							sm.logger.Warn("Failed to save credentials to MediaCheky database", zap.Error(err))
-						}
+		if err != nil {
+			sm.logger.Warn("Failed to read credentials from Sonarr database", zap.Error(err))
+		} else if dbStatus != nil {
+			// Check database status and act accordingly
+			if !dbStatus.DBExists {
+				// Database doesn't exist yet - Sonarr hasn't been started
+				// DO NOT generate credentials yet - wait for Sonarr to create its DB
+				sm.logger.Info("Sonarr database does not exist yet, waiting for first Sonarr startup")
+				config.Username = ""
+				config.Password = ""
+			} else if !dbStatus.TableExists {
+				// Database exists but Users table doesn't - Sonarr is initializing
+				// DO NOT generate credentials yet - wait for Sonarr to create the table
+				sm.logger.Info("Sonarr Users table does not exist yet, waiting for Sonarr initialization")
+				config.Username = ""
+				config.Password = ""
+			} else if !dbStatus.UserExists {
+				// Database exists, table exists, but NO user - safe to generate
+				sm.logger.Info("Sonarr database ready but no user exists, generating credentials")
+				generatedUser, generatedPass, err := generateRandomCredentials()
+				if err != nil {
+					sm.logger.Error("Failed to generate credentials", zap.Error(err))
+				} else {
+					config.Username = generatedUser
+					config.Password = generatedPass
+					sm.logger.Info("Generated random credentials for Sonarr",
+						zap.String("username", generatedUser),
+						zap.String("password_length", fmt.Sprintf("%d", len(generatedPass))))
+
+					// Save to both databases
+					if err := sm.updateSonarrCredentials(dbPath, generatedUser, generatedPass); err != nil {
+						sm.logger.Warn("Failed to save credentials to Sonarr database", zap.Error(err))
+					}
+					if err := sm.saveServiceCredentials(serviceName, generatedUser, generatedPass); err != nil {
+						sm.logger.Warn("Failed to save credentials to MediaCheky database", zap.Error(err))
+					} else {
+						sm.logger.Info("Generated credentials saved to both databases")
 					}
 				}
 			} else {
 				// User exists in Sonarr database - migrate to MediaCheky DB
 				password, err := sm.getSonarrPasswordFromDB(dbPath, dbStatus.Username)
 				if err == nil && password != "" {
+					config.Username = dbStatus.Username
 					config.Password = password
-					// Save to MediaCheky DB
-					if err := sm.serviceRepo.SaveServiceCredentials(serviceName, dbStatus.Username, password); err == nil {
+					// Save to MediaCheky database for future use
+					if err := sm.saveServiceCredentials(serviceName, dbStatus.Username, password); err != nil {
+						sm.logger.Warn("Failed to save credentials to MediaCheky database", zap.Error(err))
+					} else {
 						sm.logger.Info("Migrated credentials from Sonarr DB to MediaCheky DB", zap.String("username", dbStatus.Username))
 					}
 				} else {
-					// Password is hashed in DB, can't retrieve
-					config.Password = ""
-				}
-				config.Username = dbStatus.Username
-				if config.Password != "" {
+					// Fallback: show masked password
+					config.Username = dbStatus.Username
+					config.Password = "********"
 					sm.logger.Info("Loaded username from Sonarr database (password masked)", zap.String("username", dbStatus.Username))
 				}
 			}
@@ -1699,28 +1707,48 @@ func parseSonarrConfig(data []byte, config *models.SonarrConfig) error {
 
 // generateSonarrConfigXML generates XML content from SonarrConfig
 func generateSonarrConfigXML(config models.SonarrConfig) (string, error) {
-	var builder strings.Builder
-	builder.WriteString("<Config>\n")
-	builder.WriteString(fmt.Sprintf("  <BindAddress>%s</BindAddress>\n", config.BindAddress))
-	builder.WriteString(fmt.Sprintf("  <Port>%d</Port>\n", config.Port))
-	builder.WriteString(fmt.Sprintf("  <SslPort>%d</SslPort>\n", config.SslPort))
-	builder.WriteString(fmt.Sprintf("  <EnableSsl>%t</EnableSsl>\n", config.EnableSsl))
-	builder.WriteString(fmt.Sprintf("  <LaunchBrowser>%t</LaunchBrowser>\n", config.LaunchBrowser))
-	builder.WriteString(fmt.Sprintf("  <ApiKey>%s</ApiKey>\n", config.ApiKey))
-	builder.WriteString(fmt.Sprintf("  <AuthenticationMethod>%s</AuthenticationMethod>\n", config.AuthenticationMethod))
-	builder.WriteString(fmt.Sprintf("  <AuthenticationRequired>%s</AuthenticationRequired>\n", config.AuthenticationRequired))
-	builder.WriteString(fmt.Sprintf("  <Branch>%s</Branch>\n", config.Branch))
-	builder.WriteString(fmt.Sprintf("  <LogLevel>%s</LogLevel>\n", config.LogLevel))
-	builder.WriteString(fmt.Sprintf("  <SslCertPath>%s</SslCertPath>\n", config.SslCertPath))
-	builder.WriteString(fmt.Sprintf("  <SslCertPassword>%s</SslCertPassword>\n", config.SslCertPassword))
-	builder.WriteString(fmt.Sprintf("  <UrlBase>%s</UrlBase>\n", config.UrlBase))
-	builder.WriteString(fmt.Sprintf("  <InstanceName>%s</InstanceName>\n", config.InstanceName))
-	builder.WriteString(fmt.Sprintf("  <UpdateMechanism>%s</UpdateMechanism>\n", config.UpdateMechanism))
-	builder.WriteString(fmt.Sprintf("  <UseProxy>%t</UseProxy>\n", config.UseProxy))
-	builder.WriteString(fmt.Sprintf("  <SendAnonymousUsageData>%t</SendAnonymousUsageData>\n", config.SendAnonymousUsageData))
-	builder.WriteString("</Config>\n")
+	boolToStr := func(b bool) string {
+		if b {
+			return "True"
+		}
+		return "False"
+	}
 
-	return builder.String(), nil
+	xml := fmt.Sprintf(`<Config>
+  <BindAddress>%s</BindAddress>
+  <Port>%d</Port>
+  <SslPort>%d</SslPort>
+  <EnableSsl>%s</EnableSsl>
+  <LaunchBrowser>%s</LaunchBrowser>
+  <ApiKey>%s</ApiKey>
+  <AuthenticationMethod>%s</AuthenticationMethod>
+  <AuthenticationRequired>%s</AuthenticationRequired>
+  <Branch>%s</Branch>
+  <LogLevel>%s</LogLevel>
+  <SslCertPath>%s</SslCertPath>
+  <SslCertPassword>%s</SslCertPassword>
+  <UrlBase>%s</UrlBase>
+  <InstanceName>%s</InstanceName>
+  <UpdateMechanism>%s</UpdateMechanism>
+</Config>`,
+		config.BindAddress,
+		config.Port,
+		config.SslPort,
+		boolToStr(config.EnableSsl),
+		boolToStr(config.LaunchBrowser),
+		config.ApiKey,
+		config.AuthenticationMethod,
+		config.AuthenticationRequired,
+		config.Branch,
+		config.LogLevel,
+		config.SslCertPath,
+		config.SslCertPassword,
+		config.UrlBase,
+		config.InstanceName,
+		config.UpdateMechanism,
+	)
+
+	return xml, nil
 }
 
 // initializeSonarrConfig creates config.xml with default values if it doesn't exist
@@ -1750,15 +1778,15 @@ func (sm *ServiceManager) initializeSonarrConfig(ctx context.Context, serviceNam
 		Port:                   8989,
 		SslPort:                9898,
 		EnableSsl:              false,
-		LaunchBrowser:          false,
+		LaunchBrowser:          true,
 		ApiKey:                 "", // Sonarr will generate this on first start
 		AuthenticationMethod:   "Forms",
 		AuthenticationRequired: "DisabledForLocalAddresses",
 		Username:               "",
 		Password:               "",
 		PasswordConfirmation:   "",
-		Branch:                 "main",
-		LogLevel:               "info",
+		Branch:                 "master",
+		LogLevel:               "debug",
 		SslCertPath:            "",
 		SslCertPassword:        "",
 		UrlBase:                "",
