@@ -1,3 +1,10 @@
+# [1.0.0-dev.19](https://github.com/carcheky/mediacheky/compare/v1.0.0-dev.18...v1.0.0-dev.19) (2025-11-15)
+
+
+### Features
+
+* radarr auto config ([#28](https://github.com/carcheky/mediacheky/issues/28)) ([a9a565f](https://github.com/carcheky/mediacheky/commit/a9a565fe4f26040e03745cf6c56492f18a314082))
+
 # [1.0.0-dev.18](https://github.com/carcheky/mediacheky/compare/v1.0.0-dev.17...v1.0.0-dev.18) (2025-11-14)
 
 
