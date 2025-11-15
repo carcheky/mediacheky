@@ -1383,6 +1383,12 @@
                 this.testing = true;
                 this.testResult = null;
 
+                this.startProgress('Testing connection', [
+                    'Connecting to service',
+                    'Verifying credentials',
+                    'Checking response'
+                ], 'Testing service connection...');
+
                 try {
                     const response = await fetch(`/api/config/test/${this.serviceName}`, {
                         method: 'POST',
@@ -1393,21 +1399,26 @@
                     const data = await response.json();
 
                     if (response.ok) {
+                        this.updateProgress(2);
                         this.testResult = {
                             success: true,
                             message: data.message || 'Service is reachable and responding correctly'
                         };
+                        await new Promise(resolve => setTimeout(resolve, 500));
+                        this.endProgress();
                     } else {
                         this.testResult = {
                             success: false,
                             message: data.error || 'Unable to connect to service'
                         };
+                        this.endProgress();
                     }
                 } catch (error) {
                     this.testResult = {
                         success: false,
                         message: 'Error: ' + error.message
                     };
+                    this.endProgress();
                 } finally {
                     this.testing = false;
                 }
@@ -1421,6 +1432,12 @@
 
                 this.saving = true;
                 this.message = '';
+
+                this.startProgress('Saving configuration', [
+                    'Validating changes',
+                    'Updating configuration',
+                    'Reloading service data'
+                ], 'Saving configuration changes...');
 
                 try {
                     // Prepare config - remove HostPort if empty/0 (use static compose instead)
@@ -1436,14 +1453,19 @@
                     });
 
                     if (response.ok) {
+                        this.updateProgress(1);
                         this.showMessage('Configuration saved successfully!', 'success');
+                        this.updateProgress(2);
                         await this.loadServiceData();
+                        this.endProgress();
                     } else {
                         const data = await response.json();
                         this.showMessage(data.error || 'Failed to save configuration', 'error');
+                        this.endProgress();
                     }
                 } catch (error) {
                     this.showMessage('Error: ' + error.message, 'error');
+                    this.endProgress();
                 } finally {
                     this.saving = false;
                 }
@@ -1474,7 +1496,7 @@
                         'Killing process',
                         'Removing container',
                         'Reloading data'
-                    ]);
+                    ], 'Force stopping container...');
 
                     const response = await fetch(`/api/services/${this.serviceName}/kill-down`, {
                         method: 'POST'
@@ -1508,6 +1530,28 @@
                 this.actionInProgress = true;
                 this.message = '';
 
+                const actionTitles = {
+                    'start': 'Starting service',
+                    'stop': 'Stopping service',
+                    'restart': 'Restarting service'
+                };
+                const actionSteps = {
+                    'start': ['Starting container', 'Waiting for service', 'Verifying status'],
+                    'stop': ['Stopping container', 'Waiting for shutdown', 'Verifying status'],
+                    'restart': ['Stopping container', 'Starting container', 'Waiting for service', 'Verifying status']
+                };
+                const actionWarnings = {
+                    'start': 'Service startup in progress...',
+                    'stop': 'Service shutdown in progress...',
+                    'restart': 'Service restart in progress, please wait...'
+                };
+
+                this.startProgress(
+                    actionTitles[action] || 'Processing action',
+                    actionSteps[action] || ['Processing'],
+                    actionWarnings[action] || 'Operation in progress...'
+                );
+
                 try {
                     // Set timeout based on action
                     const timeout = action === 'restart' ? 120 : 60;
@@ -1522,6 +1566,8 @@
 
                     if (response.ok) {
                         const data = await response.json();
+                        const lastStep = actionSteps[action].length - 1;
+                        this.updateProgress(lastStep - 1);
                         this.showMessage(data.message || `Service ${action}ed successfully`, 'success');
                         
                         // Update status optimistically
@@ -1538,13 +1584,16 @@
                         }
                         
                         // Wait longer and reload full service data to confirm
+                        this.updateProgress(lastStep);
                         await new Promise(resolve => setTimeout(resolve, 2000));
                         await this.reloadAllData();
+                        this.endProgress();
                     } else {
                         const data = await response.json();
                         this.showMessage(data.error || `Failed to ${action} service`, 'error');
                         // Reload to get actual status
                         await this.reloadAllData();
+                        this.endProgress();
                     }
                 } catch (error) {
                     if (error.name === 'AbortError') {
@@ -1554,6 +1603,7 @@
                     }
                     // Reload to get actual status
                     await this.reloadAllData();
+                    this.endProgress();
                 } finally {
                     this.actionInProgress = false;
                 }
@@ -1601,6 +1651,12 @@
                 this.proxyUpdating = true;
                 this.message = '';
 
+                this.startProgress('Updating proxy configuration', [
+                    'Validating domain',
+                    'Updating settings',
+                    'Reloading endpoint'
+                ], 'Updating proxy configuration...');
+
                 try {
                     const response = await fetch(`/api/services/${this.serviceName}/subdomain`, {
                         method: 'PUT',
@@ -1612,14 +1668,19 @@
                     });
 
                     if (response.ok) {
+                        this.updateProgress(1);
                         this.showMessage('Proxy configuration updated successfully!', 'success');
+                        this.updateProgress(2);
                         await this.loadServiceEndpoint();
+                        this.endProgress();
                     } else {
                         const data = await response.json();
                         this.showMessage(data.error || 'Failed to update proxy configuration', 'error');
+                        this.endProgress();
                     }
                 } catch (error) {
                     this.showMessage('Error: ' + error.message, 'error');
+                    this.endProgress();
                 } finally {
                     this.proxyUpdating = false;
                 }

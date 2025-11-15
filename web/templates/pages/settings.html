@@ -726,6 +726,12 @@
                 this.saving = true;
                 this.message = '';
 
+                this.startProgress('Saving all configuration', [
+                    'Processing services',
+                    'Saving settings',
+                    'Finalizing changes'
+                ], 'Saving all configuration changes...');
+
                 try {
                     // First, handle service enable/disable
                     for (const service of this.services) {
@@ -747,6 +753,8 @@
                         }
                     }
 
+                    this.updateProgress(1);
+                    
                     // Then save the rest of the configuration
                     const response = await fetch('/api/config', {
                         method: 'POST',
@@ -755,13 +763,17 @@
                     });
 
                     if (response.ok) {
+                        this.updateProgress(2);
                         this.showMessage('Configuration saved successfully!', 'success');
+                        this.endProgress();
                     } else {
                         const data = await response.json();
                         this.showMessage(data.error || 'Failed to save configuration', 'error');
+                        this.endProgress();
                     }
                 } catch (error) {
                     this.showMessage('Error: ' + error.message, 'error');
+                    this.endProgress();
                 } finally {
                     this.saving = false;
                 }
