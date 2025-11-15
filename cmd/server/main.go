@@ -208,6 +208,8 @@ func setupRoutes(app *fiber.App, h *handler.Handlers) {
 		services.Post("/:name/reset", middleware.ValidateServiceName(), h.Service.ResetService)
 		services.Get("/:name/radarr-config", middleware.ValidateServiceName(), h.Service.GetRadarrConfig)
 		services.Put("/:name/radarr-config", middleware.ValidateServiceName(), h.Service.UpdateRadarrConfig)
+		services.Get("/:name/sonarr-config", middleware.ValidateServiceName(), h.Service.GetSonarrConfig)
+		services.Put("/:name/sonarr-config", middleware.ValidateServiceName(), h.Service.UpdateSonarrConfig)
 		services.Get("/:name/ready", middleware.ValidateServiceName(), h.Service.CheckServiceReady)
 
 		// Global configuration endpoints with validation

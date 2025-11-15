@@ -802,6 +802,71 @@ func (h *ServiceHandler) UpdateRadarrConfig(c *fiber.Ctx) error {
 	})
 }
 
+// GetSonarrConfig handles GET /api/services/:name/sonarr-config
+func (h *ServiceHandler) GetSonarrConfig(c *fiber.Ctx) error {
+	name := c.Params("name")
+
+	if name != "sonarr" {
+		return c.Status(fiber.StatusBadRequest).JSON(APIResponse{
+			Success: false,
+			Error:   "This endpoint is only available for Sonarr service",
+		})
+	}
+
+	config, err := h.serviceManager.GetSonarrConfig(c.Context(), name)
+	if err != nil {
+		h.logger.Error("Failed to get Sonarr config", "error", err)
+		return c.Status(fiber.StatusInternalServerError).JSON(APIResponse{
+			Success: false,
+			Error:   fmt.Sprintf("Failed to get Sonarr config: %v", err),
+		})
+	}
+
+	return c.JSON(APIResponse{
+		Success: true,
+		Data:    fiber.Map{"config": config},
+	})
+}
+
+// UpdateSonarrConfig handles PUT /api/services/:name/sonarr-config
+func (h *ServiceHandler) UpdateSonarrConfig(c *fiber.Ctx) error {
+	name := c.Params("name")
+
+	if name != "sonarr" {
+		return c.Status(fiber.StatusBadRequest).JSON(APIResponse{
+			Success: false,
+			Error:   "This endpoint is only available for Sonarr service",
+		})
+	}
+
+	var config models.SonarrConfig
+	if err := c.BodyParser(&config); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(APIResponse{
+			Success: false,
+			Error:   "Invalid request body",
+		})
+	}
+
+	h.logger.Info("Received Sonarr config update",
+		"name", name,
+		"username", config.Username,
+		"has_password", config.Password != "")
+
+	if err := h.serviceManager.UpdateSonarrConfig(c.Context(), name, config); err != nil {
+		h.logger.Error("Failed to update Sonarr config", "error", err)
+		return c.Status(fiber.StatusInternalServerError).JSON(APIResponse{
+			Success: false,
+			Error:   fmt.Sprintf("Failed to update Sonarr config: %v", err),
+		})
+	}
+
+	h.logger.Info("Sonarr config updated successfully", "name", name)
+	return c.JSON(APIResponse{
+		Success: true,
+		Data:    fiber.Map{"message": "Configuration saved successfully. Sonarr is restarting to apply changes..."},
+	})
+}
+
 // CheckServiceReady handles GET /api/services/:name/ready
 // Performs a lightweight readiness check for a service. Strategy:
 // 1) For radarr: Try Radarr API health endpoint (fastest, most reliable)

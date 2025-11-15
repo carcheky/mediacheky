@@ -255,6 +255,14 @@ func (sm *ServiceManager) StartService(ctx context.Context, serviceName string) 
 		}
 	}
 
+	// Initialize Sonarr config.xml with defaults if needed
+	if serviceName == "sonarr" {
+		if err := sm.initializeSonarrConfig(ctx, serviceName); err != nil {
+			sm.logger.Warn("Failed to initialize Sonarr config", zap.Error(err))
+			// Don't fail the start, just log the warning
+		}
+	}
+
 	// Execute docker compose up with config variables
 	result, err := sm.dockerCompose.ComposeUp(ctx, composePath, globalConfig)
 	if err != nil {
@@ -1403,6 +1411,596 @@ func (sm *ServiceManager) saveServiceCredentials(serviceName, username, password
 // getRadarrPasswordFromDB retrieves the password from Radarr's database
 // This is a helper method to migrate credentials from Radarr DB to MediaCheky DB
 func (sm *ServiceManager) getRadarrPasswordFromDB(dbPath, username string) (string, error) {
+	// Check if database exists
+	if _, err := os.Stat(dbPath); os.IsNotExist(err) {
+		return "", fmt.Errorf("database not found")
+	}
+
+	// Open database
+	db, err := sql.Open("sqlite3", dbPath)
+	if err != nil {
+		return "", fmt.Errorf("failed to open database: %w", err)
+	}
+	defer db.Close()
+
+	// Query for password hash and salt
+	var passwordB64, saltB64 string
+	var iterations int
+	err = db.QueryRow("SELECT Password, Salt, Iterations FROM Users WHERE Username = ? LIMIT 1", strings.ToLower(username)).Scan(&passwordB64, &saltB64, &iterations)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return "", fmt.Errorf("user not found")
+		}
+		return "", fmt.Errorf("failed to query user: %w", err)
+	}
+
+	// Note: We cannot reverse the hash, so we return an empty string
+	// This means we need to keep the password in MediaCheky DB from the start
+	return "", nil
+}
+
+// ============================================================================
+// SONARR CONFIGURATION MANAGEMENT
+// ============================================================================
+
+// GetSonarrConfig reads and parses Sonarr's config.xml file
+func (sm *ServiceManager) GetSonarrConfig(ctx context.Context, serviceName string) (models.SonarrConfig, error) {
+	var config models.SonarrConfig
+
+	// Build path to config.xml inside the container
+	configPath := filepath.Join("/app/data/services-volumes", serviceName, "config.xml")
+
+	// Read the config file
+	data, err := os.ReadFile(configPath)
+	if err != nil {
+		if os.IsNotExist(err) {
+			sm.logger.Info("Sonarr config.xml not found, returning defaults", zap.String("path", configPath))
+			// Return default config
+			config = models.SonarrConfig{
+				BindAddress:            "*",
+				Port:                   8989,
+				SslPort:                9898,
+				EnableSsl:              false,
+				LaunchBrowser:          true,
+				ApiKey:                 "",
+				AuthenticationMethod:   "Forms",
+				AuthenticationRequired: "DisabledForLocalAddresses",
+				Username:               "",
+				Password:               "",
+				PasswordConfirmation:   "",
+				Branch:                 "main",
+				LogLevel:               "debug",
+				SslCertPath:            "",
+				SslCertPassword:        "",
+				UrlBase:                "",
+				InstanceName:           "Sonarr",
+				UpdateMechanism:        "Docker",
+				UseProxy:               false,
+				SendAnonymousUsageData: true,
+			}
+		} else {
+			return config, fmt.Errorf("failed to read config file: %w", err)
+		}
+	} else {
+		// Parse XML
+		if err := parseSonarrConfig(data, &config); err != nil {
+			return config, fmt.Errorf("failed to parse config XML: %w", err)
+		}
+	}
+
+	// CRITICAL: Check if Sonarr container is fully initialized
+	// We must wait for [ls.io-init] done. in logs before accessing/modifying anything
+	containerInitialized, err := sm.isSonarrContainerInitialized(ctx, serviceName)
+	if err != nil {
+		sm.logger.Warn("Failed to check Sonarr container initialization status", zap.Error(err))
+	}
+
+	if !containerInitialized {
+		sm.logger.Info("Sonarr container not fully initialized yet, waiting for [ls.io-init] done.",
+			zap.String("service", serviceName))
+		// Return empty credentials - don't try to access DB or generate anything
+		config.Username = ""
+		config.Password = ""
+		return config, nil
+	}
+
+	sm.logger.Info("Sonarr container is fully initialized, proceeding with configuration",
+		zap.String("service", serviceName))
+
+	// Database path for Sonarr
+	dbPath := filepath.Join("/app/data/services-volumes", serviceName, "sonarr.db")
+
+	// Try loading credentials from MediaCheky database first
+	if creds, err := sm.serviceRepo.GetServiceCredentials(serviceName); err == nil && creds.Username != "" {
+		config.Username = creds.Username
+		config.Password = creds.Password
+		sm.logger.Info("Loaded credentials from MediaCheky database", zap.String("username", creds.Username))
+	} else {
+		// Try loading from Sonarr's database as fallback
+		sm.logger.Debug("Credentials not in MediaCheky DB, checking Sonarr database", zap.String("path", dbPath))
+		dbStatus, err := sm.getSonarrCredentialsFromDB(dbPath)
+		if err != nil {
+			if dbStatus != nil {
+				sm.logger.Warn("Failed to read credentials from Sonarr database", zap.Error(err))
+
+				if !dbStatus.DBExists {
+					// Database doesn't exist yet - Sonarr hasn't been started
+					// DO NOT generate credentials yet - wait for Sonarr to create its DB
+					sm.logger.Info("Sonarr database does not exist yet, waiting for first Sonarr startup")
+				} else if !dbStatus.TableExists {
+					// Database exists but Users table doesn't - Sonarr is initializing
+					// DO NOT generate credentials yet - wait for Sonarr to create the table
+					sm.logger.Info("Sonarr Users table does not exist yet, waiting for Sonarr initialization")
+				} else if !dbStatus.UserExists {
+					sm.logger.Info("Sonarr database ready but no user exists, generating credentials")
+					// Generate random credentials
+					generatedUser := "admin"
+					generatedPass, err := generateRandomPassword(16)
+					if err == nil {
+						sm.logger.Info("Generated random credentials for Sonarr",
+							zap.String("username", generatedUser),
+							zap.String("password", generatedPass))
+						config.Username = generatedUser
+						config.Password = generatedPass
+						if err := sm.updateSonarrCredentials(dbPath, generatedUser, generatedPass); err != nil {
+							sm.logger.Warn("Failed to save credentials to Sonarr database", zap.Error(err))
+						}
+						// Save to MediaCheky DB
+						if err := sm.serviceRepo.SaveServiceCredentials(serviceName, generatedUser, generatedPass); err != nil {
+							sm.logger.Warn("Failed to save credentials to MediaCheky database", zap.Error(err))
+						}
+					}
+				}
+			} else {
+				// User exists in Sonarr database - migrate to MediaCheky DB
+				password, err := sm.getSonarrPasswordFromDB(dbPath, dbStatus.Username)
+				if err == nil && password != "" {
+					config.Password = password
+					// Save to MediaCheky DB
+					if err := sm.serviceRepo.SaveServiceCredentials(serviceName, dbStatus.Username, password); err == nil {
+						sm.logger.Info("Migrated credentials from Sonarr DB to MediaCheky DB", zap.String("username", dbStatus.Username))
+					}
+				} else {
+					// Password is hashed in DB, can't retrieve
+					config.Password = ""
+				}
+				config.Username = dbStatus.Username
+				if config.Password != "" {
+					sm.logger.Info("Loaded username from Sonarr database (password masked)", zap.String("username", dbStatus.Username))
+				}
+			}
+		}
+	}
+
+	return config, nil
+}
+
+// UpdateSonarrConfig updates Sonarr's config.xml file and restarts the service
+func (sm *ServiceManager) UpdateSonarrConfig(ctx context.Context, serviceName string, config models.SonarrConfig) error {
+	// CRITICAL: Check if Sonarr container is fully initialized before updating
+	containerInitialized, err := sm.isSonarrContainerInitialized(ctx, serviceName)
+	if err != nil {
+		sm.logger.Warn("Failed to check Sonarr container initialization status",
+			zap.String("service", serviceName),
+			zap.Error(err))
+		return fmt.Errorf("cannot update Sonarr config: failed to verify container initialization: %w", err)
+	}
+	if !containerInitialized {
+		sm.logger.Warn("Sonarr container not fully initialized yet, refusing to save credentials",
+			zap.String("service", serviceName))
+		return fmt.Errorf("Sonarr container is not fully initialized yet. Please wait for the container to finish starting (look for '[ls.io-init] done.' in logs)")
+	}
+
+	// Build path to config directory
+	configDir := filepath.Join("/app/data/services-volumes", serviceName)
+	configPath := filepath.Join(configDir, "config.xml")
+
+	// Ensure config directory exists
+	if _, err := os.Stat(configDir); os.IsNotExist(err) {
+		return fmt.Errorf("Sonarr config directory does not exist: %s. Make sure the service is enabled and started at least once", configDir)
+	}
+
+	// Generate XML content
+	xmlContent, err := generateSonarrConfigXML(config)
+	if err != nil {
+		return fmt.Errorf("failed to generate config XML: %w", err)
+	}
+
+	// Write config file
+	if err := os.WriteFile(configPath, []byte(xmlContent), 0644); err != nil {
+		return fmt.Errorf("failed to write config file: %w", err)
+	}
+
+	sm.logger.Info("Sonarr config.xml updated successfully", zap.String("path", configPath))
+
+	// Update credentials in Sonarr's database if provided
+	if config.Username != "" && config.Password != "" {
+		dbPath := filepath.Join(configDir, "sonarr.db")
+		sm.logger.Info("Updating Sonarr credentials in database",
+			zap.String("username", config.Username))
+		if err := sm.updateSonarrCredentials(dbPath, config.Username, config.Password); err != nil {
+			sm.logger.Warn("Failed to update Sonarr credentials in database", zap.Error(err))
+			// Continue anyway - config.xml update succeeded
+		} else {
+			sm.logger.Info("Sonarr credentials updated successfully in database")
+		}
+	}
+
+	// Restart Sonarr container to apply changes
+	// Sonarr only reads config.xml on startup, not in hot-reload
+	sm.logger.Info("Restarting Sonarr to apply configuration changes", zap.String("service", serviceName))
+	if err := sm.RestartService(ctx, serviceName); err != nil {
+		sm.logger.Warn("Failed to restart Sonarr after config update", zap.Error(err))
+		// Don't return error - config was saved successfully, restart is a bonus
+		return nil
+	}
+
+	sm.logger.Info("Sonarr restarted successfully", zap.String("service", serviceName))
+	return nil
+}
+
+// parseSonarrConfig parses the XML config into SonarrConfig struct
+func parseSonarrConfig(data []byte, config *models.SonarrConfig) error {
+	// Simple XML parsing using string search
+	// This is more reliable than full XML parsing for this specific use case
+	content := string(data)
+
+	// Parse BindAddress
+	if start := strings.Index(content, "<BindAddress>"); start != -1 {
+		end := strings.Index(content[start:], "</BindAddress>")
+		if end != -1 {
+			config.BindAddress = content[start+len("<BindAddress>") : start+end]
+		}
+	}
+
+	// Parse Port
+	if start := strings.Index(content, "<Port>"); start != -1 {
+		end := strings.Index(content[start:], "</Port>")
+		if end != -1 {
+			portStr := content[start+len("<Port>") : start+end]
+			fmt.Sscanf(portStr, "%d", &config.Port)
+		}
+	}
+
+	// Parse ApiKey
+	if start := strings.Index(content, "<ApiKey>"); start != -1 {
+		end := strings.Index(content[start:], "</ApiKey>")
+		if end != -1 {
+			config.ApiKey = content[start+len("<ApiKey>") : start+end]
+		}
+	}
+
+	// Parse AuthenticationMethod
+	if start := strings.Index(content, "<AuthenticationMethod>"); start != -1 {
+		end := strings.Index(content[start:], "</AuthenticationMethod>")
+		if end != -1 {
+			config.AuthenticationMethod = content[start+len("<AuthenticationMethod>") : start+end]
+		}
+	}
+
+	// Parse UrlBase
+	if start := strings.Index(content, "<UrlBase>"); start != -1 {
+		end := strings.Index(content[start:], "</UrlBase>")
+		if end != -1 {
+			config.UrlBase = content[start+len("<UrlBase>") : start+end]
+		}
+	}
+
+	// Parse InstanceName
+	if start := strings.Index(content, "<InstanceName>"); start != -1 {
+		end := strings.Index(content[start:], "</InstanceName>")
+		if end != -1 {
+			config.InstanceName = content[start+len("<InstanceName>") : start+end]
+		}
+	}
+
+	return nil
+}
+
+// generateSonarrConfigXML generates XML content from SonarrConfig
+func generateSonarrConfigXML(config models.SonarrConfig) (string, error) {
+	var builder strings.Builder
+	builder.WriteString("<Config>\n")
+	builder.WriteString(fmt.Sprintf("  <BindAddress>%s</BindAddress>\n", config.BindAddress))
+	builder.WriteString(fmt.Sprintf("  <Port>%d</Port>\n", config.Port))
+	builder.WriteString(fmt.Sprintf("  <SslPort>%d</SslPort>\n", config.SslPort))
+	builder.WriteString(fmt.Sprintf("  <EnableSsl>%t</EnableSsl>\n", config.EnableSsl))
+	builder.WriteString(fmt.Sprintf("  <LaunchBrowser>%t</LaunchBrowser>\n", config.LaunchBrowser))
+	builder.WriteString(fmt.Sprintf("  <ApiKey>%s</ApiKey>\n", config.ApiKey))
+	builder.WriteString(fmt.Sprintf("  <AuthenticationMethod>%s</AuthenticationMethod>\n", config.AuthenticationMethod))
+	builder.WriteString(fmt.Sprintf("  <AuthenticationRequired>%s</AuthenticationRequired>\n", config.AuthenticationRequired))
+	builder.WriteString(fmt.Sprintf("  <Branch>%s</Branch>\n", config.Branch))
+	builder.WriteString(fmt.Sprintf("  <LogLevel>%s</LogLevel>\n", config.LogLevel))
+	builder.WriteString(fmt.Sprintf("  <SslCertPath>%s</SslCertPath>\n", config.SslCertPath))
+	builder.WriteString(fmt.Sprintf("  <SslCertPassword>%s</SslCertPassword>\n", config.SslCertPassword))
+	builder.WriteString(fmt.Sprintf("  <UrlBase>%s</UrlBase>\n", config.UrlBase))
+	builder.WriteString(fmt.Sprintf("  <InstanceName>%s</InstanceName>\n", config.InstanceName))
+	builder.WriteString(fmt.Sprintf("  <UpdateMechanism>%s</UpdateMechanism>\n", config.UpdateMechanism))
+	builder.WriteString(fmt.Sprintf("  <UseProxy>%t</UseProxy>\n", config.UseProxy))
+	builder.WriteString(fmt.Sprintf("  <SendAnonymousUsageData>%t</SendAnonymousUsageData>\n", config.SendAnonymousUsageData))
+	builder.WriteString("</Config>\n")
+
+	return builder.String(), nil
+}
+
+// initializeSonarrConfig creates config.xml with default values if it doesn't exist
+// This is called during service Enable operation
+func (sm *ServiceManager) initializeSonarrConfig(ctx context.Context, serviceName string) error {
+	configPath := filepath.Join("/app/data/services-volumes", serviceName, "config.xml")
+
+	// Check if config already exists
+	if _, err := os.Stat(configPath); err == nil {
+		// Config exists, check if it's valid
+		data, err := os.ReadFile(configPath)
+		if err == nil {
+			var existing models.SonarrConfig
+			if err := parseSonarrConfig(data, &existing); err == nil && existing.ApiKey != "" {
+				// Config is valid, don't overwrite
+				sm.logger.Debug("Sonarr config.xml already exists with valid ApiKey", zap.String("path", configPath))
+				return nil
+			}
+		}
+		// Config exists but is invalid, will be overwritten below
+		sm.logger.Info("Sonarr config.xml exists but is invalid, reinitializing", zap.String("path", configPath))
+	}
+
+	// Create default config
+	defaultConfig := models.SonarrConfig{
+		BindAddress:            "*",
+		Port:                   8989,
+		SslPort:                9898,
+		EnableSsl:              false,
+		LaunchBrowser:          false,
+		ApiKey:                 "", // Sonarr will generate this on first start
+		AuthenticationMethod:   "Forms",
+		AuthenticationRequired: "DisabledForLocalAddresses",
+		Username:               "",
+		Password:               "",
+		PasswordConfirmation:   "",
+		Branch:                 "main",
+		LogLevel:               "info",
+		SslCertPath:            "",
+		SslCertPassword:        "",
+		UrlBase:                "",
+		InstanceName:           "Sonarr",
+		UpdateMechanism:        "Docker",
+		UseProxy:               false,
+		SendAnonymousUsageData: true,
+	}
+
+	xmlContent, err := generateSonarrConfigXML(defaultConfig)
+	if err != nil {
+		return fmt.Errorf("failed to generate default config: %w", err)
+	}
+
+	// Ensure directory exists
+	configDir := filepath.Dir(configPath)
+	if err := os.MkdirAll(configDir, 0755); err != nil {
+		return fmt.Errorf("failed to create config directory: %w", err)
+	}
+
+	// Write config file
+	if err := os.WriteFile(configPath, []byte(xmlContent), 0644); err != nil {
+		return fmt.Errorf("failed to write config file: %w", err)
+	}
+
+	sm.logger.Info("Sonarr config.xml initialized with default values", zap.String("path", configPath))
+	return nil
+}
+
+// generateRandomPassword creates a random password of the specified length
+func generateRandomPassword(length int) (string, error) {
+	const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*"
+	b := make([]byte, length)
+	if _, err := rand.Read(b); err != nil {
+		return "", err
+	}
+	for i := range b {
+		b[i] = charset[int(b[i])%len(charset)]
+	}
+	return string(b), nil
+}
+
+// isSonarrContainerInitialized checks if Sonarr container has completed initialization
+// LinuxServer.io images output "[ls.io-init] done." when ready
+func (sm *ServiceManager) isSonarrContainerInitialized(ctx context.Context, serviceName string) (bool, error) {
+	// Get service from database
+	svc, err := sm.serviceRepo.GetByName(serviceName)
+	if err != nil {
+		return false, fmt.Errorf("failed to get service: %w", err)
+	}
+
+	// Extract container name from config
+	var containerName string
+	if nameVal, ok := svc.Config["ContainerName"]; ok {
+		if nameStr, ok := nameVal.(string); ok && nameStr != "" {
+			containerName = nameStr
+		}
+	}
+
+	// If no container name in config, use service name
+	if containerName == "" {
+		containerName = serviceName
+	}
+
+	sm.logger.Debug("Checking Sonarr container initialization",
+		zap.String("service", serviceName),
+		zap.String("container", containerName))
+
+	// Try to get container info
+	containerInfo, err := sm.dockerClient.GetContainer(ctx, containerName)
+	if err != nil || containerInfo == nil {
+		sm.logger.Debug("Container not found or not accessible",
+			zap.String("container", containerName),
+			zap.Error(err))
+		return false, nil
+	}
+
+	// Check if container is running
+	if containerInfo.Status != "running" {
+		sm.logger.Debug("Container is not running",
+			zap.String("container", containerName),
+			zap.String("status", string(containerInfo.Status)))
+		return false, nil
+	}
+
+	// Get container logs (last 200 lines should be enough to catch init message)
+	logs, err := sm.dockerClient.GetContainerLogs(ctx, containerInfo.ID, "200")
+	if err != nil {
+		sm.logger.Warn("Failed to get container logs for initialization check",
+			zap.String("container", containerName),
+			zap.Error(err))
+		return false, err
+	}
+
+	// Check if logs contain the initialization complete marker
+	initComplete := strings.Contains(logs, "[ls.io-init] done.")
+
+	if initComplete {
+		sm.logger.Info("Sonarr container initialization complete",
+			zap.String("container", containerName))
+	} else {
+		sm.logger.Debug("Sonarr container still initializing, waiting for [ls.io-init] done.",
+			zap.String("container", containerName))
+	}
+
+	return initComplete, nil
+}
+
+// SonarrDBStatus represents the status of Sonarr's database
+type SonarrDBStatus struct {
+	DBExists    bool
+	TableExists bool
+	UserExists  bool
+	Username    string
+}
+
+// getSonarrCredentialsFromDB reads existing credentials from Sonarr's database
+// Returns status information about the database and user
+func (sm *ServiceManager) getSonarrCredentialsFromDB(dbPath string) (*SonarrDBStatus, error) {
+	status := &SonarrDBStatus{
+		DBExists:    false,
+		TableExists: false,
+		UserExists:  false,
+		Username:    "",
+	}
+
+	// Check if database exists
+	if _, err := os.Stat(dbPath); os.IsNotExist(err) {
+		sm.logger.Debug("Sonarr database does not exist yet", zap.String("path", dbPath))
+		return status, fmt.Errorf("database does not exist")
+	}
+	status.DBExists = true
+
+	// Open database
+	db, err := sql.Open("sqlite3", dbPath)
+	if err != nil {
+		return status, fmt.Errorf("failed to open database: %w", err)
+	}
+	defer db.Close()
+
+	// Check if Users table exists
+	var tableName string
+	err = db.QueryRow("SELECT name FROM sqlite_master WHERE type='table' AND name='Users'").Scan(&tableName)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			sm.logger.Debug("Users table does not exist yet in Sonarr database")
+			return status, nil // Table doesn't exist - Sonarr hasn't created it yet
+		}
+		return status, fmt.Errorf("failed to check for Users table: %w", err)
+	}
+	status.TableExists = true
+
+	// Try to get username from Users table
+	var savedUsername string
+	err = db.QueryRow("SELECT Username FROM Users LIMIT 1").Scan(&savedUsername)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			// No user exists yet
+			return status, nil
+		}
+		return status, fmt.Errorf("failed to query user: %w", err)
+	}
+
+	status.UserExists = true
+	status.Username = savedUsername
+
+	sm.logger.Debug("Found existing user in Sonarr database", zap.String("username", savedUsername))
+	return status, nil
+}
+
+// updateSonarrCredentials updates username and password in Sonarr's database
+func (sm *ServiceManager) updateSonarrCredentials(dbPath, username, password string) error {
+	// Open database
+	db, err := sql.Open("sqlite3", dbPath)
+	if err != nil {
+		return fmt.Errorf("failed to open database: %w", err)
+	}
+	defer db.Close()
+
+	// Generate salt and hash password (mimicking Sonarr's UserService)
+	salt := make([]byte, 16)
+	if _, err := rand.Read(salt); err != nil {
+		return fmt.Errorf("failed to generate salt: %w", err)
+	}
+
+	// NOTE: 10,000 iterations is intentionally low to match Sonarr's implementation for compatibility.
+	// While OWASP recommends 120,000+ iterations for PBKDF2-SHA512, we must use Sonarr's exact settings
+	// to ensure generated passwords work with Sonarr's authentication system.
+	// Reference: https://github.com/Sonarr/Sonarr/blob/develop/src/NzbDrone.Core/Authentication/UserService.cs
+	iterations := 10000
+	hash := pbkdf2.Key([]byte(password), salt, iterations, 64, sha512.New)
+
+	// Encode to base64
+	saltB64 := base64.StdEncoding.EncodeToString(salt)
+	hashB64 := base64.StdEncoding.EncodeToString(hash)
+
+	// Check if user exists
+	var existingID int
+	err = db.QueryRow("SELECT Id FROM Users WHERE Username = ? LIMIT 1", strings.ToLower(username)).Scan(&existingID)
+
+	if err == sql.ErrNoRows {
+		// User doesn't exist, insert
+		_, err = db.Exec(`
+			INSERT INTO Users (Identifier, Username, Password, Salt, Iterations) 
+			VALUES (?, ?, ?, ?, ?)`,
+			uuid.New().String(),
+			strings.ToLower(username),
+			hashB64,
+			saltB64,
+			iterations,
+		)
+		if err != nil {
+			return fmt.Errorf("failed to insert user: %w", err)
+		}
+		sm.logger.Info("Sonarr user created in database", zap.String("username", username))
+	} else if err != nil {
+		return fmt.Errorf("failed to check for existing user: %w", err)
+	} else {
+		// User exists, update
+		_, err = db.Exec(`
+			UPDATE Users 
+			SET Password = ?, Salt = ?, Iterations = ? 
+			WHERE Username = ?`,
+			hashB64,
+			saltB64,
+			iterations,
+			strings.ToLower(username),
+		)
+		if err != nil {
+			return fmt.Errorf("failed to update user: %w", err)
+		}
+		sm.logger.Info("Sonarr user updated in database", zap.String("username", username))
+	}
+
+	// Note: Credentials are saved to MediaCheky database separately by the caller
+
+	return nil
+}
+
+// getSonarrPasswordFromDB retrieves the password from Sonarr's database
+// This is a helper method to migrate credentials from Sonarr DB to MediaCheky DB
+func (sm *ServiceManager) getSonarrPasswordFromDB(dbPath, username string) (string, error) {
 	// Check if database exists
 	if _, err := os.Stat(dbPath); os.IsNotExist(err) {
 		return "", fmt.Errorf("database not found")

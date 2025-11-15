@@ -100,3 +100,27 @@ type RadarrConfig struct {
 	UseProxy               bool   `json:"UseProxy" xml:"UseProxy"`
 	SendAnonymousUsageData bool   `json:"SendAnonymousUsageData" xml:"SendAnonymousUsageData"`
 }
+
+// SonarrConfig represents Sonarr's config.xml settings
+type SonarrConfig struct {
+	BindAddress            string `json:"BindAddress" xml:"BindAddress"`
+	Port                   int    `json:"Port" xml:"Port"`
+	SslPort                int    `json:"SslPort" xml:"SslPort"`
+	EnableSsl              bool   `json:"EnableSsl" xml:"EnableSsl"`
+	LaunchBrowser          bool   `json:"LaunchBrowser" xml:"LaunchBrowser"`
+	ApiKey                 string `json:"ApiKey" xml:"ApiKey"`
+	AuthenticationMethod   string `json:"AuthenticationMethod" xml:"AuthenticationMethod"`
+	AuthenticationRequired string `json:"AuthenticationRequired" xml:"AuthenticationRequired"`
+	Username               string `json:"Username" xml:"Username"`
+	Password               string `json:"Password" xml:"Password"`
+	PasswordConfirmation   string `json:"PasswordConfirmation" xml:"PasswordConfirmation"`
+	Branch                 string `json:"Branch" xml:"Branch"`
+	LogLevel               string `json:"LogLevel" xml:"LogLevel"`
+	SslCertPath            string `json:"SslCertPath" xml:"SslCertPath"`
+	SslCertPassword        string `json:"SslCertPassword" xml:"SslCertPassword"`
+	UrlBase                string `json:"UrlBase" xml:"UrlBase"`
+	InstanceName           string `json:"InstanceName" xml:"InstanceName"`
+	UpdateMechanism        string `json:"UpdateMechanism" xml:"UpdateMechanism"`
+	UseProxy               bool   `json:"UseProxy" xml:"UseProxy"`
+	SendAnonymousUsageData bool   `json:"SendAnonymousUsageData" xml:"SendAnonymousUsageData"`
+}
