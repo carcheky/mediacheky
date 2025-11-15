@@ -813,7 +813,10 @@ func (sm *ServiceManager) GetRadarrConfig(ctx context.Context, serviceName strin
 		sm.logger.Info("Loaded existing credentials from Radarr database", zap.String("username", username))
 	} else {
 		// No credentials in database - generate random ones
-		generatedUser, generatedPass := generateRandomCredentials()
+		generatedUser, generatedPass, err := generateRandomCredentials()
+		if err != nil {
+			return config, fmt.Errorf("failed to generate credentials: %w", err)
+		}
 		config.Username = generatedUser
 		config.Password = generatedPass
 		sm.logger.Info("Generated random credentials for Radarr",
@@ -891,12 +894,12 @@ func parseRadarrConfig(data []byte, config *models.RadarrConfig) error {
 	extractValue := func(tag string) string {
 		start := fmt.Sprintf("<%s>", tag)
 		end := fmt.Sprintf("</%s>", tag)
-		startIdx := indexOf(content, start)
+		startIdx := strings.Index(content, start)
 		if startIdx == -1 {
 			return ""
 		}
 		startIdx += len(start)
-		endIdx := indexOf(content[startIdx:], end)
+		endIdx := strings.Index(content[startIdx:], end)
 		if endIdx == -1 {
 			return ""
 		}
@@ -985,10 +988,10 @@ func (sm *ServiceManager) initializeRadarrConfig(ctx context.Context, serviceNam
 		if readErr == nil && len(data) > 0 {
 			// File exists and has content, check if ApiKey is set
 			content := string(data)
-			if indexOf(content, "<ApiKey>") != -1 && indexOf(content, "</ApiKey>") != -1 {
+			if strings.Index(content, "<ApiKey>") != -1 && strings.Index(content, "</ApiKey>") != -1 {
 				// Extract ApiKey value
-				start := indexOf(content, "<ApiKey>") + 8
-				end := indexOf(content[start:], "</ApiKey>")
+				start := strings.Index(content, "<ApiKey>") + 8
+				end := strings.Index(content[start:], "</ApiKey>")
 				if end > 0 {
 					apiKey := content[start : start+end]
 					// If ApiKey has value (not empty), assume config is valid
@@ -1049,28 +1052,24 @@ func (sm *ServiceManager) initializeRadarrConfig(ctx context.Context, serviceNam
 }
 
 // Helper functions
-func indexOf(s, substr string) int {
-	for i := 0; i <= len(s)-len(substr); i++ {
-		if s[i:i+len(substr)] == substr {
-			return i
-		}
-	}
-	return -1
-}
 
 // generateRandomCredentials generates random username and password
-func generateRandomCredentials() (username, password string) {
+func generateRandomCredentials() (username, password string, err error) {
 	// Generate random username: "admin" + 4 random chars
 	usernameBytes := make([]byte, 4)
-	rand.Read(usernameBytes)
+	if _, err := rand.Read(usernameBytes); err != nil {
+		return "", "", fmt.Errorf("failed to generate random username: %w", err)
+	}
 	username = fmt.Sprintf("admin%x", usernameBytes)[:10] // max 10 chars
 
 	// Generate random password: 16 characters
 	passwordBytes := make([]byte, 12)
-	rand.Read(passwordBytes)
+	if _, err := rand.Read(passwordBytes); err != nil {
+		return "", "", fmt.Errorf("failed to generate random password: %w", err)
+	}
 	password = base64.URLEncoding.EncodeToString(passwordBytes)[:16]
 
-	return username, password
+	return username, password, nil
 }
 
 // getRadarrCredentialsFromDB reads existing credentials from Radarr's database
@@ -1115,7 +1114,10 @@ func (sm *ServiceManager) updateRadarrCredentials(dbPath, username, password str
 		return fmt.Errorf("failed to generate salt: %w", err)
 	}
 
-	// PBKDF2-HMAC-SHA512 with 10000 iterations (same as Radarr)
+	// PBKDF2-HMAC-SHA512 with 10000 iterations
+	// NOTE: 10,000 iterations is intentionally low to match Radarr's implementation for compatibility.
+	// While OWASP recommends 120,000+ iterations for PBKDF2-SHA512, we must use Radarr's exact settings
+	// to ensure generated passwords work with Radarr's authentication system.
 	hashedPassword := pbkdf2.Key([]byte(password), salt, 10000, 32, sha512.New)
 
 	saltB64 := base64.StdEncoding.EncodeToString(salt)
