@@ -65,7 +65,7 @@ func NewHandlers(db *gorm.DB, repos *repository.Repositories, logger *logger.Log
 		Logs:           NewLogsHandler(repos, logger),
 		Service:        NewServiceHandler(repos, logger, dockerClient, serviceManager),
 		Config:         NewConfigHandler(repos, logger),
-		Docker:         NewDockerHandler(logger, dockerClient),
+		Docker:         NewDockerHandler(logger, dockerClient, db, repos),
 		Proxy:          NewProxyHandler(repos, logger),
 		ServiceManager: serviceManager, // Expose for auto-start
 	}
