@@ -16,9 +16,9 @@
                 <div class="flex-1 min-w-0">
                     <div class="flex items-center gap-2">
                         <h1 class="text-3xl font-bold text-dark-text" x-text="serviceName + ' Configuration'"></h1>
-                        <!-- Link Icon to service (only when running) - with API key auth for Radarr -->
+                        <!-- Link Icon to service (only when running) -->
                         <button x-show="enabled && status === 'running'" 
-                                @click="serviceName.toLowerCase() === 'radarr' ? openRadarrWithAuth() : window.open((proxyConfig.sslEnabled ? 'https://' : 'http://') + serviceEndpoint, '_blank')"
+                                @click="window.open((proxyConfig.sslEnabled ? 'https://' : 'http://') + serviceEndpoint, '_blank')"
                                 class="text-blue-400 hover:text-blue-300 transition-colors flex-shrink-0 cursor-pointer bg-transparent border-0 p-0" 
                                 title="Open service">
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -182,9 +182,9 @@
                         <p class="text-xs text-dark-muted">MediaCheky reads/writes Radarr's config.xml directly.</p>
                     </div>
                     <button x-show="enabled && status === 'running' && serviceEndpoint" 
-                            @click="openRadarrWithAuth()"
+                            @click="window.open((proxyConfig.sslEnabled ? 'https://' : 'http://') + serviceEndpoint, '_blank')"
                             class="text-blue-400 hover:text-blue-300 transition-colors flex items-center gap-1 text-xs"
-                            title="Open Radarr with automatic login">
+                            title="Open Radarr (manual login required)">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path>
                         </svg>
@@ -251,12 +251,12 @@
 
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
-                            <label class="block text-sm font-medium text-dark-text mb-1">
+                            <label for="radarr-username" class="block text-sm font-medium text-dark-text mb-1">
                                 Username
                                 <span class="ml-2 inline-block px-2 py-0.5 bg-yellow-900/40 border border-yellow-700/50 text-yellow-300 rounded text-xs font-normal italic">database</span>
                             </label>
                             <div class="flex gap-2">
-                                <input type="text" x-model="radarrConfig.Username"
+                                <input type="text" id="radarr-username" x-model="radarrConfig.Username"
                                     class="flex-1 px-3 py-2 border border-dark-border rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 bg-dark-bg text-dark-text"
                                     placeholder="Enter username">
                                 <button @click="copyToClipboard(radarrConfig.Username)"
@@ -270,12 +270,12 @@
                         </div>
 
                         <div>
-                            <label class="block text-sm font-medium text-dark-text mb-1">
+                            <label for="radarr-password" class="block text-sm font-medium text-dark-text mb-1">
                                 Password
                                 <span class="ml-2 inline-block px-2 py-0.5 bg-yellow-900/40 border border-yellow-700/50 text-yellow-300 rounded text-xs font-normal italic">database</span>
                             </label>
                             <div class="flex gap-2">
-                                <input type="password" x-model="radarrConfig.Password"
+                                <input type="password" id="radarr-password" x-model="radarrConfig.Password"
                                     x-ref="passwordField"
                                     class="flex-1 px-3 py-2 border border-dark-border rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 bg-dark-bg text-dark-text"
                                     placeholder="Enter password">
@@ -286,6 +286,7 @@
                                     </svg>
                                 </button>
                                 <button @click="$refs.passwordField.type = $refs.passwordField.type === 'password' ? 'text' : 'password'"
+                                    aria-label="Toggle password visibility"
                                     class="px-3 py-2 bg-slate-700 text-white rounded-md hover:bg-slate-600">
                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
@@ -1636,28 +1637,6 @@
                 }
             },
 
-            async openRadarrWithAuth() {
-                if (this.serviceName.toLowerCase() !== 'radarr') return;
-                
-                try {
-                    // Build URL to open Radarr UI
-                    // NOTE: Radarr does not support auto-login via URL parameters for the web UI
-                    // The API key (via ?apikey=XXX or X-Api-Key header) only works for API endpoints (/api/*)
-                    // The web UI requires manual login through Radarr's authentication system
-                    // Reference: https://github.com/Radarr/Radarr (ApiKeyAuthenticationHandler.cs)
-                    const protocol = this.proxyConfig.sslEnabled ? 'https://' : 'http://';
-                    const url = `${protocol}${this.serviceEndpoint}`;
-                    
-                    console.log('🚀 Opening Radarr UI (manual login required):', url);
-                    
-                    // Open in new tab
-                    window.open(url, '_blank', 'noopener,noreferrer');
-                } catch (error) {
-                    console.error('Error opening Radarr:', error);
-                    this.showToast('Error opening Radarr: ' + error.message, 'error');
-                }
-            },
-
 
             async copyToClipboard(text) {
                 try {
@@ -1671,6 +1650,7 @@
             showMessage: createShowMessage(),
             
             // Cleanup interval on component destroy
+            // Note: Alpine.js will automatically handle cleanup when the component is destroyed
             destroy() {
                 if (this.statusInterval) {
                     clearInterval(this.statusInterval);
@@ -1681,12 +1661,4 @@
             }
         }
     }
-    
-    // Cleanup on page unload
-    window.addEventListener('beforeunload', () => {
-        const component = Alpine.$data(document.querySelector('[x-data]'));
-        if (component && component.destroy) {
-            component.destroy();
-        }
-    });
 </script>
