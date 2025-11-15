@@ -16,12 +16,15 @@
                 <div class="flex-1 min-w-0">
                     <div class="flex items-center gap-2">
                         <h1 class="text-3xl font-bold text-dark-text" x-text="serviceName + ' Configuration'"></h1>
-                        <!-- Link Icon to service (only when running) -->
-                        <a x-show="enabled && status === 'running' && serviceEndpoint" :href="(proxyConfig.sslEnabled ? 'https://' : 'http://') + serviceEndpoint" target="_blank" rel="noopener" class="text-blue-400 hover:text-blue-300 transition-colors flex-shrink-0" title="Open service">
+                        <!-- Link Icon to service (only when running) - with API key auth for Radarr -->
+                        <button x-show="enabled && status === 'running'" 
+                                @click="serviceName.toLowerCase() === 'radarr' ? openRadarrWithAuth() : window.open((proxyConfig.sslEnabled ? 'https://' : 'http://') + serviceEndpoint, '_blank')"
+                                class="text-blue-400 hover:text-blue-300 transition-colors flex-shrink-0 cursor-pointer bg-transparent border-0 p-0" 
+                                title="Open service">
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4m-4-6l6-6m0 0V4m0-4h4" />
                             </svg>
-                        </a>
+                        </button>
                     </div>
                     <div class="flex flex-wrap items-center gap-2 mt-2">
                         <p class="text-sm text-dark-muted">Configure service settings and paths</p>
@@ -1066,13 +1069,14 @@
                 this.message = '';
 
                 try {
-                    this.startProgress('Applying configuration', [
-                        'Saving configuration',
-                        'Restarting container',
-                        'Reloading data'
-                    ]);
+                    const isRadarr = this.serviceName.toLowerCase() === 'radarr';
+                    const steps = isRadarr 
+                        ? ['Saving Docker configuration', 'Saving Radarr config.xml', 'Restarting container', 'Reloading data']
+                        : ['Saving configuration', 'Restarting container', 'Reloading data'];
+                    
+                    this.startProgress('Applying configuration', steps);
 
-                    // First save config
+                    // First save Docker config
                     const configToSave = { ...this.config };
                     if (!configToSave.HostPort || configToSave.HostPort === 0) {
                         delete configToSave.HostPort;
@@ -1091,35 +1095,61 @@
                         return;
                     }
 
-                    this.updateProgress(1); // Update to step 2: Restarting container
+                    this.updateProgress(1); // Next step
 
-                    // Then trigger restart/recreate
-                    const restartResponse = await fetch(`/api/services/${this.serviceName}/restart`, {
-                        method: 'POST'
-                    });
+                    // For Radarr: Also save config.xml which will trigger automatic restart
+                    if (isRadarr) {
+                        const radarrSaveResponse = await fetch(`/api/services/${this.serviceName}/radarr-config`, {
+                            method: 'PUT',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(this.radarrConfig)
+                        });
 
-                    if (restartResponse.ok) {
-                        this.updateProgress(2); // Update to step 3: Reloading data
-                        this.showMessage('Configuration applied and container recreated successfully!', 'success');
+                        if (!radarrSaveResponse.ok) {
+                            const data = await radarrSaveResponse.json();
+                            this.showMessage(data.error || 'Failed to save Radarr config.xml', 'error');
+                            this.endProgress();
+                            return;
+                        }
+
+                        this.updateProgress(2); // Radarr is restarting automatically
+                        this.showMessage('Configuration applied! Radarr is restarting...', 'success');
                         
-                        // Wait for container to start
-                        await new Promise(resolve => setTimeout(resolve, 2000));
+                        // Wait longer for Radarr to restart (it's done automatically by backend)
+                        await new Promise(resolve => setTimeout(resolve, 5000));
                         
-                        // Reload all data including service status
-                        await this.reloadAllData();
-                        await this.updateServiceStatus();
-                        
-                        // Re-enable action buttons
-                        this.actionInProgress = false;
-                        
-                        this.endProgress();
+                        this.updateProgress(3); // Reloading data
                     } else {
-                        const data = await restartResponse.json();
-                        this.showMessage(data.error || 'Failed to restart service', 'error');
-                        this.endProgress();
+                        this.updateProgress(2); // Restarting container (non-Radarr)
+
+                        // For other services: trigger manual restart
+                        const restartResponse = await fetch(`/api/services/${this.serviceName}/restart`, {
+                            method: 'POST'
+                        });
+
+                        if (!restartResponse.ok) {
+                            const data = await restartResponse.json();
+                            this.showMessage(data.error || 'Failed to restart service', 'error');
+                            this.endProgress();
+                            return;
+                        }
+
+                        this.showMessage('Configuration applied and container recreated successfully!', 'success');
+                        await new Promise(resolve => setTimeout(resolve, 2000));
+                        this.updateProgress(3); // Reloading data
                     }
+                    
+                    // Reload all data including service status
+                    await this.reloadAllData();
+                    await this.updateServiceStatus();
+                    
+                    // Re-enable action buttons
+                    this.actionInProgress = false;
+                    
+                    this.endProgress();
                 } catch (error) {
                     this.showMessage('Error: ' + error.message, 'error');
+                    this.endProgress();
                 } finally {
                     this.applying = false;
                 }
@@ -1471,25 +1501,15 @@
                 if (this.serviceName.toLowerCase() !== 'radarr') return;
                 
                 try {
-                    // Get API Key from Radarr config
-                    const response = await fetch(`/api/services/${this.serviceName}/radarr-config`);
-                    if (!response.ok) {
-                        this.showToast('Failed to get Radarr configuration', 'error');
-                        return;
-                    }
-                    
-                    const result = await response.json();
-                    const data = result.data || result;
-                    const apiKey = data.config?.ApiKey;
-                    
-                    if (!apiKey) {
-                        this.showToast('API Key not found in Radarr configuration', 'error');
-                        return;
-                    }
-                    
-                    // Build URL with API Key for automatic authentication
+                    // Build URL to open Radarr UI
+                    // NOTE: Radarr does not support auto-login via URL parameters for the web UI
+                    // The API key (via ?apikey=XXX or X-Api-Key header) only works for API endpoints (/api/*)
+                    // The web UI requires manual login through Radarr's authentication system
+                    // Reference: https://github.com/Radarr/Radarr (ApiKeyAuthenticationHandler.cs)
                     const protocol = this.proxyConfig.sslEnabled ? 'https://' : 'http://';
-                    const url = `${protocol}${this.serviceEndpoint}?apikey=${apiKey}`;
+                    const url = `${protocol}${this.serviceEndpoint}`;
+                    
+                    console.log('🚀 Opening Radarr UI (manual login required):', url);
                     
                     // Open in new tab
                     window.open(url, '_blank', 'noopener,noreferrer');

@@ -794,7 +794,7 @@ func (sm *ServiceManager) GetRadarrConfig(ctx context.Context, serviceName strin
 	return config, nil
 }
 
-// UpdateRadarrConfig updates Radarr's config.xml file
+// UpdateRadarrConfig updates Radarr's config.xml file and restarts the service
 func (sm *ServiceManager) UpdateRadarrConfig(ctx context.Context, serviceName string, config models.RadarrConfig) error {
 	// Build path to config.xml inside the container
 	configPath := filepath.Join("/app/data/services-volumes", serviceName, "config.xml")
@@ -817,6 +817,17 @@ func (sm *ServiceManager) UpdateRadarrConfig(ctx context.Context, serviceName st
 	}
 
 	sm.logger.Info("Radarr config.xml updated successfully", zap.String("path", configPath))
+
+	// Restart Radarr container to apply changes
+	// Radarr only reads config.xml on startup, not in hot-reload
+	sm.logger.Info("Restarting Radarr to apply configuration changes", zap.String("service", serviceName))
+	if err := sm.RestartService(ctx, serviceName); err != nil {
+		sm.logger.Warn("Failed to restart Radarr after config update", zap.Error(err))
+		// Don't return error - config was saved successfully, restart is a bonus
+		return nil
+	}
+
+	sm.logger.Info("Radarr restarted successfully", zap.String("service", serviceName))
 	return nil
 }
 

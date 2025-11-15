@@ -786,7 +786,7 @@ func (h *ServiceHandler) UpdateRadarrConfig(c *fiber.Ctx) error {
 	h.logger.Info("Radarr config updated successfully", "name", name)
 	return c.JSON(APIResponse{
 		Success: true,
-		Data:    fiber.Map{"message": "Radarr configuration updated successfully"},
+		Data:    fiber.Map{"message": "Configuration saved successfully. Radarr is restarting to apply changes..."},
 	})
 }
 
