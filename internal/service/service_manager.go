@@ -1052,7 +1052,7 @@ func (sm *ServiceManager) initializeRadarrConfig(ctx context.Context, serviceNam
 		Password:               "",
 		PasswordConfirmation:   "",
 		Branch:                 "master",
-		LogLevel:               "debug",
+		LogLevel:               "info",
 		SslCertPath:            "",
 		SslCertPassword:        "",
 		UrlBase:                "",
