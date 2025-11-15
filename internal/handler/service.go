@@ -181,11 +181,13 @@ func (h *ServiceHandler) GetService(c *fiber.Ctx) error {
 				"new_status", realStatus)
 			svc.Status = realStatus
 			// Update in database asynchronously (don't block response)
-			go func() {
-				if updateErr := h.repos.Service.UpdateStatus(svc.ID, realStatus, ""); updateErr != nil {
+			go func(id uint, status string) {
+				ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+				defer cancel()
+				if updateErr := h.repos.Service.UpdateStatus(id, status, ""); updateErr != nil {
 					h.logger.Warn("Failed to update service status in DB", "name", name, "error", updateErr)
 				}
-			}()
+			}(svc.ID, realStatus)
 		} else {
 			h.logger.Info("ℹ️ Status unchanged",
 				"service", name,
@@ -810,8 +812,9 @@ func (h *ServiceHandler) CheckServiceReady(c *fiber.Ctx) error {
 		})
 	}
 
-	// Prepare HTTP client with shorter timeout (1 second)
-	client := &http.Client{Timeout: 1 * time.Second}
+	// Prepare HTTP client with increased timeout (3 seconds)
+	// Services may be slow to start or under load, so we need a reasonable timeout
+	client := &http.Client{Timeout: 3 * time.Second}
 
 	// Helper to try a URL with HEAD request (faster than GET)
 	tryURL := func(url string) (bool, int, error) {
@@ -968,61 +971,4 @@ func getServiceConfigPath(svc *models.Service) string {
 	return ""
 }
 
-// extractRadarrAPIKey extracts the API key from Radarr's config.xml
-func extractRadarrAPIKey(configPath string) (string, error) {
-	// First try environment variable
-	apiKey := os.Getenv("RADARR_API_KEY")
-	if apiKey != "" {
-		return apiKey, nil
-	}
 
-	var possiblePaths []string
-
-	if configPath != "" {
-		cleanPath := filepath.Clean(configPath)
-		if filepath.Ext(cleanPath) == ".xml" {
-			possiblePaths = append(possiblePaths, cleanPath)
-		} else {
-			possiblePaths = append(possiblePaths, filepath.Join(cleanPath, "config.xml"))
-		}
-	}
-
-	// Possible paths where config.xml might be located
-	possiblePaths = append(possiblePaths,
-		// Docker volumes path (most common in docker-compose setup)
-		"./volumes/services-volumes/radarr/config.xml",
-		"/root/volumes/services-volumes/radarr/config.xml",
-		"/config/config.xml", // Inside radarr container
-	)
-
-	if configPath != "" {
-		possiblePaths = append(possiblePaths, filepath.Join(configPath, "config.xml"))
-	}
-
-	possiblePaths = append(possiblePaths, filepath.Join(os.Getenv("HOME"), ".config/Radarr/config.xml"))
-
-	for _, path := range possiblePaths {
-		if fileInfo, err := os.Stat(path); err == nil && !fileInfo.IsDir() {
-			// File exists, try to read it
-			content, err := os.ReadFile(path)
-			if err != nil {
-				continue
-			}
-
-			// Parse XML to find ApiKey
-			type Config struct {
-				ApiKey string `xml:"ApiKey"`
-			}
-			var cfg Config
-			if err := xml.Unmarshal(content, &cfg); err != nil {
-				continue
-			}
-
-			if cfg.ApiKey != "" {
-				return cfg.ApiKey, nil
-			}
-		}
-	}
-
-	return "", fmt.Errorf("RADARR_API_KEY not found in environment or config.xml")
-}
