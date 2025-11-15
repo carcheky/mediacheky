@@ -162,15 +162,15 @@
                             <h3 class="text-sm font-semibold text-purple-400 uppercase tracking-wide">Config.xml values</h3>
                             <p class="text-xs text-dark-muted">MediaCheky reads/writes Radarr's config.xml directly.</p>
                         </div>
-                        <a x-show="enabled && status === 'running' && serviceEndpoint" :href="(proxyConfig.sslEnabled ? 'https://' : 'http://') + serviceEndpoint + '/settings/general'" 
-                           target="_blank" rel="noopener"
-                           class="text-blue-400 hover:text-blue-300 transition-colors flex items-center gap-1 text-xs"
-                           title="Open Radarr">
+                        <button x-show="enabled && status === 'running' && serviceEndpoint" 
+                                @click="openRadarrWithAuth()"
+                                class="text-blue-400 hover:text-blue-300 transition-colors flex items-center gap-1 text-xs"
+                                title="Open Radarr with automatic login">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path>
                             </svg>
-                            Radarr Settings
-                        </a>
+                            Open Radarr
+                        </button>
                     </div>
 
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -244,32 +244,6 @@
                             <input type="text" x-model="radarrConfig.InstanceName"
                                 class="w-full px-3 py-2 border border-dark-border rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 bg-dark-bg text-dark-text">
                             <p class="text-xs text-dark-muted mt-1">Friendly name displayed across Radarr UI.</p>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="border-t border-dark-border pt-6">
-                    <h3 class="text-sm font-semibold text-purple-400 uppercase tracking-wide mb-3">Radarr Auth API</h3>
-                    <p class="text-xs text-dark-muted mb-4">These credentials are persisted through Radarr's /config/auth endpoint.</p>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                            <label class="block text-sm font-medium text-dark-text mb-1">
-                                Username
-                                <span class="ml-2 inline-block px-2 py-0.5 bg-amber-900/40 border border-amber-700/50 text-amber-300 rounded text-xs font-normal italic">auth API</span>
-                            </label>
-                            <input type="text" id="radarr-username"
-                                class="w-full px-3 py-2 border border-dark-border rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 bg-dark-bg text-dark-text">
-                            <p class="text-xs text-dark-muted mt-1">Username used to access the Radarr UI.</p>
-                        </div>
-
-                        <div>
-                            <label class="block text-sm font-medium text-dark-text mb-1">
-                                Password
-                                <span class="ml-2 inline-block px-2 py-0.5 bg-amber-900/40 border border-amber-700/50 text-amber-300 rounded text-xs font-normal italic">auth API</span>
-                            </label>
-                            <input type="password" id="radarr-password"
-                                class="w-full px-3 py-2 border border-dark-border rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 bg-dark-bg text-dark-text">
-                            <p class="text-xs text-dark-muted mt-1">Password sent to Radarr via API.</p>
                         </div>
                     </div>
                 </div>
@@ -805,6 +779,13 @@
                         const result = await response.json();
                         const data = result.data || result;
                         
+                        console.log('🔍 loadServiceData received:', {
+                            service: this.serviceName,
+                            status: data.status,
+                            enabled: data.enabled,
+                            current_status: this.status
+                        });
+                        
                         // Load enabled state
                         this.enabled = data.enabled || false;
                         
@@ -838,7 +819,14 @@
                             this.proxyConfig.domain = data.domain || '';
                         }
                         
-                        this.status = data.status || 'stopped';
+                        // CRITICAL: Update status from backend
+                        const newStatus = data.status || 'stopped';
+                        console.log('🔄 Status update:', {
+                            service: this.serviceName,
+                            old: this.status,
+                            new: newStatus
+                        });
+                        this.status = newStatus;
                     }
                 } catch (error) {
                     console.error('Error loading service data:', error);
@@ -1088,23 +1076,6 @@
                     const configToSave = { ...this.config };
                     if (!configToSave.HostPort || configToSave.HostPort === 0) {
                         delete configToSave.HostPort;
-                    }
-
-                    // For Radarr, include auth settings in config
-                    if (this.serviceName.toLowerCase() === 'radarr') {
-                        const usernameField = document.querySelector('#radarr-username');
-                        const passwordField = document.querySelector('#radarr-password');
-                        
-                        if (usernameField && passwordField) {
-                            const username = usernameField.value.trim();
-                            const password = passwordField.value.trim();
-                            
-                            // Include credentials in config payload
-                            configToSave.radarrAuth = {
-                                username: username,
-                                password: password
-                            };
-                        }
                     }
 
                     const saveResponse = await fetch(`/api/services/${this.serviceName}/config`, {
@@ -1496,32 +1467,39 @@
                 }
             },
 
-            // Load Radarr authentication settings from API (manual trigger only)
-            async loadRadarrAuthSettings() {
+            async openRadarrWithAuth() {
                 if (this.serviceName.toLowerCase() !== 'radarr') return;
                 
                 try {
-                    const response = await fetch(`/api/services/${this.serviceName}/radarr/auth`);
-                    
-                    if (response.ok) {
-                        const result = await response.json();
-                        const authConfig = result.data || result;
-                        
-                        // Update form fields with loaded values
-                        if (authConfig.username) {
-                            const usernameField = document.querySelector('#radarr-username');
-                            if (usernameField) usernameField.value = authConfig.username;
-                        }
-                        // Note: password is not returned by API for security
-                        return true;
+                    // Get API Key from Radarr config
+                    const response = await fetch(`/api/services/${this.serviceName}/radarr-config`);
+                    if (!response.ok) {
+                        this.showToast('Failed to get Radarr configuration', 'error');
+                        return;
                     }
+                    
+                    const result = await response.json();
+                    const data = result.data || result;
+                    const apiKey = data.config?.ApiKey;
+                    
+                    if (!apiKey) {
+                        this.showToast('API Key not found in Radarr configuration', 'error');
+                        return;
+                    }
+                    
+                    // Build URL with API Key for automatic authentication
+                    const protocol = this.proxyConfig.sslEnabled ? 'https://' : 'http://';
+                    const url = `${protocol}${this.serviceEndpoint}?apikey=${apiKey}`;
+                    
+                    // Open in new tab
+                    window.open(url, '_blank', 'noopener,noreferrer');
                 } catch (error) {
-                    console.error('Error loading authentication settings:', error);
+                    console.error('Error opening Radarr:', error);
+                    this.showToast('Error opening Radarr: ' + error.message, 'error');
                 }
-                return false;
             },
 
-            // Save Radarr authentication settings to API
+
             async copyToClipboard(text) {
                 try {
                     await navigator.clipboard.writeText(text);

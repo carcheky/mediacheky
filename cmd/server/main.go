@@ -209,8 +209,6 @@ func setupRoutes(app *fiber.App, h *handler.Handlers) {
 		services.Get("/:name/radarr-config", middleware.ValidateServiceName(), h.Service.GetRadarrConfig)
 		services.Put("/:name/radarr-config", middleware.ValidateServiceName(), h.Service.UpdateRadarrConfig)
 		services.Get("/:name/ready", middleware.ValidateServiceName(), h.Service.CheckServiceReady)
-		services.Get("/:name/radarr/auth", middleware.ValidateServiceName(), h.Service.RadarrAuthConfig)
-		services.Put("/:name/radarr/auth", middleware.ValidateServiceName(), h.Service.UpdateRadarrAuthConfig)
 
 		// Global configuration endpoints with validation
 		globalConfig := api.Group("/config/global")

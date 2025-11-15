@@ -1,12 +1,9 @@
 package handler
 
 import (
-	"bytes"
 	"context"
-	"encoding/json"
 	"encoding/xml"
 	"fmt"
-	"io"
 	"net"
 	"net/http"
 	"os"
@@ -86,6 +83,117 @@ func (h *ServiceHandler) GetService(c *fiber.Ctx) error {
 			Success: false,
 			Error:   "Failed to retrieve service",
 		})
+	}
+
+	// CRITICAL FIX: Update status from REAL container state before returning
+	// This ensures buttons show correct state after start/stop/restart operations
+	if svc.Enabled {
+		// Extract container name from config
+		var containerName string
+		if nameVal, ok := svc.Config["ContainerName"]; ok {
+			if nameStr, ok := nameVal.(string); ok && nameStr != "" {
+				containerName = nameStr
+			}
+		}
+
+		// If no container name in config, use service name
+		if containerName == "" {
+			containerName = name
+		}
+
+		h.logger.Info("🔍 GetService: Checking container status",
+			"service", name,
+			"container_name", containerName,
+			"db_status", svc.Status)
+
+		ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+		defer cancel()
+
+		// Try to get container directly by name (doesn't require labels)
+		realStatus := "stopped" // Default if not found
+		containerFound := false
+
+		// First, try to inspect the container directly by name
+		containerInfo, err := h.dockerClient.GetContainer(ctx, containerName)
+		if err == nil && containerInfo != nil {
+			// Container found via direct inspect
+			realStatus = string(containerInfo.Status)
+			containerFound = true
+			h.logger.Info("✅ Container found (direct inspect)",
+				"service", name,
+				"container", containerName,
+				"status", realStatus)
+		} else {
+			// Fallback: list all containers and search
+			h.logger.Info("🔍 Container not found by name, searching all containers",
+				"service", name,
+				"container_name", containerName)
+
+			containers, listErr := h.dockerClient.ListContainers(ctx)
+			if listErr == nil {
+				h.logger.Info("🐳 Docker containers listed",
+					"service", name,
+					"total_containers", len(containers))
+
+				for _, container := range containers {
+					// Docker prefixes names with /, so strip it
+					cName := container.Name
+					if len(cName) > 0 && cName[0] == '/' {
+						cName = cName[1:]
+					}
+
+					h.logger.Debug("Checking container",
+						"service", name,
+						"container_name", cName,
+						"looking_for", containerName,
+						"status", string(container.Status))
+
+					if cName == containerName {
+						// Container found in list
+						realStatus = string(container.Status)
+						containerFound = true
+						h.logger.Info("✅ Container found (in list)",
+							"service", name,
+							"container", containerName,
+							"status", realStatus)
+						break
+					}
+				}
+			} else {
+				h.logger.Error("❌ Failed to list Docker containers",
+					"service", name,
+					"error", listErr)
+			}
+		}
+
+		if !containerFound {
+			h.logger.Warn("⚠️ Container NOT found in Docker",
+				"service", name,
+				"container_name", containerName,
+				"setting_status_to", "stopped")
+		}
+
+		// Update service with real status
+		if svc.Status != realStatus {
+			h.logger.Info("🔄 Status changed",
+				"service", name,
+				"old_status", svc.Status,
+				"new_status", realStatus)
+			svc.Status = realStatus
+			// Update in database asynchronously (don't block response)
+			go func() {
+				if updateErr := h.repos.Service.UpdateStatus(svc.ID, realStatus, ""); updateErr != nil {
+					h.logger.Warn("Failed to update service status in DB", "name", name, "error", updateErr)
+				}
+			}()
+		} else {
+			h.logger.Info("ℹ️ Status unchanged",
+				"service", name,
+				"status", svc.Status)
+		}
+	} else {
+		h.logger.Info("⏸️ Service not enabled, skipping status check",
+			"service", name)
 	}
 
 	return c.JSON(APIResponse{
@@ -409,16 +517,6 @@ func (h *ServiceHandler) UpdateServiceConfig(c *fiber.Ctx) error {
 		"config", configUpdate,
 		"paths", configUpdate["Paths"])
 
-	// Extract and handle Radarr auth if provided
-	var radarrAuth map[string]interface{}
-	if auth, exists := configUpdate["radarrAuth"]; exists {
-		if authMap, ok := auth.(map[string]interface{}); ok {
-			radarrAuth = authMap
-			// Remove from config before saving to database
-			delete(configUpdate, "radarrAuth")
-		}
-	}
-
 	// Ensure Paths exists and has Config path
 	if configUpdate["Paths"] == nil {
 		configUpdate["Paths"] = make(map[string]interface{})
@@ -441,8 +539,6 @@ func (h *ServiceHandler) UpdateServiceConfig(c *fiber.Ctx) error {
 			"config_path", paths["Config"])
 	}
 
-	configPathStr, _ := paths["Config"].(string)
-
 	// Check if service manager is available
 	if h.serviceManager == nil {
 		return c.Status(fiber.StatusServiceUnavailable).JSON(APIResponse{
@@ -461,16 +557,6 @@ func (h *ServiceHandler) UpdateServiceConfig(c *fiber.Ctx) error {
 			Success: false,
 			Error:   fmt.Sprintf("Failed to update service configuration: %v", err),
 		})
-	}
-
-	// If Radarr auth was provided, update it asynchronously
-	if name == "radarr" && radarrAuth != nil {
-		username, _ := radarrAuth["username"].(string)
-		password, _ := radarrAuth["password"].(string)
-
-		if username != "" && password != "" {
-			updateRadarrAuthInBackground(username, password, configPathStr, h.logger)
-		}
 	}
 
 	h.logger.Info("Service config updated", "name", name)
@@ -875,273 +961,6 @@ func getServiceConfigPath(svc *models.Service) string {
 	}
 
 	return ""
-}
-
-// RadarrAuthConfig handles GET /api/services/:name/radarr/auth
-// Retrieves authentication configuration from Radarr
-func (h *ServiceHandler) RadarrAuthConfig(c *fiber.Ctx) error {
-	name := c.Params("name")
-	if name == "" {
-		return c.Status(fiber.StatusBadRequest).JSON(APIResponse{
-			Success: false,
-			Error:   "Service name is required",
-		})
-	}
-
-	// Only Radarr has this endpoint
-	if name != "radarr" {
-		return c.Status(fiber.StatusBadRequest).JSON(APIResponse{
-			Success: false,
-			Error:   "This endpoint is only available for Radarr",
-		})
-	}
-
-	// Get service config
-	svc, err := h.repos.Service.GetByName(name)
-	if err != nil {
-		return c.Status(fiber.StatusNotFound).JSON(APIResponse{
-			Success: false,
-			Error:   "Service not found",
-		})
-	}
-
-	if !svc.Enabled {
-		return c.Status(fiber.StatusBadRequest).JSON(APIResponse{
-			Success: false,
-			Error:   "Service is not enabled",
-		})
-	}
-
-	// Get API key from config.xml
-	configPath := getServiceConfigPath(svc)
-	apiKey, err := extractRadarrAPIKey(configPath)
-	if err != nil {
-		h.logger.Error("Failed to get Radarr API key", "error", err)
-		return c.Status(fiber.StatusInternalServerError).JSON(APIResponse{
-			Success: false,
-			Error:   "Failed to retrieve API key from Radarr",
-		})
-	}
-
-	// Call Radarr API
-	url := fmt.Sprintf("http://radarr:7878/api/v3/config/auth")
-	req, err := http.NewRequest("GET", url, nil)
-	if err != nil {
-		h.logger.Error("Failed to create request", "error", err)
-		return c.Status(fiber.StatusInternalServerError).JSON(APIResponse{
-			Success: false,
-			Error:   "Failed to create API request",
-		})
-	}
-
-	req.Header.Set("X-Api-Key", apiKey)
-	req.Header.Set("Accept", "application/json")
-
-	client := &http.Client{Timeout: 10 * time.Second}
-	resp, err := client.Do(req)
-	if err != nil {
-		h.logger.Error("Failed to call Radarr API", "error", err)
-		return c.Status(fiber.StatusInternalServerError).JSON(APIResponse{
-			Success: false,
-			Error:   "Failed to connect to Radarr",
-		})
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		h.logger.Error("Radarr API returned error", "status", resp.StatusCode)
-		return c.Status(fiber.StatusInternalServerError).JSON(APIResponse{
-			Success: false,
-			Error:   fmt.Sprintf("Radarr returned status %d", resp.StatusCode),
-		})
-	}
-
-	// Parse response
-	var authConfig map[string]interface{}
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		h.logger.Error("Failed to read response body", "error", err)
-		return c.Status(fiber.StatusInternalServerError).JSON(APIResponse{
-			Success: false,
-			Error:   "Failed to read Radarr response",
-		})
-	}
-
-	if err := json.Unmarshal(body, &authConfig); err != nil {
-		h.logger.Error("Failed to parse Radarr response", "error", err)
-		return c.Status(fiber.StatusInternalServerError).JSON(APIResponse{
-			Success: false,
-			Error:   "Failed to parse Radarr response",
-		})
-	}
-
-	return c.JSON(APIResponse{
-		Success: true,
-		Data:    authConfig,
-	})
-}
-
-// UpdateRadarrAuthConfig handles PUT /api/services/:name/radarr/auth
-// Updates authentication configuration in Radarr
-func (h *ServiceHandler) UpdateRadarrAuthConfig(c *fiber.Ctx) error {
-	name := c.Params("name")
-	if name == "" {
-		return c.Status(fiber.StatusBadRequest).JSON(APIResponse{
-			Success: false,
-			Error:   "Service name is required",
-		})
-	}
-
-	// Only Radarr has this endpoint
-	if name != "radarr" {
-		return c.Status(fiber.StatusBadRequest).JSON(APIResponse{
-			Success: false,
-			Error:   "This endpoint is only available for Radarr",
-		})
-	}
-
-	// Parse request body
-	var authConfig map[string]interface{}
-	if err := c.BodyParser(&authConfig); err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(APIResponse{
-			Success: false,
-			Error:   "Invalid request body",
-		})
-	}
-
-	// Get service config
-	svc, err := h.repos.Service.GetByName(name)
-	if err != nil {
-		return c.Status(fiber.StatusNotFound).JSON(APIResponse{
-			Success: false,
-			Error:   "Service not found",
-		})
-	}
-
-	if !svc.Enabled {
-		return c.Status(fiber.StatusBadRequest).JSON(APIResponse{
-			Success: false,
-			Error:   "Service is not enabled",
-		})
-	}
-
-	// Get API key from config.xml
-	configPath := getServiceConfigPath(svc)
-	apiKey, err := extractRadarrAPIKey(configPath)
-	if err != nil {
-		h.logger.Error("Failed to get Radarr API key", "error", err)
-		return c.Status(fiber.StatusInternalServerError).JSON(APIResponse{
-			Success: false,
-			Error:   "Failed to retrieve API key from Radarr",
-		})
-	}
-
-	// Convert to JSON
-	bodyBytes, _ := json.Marshal(authConfig)
-
-	// Call Radarr API
-	url := fmt.Sprintf("http://radarr:7878/api/v3/config/auth")
-	req, err := http.NewRequest("PUT", url, bytes.NewReader(bodyBytes))
-	if err != nil {
-		h.logger.Error("Failed to create request", "error", err)
-		return c.Status(fiber.StatusInternalServerError).JSON(APIResponse{
-			Success: false,
-			Error:   "Failed to create API request",
-		})
-	}
-
-	req.Header.Set("X-Api-Key", apiKey)
-	req.Header.Set("Content-Type", "application/json")
-
-	client := &http.Client{Timeout: 10 * time.Second}
-	resp, err := client.Do(req)
-	if err != nil {
-		h.logger.Error("Failed to call Radarr API", "error", err)
-		return c.Status(fiber.StatusInternalServerError).JSON(APIResponse{
-			Success: false,
-			Error:   "Failed to connect to Radarr",
-		})
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		h.logger.Error("Radarr API returned error", "status", resp.StatusCode)
-		return c.Status(fiber.StatusInternalServerError).JSON(APIResponse{
-			Success: false,
-			Error:   fmt.Sprintf("Radarr returned status %d", resp.StatusCode),
-		})
-	}
-
-	// Log success
-	h.logger.Info("Radarr auth config updated successfully", "service", name)
-
-	return c.JSON(APIResponse{
-		Success: true,
-		Data:    authConfig,
-	})
-}
-
-// updateRadarrAuthInBackground updates Radarr authentication asynchronously
-func updateRadarrAuthInBackground(username, password, configPath string, logger *logger.Logger) {
-	// Use a goroutine to avoid blocking the response
-	go func() {
-		apiKey, err := extractRadarrAPIKey(configPath)
-		if err != nil || apiKey == "" {
-			logger.Warn("Failed to extract Radarr API key for auth update", "error", err)
-			return
-		}
-
-		const url = "http://radarr:7878/api/v3/config/auth"
-		req, err := http.NewRequest("GET", url, nil)
-		if err != nil {
-			logger.Warn("Failed to create Radarr auth request", "error", err)
-			return
-		}
-
-		req.Header.Set("X-Api-Key", apiKey)
-		client := &http.Client{Timeout: 10 * time.Second}
-		resp, err := client.Do(req)
-		if err != nil {
-			logger.Warn("Failed to get Radarr auth config", "error", err)
-			return
-		}
-		defer resp.Body.Close()
-
-		if resp.StatusCode != http.StatusOK {
-			logger.Warn("Radarr auth config returned non-OK status", "status", resp.StatusCode)
-			return
-		}
-
-		var currentConfig map[string]interface{}
-		body, _ := io.ReadAll(resp.Body)
-		if err := json.Unmarshal(body, &currentConfig); err != nil {
-			logger.Warn("Failed to parse Radarr auth config", "error", err)
-			return
-		}
-
-		// Update with new credentials
-		currentConfig["username"] = username
-		currentConfig["password"] = password
-
-		// Send PUT request
-		bodyBytes, _ := json.Marshal(currentConfig)
-		putReq, _ := http.NewRequest("PUT", url, bytes.NewReader(bodyBytes))
-		putReq.Header.Set("X-Api-Key", apiKey)
-		putReq.Header.Set("Content-Type", "application/json")
-
-		putResp, err := client.Do(putReq)
-		if err != nil {
-			logger.Warn("Failed to update Radarr auth", "error", err)
-			return
-		}
-		putResp.Body.Close()
-
-		if putResp.StatusCode == http.StatusOK {
-			logger.Info("Radarr auth credentials updated successfully")
-		} else {
-			logger.Warn("Failed to update Radarr auth", "status", putResp.StatusCode)
-		}
-	}()
 }
 
 // extractRadarrAPIKey extracts the API key from Radarr's config.xml
