@@ -968,5 +968,3 @@ func getServiceConfigPath(svc *models.Service) string {
 
 	return ""
 }
-
-

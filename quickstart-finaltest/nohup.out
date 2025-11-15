@@ -1,0 +1,568 @@
+mediacheky-finaltest  | No config file found, using defaults and environment variables
+mediacheky-finaltest  | 2025-11-15T01:23:11.808Z	[34mINFO[0m	server/main.go:43	Starting MediaChekyversionfinaltestcommit76072afenvproduction
+mediacheky-finaltest  | 2025-11-15T01:23:11.808Z	[34mINFO[0m	database/database.go:24	Initializing databasepath/app/data/mediacheky.db
+mediacheky-finaltest  | 2025/11/15 01:23:11 Template seeding disabled - using filesystem templates only
+mediacheky-finaltest  | 2025/11/15 01:23:11 Template upsert disabled - using filesystem templates only
+mediacheky-finaltest  | 2025-11-15T01:23:11.823Z	[34mINFO[0m	service/docker_client.go:50	Docker client initialized successfully
+mediacheky-finaltest  | 2025-11-15T01:23:11.824Z	[34mINFO[0m	service/template_engine.go:97	Using MEDIACHEKY_HOST_PATH for base directory	{"baseDir": "/home/user/projects/mediacheky/quickstart-finaltest"}
+mediacheky-finaltest  | 2025-11-15T01:23:11.824Z	[34mINFO[0m	server/main.go:282	Auto-starting enabled services...
+mediacheky-finaltest  | 2025-11-15T01:23:11.824Z	[34mINFO[0m	service/service_manager.go:692	Auto-starting enabled services on startup
+mediacheky-finaltest  | 2025-11-15T01:23:11.825Z	[34mINFO[0m	service/service_manager.go:708	Auto-starting enabled service	{"service": "radarr"}
+mediacheky-finaltest  | 2025-11-15T01:23:11.825Z	[34mINFO[0m	service/template_engine.go:114	Generating dynamic compose for service	{"service": "radarr"}
+mediacheky-finaltest  | 
+mediacheky-finaltest  | 2025/11/15 01:23:11 [31;1mgithub.com/carcheky/mediacheky/internal/repository/template_repo.go:28 [35;1mrecord not found
+mediacheky-finaltest  | [0m[33m[0.108ms] [34;1m[rows:0][0m SELECT * FROM `templates` WHERE name = "radarr" AND `templates`.`deleted_at` IS NULL ORDER BY `templates`.`id` LIMIT 1
+mediacheky-finaltest  | 2025-11-15T01:23:11.826Z	[34mINFO[0m	service/template_engine.go:342	Building template data	{"config": {"ContainerName":"radarr","Image":"linuxserver/radarr:latest","Paths":{"Config":"/home/user/projects/mediacheky/quickstart-finaltest/volumes/mediacheky-data/services-volumes/radarr","Media":"/home/user/projects/mediacheky/quickstart-finaltest/volumes/library"},"RestartPolicy":"unless-stopped"}, "config_paths": {"Config":"/home/user/projects/mediacheky/quickstart-finaltest/volumes/mediacheky-data/services-volumes/radarr","Media":"/home/user/projects/mediacheky/quickstart-finaltest/volumes/library"}}
+mediacheky-finaltest  | 2025-11-15T01:23:11.826Z	[34mINFO[0m	service/template_engine.go:388	Extracted and converted paths to absolute	{"paths_interface": {"Config":"/home/user/projects/mediacheky/quickstart-finaltest/volumes/mediacheky-data/services-volumes/radarr","Media":"/home/user/projects/mediacheky/quickstart-finaltest/volumes/library"}, "paths_absolute": {"Config":"/home/user/projects/mediacheky/quickstart-finaltest/volumes/mediacheky-data/services-volumes/radarr","Media":"/home/user/projects/mediacheky/quickstart-finaltest/volumes/library"}}
+mediacheky-finaltest  | 2025-11-15T01:23:11.827Z	[34mINFO[0m	service/docker_client.go:50	Docker client initialized successfully
+mediacheky-finaltest  | 2025-11-15T01:23:11.829Z	[34mINFO[0m	service/docker_client.go:480	Detected MediaCheky network	{"network": "quickstart-finaltest_mediacheky-net", "container_id": "70b1adc14793"}
+mediacheky-finaltest  | 2025-11-15T01:23:11.830Z	[34mINFO[0m	service/template_engine.go:413	Service will be created on MediaCheky network	{"network": "quickstart-finaltest_mediacheky-net", "service": "radarr"}
+mediacheky-finaltest  | 2025-11-15T01:23:11.830Z	[34mINFO[0m	service/template_engine.go:174	Executing template	{"service": "radarr", "template_data": {"Image":"linuxserver/radarr:latest","ContainerName":"radarr","Port":0,"HostPort":0,"Paths":{"Config":"/home/user/projects/mediacheky/quickstart-finaltest/volumes/mediacheky-data/services-volumes/radarr","Media":"/home/user/projects/mediacheky/quickstart-finaltest/volumes/library"},"Umask":"","Network":"quickstart-finaltest_mediacheky-net","RestartPolicy":"unless-stopped","Global":{"PUID":"1000","PGID":"1000","Timezone":"UTC","MediaPath":"/home/user/projects/mediacheky/quickstart-finaltest/volumes/library"},"Custom":{}}, "paths": {"Config":"/home/user/projects/mediacheky/quickstart-finaltest/volumes/mediacheky-data/services-volumes/radarr","Media":"/home/user/projects/mediacheky/quickstart-finaltest/volumes/library"}}
+mediacheky-finaltest  | 2025-11-15T01:23:11.830Z	[34mINFO[0m	service/template_engine.go:187	Generated compose content	{"service": "radarr", "content": "services:\n  radarr:\n    image: linuxserver/radarr:latest\n    container_name: radarr\n    environment:\n      - PUID=1000\n      - PGID=1000\n      - TZ=UTC\n    volumes:\n      - /home/user/projects/mediacheky/quickstart-finaltest/volumes/mediacheky-data/services-volumes/radarr:/config\n      - /home/user/projects/mediacheky/quickstart-finaltest/volumes/library:/MEDIACHEKY_LIBRARY\n    extra_hosts:\n      - \"radarr.docker.internal:127.0.0.1\"\n      - \"sonarr.docker.internal:127.0.0.1\"\n      - \"bazarr.docker.internal:127.0.0.1\"\n      - \"prowlarr.docker.internal:127.0.0.1\"\n      - \"lidarr.docker.internal:127.0.0.1\"\n      - \"overseerr.docker.internal:127.0.0.1\"\n      - \"jellyfin.docker.internal:127.0.0.1\"\n      - \"jellyseerr.docker.internal:127.0.0.1\"\n    networks:\n      - quickstart-finaltest_mediacheky-net\n    restart: unless-stopped\n\nnetworks:\n  quickstart-finaltest_mediacheky-net:\n    external: true\n"}
+mediacheky-finaltest  | 2025-11-15T01:23:11.830Z	[34mINFO[0m	service/template_engine.go:544	Created backup of compose file	{"original": "/app/data/services/radarr/docker compose.yml", "backup": "/app/data/services/radarr/docker compose.yml.backup.20251115-012311"}
+mediacheky-finaltest  | 2025-11-15T01:23:11.830Z	[34mINFO[0m	service/template_engine.go:202	Successfully generated docker compose	{"service": "radarr", "path": "/app/data/services/radarr/docker compose.yml"}
+mediacheky-finaltest  | 2025-11-15T01:23:11.830Z	[34mINFO[0m	service/docker_compose.go:52	Executing docker compose up	{"path": "/app/data/services/radarr/docker compose.yml", "directory": "/app/data/services/radarr"}
+mediacheky-finaltest  | 2025-11-15T01:23:35.006Z	[34mINFO[0m	service/docker_compose.go:90	Docker compose up executed successfully	{"path": "/app/data/services/radarr/docker compose.yml", "output": ""}
+mediacheky-finaltest  | 2025-11-15T01:23:35.006Z	[34mINFO[0m	service/service_manager.go:738	Service auto-started successfully	{"service": "radarr"}
+mediacheky-finaltest  | 
+mediacheky-finaltest  | 2025/11/15 01:23:35 [31;1mgithub.com/carcheky/mediacheky/internal/repository/service_repo.go:30 [35;1mrecord not found
+mediacheky-finaltest  | [0m[33m[0.212ms] [34;1m[rows:0][0m SELECT * FROM `services` WHERE name = "sonarr" AND `services`.`deleted_at` IS NULL ORDER BY `services`.`id` LIMIT 1
+mediacheky-finaltest  | 
+mediacheky-finaltest  | 2025/11/15 01:23:35 [31;1mgithub.com/carcheky/mediacheky/internal/repository/service_repo.go:30 [35;1mrecord not found
+mediacheky-finaltest  | [0m[33m[0.082ms] [34;1m[rows:0][0m SELECT * FROM `services` WHERE name = "jellyfin" AND `services`.`deleted_at` IS NULL ORDER BY `services`.`id` LIMIT 1
+mediacheky-finaltest  | 
+mediacheky-finaltest  | 2025/11/15 01:23:35 [31;1mgithub.com/carcheky/mediacheky/internal/repository/service_repo.go:30 [35;1mrecord not found
+mediacheky-finaltest  | [0m[33m[0.065ms] [34;1m[rows:0][0m SELECT * FROM `services` WHERE name = "prowlarr" AND `services`.`deleted_at` IS NULL ORDER BY `services`.`id` LIMIT 1
+mediacheky-finaltest  | 
+mediacheky-finaltest  | 2025/11/15 01:23:35 [31;1mgithub.com/carcheky/mediacheky/internal/repository/service_repo.go:30 [35;1mrecord not found
+mediacheky-finaltest  | [0m[33m[0.107ms] [34;1m[rows:0][0m SELECT * FROM `services` WHERE name = "qbittorrent" AND `services`.`deleted_at` IS NULL ORDER BY `services`.`id` LIMIT 1
+mediacheky-finaltest  | 
+mediacheky-finaltest  | 2025/11/15 01:23:35 [31;1mgithub.com/carcheky/mediacheky/internal/repository/service_repo.go:30 [35;1mrecord not found
+mediacheky-finaltest  | [0m[33m[0.113ms] [34;1m[rows:0][0m SELECT * FROM `services` WHERE name = "jellyseerr" AND `services`.`deleted_at` IS NULL ORDER BY `services`.`id` LIMIT 1
+mediacheky-finaltest  | 
+mediacheky-finaltest  | 2025/11/15 01:23:35 [31;1mgithub.com/carcheky/mediacheky/internal/repository/service_repo.go:30 [35;1mrecord not found
+mediacheky-finaltest  | [0m[33m[0.162ms] [34;1m[rows:0][0m SELECT * FROM `services` WHERE name = "bazarr" AND `services`.`deleted_at` IS NULL ORDER BY `services`.`id` LIMIT 1
+mediacheky-finaltest  | 
+mediacheky-finaltest  | 2025/11/15 01:23:35 [31;1mgithub.com/carcheky/mediacheky/internal/repository/service_repo.go:30 [35;1mrecord not found
+mediacheky-finaltest  | [0m[33m[0.093ms] [34;1m[rows:0][0m SELECT * FROM `services` WHERE name = "jellystat" AND `services`.`deleted_at` IS NULL ORDER BY `services`.`id` LIMIT 1
+mediacheky-finaltest  | 2025-11-15T01:23:35.026Z	[34mINFO[0m	service/service_manager.go:754	Auto-start process completed
+mediacheky-finaltest  | 2025-11-15T01:23:35.026Z	[34mINFO[0m	server/main.go:134	Server startingport7369
+mediacheky-finaltest  | 
+mediacheky-finaltest  |  ┌───────────────────────────────────────────────────┐ 
+mediacheky-finaltest  |  │                    KeeperCheky                    │ 
+mediacheky-finaltest  |  │                   Fiber v2.52.9                   │ 
+mediacheky-finaltest  |  │               http://127.0.0.1:7369               │ 
+mediacheky-finaltest  |  │       (bound on host 0.0.0.0 and port 7369)       │ 
+mediacheky-finaltest  |  │                                                   │ 
+mediacheky-finaltest  |  │ Handlers ........... 128  Processes ........... 1 │ 
+mediacheky-finaltest  |  │ Prefork ....... Disabled  PID ................. 1 │ 
+mediacheky-finaltest  |  └───────────────────────────────────────────────────┘ 
+mediacheky-finaltest  | 
+mediacheky-finaltest  | 2025-11-15T01:24:46.419Z	[34mINFO[0m	middleware/middleware.go:28	HTTP requestmethodGETpath/status200duration_ms2ip172.18.0.1request_id133a5c36-71ce-4d6e-9a20-e664843c3abf
+mediacheky-finaltest  | 2025-11-15T01:24:46.505Z	[34mINFO[0m	middleware/middleware.go:28	HTTP requestmethodGETpath/static/css/custom.cssstatus200duration_ms0ip172.18.0.1request_idaa58ed1f-cc72-4fcf-b938-131b985c9664
+mediacheky-finaltest  | 2025-11-15T01:24:46.511Z	[34mINFO[0m	middleware/middleware.go:28	HTTP requestmethodGETpath/static/js/shared.jsstatus200duration_ms0ip172.18.0.1request_id789526d9-8193-40d7-a030-9dfabfa722f9
+mediacheky-finaltest  | 2025-11-15T01:24:46.511Z	[34mINFO[0m	middleware/middleware.go:28	HTTP requestmethodGETpath/static/js/file-health-components.jsstatus200duration_ms0ip172.18.0.1request_id8fc8885f-bab5-4560-8edb-ba011f3e14ed
+mediacheky-finaltest  | 2025-11-15T01:24:46.811Z	[34mINFO[0m	middleware/middleware.go:28	HTTP requestmethodGETpath/api/statsstatus200duration_ms0ip172.18.0.1request_id31ba3157-9a72-45ce-8455-87ea3d090c03
+mediacheky-finaltest  | 2025-11-15T01:24:46.811Z	[34mINFO[0m	middleware/middleware.go:28	HTTP requestmethodGETpath/api/radarr/queuestatus404duration_ms0ip172.18.0.1request_id8dd012e1-961b-4635-ad6f-1cef6959a9e8
+mediacheky-finaltest  | 2025-11-15T01:24:46.811Z	[34mINFO[0m	middleware/middleware.go:28	HTTP requestmethodGETpath/api/servicesstatus200duration_ms1ip172.18.0.1request_id8eb2bb1f-090e-4600-9a57-8adb51ed4ef9
+mediacheky-finaltest  | 2025-11-15T01:24:46.814Z	[34mINFO[0m	middleware/middleware.go:28	HTTP requestmethodGETpath/api/jellyfin/recently-addedstatus404duration_ms0ip172.18.0.1request_id5d5e3ac0-16f1-488b-b570-13657ecbf2d8
+mediacheky-finaltest  | 2025-11-15T01:24:46.814Z	[34mINFO[0m	middleware/middleware.go:28	HTTP requestmethodGETpath/api/jellyfin/sessionsstatus404duration_ms0ip172.18.0.1request_ide6e60092-5fc5-45fa-897b-309bbafcb4ff
+mediacheky-finaltest  | 2025-11-15T01:24:46.816Z	[34mINFO[0m	middleware/middleware.go:28	HTTP requestmethodGETpath/api/sonarr/queuestatus404duration_ms0ip172.18.0.1request_id8bb55c02-c8e4-42d3-b890-7f7457bd94c0
+mediacheky-finaltest  | 2025-11-15T01:24:46.816Z	[34mINFO[0m	middleware/middleware.go:28	HTTP requestmethodGETpath/api/qbittorrent/statestatus200duration_ms0ip172.18.0.1request_id01d5704e-174e-410d-9bba-0e6913d9d537
+mediacheky-finaltest  | 2025-11-15T01:24:46.816Z	[31mERROR[0m	middleware/middleware.go:69	Request errorerrorCannot GET /api/qbittorrent/statepath/api/qbittorrent/statemethodGETstatus404request_id01d5704e-174e-410d-9bba-0e6913d9d537
+mediacheky-finaltest  | main.main.ErrorHandler.func3
+mediacheky-finaltest  | 	github.com/carcheky/mediacheky/internal/middleware/middleware.go:69
+mediacheky-finaltest  | github.com/gofiber/fiber/v2.(*App).ErrorHandler
+mediacheky-finaltest  | 	github.com/gofiber/fiber/v2@v2.52.9/app.go:1061
+mediacheky-finaltest  | github.com/gofiber/fiber/v2.(*App).handler
+mediacheky-finaltest  | 	github.com/gofiber/fiber/v2@v2.52.9/router.go:172
+mediacheky-finaltest  | github.com/valyala/fasthttp.(*Server).serveConn
+mediacheky-finaltest  | 	github.com/valyala/fasthttp@v1.57.0/server.go:2385
+mediacheky-finaltest  | github.com/valyala/fasthttp.(*workerPool).workerFunc
+mediacheky-finaltest  | 	github.com/valyala/fasthttp@v1.57.0/workerpool.go:225
+mediacheky-finaltest  | github.com/valyala/fasthttp.(*workerPool).getCh.func1
+mediacheky-finaltest  | 	github.com/valyala/fasthttp@v1.57.0/workerpool.go:197
+mediacheky-finaltest  | 2025-11-15T01:24:46.818Z	[34mINFO[0m	middleware/middleware.go:28	HTTP requestmethodGETpath/api/jellyseerr/statsstatus404duration_ms0ip172.18.0.1request_idda244759-8b8e-476c-b503-3bd7791da320
+mediacheky-finaltest  | 2025-11-15T01:24:46.820Z	[34mINFO[0m	middleware/middleware.go:28	HTTP requestmethodGETpath/api/jellystat/dashboard/statsstatus404duration_ms0ip172.18.0.1request_id46c04229-7bbf-4efa-b1fb-be9d23b0f054
+mediacheky-finaltest  | 2025-11-15T01:24:46.884Z	[34mINFO[0m	middleware/middleware.go:28	HTTP requestmethodGETpath/api/statsstatus200duration_ms0ip172.18.0.1request_id1b6fd8e3-8bd7-49d9-bf60-e37bd5c28f0f
+mediacheky-finaltest  | 2025-11-15T01:24:46.884Z	[34mINFO[0m	middleware/middleware.go:28	HTTP requestmethodGETpath/api/radarr/queuestatus404duration_ms0ip172.18.0.1request_id295bfd71-dcac-4cef-bdad-da855aedef76
+mediacheky-finaltest  | 2025-11-15T01:24:46.884Z	[34mINFO[0m	middleware/middleware.go:28	HTTP requestmethodGETpath/api/jellyfin/sessionsstatus404duration_ms0ip172.18.0.1request_id889e3b1d-d9b6-42b8-9390-af314980c8cd
+mediacheky-finaltest  | 2025-11-15T01:24:46.884Z	[34mINFO[0m	middleware/middleware.go:28	HTTP requestmethodGETpath/api/jellyfin/recently-addedstatus404duration_ms0ip172.18.0.1request_id4dab19af-e2e7-4c4f-bfad-be365171b3ee
+mediacheky-finaltest  | 2025-11-15T01:24:46.884Z	[34mINFO[0m	middleware/middleware.go:28	HTTP requestmethodGETpath/api/qbittorrent/statestatus200duration_ms0ip172.18.0.1request_id80aeee7f-94b0-46ae-b673-29d3ad97c57d
+mediacheky-finaltest  | 2025-11-15T01:24:46.884Z	[31mERROR[0m	middleware/middleware.go:69	Request errorerrorCannot GET /api/qbittorrent/statepath/api/qbittorrent/statemethodGETstatus404request_id80aeee7f-94b0-46ae-b673-29d3ad97c57d
+mediacheky-finaltest  | main.main.ErrorHandler.func3
+mediacheky-finaltest  | 	github.com/carcheky/mediacheky/internal/middleware/middleware.go:69
+mediacheky-finaltest  | github.com/gofiber/fiber/v2.(*App).ErrorHandler
+mediacheky-finaltest  | 	github.com/gofiber/fiber/v2@v2.52.9/app.go:1061
+mediacheky-finaltest  | github.com/gofiber/fiber/v2.(*App).handler
+mediacheky-finaltest  | 	github.com/gofiber/fiber/v2@v2.52.9/router.go:172
+mediacheky-finaltest  | github.com/valyala/fasthttp.(*Server).serveConn
+mediacheky-finaltest  | 	github.com/valyala/fasthttp@v1.57.0/server.go:2385
+mediacheky-finaltest  | github.com/valyala/fasthttp.(*workerPool).workerFunc
+mediacheky-finaltest  | 	github.com/valyala/fasthttp@v1.57.0/workerpool.go:225
+mediacheky-finaltest  | github.com/valyala/fasthttp.(*workerPool).getCh.func1
+mediacheky-finaltest  | 	github.com/valyala/fasthttp@v1.57.0/workerpool.go:197
+mediacheky-finaltest  | 2025-11-15T01:24:46.884Z	[34mINFO[0m	middleware/middleware.go:28	HTTP requestmethodGETpath/api/sonarr/queuestatus404duration_ms0ip172.18.0.1request_idaa201399-8a78-49ed-8c53-32e8abefe77f
+mediacheky-finaltest  | 2025-11-15T01:24:46.886Z	[34mINFO[0m	middleware/middleware.go:28	HTTP requestmethodGETpath/api/jellyseerr/statsstatus404duration_ms0ip172.18.0.1request_id4c39fe1f-63ba-471e-9d91-b86bd4d94441
+mediacheky-finaltest  | 2025-11-15T01:24:46.887Z	[34mINFO[0m	middleware/middleware.go:28	HTTP requestmethodGETpath/api/jellystat/dashboard/statsstatus404duration_ms0ip172.18.0.1request_id15afb41a-ef4a-45ea-ba9d-5ea1fb9d85e5
+mediacheky-finaltest  | 2025-11-15T01:24:46.932Z	[34mINFO[0m	middleware/middleware.go:28	HTTP requestmethodGETpath/favicon.icostatus204duration_ms0ip172.18.0.1request_id8492496a-4752-4f17-bb18-b926cc40dde4
+mediacheky-finaltest  | 2025-11-15T01:24:48.083Z	[34mINFO[0m	middleware/middleware.go:28	HTTP requestmethodGETpath/services/radarrstatus200duration_ms1ip172.18.0.1request_idc1651740-bd21-4a55-9a3c-3865fd6f0577
+mediacheky-finaltest  | 2025-11-15T01:24:48.644Z	[34mINFO[0m	middleware/middleware.go:28	HTTP requestmethodGETpath/api/config/globalstatus200duration_ms0ip172.18.0.1request_id28babb97-acc9-4d12-9870-66e58ac8e2fe
+mediacheky-finaltest  | 2025-11-15T01:24:48.645Z	[34mINFO[0m	handler/service.go:104	🔍 GetService: Checking container statusserviceradarrcontainer_nameradarrdb_statusstopped
+mediacheky-finaltest  | 2025-11-15T01:24:48.647Z	[34mINFO[0m	handler/service.go:122	✅ Container found (direct inspect)serviceradarrcontainerradarrstatusrunning
+mediacheky-finaltest  | 2025-11-15T01:24:48.647Z	[34mINFO[0m	handler/service.go:178	🔄 Status changedserviceradarrold_statusstoppednew_statusrunning
+mediacheky-finaltest  | 2025-11-15T01:24:48.647Z	[34mINFO[0m	middleware/middleware.go:28	HTTP requestmethodGETpath/api/services/radarrstatus200duration_ms2ip172.18.0.1request_idcf55d1b3-3dfc-4b4a-85fe-b55fd7f5f982
+mediacheky-finaltest  | 2025-11-15T01:24:48.676Z	[34mINFO[0m	handler/service.go:104	🔍 GetService: Checking container statusserviceradarrcontainer_nameradarrdb_statusrunning
+mediacheky-finaltest  | 2025-11-15T01:24:48.678Z	[34mINFO[0m	handler/service.go:122	✅ Container found (direct inspect)serviceradarrcontainerradarrstatusrunning
+mediacheky-finaltest  | 2025-11-15T01:24:48.678Z	[34mINFO[0m	handler/service.go:190	ℹ️ Status unchangedserviceradarrstatusrunning
+mediacheky-finaltest  | 2025-11-15T01:24:48.678Z	[34mINFO[0m	middleware/middleware.go:28	HTTP requestmethodGETpath/api/services/radarrstatus200duration_ms2ip172.18.0.1request_id4912c36e-45ea-45cb-85c7-3841f1cfddcc
+mediacheky-finaltest  | 2025-11-15T01:24:48.683Z	[34mINFO[0m	middleware/middleware.go:28	HTTP requestmethodGETpath/api/config/globalstatus200duration_ms34ip172.18.0.1request_id998ed990-a5ec-4d06-b248-97471a0662bd
+mediacheky-finaltest  | 2025-11-15T01:24:48.786Z	[34mINFO[0m	middleware/middleware.go:28	HTTP requestmethodGETpath/api/proxy/configstatus200duration_ms0ip172.18.0.1request_idf2d267c9-58e4-41aa-bf29-4fad78ba18ad
+mediacheky-finaltest  | 2025-11-15T01:24:48.786Z	[34mINFO[0m	middleware/middleware.go:28	HTTP requestmethodGETpath/api/services/radarr/config-existsstatus200duration_ms0ip172.18.0.1request_ide9e2e0fc-aed6-40e7-8881-8bc0b4087977
+mediacheky-finaltest  | 2025-11-15T01:24:48.786Z	[34mINFO[0m	middleware/middleware.go:28	HTTP requestmethodGETpath/api/services/radarr/endpointstatus200duration_ms0ip172.18.0.1request_id2eb4b895-0159-4249-95f2-030ca80802d6
+mediacheky-finaltest  | 2025-11-15T01:24:48.787Z	[34mINFO[0m	service/service_manager.go:819	Generated random credentials for Radarr	{"username": "admin93177", "password_length": "16"}
+mediacheky-finaltest  | 2025-11-15T01:24:48.794Z	[34mINFO[0m	service/service_manager.go:1145	Radarr user created in database	{"username": "admin93177"}
+mediacheky-finaltest  | 2025-11-15T01:24:48.794Z	[34mINFO[0m	service/service_manager.go:827	Generated credentials saved to database
+mediacheky-finaltest  | 2025-11-15T01:24:48.795Z	[34mINFO[0m	middleware/middleware.go:28	HTTP requestmethodGETpath/api/services/radarr/radarr-configstatus200duration_ms9ip172.18.0.1request_id853885f0-2861-456f-b79c-17d0c08d0a8a
+mediacheky-finaltest  | 2025-11-15T01:24:48.803Z	[34mINFO[0m	middleware/middleware.go:28	HTTP requestmethodGETpath/api/proxy/configstatus200duration_ms0ip172.18.0.1request_id5799b0d0-2680-42ba-ab35-44deaee20a65
+mediacheky-finaltest  | 2025-11-15T01:24:48.803Z	[34mINFO[0m	middleware/middleware.go:28	HTTP requestmethodGETpath/api/services/radarr/endpointstatus200duration_ms0ip172.18.0.1request_id9f90d554-2332-4165-9a4b-3f57061e0f55
+mediacheky-finaltest  | 2025-11-15T01:24:48.804Z	[34mINFO[0m	middleware/middleware.go:28	HTTP requestmethodGETpath/api/services/radarr/config-existsstatus200duration_ms0ip172.18.0.1request_idf3a9c073-763f-4981-92ad-41e6e8c88b36
+mediacheky-finaltest  | 2025-11-15T01:24:48.805Z	[34mINFO[0m	service/service_manager.go:813	Loaded existing credentials from Radarr database	{"username": "admin93177"}
+mediacheky-finaltest  | 2025-11-15T01:24:48.806Z	[34mINFO[0m	middleware/middleware.go:28	HTTP requestmethodGETpath/api/services/radarr/radarr-configstatus200duration_ms1ip172.18.0.1request_id9d393efa-6bed-46e4-9464-530f445d0632
+mediacheky-finaltest  | 2025-11-15T01:24:48.836Z	[34mINFO[0m	service/service_manager.go:813	Loaded existing credentials from Radarr database	{"username": "admin93177"}
+mediacheky-finaltest  | 2025-11-15T01:24:48.899Z	[34mINFO[0m	middleware/middleware.go:28	HTTP requestmethodGETpath/api/services/radarr/readystatus200duration_ms64ip172.18.0.1request_id4ca4b1e0-8310-441f-a329-6a901407ce2f
+mediacheky-finaltest  | 2025-11-15T01:24:50.602Z	[34mINFO[0m	handler/service.go:715	Resetting service configurationnameradarr
+mediacheky-finaltest  | 2025-11-15T01:24:50.602Z	[34mINFO[0m	service/service_manager.go:390	Resetting service (deleting config and recreating container)	{"service": "radarr"}
+mediacheky-finaltest  | 2025-11-15T01:24:50.603Z	[34mINFO[0m	service/template_engine.go:275	Using media library path	{"path": "/home/user/projects/mediacheky/quickstart-finaltest/volumes/library"}
+mediacheky-finaltest  | 2025-11-15T01:24:50.603Z	[34mINFO[0m	service/service_manager.go:409	Stopping service and removing volumes (docker compose down -v)	{"service": "radarr"}
+mediacheky-finaltest  | 2025-11-15T01:24:50.603Z	[34mINFO[0m	service/docker_compose.go:318	Executing docker compose down -v (removing volumes)	{"path": "/app/data/services/radarr/docker compose.yml", "directory": "/app/data/services/radarr"}
+mediacheky-finaltest  | 2025-11-15T01:24:51.880Z	[34mINFO[0m	service/service_manager.go:813	Loaded existing credentials from Radarr database	{"username": "admin93177"}
+mediacheky-finaltest  | 2025-11-15T01:24:51.902Z	[34mINFO[0m	middleware/middleware.go:28	HTTP requestmethodGETpath/api/services/radarr/readystatus200duration_ms25ip172.18.0.1request_id7c596a04-0e1e-4574-bd6b-ec7f0160bd5b
+mediacheky-finaltest  | 2025-11-15T01:24:54.237Z	[34mINFO[0m	service/docker_compose.go:355	Docker compose down -v executed successfully	{"path": "/app/data/services/radarr/docker compose.yml", "output": ""}
+mediacheky-finaltest  | 2025-11-15T01:24:54.238Z	[34mINFO[0m	service/service_manager.go:428	Deleting service directory	{"service": "radarr", "path": "/app/data/services/radarr"}
+mediacheky-finaltest  | 2025-11-15T01:24:54.238Z	[34mINFO[0m	service/template_engine.go:763	Removing directory	{"path": "/app/data/services/radarr"}
+mediacheky-finaltest  | 2025-11-15T01:24:54.238Z	[34mINFO[0m	service/template_engine.go:768	Directory removed successfully	{"path": "/app/data/services/radarr"}
+mediacheky-finaltest  | 2025-11-15T01:24:54.238Z	[34mINFO[0m	service/service_manager.go:428	Deleting service directory	{"service": "radarr", "path": "/app/data/services-volumes/radarr"}
+mediacheky-finaltest  | 2025-11-15T01:24:54.238Z	[34mINFO[0m	service/template_engine.go:763	Removing directory	{"path": "/app/data/services-volumes/radarr"}
+mediacheky-finaltest  | 2025-11-15T01:24:54.240Z	[34mINFO[0m	service/template_engine.go:768	Directory removed successfully	{"path": "/app/data/services-volumes/radarr"}
+mediacheky-finaltest  | 2025-11-15T01:24:54.240Z	[34mINFO[0m	service/service_manager.go:439	Service directories deleted	{"service": "radarr"}
+mediacheky-finaltest  | 2025-11-15T01:24:54.252Z	[34mINFO[0m	service/service_manager.go:448	Service disabled after prune	{"service": "radarr"}
+mediacheky-finaltest  | 2025-11-15T01:24:54.281Z	[34mINFO[0m	service/service_manager.go:457	Service prune completed successfully	{"service": "radarr"}
+mediacheky-finaltest  | 2025-11-15T01:24:54.281Z	[34mINFO[0m	handler/service.go:726	Service prune completednameradarr
+mediacheky-finaltest  | 2025-11-15T01:24:54.281Z	[34mINFO[0m	middleware/middleware.go:28	HTTP requestmethodPOSTpath/api/services/radarr/resetstatus200duration_ms3679ip172.18.0.1request_id69fa9b84-975e-4b24-8c95-d9390e887f09
+mediacheky-finaltest  | 2025-11-15T01:24:56.348Z	[34mINFO[0m	middleware/middleware.go:28	HTTP requestmethodGETpath/api/services/radarr/config-existsstatus200duration_ms0ip172.18.0.1request_id4f27a1f1-4f65-4527-a25d-5852e3d94ff4
+mediacheky-finaltest  | 2025-11-15T01:24:56.348Z	[34mINFO[0m	handler/service.go:195	⏸️ Service not enabled, skipping status checkserviceradarr
+mediacheky-finaltest  | 2025-11-15T01:24:56.348Z	[34mINFO[0m	middleware/middleware.go:28	HTTP requestmethodGETpath/api/services/radarrstatus200duration_ms0ip172.18.0.1request_idf91241a4-a6c7-4796-8cd4-176abe2c5d27
+mediacheky-finaltest  | 2025-11-15T01:24:56.348Z	[34mINFO[0m	service/service_manager.go:769	Radarr config.xml not found, returning defaults	{"path": "/app/data/services-volumes/radarr/config.xml"}
+mediacheky-finaltest  | 2025-11-15T01:24:56.348Z	[34mINFO[0m	middleware/middleware.go:28	HTTP requestmethodGETpath/api/proxy/configstatus200duration_ms0ip172.18.0.1request_idcaa480ae-15d4-44a9-a214-463ef18ea42c
+mediacheky-finaltest  | 2025-11-15T01:24:56.348Z	[34mINFO[0m	service/service_manager.go:819	Generated random credentials for Radarr	{"username": "admind1b8c", "password_length": "16"}
+mediacheky-finaltest  | 2025-11-15T01:24:56.350Z	[34mINFO[0m	middleware/middleware.go:28	HTTP requestmethodGETpath/api/services/radarr/endpointstatus200duration_ms0ip172.18.0.1request_idf85d72d7-0d30-4b59-a6db-50182d6ef0db
+mediacheky-finaltest  | 2025-11-15T01:24:56.354Z	[33mWARN[0m	service/service_manager.go:825	Failed to save generated credentials	{"error": "failed to query users: unable to open database file: no such file or directory"}
+mediacheky-finaltest  | 2025-11-15T01:24:56.354Z	[34mINFO[0m	middleware/middleware.go:28	HTTP requestmethodGETpath/api/services/radarr/radarr-configstatus200duration_ms5ip172.18.0.1request_ide6fb10e2-25b8-4740-9add-9f132035dd80
+mediacheky-finaltest  | 2025-11-15T01:24:56.447Z	[34mINFO[0m	handler/service.go:511	HostPort not provided or is 0, will be removed from confignameradarr
+mediacheky-finaltest  | 2025-11-15T01:24:56.447Z	[34mINFO[0m	handler/service.go:515	Received config updatenameradarrconfigmap[ContainerName:radarr HostPort:<nil> Image:linuxserver/radarr:latest Paths:map[Config:/home/user/projects/mediacheky/quickstart-finaltest/volumes/mediacheky-data/services-volumes/radarr Media:/home/user/projects/mediacheky/quickstart-finaltest/volumes/library] RestartPolicy:unless-stopped]pathsmap[Config:/home/user/projects/mediacheky/quickstart-finaltest/volumes/mediacheky-data/services-volumes/radarr Media:/home/user/projects/mediacheky/quickstart-finaltest/volumes/library]
+mediacheky-finaltest  | 2025-11-15T01:24:56.447Z	[34mINFO[0m	handler/service.go:537	Using user-provided config pathnameradarrconfig_path/home/user/projects/mediacheky/quickstart-finaltest/volumes/mediacheky-data/services-volumes/radarr
+mediacheky-finaltest  | 2025-11-15T01:24:56.447Z	[34mINFO[0m	service/service_manager.go:515	Updating service configuration	{"service": "radarr"}
+mediacheky-finaltest  | 2025-11-15T01:24:56.447Z	[34mINFO[0m	service/service_manager.go:538	Removing HostPort from configuration (switching to static compose)	{"service": "radarr"}
+mediacheky-finaltest  | 2025-11-15T01:24:56.447Z	[34mINFO[0m	service/service_manager.go:546	Saving configuration to database	{"service": "radarr", "config": {"ContainerName":"radarr","Image":"linuxserver/radarr:latest","Paths":{"Config":"/home/user/projects/mediacheky/quickstart-finaltest/volumes/mediacheky-data/services-volumes/radarr","Media":"/home/user/projects/mediacheky/quickstart-finaltest/volumes/library"},"RestartPolicy":"unless-stopped"}, "config_paths": {"Config":"/home/user/projects/mediacheky/quickstart-finaltest/volumes/mediacheky-data/services-volumes/radarr","Media":"/home/user/projects/mediacheky/quickstart-finaltest/volumes/library"}}
+mediacheky-finaltest  | 2025-11-15T01:24:56.478Z	[34mINFO[0m	service/service_manager.go:618	Service configuration updated	{"service": "radarr"}
+mediacheky-finaltest  | 2025-11-15T01:24:56.479Z	[34mINFO[0m	handler/service.go:562	Service config updatednameradarr
+mediacheky-finaltest  | 2025-11-15T01:24:56.479Z	[34mINFO[0m	middleware/middleware.go:28	HTTP requestmethodPUTpath/api/services/radarr/configstatus200duration_ms32ip172.18.0.1request_id24f8213e-1f48-4c1a-82b6-9f0294fb6066
+mediacheky-finaltest  | 2025-11-15T01:24:56.559Z	[34mINFO[0m	service/service_manager.go:110	Enabling service	{"service": "radarr"}
+mediacheky-finaltest  | 2025-11-15T01:24:56.560Z	[34mINFO[0m	service/template_engine.go:114	Generating dynamic compose for service	{"service": "radarr"}
+mediacheky-finaltest  | 
+mediacheky-finaltest  | 2025/11/15 01:24:56 [31;1mgithub.com/carcheky/mediacheky/internal/repository/template_repo.go:28 [35;1mrecord not found
+mediacheky-finaltest  | [0m[33m[0.055ms] [34;1m[rows:0][0m SELECT * FROM `templates` WHERE name = "radarr" AND `templates`.`deleted_at` IS NULL ORDER BY `templates`.`id` LIMIT 1
+mediacheky-finaltest  | 2025-11-15T01:24:56.560Z	[34mINFO[0m	service/template_engine.go:342	Building template data	{"config": {"ContainerName":"radarr","Image":"linuxserver/radarr:latest","Paths":{"Config":"/home/user/projects/mediacheky/quickstart-finaltest/volumes/mediacheky-data/services-volumes/radarr","Media":"/home/user/projects/mediacheky/quickstart-finaltest/volumes/library"},"RestartPolicy":"unless-stopped"}, "config_paths": {"Config":"/home/user/projects/mediacheky/quickstart-finaltest/volumes/mediacheky-data/services-volumes/radarr","Media":"/home/user/projects/mediacheky/quickstart-finaltest/volumes/library"}}
+mediacheky-finaltest  | 2025-11-15T01:24:56.560Z	[34mINFO[0m	service/template_engine.go:388	Extracted and converted paths to absolute	{"paths_interface": {"Config":"/home/user/projects/mediacheky/quickstart-finaltest/volumes/mediacheky-data/services-volumes/radarr","Media":"/home/user/projects/mediacheky/quickstart-finaltest/volumes/library"}, "paths_absolute": {"Config":"/home/user/projects/mediacheky/quickstart-finaltest/volumes/mediacheky-data/services-volumes/radarr","Media":"/home/user/projects/mediacheky/quickstart-finaltest/volumes/library"}}
+mediacheky-finaltest  | 2025-11-15T01:24:56.561Z	[34mINFO[0m	service/docker_client.go:50	Docker client initialized successfully
+mediacheky-finaltest  | 2025-11-15T01:24:56.564Z	[34mINFO[0m	service/docker_client.go:480	Detected MediaCheky network	{"network": "quickstart-finaltest_mediacheky-net", "container_id": "70b1adc14793"}
+mediacheky-finaltest  | 2025-11-15T01:24:56.564Z	[34mINFO[0m	service/template_engine.go:413	Service will be created on MediaCheky network	{"network": "quickstart-finaltest_mediacheky-net", "service": "radarr"}
+mediacheky-finaltest  | 2025-11-15T01:24:56.564Z	[34mINFO[0m	service/template_engine.go:174	Executing template	{"service": "radarr", "template_data": {"Image":"linuxserver/radarr:latest","ContainerName":"radarr","Port":0,"HostPort":0,"Paths":{"Config":"/home/user/projects/mediacheky/quickstart-finaltest/volumes/mediacheky-data/services-volumes/radarr","Media":"/home/user/projects/mediacheky/quickstart-finaltest/volumes/library"},"Umask":"","Network":"quickstart-finaltest_mediacheky-net","RestartPolicy":"unless-stopped","Global":{"PUID":"1000","PGID":"1000","Timezone":"UTC","MediaPath":"/home/user/projects/mediacheky/quickstart-finaltest/volumes/library"},"Custom":{}}, "paths": {"Config":"/home/user/projects/mediacheky/quickstart-finaltest/volumes/mediacheky-data/services-volumes/radarr","Media":"/home/user/projects/mediacheky/quickstart-finaltest/volumes/library"}}
+mediacheky-finaltest  | 2025-11-15T01:24:56.564Z	[34mINFO[0m	service/template_engine.go:187	Generated compose content	{"service": "radarr", "content": "services:\n  radarr:\n    image: linuxserver/radarr:latest\n    container_name: radarr\n    environment:\n      - PUID=1000\n      - PGID=1000\n      - TZ=UTC\n    volumes:\n      - /home/user/projects/mediacheky/quickstart-finaltest/volumes/mediacheky-data/services-volumes/radarr:/config\n      - /home/user/projects/mediacheky/quickstart-finaltest/volumes/library:/MEDIACHEKY_LIBRARY\n    extra_hosts:\n      - \"radarr.docker.internal:127.0.0.1\"\n      - \"sonarr.docker.internal:127.0.0.1\"\n      - \"bazarr.docker.internal:127.0.0.1\"\n      - \"prowlarr.docker.internal:127.0.0.1\"\n      - \"lidarr.docker.internal:127.0.0.1\"\n      - \"overseerr.docker.internal:127.0.0.1\"\n      - \"jellyfin.docker.internal:127.0.0.1\"\n      - \"jellyseerr.docker.internal:127.0.0.1\"\n    networks:\n      - quickstart-finaltest_mediacheky-net\n    restart: unless-stopped\n\nnetworks:\n  quickstart-finaltest_mediacheky-net:\n    external: true\n"}
+mediacheky-finaltest  | 2025-11-15T01:24:56.565Z	[34mINFO[0m	service/template_engine.go:202	Successfully generated docker compose	{"service": "radarr", "path": "/app/data/services/radarr/docker compose.yml"}
+mediacheky-finaltest  | 2025-11-15T01:24:56.590Z	[34mINFO[0m	service/service_manager.go:163	Service enabled successfully	{"service": "radarr"}
+mediacheky-finaltest  | 2025-11-15T01:24:56.590Z	[34mINFO[0m	service/service_manager.go:166	Starting service automatically after enable	{"service": "radarr"}
+mediacheky-finaltest  | 2025-11-15T01:24:56.590Z	[34mINFO[0m	service/service_manager.go:219	Starting service	{"service": "radarr"}
+mediacheky-finaltest  | 2025-11-15T01:24:56.591Z	[34mINFO[0m	service/template_engine.go:275	Using media library path	{"path": "/home/user/projects/mediacheky/quickstart-finaltest/volumes/library"}
+mediacheky-finaltest  | 2025-11-15T01:24:56.591Z	[34mINFO[0m	service/template_engine.go:275	Using media library path	{"path": "/home/user/projects/mediacheky/quickstart-finaltest/volumes/library"}
+mediacheky-finaltest  | 2025-11-15T01:24:56.593Z	[34mINFO[0m	service/service_manager.go:1047	Radarr config.xml initialized with default values	{"path": "/app/data/services-volumes/radarr/config.xml"}
+mediacheky-finaltest  | 2025-11-15T01:24:56.593Z	[34mINFO[0m	service/docker_compose.go:52	Executing docker compose up	{"path": "/app/data/services/radarr/docker compose.yml", "directory": "/app/data/services/radarr"}
+mediacheky-finaltest  | 2025-11-15T01:24:57.061Z	[34mINFO[0m	service/docker_compose.go:90	Docker compose up executed successfully	{"path": "/app/data/services/radarr/docker compose.yml", "output": ""}
+mediacheky-finaltest  | 2025-11-15T01:24:58.700Z	[34mINFO[0m	handler/service.go:104	🔍 GetService: Checking container statusserviceradarrcontainer_nameradarrdb_statusstopped
+mediacheky-finaltest  | 2025-11-15T01:24:58.701Z	[34mINFO[0m	handler/service.go:122	✅ Container found (direct inspect)serviceradarrcontainerradarrstatusrunning
+mediacheky-finaltest  | 2025-11-15T01:24:58.701Z	[34mINFO[0m	handler/service.go:178	🔄 Status changedserviceradarrold_statusstoppednew_statusrunning
+mediacheky-finaltest  | 2025-11-15T01:24:58.702Z	[34mINFO[0m	middleware/middleware.go:28	HTTP requestmethodGETpath/api/services/radarrstatus200duration_ms1ip172.18.0.1request_id303f5f4c-ed62-4c27-a30d-89ea39a95cd9
+mediacheky-finaltest  | 2025-11-15T01:24:58.744Z	[34mINFO[0m	handler/service.go:104	🔍 GetService: Checking container statusserviceradarrcontainer_nameradarrdb_statusrunning
+mediacheky-finaltest  | 2025-11-15T01:24:58.745Z	[34mINFO[0m	handler/service.go:122	✅ Container found (direct inspect)serviceradarrcontainerradarrstatusrunning
+mediacheky-finaltest  | 2025-11-15T01:24:58.745Z	[34mINFO[0m	handler/service.go:190	ℹ️ Status unchangedserviceradarrstatusrunning
+mediacheky-finaltest  | 2025-11-15T01:24:58.745Z	[34mINFO[0m	middleware/middleware.go:28	HTTP requestmethodGETpath/api/services/radarrstatus200duration_ms1ip172.18.0.1request_id38cfb595-ee6d-4376-87d3-8d342f4b87d5
+mediacheky-finaltest  | 2025-11-15T01:25:00.907Z	[34mINFO[0m	service/service_manager.go:819	Generated random credentials for Radarr	{"username": "admin75a6e", "password_length": "16"}
+mediacheky-finaltest  | 2025-11-15T01:25:00.915Z	[33mWARN[0m	service/service_manager.go:825	Failed to save generated credentials	{"error": "failed to insert user: table Users has no column named Salt"}
+mediacheky-finaltest  | 2025-11-15T01:25:00.944Z	[34mINFO[0m	middleware/middleware.go:28	HTTP requestmethodGETpath/api/services/radarr/readystatus200duration_ms38ip172.18.0.1request_idf6cc5767-b2bf-4362-82b6-e2c26376783b
+mediacheky-finaltest  | 2025-11-15T01:25:01.915Z	[34mINFO[0m	middleware/proxy.go:175	Proxying requesthostradarr.docker.internalserviceradarrtargethttp://radarr:7878path/
+mediacheky-finaltest  | 2025-11-15T01:25:01.917Z	[31mERROR[0m	middleware/proxy.go:206	Proxy request failedtargethttp://radarr:7878/serviceradarrcontainerHostradarrport7878errorerror when dialing 172.18.0.3:7878: dial tcp4 172.18.0.3:7878: connect: connection refused
+mediacheky-finaltest  | main.main.ReverseProxy.func8
+mediacheky-finaltest  | 	github.com/carcheky/mediacheky/internal/middleware/proxy.go:206
+mediacheky-finaltest  | github.com/gofiber/fiber/v2.(*Ctx).Next
+mediacheky-finaltest  | 	github.com/gofiber/fiber/v2@v2.52.9/ctx.go:1027
+mediacheky-finaltest  | main.main.CORS.func7
+mediacheky-finaltest  | 	github.com/carcheky/mediacheky/internal/middleware/middleware.go:154
+mediacheky-finaltest  | github.com/gofiber/fiber/v2.(*Ctx).Next
+mediacheky-finaltest  | 	github.com/gofiber/fiber/v2@v2.52.9/ctx.go:1027
+mediacheky-finaltest  | main.main.RequestID.func6
+mediacheky-finaltest  | 	github.com/carcheky/mediacheky/internal/middleware/middleware.go:56
+mediacheky-finaltest  | github.com/gofiber/fiber/v2.(*Ctx).Next
+mediacheky-finaltest  | 	github.com/gofiber/fiber/v2@v2.52.9/ctx.go:1027
+mediacheky-finaltest  | main.main.Logger.func5
+mediacheky-finaltest  | 	github.com/carcheky/mediacheky/internal/middleware/middleware.go:25
+mediacheky-finaltest  | github.com/gofiber/fiber/v2.(*Ctx).Next
+mediacheky-finaltest  | 	github.com/gofiber/fiber/v2@v2.52.9/ctx.go:1027
+mediacheky-finaltest  | main.main.New.func4
+mediacheky-finaltest  | 	github.com/gofiber/fiber/v2@v2.52.9/middleware/recover/recover.go:43
+mediacheky-finaltest  | github.com/gofiber/fiber/v2.(*App).next
+mediacheky-finaltest  | 	github.com/gofiber/fiber/v2@v2.52.9/router.go:143
+mediacheky-finaltest  | github.com/gofiber/fiber/v2.(*App).handler
+mediacheky-finaltest  | 	github.com/gofiber/fiber/v2@v2.52.9/router.go:170
+mediacheky-finaltest  | github.com/valyala/fasthttp.(*Server).serveConn
+mediacheky-finaltest  | 	github.com/valyala/fasthttp@v1.57.0/server.go:2385
+mediacheky-finaltest  | github.com/valyala/fasthttp.(*workerPool).workerFunc
+mediacheky-finaltest  | 	github.com/valyala/fasthttp@v1.57.0/workerpool.go:225
+mediacheky-finaltest  | github.com/valyala/fasthttp.(*workerPool).getCh.func1
+mediacheky-finaltest  | 	github.com/valyala/fasthttp@v1.57.0/workerpool.go:197
+mediacheky-finaltest  | 2025-11-15T01:25:01.917Z	[34mINFO[0m	middleware/middleware.go:28	HTTP requestmethodGETpath/status502duration_ms2ip172.18.0.1request_idee165da0-99f1-4850-99cb-23192e543769
+mediacheky-finaltest  | 2025-11-15T01:25:03.406Z	[34mINFO[0m	middleware/proxy.go:175	Proxying requesthostradarr.docker.internalserviceradarrtargethttp://radarr:7878path/
+mediacheky-finaltest  | 2025-11-15T01:25:03.407Z	[31mERROR[0m	middleware/proxy.go:206	Proxy request failedtargethttp://radarr:7878/serviceradarrcontainerHostradarrport7878errorerror when dialing 172.18.0.3:7878: dial tcp4 172.18.0.3:7878: connect: connection refused
+mediacheky-finaltest  | main.main.ReverseProxy.func8
+mediacheky-finaltest  | 	github.com/carcheky/mediacheky/internal/middleware/proxy.go:206
+mediacheky-finaltest  | github.com/gofiber/fiber/v2.(*Ctx).Next
+mediacheky-finaltest  | 	github.com/gofiber/fiber/v2@v2.52.9/ctx.go:1027
+mediacheky-finaltest  | main.main.CORS.func7
+mediacheky-finaltest  | 	github.com/carcheky/mediacheky/internal/middleware/middleware.go:154
+mediacheky-finaltest  | github.com/gofiber/fiber/v2.(*Ctx).Next
+mediacheky-finaltest  | 	github.com/gofiber/fiber/v2@v2.52.9/ctx.go:1027
+mediacheky-finaltest  | main.main.RequestID.func6
+mediacheky-finaltest  | 	github.com/carcheky/mediacheky/internal/middleware/middleware.go:56
+mediacheky-finaltest  | github.com/gofiber/fiber/v2.(*Ctx).Next
+mediacheky-finaltest  | 	github.com/gofiber/fiber/v2@v2.52.9/ctx.go:1027
+mediacheky-finaltest  | main.main.Logger.func5
+mediacheky-finaltest  | 	github.com/carcheky/mediacheky/internal/middleware/middleware.go:25
+mediacheky-finaltest  | github.com/gofiber/fiber/v2.(*Ctx).Next
+mediacheky-finaltest  | 	github.com/gofiber/fiber/v2@v2.52.9/ctx.go:1027
+mediacheky-finaltest  | main.main.New.func4
+mediacheky-finaltest  | 	github.com/gofiber/fiber/v2@v2.52.9/middleware/recover/recover.go:43
+mediacheky-finaltest  | github.com/gofiber/fiber/v2.(*App).next
+mediacheky-finaltest  | 	github.com/gofiber/fiber/v2@v2.52.9/router.go:143
+mediacheky-finaltest  | github.com/gofiber/fiber/v2.(*App).handler
+mediacheky-finaltest  | 	github.com/gofiber/fiber/v2@v2.52.9/router.go:170
+mediacheky-finaltest  | github.com/valyala/fasthttp.(*Server).serveConn
+mediacheky-finaltest  | 	github.com/valyala/fasthttp@v1.57.0/server.go:2385
+mediacheky-finaltest  | github.com/valyala/fasthttp.(*workerPool).workerFunc
+mediacheky-finaltest  | 	github.com/valyala/fasthttp@v1.57.0/workerpool.go:225
+mediacheky-finaltest  | github.com/valyala/fasthttp.(*workerPool).getCh.func1
+mediacheky-finaltest  | 	github.com/valyala/fasthttp@v1.57.0/workerpool.go:197
+mediacheky-finaltest  | 2025-11-15T01:25:03.407Z	[34mINFO[0m	middleware/middleware.go:28	HTTP requestmethodGETpath/status502duration_ms1ip172.18.0.1request_id646f3c01-e617-4ba6-99c1-09baf1d5bc8a
+mediacheky-finaltest  | 2025-11-15T01:25:03.847Z	[34mINFO[0m	handler/service.go:104	🔍 GetService: Checking container statusserviceradarrcontainer_nameradarrdb_statusrunning
+mediacheky-finaltest  | 2025-11-15T01:25:03.847Z	[34mINFO[0m	handler/service.go:104	🔍 GetService: Checking container statusserviceradarrcontainer_nameradarrdb_statusrunning
+mediacheky-finaltest  | 2025-11-15T01:25:03.849Z	[34mINFO[0m	handler/service.go:122	✅ Container found (direct inspect)serviceradarrcontainerradarrstatusrunning
+mediacheky-finaltest  | 2025-11-15T01:25:03.849Z	[34mINFO[0m	handler/service.go:190	ℹ️ Status unchangedserviceradarrstatusrunning
+mediacheky-finaltest  | 2025-11-15T01:25:03.849Z	[34mINFO[0m	middleware/middleware.go:28	HTTP requestmethodGETpath/api/services/radarrstatus200duration_ms2ip172.18.0.1request_idf780fa62-d068-4a5f-88d2-23e9e77ce46c
+mediacheky-finaltest  | 2025-11-15T01:25:03.849Z	[34mINFO[0m	handler/service.go:122	✅ Container found (direct inspect)serviceradarrcontainerradarrstatusrunning
+mediacheky-finaltest  | 2025-11-15T01:25:03.849Z	[34mINFO[0m	handler/service.go:190	ℹ️ Status unchangedserviceradarrstatusrunning
+mediacheky-finaltest  | 2025-11-15T01:25:03.849Z	[34mINFO[0m	middleware/middleware.go:28	HTTP requestmethodGETpath/api/services/radarrstatus200duration_ms2ip172.18.0.1request_id52d3d48e-adc3-471c-81b6-66207580d213
+mediacheky-finaltest  | 2025-11-15T01:25:04.809Z	[34mINFO[0m	service/service_manager.go:819	Generated random credentials for Radarr	{"username": "adminf171a", "password_length": "16"}
+mediacheky-finaltest  | 2025-11-15T01:25:04.815Z	[34mINFO[0m	service/service_manager.go:1145	Radarr user created in database	{"username": "adminf171a"}
+mediacheky-finaltest  | 2025-11-15T01:25:04.815Z	[34mINFO[0m	service/service_manager.go:827	Generated credentials saved to database
+mediacheky-finaltest  | 2025-11-15T01:25:04.870Z	[34mINFO[0m	middleware/middleware.go:28	HTTP requestmethodGETpath/api/services/radarr/readystatus200duration_ms61ip172.18.0.1request_idf0fc69f6-e92e-44b1-abe4-ea2a62d499f6
+mediacheky-finaltest  | 2025-11-15T01:25:05.456Z	[34mINFO[0m	middleware/proxy.go:175	Proxying requesthostradarr.docker.internalserviceradarrtargethttp://radarr:7878path/
+mediacheky-finaltest  | 2025-11-15T01:25:05.540Z	[34mINFO[0m	middleware/middleware.go:28	HTTP requestmethodGETpath/status200duration_ms84ip172.18.0.1request_idc89cb6ec-578d-4fba-b55d-44d466ef3a12
+mediacheky-finaltest  | 2025-11-15T01:25:05.618Z	[34mINFO[0m	middleware/proxy.go:175	Proxying requesthostradarr.docker.internalserviceradarrtargethttp://radarr:7878path/Content/Fonts/fonts.css
+mediacheky-finaltest  | 2025-11-15T01:25:05.624Z	[34mINFO[0m	middleware/proxy.go:175	Proxying requesthostradarr.docker.internalserviceradarrtargethttp://radarr:7878path/index-1a833a30e26c7cace07a.js
+mediacheky-finaltest  | 2025-11-15T01:25:05.626Z	[34mINFO[0m	middleware/proxy.go:175	Proxying requesthostradarr.docker.internalserviceradarrtargethttp://radarr:7878path/Content/styles.css
+mediacheky-finaltest  | 2025-11-15T01:25:05.640Z	[34mINFO[0m	middleware/middleware.go:28	HTTP requestmethodGETpath/index-1a833a30e26c7cace07a.jsstatus200duration_ms16ip172.18.0.1request_id998bf246-8247-407f-88ca-9e9af6575edb
+mediacheky-finaltest  | 2025-11-15T01:25:05.647Z	[34mINFO[0m	middleware/middleware.go:28	HTTP requestmethodGETpath/Content/Fonts/fonts.cssstatus200duration_ms30ip172.18.0.1request_id253078f4-5043-43bb-8d62-b39c641215e6
+mediacheky-finaltest  | 2025-11-15T01:25:05.647Z	[34mINFO[0m	middleware/middleware.go:28	HTTP requestmethodGETpath/Content/styles.cssstatus200duration_ms21ip172.18.0.1request_id46c106b2-dc65-4713-ad86-0aadbfe163a6
+mediacheky-finaltest  | 2025-11-15T01:25:05.696Z	[34mINFO[0m	middleware/proxy.go:175	Proxying requesthostradarr.docker.internalserviceradarrtargethttp://radarr:7878path/initialize.json
+mediacheky-finaltest  | 2025-11-15T01:25:05.696Z	[34mINFO[0m	middleware/proxy.go:175	Proxying requesthostradarr.docker.internalserviceradarrtargethttp://radarr:7878path/Content/Fonts/Roboto-Regular.woff2
+mediacheky-finaltest  | 2025-11-15T01:25:05.700Z	[34mINFO[0m	middleware/middleware.go:28	HTTP requestmethodGETpath/Content/Fonts/Roboto-Regular.woff2status200duration_ms5ip172.18.0.1request_ide6b23587-c54e-4ecb-8424-bed39460f2ac
+mediacheky-finaltest  | 2025-11-15T01:25:05.704Z	[34mINFO[0m	middleware/middleware.go:28	HTTP requestmethodGETpath/initialize.jsonstatus200duration_ms8ip172.18.0.1request_id6337f616-4efb-4d88-91b7-e19ad70b8c68
+mediacheky-finaltest  | 2025-11-15T01:25:05.755Z	[34mINFO[0m	middleware/proxy.go:175	Proxying requesthostradarr.docker.internalserviceradarrtargethttp://radarr:7878path/640-f9f81c4832fff26ecd9c.js
+mediacheky-finaltest  | 2025-11-15T01:25:05.756Z	[34mINFO[0m	middleware/proxy.go:175	Proxying requesthostradarr.docker.internalserviceradarrtargethttp://radarr:7878path/74-975b993aad2b9f19310e.js
+mediacheky-finaltest  | 2025-11-15T01:25:05.756Z	[34mINFO[0m	middleware/proxy.go:175	Proxying requesthostradarr.docker.internalserviceradarrtargethttp://radarr:7878path/Content/74-ed24f12629d83785411e.css
+mediacheky-finaltest  | 2025-11-15T01:25:05.762Z	[34mINFO[0m	middleware/middleware.go:28	HTTP requestmethodGETpath/Content/74-ed24f12629d83785411e.cssstatus200duration_ms6ip172.18.0.1request_idb132c03b-94b9-400d-a7d4-2cb7af49695a
+mediacheky-finaltest  | 2025-11-15T01:25:05.774Z	[34mINFO[0m	middleware/middleware.go:28	HTTP requestmethodGETpath/74-975b993aad2b9f19310e.jsstatus200duration_ms18ip172.18.0.1request_id14c40f93-d9ca-4811-b7dd-25acb0869cd6
+mediacheky-finaltest  | 2025-11-15T01:25:05.785Z	[34mINFO[0m	middleware/middleware.go:28	HTTP requestmethodGETpath/640-f9f81c4832fff26ecd9c.jsstatus200duration_ms30ip172.18.0.1request_id907293ce-a289-4813-bf8b-8b6bfff5ab4b
+mediacheky-finaltest  | 2025-11-15T01:25:05.798Z	[34mINFO[0m	middleware/proxy.go:175	Proxying requesthostradarr.docker.internalserviceradarrtargethttp://radarr:7878path/Content/Images/Icons/favicon-32x32.png
+mediacheky-finaltest  | 2025-11-15T01:25:05.799Z	[34mINFO[0m	middleware/proxy.go:175	Proxying requesthostradarr.docker.internalserviceradarrtargethttp://radarr:7878path/Content/Images/Icons/apple-touch-icon.png
+mediacheky-finaltest  | 2025-11-15T01:25:05.801Z	[34mINFO[0m	middleware/middleware.go:28	HTTP requestmethodGETpath/Content/Images/Icons/favicon-32x32.pngstatus200duration_ms4ip172.18.0.1request_id4d8477ad-a7ae-4fa5-b59a-fcb70268ffb2
+mediacheky-finaltest  | 2025-11-15T01:25:05.802Z	[34mINFO[0m	middleware/middleware.go:28	HTTP requestmethodGETpath/Content/Images/Icons/apple-touch-icon.pngstatus200duration_ms3ip172.18.0.1request_id04697f67-7403-40af-8e87-230d3b9b08d8
+mediacheky-finaltest  | 2025-11-15T01:25:05.926Z	[34mINFO[0m	middleware/proxy.go:175	Proxying requesthostradarr.docker.internalserviceradarrtargethttp://radarr:7878path/api/v3/localization/language
+mediacheky-finaltest  | 2025-11-15T01:25:05.937Z	[34mINFO[0m	middleware/middleware.go:28	HTTP requestmethodGETpath/api/v3/localization/languagestatus200duration_ms11ip172.18.0.1request_id307f7ab1-76f7-4cef-a4b5-d7b63f54863d
+mediacheky-finaltest  | 2025-11-15T01:25:05.965Z	[34mINFO[0m	middleware/proxy.go:175	Proxying requesthostradarr.docker.internalserviceradarrtargethttp://radarr:7878path/api/v3/movie
+mediacheky-finaltest  | 2025-11-15T01:25:05.971Z	[34mINFO[0m	middleware/proxy.go:175	Proxying requesthostradarr.docker.internalserviceradarrtargethttp://radarr:7878path/api/v3/collection
+mediacheky-finaltest  | 2025-11-15T01:25:05.982Z	[34mINFO[0m	middleware/proxy.go:175	Proxying requesthostradarr.docker.internalserviceradarrtargethttp://radarr:7878path/api/v3/customFilter
+mediacheky-finaltest  | 2025-11-15T01:25:06.006Z	[34mINFO[0m	middleware/middleware.go:28	HTTP requestmethodGETpath/api/v3/customFilterstatus200duration_ms24ip172.18.0.1request_idf6efd3bc-0b91-4b5e-839e-d93d472e6cb9
+mediacheky-finaltest  | 2025-11-15T01:25:06.010Z	[34mINFO[0m	middleware/proxy.go:175	Proxying requesthostradarr.docker.internalserviceradarrtargethttp://radarr:7878path/api/v3/tag
+mediacheky-finaltest  | 2025-11-15T01:25:06.011Z	[34mINFO[0m	middleware/proxy.go:175	Proxying requesthostradarr.docker.internalserviceradarrtargethttp://radarr:7878path/api/v3/language
+mediacheky-finaltest  | 2025-11-15T01:25:06.011Z	[34mINFO[0m	middleware/proxy.go:175	Proxying requesthostradarr.docker.internalserviceradarrtargethttp://radarr:7878path/api/v3/qualityprofile
+mediacheky-finaltest  | 2025-11-15T01:25:06.012Z	[34mINFO[0m	middleware/proxy.go:175	Proxying requesthostradarr.docker.internalserviceradarrtargethttp://radarr:7878path/api/v3/importlist
+mediacheky-finaltest  | 2025-11-15T01:25:06.022Z	[34mINFO[0m	middleware/middleware.go:28	HTTP requestmethodGETpath/api/v3/collectionstatus200duration_ms51ip172.18.0.1request_id78585b2a-d2b4-41ba-9f54-e142792ed298
+mediacheky-finaltest  | 2025-11-15T01:25:06.022Z	[34mINFO[0m	middleware/middleware.go:28	HTTP requestmethodGETpath/api/v3/tagstatus200duration_ms11ip172.18.0.1request_idf4449a41-a04c-44fc-b009-3e3b5833ee93
+mediacheky-finaltest  | 2025-11-15T01:25:06.024Z	[34mINFO[0m	middleware/proxy.go:175	Proxying requesthostradarr.docker.internalserviceradarrtargethttp://radarr:7878path/api/v3/indexerFlag
+mediacheky-finaltest  | 2025-11-15T01:25:06.024Z	[34mINFO[0m	middleware/middleware.go:28	HTTP requestmethodGETpath/api/v3/languagestatus200duration_ms12ip172.18.0.1request_iddcc39213-2be2-47b2-ad10-0b80780896f9
+mediacheky-finaltest  | 2025-11-15T01:25:06.024Z	[34mINFO[0m	middleware/proxy.go:175	Proxying requesthostradarr.docker.internalserviceradarrtargethttp://radarr:7878path/api/v3/config/ui
+mediacheky-finaltest  | 2025-11-15T01:25:06.027Z	[34mINFO[0m	middleware/proxy.go:175	Proxying requesthostradarr.docker.internalserviceradarrtargethttp://radarr:7878path/api/v3/system/status
+mediacheky-finaltest  | 2025-11-15T01:25:06.036Z	[34mINFO[0m	middleware/middleware.go:28	HTTP requestmethodGETpath/api/v3/indexerFlagstatus200duration_ms13ip172.18.0.1request_idf0d69371-f52f-4677-b19e-1be092395a7e
+mediacheky-finaltest  | 2025-11-15T01:25:06.037Z	[34mINFO[0m	middleware/middleware.go:28	HTTP requestmethodGETpath/api/v3/moviestatus200duration_ms72ip172.18.0.1request_id9640b1a3-6800-4757-a8b7-3ac92dd4fbf8
+mediacheky-finaltest  | 2025-11-15T01:25:06.039Z	[34mINFO[0m	middleware/proxy.go:175	Proxying requesthostradarr.docker.internalserviceradarrtargethttp://radarr:7878path/api/v3/localization
+mediacheky-finaltest  | 2025-11-15T01:25:06.039Z	[34mINFO[0m	middleware/proxy.go:175	Proxying requesthostradarr.docker.internalserviceradarrtargethttp://radarr:7878path/Content/Fonts/Roboto-Light.woff2
+mediacheky-finaltest  | 2025-11-15T01:25:06.042Z	[34mINFO[0m	middleware/middleware.go:28	HTTP requestmethodGETpath/Content/Fonts/Roboto-Light.woff2status200duration_ms3ip172.18.0.1request_ide3e0bbae-9924-486d-9953-3ffce26da14b
+mediacheky-finaltest  | 2025-11-15T01:25:06.056Z	[34mINFO[0m	middleware/middleware.go:28	HTTP requestmethodGETpath/api/v3/localizationstatus200duration_ms18ip172.18.0.1request_idaee88737-ec15-47ea-a625-85dcf7dc1d63
+mediacheky-finaltest  | 2025-11-15T01:25:06.057Z	[34mINFO[0m	middleware/middleware.go:28	HTTP requestmethodGETpath/api/v3/importliststatus200duration_ms45ip172.18.0.1request_id9ef791ff-fc20-4218-a785-dc5dccd584ee
+mediacheky-finaltest  | 2025-11-15T01:25:06.057Z	[34mINFO[0m	middleware/middleware.go:28	HTTP requestmethodGETpath/api/v3/config/uistatus200duration_ms33ip172.18.0.1request_id8b28778a-52dc-4e19-9100-b25c30d9cc22
+mediacheky-finaltest  | 2025-11-15T01:25:06.062Z	[34mINFO[0m	middleware/middleware.go:28	HTTP requestmethodGETpath/api/v3/qualityprofilestatus200duration_ms51ip172.18.0.1request_idb05bc2a7-d5ad-4835-83ad-974cdb2f775a
+mediacheky-finaltest  | 2025-11-15T01:25:06.083Z	[34mINFO[0m	middleware/middleware.go:28	HTTP requestmethodGETpath/api/v3/system/statusstatus200duration_ms56ip172.18.0.1request_id2807cf35-4293-4fa3-9205-cf466d879096
+mediacheky-finaltest  | 2025-11-15T01:25:06.128Z	[34mINFO[0m	middleware/proxy.go:175	Proxying requesthostradarr.docker.internalserviceradarrtargethttp://radarr:7878path/signalr/messages/negotiate
+mediacheky-finaltest  | 2025-11-15T01:25:06.139Z	[34mINFO[0m	middleware/middleware.go:28	HTTP requestmethodPOSTpath/signalr/messages/negotiatestatus200duration_ms11ip172.18.0.1request_id952aec27-a123-4bc8-a34a-cc99e6c47b7f
+mediacheky-finaltest  | 2025-11-15T01:25:06.145Z	[34mINFO[0m	middleware/proxy.go:175	Proxying requesthostradarr.docker.internalserviceradarrtargethttp://radarr:7878path/api/v3/queue/status
+mediacheky-finaltest  | 2025-11-15T01:25:06.146Z	[34mINFO[0m	middleware/proxy.go:175	Proxying requesthostradarr.docker.internalserviceradarrtargethttp://radarr:7878path/api/v3/health
+mediacheky-finaltest  | 2025-11-15T01:25:06.146Z	[34mINFO[0m	middleware/proxy.go:175	Proxying requesthostradarr.docker.internalserviceradarrtargethttp://radarr:7878path/api/v3/queue/details
+mediacheky-finaltest  | 2025-11-15T01:25:06.152Z	[34mINFO[0m	middleware/middleware.go:28	HTTP requestmethodGETpath/api/v3/healthstatus200duration_ms7ip172.18.0.1request_id2242d249-edd1-41c0-93f8-c960d1688f15
+mediacheky-finaltest  | 2025-11-15T01:25:06.162Z	[34mINFO[0m	middleware/proxy.go:175	Proxying requesthostradarr.docker.internalserviceradarrtargethttp://radarr:7878path/Content/Images/logo-full.png
+mediacheky-finaltest  | 2025-11-15T01:25:06.162Z	[34mINFO[0m	middleware/proxy.go:175	Proxying requesthostradarr.docker.internalserviceradarrtargethttp://radarr:7878path/7-a1b843a798e447f93f4f.js
+mediacheky-finaltest  | 2025-11-15T01:25:06.164Z	[34mINFO[0m	middleware/middleware.go:28	HTTP requestmethodGETpath/Content/Images/logo-full.pngstatus200duration_ms3ip172.18.0.1request_id6866c4dc-9fac-4c25-8193-a6de9afd42c0
+mediacheky-finaltest  | 2025-11-15T01:25:06.165Z	[34mINFO[0m	middleware/middleware.go:28	HTTP requestmethodGETpath/7-a1b843a798e447f93f4f.jsstatus200duration_ms3ip172.18.0.1request_id219b8d7c-487d-4cc1-9c2a-8862094c841f
+mediacheky-finaltest  | 2025-11-15T01:25:06.171Z	[34mINFO[0m	middleware/middleware.go:28	HTTP requestmethodGETpath/api/v3/queue/statusstatus200duration_ms26ip172.18.0.1request_id00f4375c-c580-4438-a303-42181f183b01
+mediacheky-finaltest  | 2025-11-15T01:25:06.201Z	[34mINFO[0m	middleware/middleware.go:28	HTTP requestmethodGETpath/api/v3/queue/detailsstatus200duration_ms56ip172.18.0.1request_idb0f8f1bc-0d41-442e-8b60-09f8c06da516
+mediacheky-finaltest  | 2025-11-15T01:25:06.210Z	[34mINFO[0m	middleware/proxy.go:175	Proxying requesthostradarr.docker.internalserviceradarrtargethttp://radarr:7878path/signalr/messages
+mediacheky-finaltest  | 2025-11-15T01:25:06.219Z	[34mINFO[0m	middleware/middleware.go:28	HTTP requestmethodGETpath/signalr/messagesstatus200duration_ms9ip172.18.0.1request_id382f280d-3611-4bb4-831e-e7c789722ce5
+mediacheky-finaltest  | 2025-11-15T01:25:06.236Z	[34mINFO[0m	middleware/proxy.go:175	Proxying requesthostradarr.docker.internalserviceradarrtargethttp://radarr:7878path/signalr/messages/negotiate
+mediacheky-finaltest  | 2025-11-15T01:25:06.238Z	[34mINFO[0m	middleware/middleware.go:28	HTTP requestmethodPOSTpath/signalr/messages/negotiatestatus200duration_ms2ip172.18.0.1request_iddf91eeb2-f48f-45cc-bde0-a2604d32d4e4
+mediacheky-finaltest  | 2025-11-15T01:25:06.250Z	[34mINFO[0m	middleware/proxy.go:175	Proxying requesthostradarr.docker.internalserviceradarrtargethttp://radarr:7878path/signalr/messages
+mediacheky-finaltest  | 2025-11-15T01:25:07.140Z	[33mWARN[0m	service/service_manager.go:283	Could not find container after start	{"service": "radarr", "container_name": "radarr"}
+mediacheky-finaltest  | 2025-11-15T01:25:07.163Z	[34mINFO[0m	service/service_manager.go:296	Service started successfully	{"service": "radarr"}
+mediacheky-finaltest  | 2025-11-15T01:25:07.163Z	[34mINFO[0m	service/service_manager.go:174	Service auto-started successfully	{"service": "radarr"}
+mediacheky-finaltest  | 2025-11-15T01:25:07.163Z	[34mINFO[0m	handler/service.go:235	Service enablednameradarr
+mediacheky-finaltest  | 2025-11-15T01:25:07.163Z	[34mINFO[0m	middleware/middleware.go:28	HTTP requestmethodPOSTpath/api/services/radarr/enablestatus200duration_ms10603ip172.18.0.1request_idd4380dc0-dd95-407e-bd8e-d2cd329d37e6
+mediacheky-finaltest  | 2025-11-15T01:25:07.176Z	[34mINFO[0m	service/service_manager.go:813	Loaded existing credentials from Radarr database	{"username": "adminf171a"}
+mediacheky-finaltest  | 2025-11-15T01:25:07.180Z	[34mINFO[0m	middleware/middleware.go:28	HTTP requestmethodGETpath/api/services/radarr/readystatus200duration_ms4ip172.18.0.1request_idb54deea6-1ac0-4f82-a160-500c052e7339
+mediacheky-finaltest  | 2025-11-15T01:25:08.781Z	[34mINFO[0m	handler/service.go:104	🔍 GetService: Checking container statusserviceradarrcontainer_nameradarrdb_statusrunning
+mediacheky-finaltest  | 2025-11-15T01:25:08.782Z	[34mINFO[0m	handler/service.go:122	✅ Container found (direct inspect)serviceradarrcontainerradarrstatusrunning
+mediacheky-finaltest  | 2025-11-15T01:25:08.782Z	[34mINFO[0m	handler/service.go:190	ℹ️ Status unchangedserviceradarrstatusrunning
+mediacheky-finaltest  | 2025-11-15T01:25:08.782Z	[34mINFO[0m	middleware/middleware.go:28	HTTP requestmethodGETpath/api/services/radarrstatus200duration_ms1ip172.18.0.1request_idc8e3034c-e17a-425d-bcf8-344a1f86e3d1
+mediacheky-finaltest  | 2025-11-15T01:25:08.786Z	[34mINFO[0m	handler/service.go:104	🔍 GetService: Checking container statusserviceradarrcontainer_nameradarrdb_statusrunning
+mediacheky-finaltest  | 2025-11-15T01:25:08.789Z	[34mINFO[0m	handler/service.go:122	✅ Container found (direct inspect)serviceradarrcontainerradarrstatusrunning
+mediacheky-finaltest  | 2025-11-15T01:25:08.789Z	[34mINFO[0m	handler/service.go:190	ℹ️ Status unchangedserviceradarrstatusrunning
+mediacheky-finaltest  | 2025-11-15T01:25:08.789Z	[34mINFO[0m	middleware/middleware.go:28	HTTP requestmethodGETpath/api/services/radarrstatus200duration_ms2ip172.18.0.1request_id40e38509-114f-457e-b4af-3ed98bf452de
+mediacheky-finaltest  | 2025-11-15T01:25:09.192Z	[34mINFO[0m	middleware/middleware.go:28	HTTP requestmethodGETpath/api/services/radarr/config-existsstatus200duration_ms0ip172.18.0.1request_idb3ebdedc-05cb-4aa8-9e62-5d8d2324276e
+mediacheky-finaltest  | 2025-11-15T01:25:09.193Z	[34mINFO[0m	handler/service.go:104	🔍 GetService: Checking container statusserviceradarrcontainer_nameradarrdb_statusrunning
+mediacheky-finaltest  | 2025-11-15T01:25:09.193Z	[34mINFO[0m	middleware/middleware.go:28	HTTP requestmethodGETpath/api/proxy/configstatus200duration_ms0ip172.18.0.1request_id2622b78b-bb96-430d-884e-197c3497962f
+mediacheky-finaltest  | 2025-11-15T01:25:09.193Z	[34mINFO[0m	middleware/middleware.go:28	HTTP requestmethodGETpath/api/services/radarr/endpointstatus200duration_ms0ip172.18.0.1request_id2bedf758-c640-42ae-b6de-06d3b6c9f589
+mediacheky-finaltest  | 2025-11-15T01:25:09.195Z	[34mINFO[0m	handler/service.go:122	✅ Container found (direct inspect)serviceradarrcontainerradarrstatusrunning
+mediacheky-finaltest  | 2025-11-15T01:25:09.195Z	[34mINFO[0m	handler/service.go:190	ℹ️ Status unchangedserviceradarrstatusrunning
+mediacheky-finaltest  | 2025-11-15T01:25:09.195Z	[34mINFO[0m	middleware/middleware.go:28	HTTP requestmethodGETpath/api/services/radarrstatus200duration_ms2ip172.18.0.1request_idb2566ab4-f7d4-4cc8-a3cb-777bb1356d70
+mediacheky-finaltest  | 2025-11-15T01:25:09.195Z	[34mINFO[0m	service/service_manager.go:813	Loaded existing credentials from Radarr database	{"username": "adminf171a"}
+mediacheky-finaltest  | 2025-11-15T01:25:09.195Z	[34mINFO[0m	middleware/middleware.go:28	HTTP requestmethodGETpath/api/services/radarr/radarr-configstatus200duration_ms1ip172.18.0.1request_id06cbe63a-4fb8-434f-8bd5-af0ddf35ae1b
+mediacheky-finaltest  | 2025-11-15T01:25:10.188Z	[34mINFO[0m	service/service_manager.go:813	Loaded existing credentials from Radarr database	{"username": "adminf171a"}
+mediacheky-finaltest  | 2025-11-15T01:25:10.194Z	[34mINFO[0m	middleware/middleware.go:28	HTTP requestmethodGETpath/api/services/radarr/readystatus200duration_ms8ip172.18.0.1request_ide446c0f2-509a-44d1-962f-36b100df0b9f
+mediacheky-finaltest  | 2025-11-15T01:25:10.354Z	[34mINFO[0m	middleware/proxy.go:175	Proxying requesthostradarr.docker.internalserviceradarrtargethttp://radarr:7878path/
+mediacheky-finaltest  | 2025-11-15T01:25:10.358Z	[34mINFO[0m	middleware/middleware.go:28	HTTP requestmethodGETpath/status200duration_ms4ip172.18.0.1request_ide8c356a1-de1d-49d7-9dcb-ab18241b96e0
+mediacheky-finaltest  | 2025-11-15T01:25:10.499Z	[34mINFO[0m	middleware/proxy.go:175	Proxying requesthostradarr.docker.internalserviceradarrtargethttp://radarr:7878path/initialize.json
+mediacheky-finaltest  | 2025-11-15T01:25:10.502Z	[34mINFO[0m	middleware/middleware.go:28	HTTP requestmethodGETpath/initialize.jsonstatus200duration_ms3ip172.18.0.1request_id7ea256d0-9d44-458d-9762-bcb848d0a627
+mediacheky-finaltest  | 2025-11-15T01:25:11.023Z	[34mINFO[0m	middleware/proxy.go:175	Proxying requesthostradarr.docker.internalserviceradarrtargethttp://radarr:7878path/api/v3/localization/language
+mediacheky-finaltest  | 2025-11-15T01:25:11.027Z	[34mINFO[0m	middleware/middleware.go:28	HTTP requestmethodGETpath/api/v3/localization/languagestatus200duration_ms3ip172.18.0.1request_id4389d354-939a-4ceb-aeba-4dd33a221776
+mediacheky-finaltest  | 2025-11-15T01:25:11.060Z	[34mINFO[0m	middleware/proxy.go:175	Proxying requesthostradarr.docker.internalserviceradarrtargethttp://radarr:7878path/api/v3/movie
+mediacheky-finaltest  | 2025-11-15T01:25:11.069Z	[34mINFO[0m	middleware/middleware.go:28	HTTP requestmethodGETpath/api/v3/moviestatus200duration_ms9ip172.18.0.1request_id07ae2534-aab5-4f93-a4aa-6d226ecbef22
+mediacheky-finaltest  | 2025-11-15T01:25:11.073Z	[34mINFO[0m	middleware/proxy.go:175	Proxying requesthostradarr.docker.internalserviceradarrtargethttp://radarr:7878path/api/v3/collection
+mediacheky-finaltest  | 2025-11-15T01:25:11.073Z	[34mINFO[0m	middleware/proxy.go:175	Proxying requesthostradarr.docker.internalserviceradarrtargethttp://radarr:7878path/api/v3/customFilter
+mediacheky-finaltest  | 2025-11-15T01:25:11.077Z	[34mINFO[0m	middleware/middleware.go:28	HTTP requestmethodGETpath/api/v3/customFilterstatus200duration_ms3ip172.18.0.1request_id69f87a5b-e4c2-4282-9151-d872e77238ea
+mediacheky-finaltest  | 2025-11-15T01:25:11.078Z	[34mINFO[0m	middleware/proxy.go:175	Proxying requesthostradarr.docker.internalserviceradarrtargethttp://radarr:7878path/api/v3/tag
+mediacheky-finaltest  | 2025-11-15T01:25:11.078Z	[34mINFO[0m	middleware/proxy.go:175	Proxying requesthostradarr.docker.internalserviceradarrtargethttp://radarr:7878path/api/v3/qualityprofile
+mediacheky-finaltest  | 2025-11-15T01:25:11.079Z	[34mINFO[0m	middleware/middleware.go:28	HTTP requestmethodGETpath/api/v3/collectionstatus200duration_ms7ip172.18.0.1request_id2c21bea4-a6ef-40e7-a360-b4dfc9f14a91
+mediacheky-finaltest  | 2025-11-15T01:25:11.080Z	[34mINFO[0m	middleware/middleware.go:28	HTTP requestmethodGETpath/api/v3/tagstatus200duration_ms3ip172.18.0.1request_idb87dbeeb-df9c-4054-8a02-673c75b79cfd
+mediacheky-finaltest  | 2025-11-15T01:25:11.082Z	[34mINFO[0m	middleware/proxy.go:175	Proxying requesthostradarr.docker.internalserviceradarrtargethttp://radarr:7878path/api/v3/language
+mediacheky-finaltest  | 2025-11-15T01:25:11.082Z	[34mINFO[0m	middleware/middleware.go:28	HTTP requestmethodGETpath/api/v3/qualityprofilestatus200duration_ms3ip172.18.0.1request_id889f1bec-92c7-46fd-aad3-b7136cfe324d
+mediacheky-finaltest  | 2025-11-15T01:25:11.084Z	[34mINFO[0m	middleware/middleware.go:28	HTTP requestmethodGETpath/api/v3/languagestatus200duration_ms2ip172.18.0.1request_idddebf345-0627-4a8b-aa29-bdecaef91f37
+mediacheky-finaltest  | 2025-11-15T01:25:11.091Z	[34mINFO[0m	middleware/proxy.go:175	Proxying requesthostradarr.docker.internalserviceradarrtargethttp://radarr:7878path/api/v3/importlist
+mediacheky-finaltest  | 2025-11-15T01:25:11.094Z	[34mINFO[0m	middleware/middleware.go:28	HTTP requestmethodGETpath/api/v3/importliststatus200duration_ms4ip172.18.0.1request_idf7816db3-9300-4a3f-97f7-c9e5db22d74a
+mediacheky-finaltest  | 2025-11-15T01:25:11.107Z	[34mINFO[0m	middleware/proxy.go:175	Proxying requesthostradarr.docker.internalserviceradarrtargethttp://radarr:7878path/api/v3/indexerFlag
+mediacheky-finaltest  | 2025-11-15T01:25:11.109Z	[34mINFO[0m	middleware/middleware.go:28	HTTP requestmethodGETpath/api/v3/indexerFlagstatus200duration_ms2ip172.18.0.1request_ide7433977-4266-4f19-8276-ed96f6eb530e
+mediacheky-finaltest  | 2025-11-15T01:25:11.112Z	[34mINFO[0m	middleware/proxy.go:175	Proxying requesthostradarr.docker.internalserviceradarrtargethttp://radarr:7878path/api/v3/config/ui
+mediacheky-finaltest  | 2025-11-15T01:25:11.114Z	[34mINFO[0m	middleware/proxy.go:175	Proxying requesthostradarr.docker.internalserviceradarrtargethttp://radarr:7878path/api/v3/system/status
+mediacheky-finaltest  | 2025-11-15T01:25:11.118Z	[34mINFO[0m	middleware/proxy.go:175	Proxying requesthostradarr.docker.internalserviceradarrtargethttp://radarr:7878path/api/v3/localization
+mediacheky-finaltest  | 2025-11-15T01:25:11.118Z	[34mINFO[0m	middleware/middleware.go:28	HTTP requestmethodGETpath/api/v3/system/statusstatus200duration_ms4ip172.18.0.1request_id2ba9eb69-9f7c-4726-85f4-52c10154f227
+mediacheky-finaltest  | 2025-11-15T01:25:11.120Z	[34mINFO[0m	middleware/middleware.go:28	HTTP requestmethodGETpath/api/v3/config/uistatus200duration_ms8ip172.18.0.1request_idc8bcb81e-ee56-4e6d-b046-44fe749bb72d
+mediacheky-finaltest  | 2025-11-15T01:25:11.126Z	[34mINFO[0m	middleware/middleware.go:28	HTTP requestmethodGETpath/api/v3/localizationstatus200duration_ms8ip172.18.0.1request_id82353126-c15e-408d-9d16-9c4f314580ce
+mediacheky-finaltest  | 2025-11-15T01:25:11.286Z	[34mINFO[0m	middleware/proxy.go:175	Proxying requesthostradarr.docker.internalserviceradarrtargethttp://radarr:7878path/signalr/messages/negotiate
+mediacheky-finaltest  | 2025-11-15T01:25:11.287Z	[34mINFO[0m	middleware/proxy.go:175	Proxying requesthostradarr.docker.internalserviceradarrtargethttp://radarr:7878path/api/v3/health
+mediacheky-finaltest  | 2025-11-15T01:25:11.287Z	[34mINFO[0m	middleware/proxy.go:175	Proxying requesthostradarr.docker.internalserviceradarrtargethttp://radarr:7878path/api/v3/queue/details
+mediacheky-finaltest  | 2025-11-15T01:25:11.288Z	[34mINFO[0m	middleware/middleware.go:28	HTTP requestmethodPOSTpath/signalr/messages/negotiatestatus200duration_ms2ip172.18.0.1request_idddded57e-719f-486f-b9ec-a3b4278d3b44
+mediacheky-finaltest  | 2025-11-15T01:25:11.288Z	[34mINFO[0m	middleware/proxy.go:175	Proxying requesthostradarr.docker.internalserviceradarrtargethttp://radarr:7878path/api/v3/queue/status
+mediacheky-finaltest  | 2025-11-15T01:25:11.289Z	[34mINFO[0m	middleware/middleware.go:28	HTTP requestmethodGETpath/api/v3/healthstatus200duration_ms2ip172.18.0.1request_id96b04375-9692-431a-ba27-ce74167d72c8
+mediacheky-finaltest  | 2025-11-15T01:25:11.292Z	[34mINFO[0m	middleware/middleware.go:28	HTTP requestmethodGETpath/api/v3/queue/detailsstatus200duration_ms5ip172.18.0.1request_id393c6ffd-cba5-4b18-b8fe-0502fa0ff3cf
+mediacheky-finaltest  | 2025-11-15T01:25:11.293Z	[34mINFO[0m	middleware/middleware.go:28	HTTP requestmethodGETpath/api/v3/queue/statusstatus200duration_ms6ip172.18.0.1request_id4816c276-0919-4141-8e37-6fe668fa6241
+mediacheky-finaltest  | 2025-11-15T01:25:11.328Z	[34mINFO[0m	middleware/proxy.go:175	Proxying requesthostradarr.docker.internalserviceradarrtargethttp://radarr:7878path/signalr/messages
+mediacheky-finaltest  | 2025-11-15T01:25:11.330Z	[34mINFO[0m	middleware/middleware.go:28	HTTP requestmethodGETpath/signalr/messagesstatus200duration_ms2ip172.18.0.1request_id59991c5d-c8b6-49a6-bd33-f66476b1a8bf
+mediacheky-finaltest  | 2025-11-15T01:25:11.345Z	[34mINFO[0m	middleware/proxy.go:175	Proxying requesthostradarr.docker.internalserviceradarrtargethttp://radarr:7878path/signalr/messages/negotiate
+mediacheky-finaltest  | 2025-11-15T01:25:11.347Z	[34mINFO[0m	middleware/middleware.go:28	HTTP requestmethodPOSTpath/signalr/messages/negotiatestatus200duration_ms1ip172.18.0.1request_id1258e717-3580-48b8-b7d9-292b98fadb9f
+mediacheky-finaltest  | 2025-11-15T01:25:11.358Z	[34mINFO[0m	middleware/proxy.go:175	Proxying requesthostradarr.docker.internalserviceradarrtargethttp://radarr:7878path/signalr/messages
+mediacheky-finaltest  | 2025-11-15T01:25:12.679Z	[34mINFO[0m	middleware/proxy.go:175	Proxying requesthostradarr.docker.internalserviceradarrtargethttp://radarr:7878path/api/v3/health
+mediacheky-finaltest  | 2025-11-15T01:25:12.679Z	[34mINFO[0m	middleware/proxy.go:175	Proxying requesthostradarr.docker.internalserviceradarrtargethttp://radarr:7878path/api/v3/diskspace
+mediacheky-finaltest  | 2025-11-15T01:25:12.680Z	[34mINFO[0m	middleware/proxy.go:175	Proxying requesthostradarr.docker.internalserviceradarrtargethttp://radarr:7878path/Content/Images/Icons/logo-radarr.png
+mediacheky-finaltest  | 2025-11-15T01:25:12.680Z	[34mINFO[0m	middleware/proxy.go:175	Proxying requesthostradarr.docker.internalserviceradarrtargethttp://radarr:7878path/api/v3/system/status
+mediacheky-finaltest  | 2025-11-15T01:25:12.681Z	[34mINFO[0m	middleware/middleware.go:28	HTTP requestmethodGETpath/api/v3/healthstatus200duration_ms2ip172.18.0.1request_id6b84cdd5-32e5-4af1-b117-5501ce217872
+mediacheky-finaltest  | 2025-11-15T01:25:12.683Z	[34mINFO[0m	middleware/middleware.go:28	HTTP requestmethodGETpath/Content/Images/Icons/logo-radarr.pngstatus200duration_ms2ip172.18.0.1request_id5751b66e-5198-4b19-b9a9-24c59f563d1a
+mediacheky-finaltest  | 2025-11-15T01:25:12.683Z	[34mINFO[0m	middleware/proxy.go:175	Proxying requesthostradarr.docker.internalserviceradarrtargethttp://radarr:7878path/Content/Images/Icons/logo-lidarr.png
+mediacheky-finaltest  | 2025-11-15T01:25:12.683Z	[34mINFO[0m	middleware/middleware.go:28	HTTP requestmethodGETpath/api/v3/system/statusstatus200duration_ms3ip172.18.0.1request_ided9d7965-cded-460b-acd8-c5e51c48433c
+mediacheky-finaltest  | 2025-11-15T01:25:12.685Z	[34mINFO[0m	middleware/middleware.go:28	HTTP requestmethodGETpath/Content/Images/Icons/logo-lidarr.pngstatus200duration_ms2ip172.18.0.1request_id6e1b6672-0747-41d8-b321-d2cd55aa6042
+mediacheky-finaltest  | 2025-11-15T01:25:12.686Z	[34mINFO[0m	middleware/proxy.go:175	Proxying requesthostradarr.docker.internalserviceradarrtargethttp://radarr:7878path/Content/Images/Icons/logo-prowlarr.png
+mediacheky-finaltest  | 2025-11-15T01:25:12.686Z	[34mINFO[0m	middleware/proxy.go:175	Proxying requesthostradarr.docker.internalserviceradarrtargethttp://radarr:7878path/Content/Images/Icons/logo-readarr.png
+mediacheky-finaltest  | 2025-11-15T01:25:12.688Z	[34mINFO[0m	middleware/middleware.go:28	HTTP requestmethodGETpath/Content/Images/Icons/logo-readarr.pngstatus200duration_ms2ip172.18.0.1request_idd01e577b-4dd6-42aa-8804-8ab3b8414316
+mediacheky-finaltest  | 2025-11-15T01:25:12.688Z	[34mINFO[0m	middleware/middleware.go:28	HTTP requestmethodGETpath/Content/Images/Icons/logo-prowlarr.pngstatus200duration_ms2ip172.18.0.1request_id39736321-0116-4315-95be-b284853dec9d
+mediacheky-finaltest  | 2025-11-15T01:25:12.691Z	[34mINFO[0m	middleware/proxy.go:175	Proxying requesthostradarr.docker.internalserviceradarrtargethttp://radarr:7878path/Content/Images/Icons/logo-sonarr.png
+mediacheky-finaltest  | 2025-11-15T01:25:12.694Z	[34mINFO[0m	middleware/middleware.go:28	HTTP requestmethodGETpath/Content/Images/Icons/logo-sonarr.pngstatus200duration_ms3ip172.18.0.1request_ide20c1ddd-05be-43b2-8bb2-db3e82d47e79
+mediacheky-finaltest  | 2025-11-15T01:25:12.739Z	[34mINFO[0m	middleware/middleware.go:28	HTTP requestmethodGETpath/api/v3/diskspacestatus200duration_ms59ip172.18.0.1request_ide13b990d-0eaf-492b-a936-a61b410c352e
+mediacheky-finaltest  | 2025-11-15T01:25:13.235Z	[34mINFO[0m	service/service_manager.go:813	Loaded existing credentials from Radarr database	{"username": "adminf171a"}
+mediacheky-finaltest  | 2025-11-15T01:25:13.237Z	[34mINFO[0m	middleware/middleware.go:28	HTTP requestmethodGETpath/api/services/radarr/readystatus200duration_ms5ip172.18.0.1request_id58e7b1da-51a8-4d81-b4a1-2a4a4ffcaba0
+mediacheky-finaltest  | 2025-11-15T01:25:14.255Z	[34mINFO[0m	handler/service.go:104	🔍 GetService: Checking container statusserviceradarrcontainer_nameradarrdb_statusrunning
+mediacheky-finaltest  | 2025-11-15T01:25:14.256Z	[34mINFO[0m	handler/service.go:122	✅ Container found (direct inspect)serviceradarrcontainerradarrstatusrunning
+mediacheky-finaltest  | 2025-11-15T01:25:14.256Z	[34mINFO[0m	handler/service.go:190	ℹ️ Status unchangedserviceradarrstatusrunning
+mediacheky-finaltest  | 2025-11-15T01:25:14.256Z	[34mINFO[0m	middleware/middleware.go:28	HTTP requestmethodGETpath/api/services/radarrstatus200duration_ms1ip172.18.0.1request_ide4b3e370-9b5b-40ef-8f36-479d28d004da
+mediacheky-finaltest  | 2025-11-15T01:25:14.262Z	[34mINFO[0m	handler/service.go:104	🔍 GetService: Checking container statusserviceradarrcontainer_nameradarrdb_statusrunning
+mediacheky-finaltest  | 2025-11-15T01:25:14.264Z	[34mINFO[0m	handler/service.go:122	✅ Container found (direct inspect)serviceradarrcontainerradarrstatusrunning
+mediacheky-finaltest  | 2025-11-15T01:25:14.264Z	[34mINFO[0m	handler/service.go:190	ℹ️ Status unchangedserviceradarrstatusrunning
+mediacheky-finaltest  | 2025-11-15T01:25:14.264Z	[34mINFO[0m	middleware/middleware.go:28	HTTP requestmethodGETpath/api/services/radarrstatus200duration_ms2ip172.18.0.1request_idb0134eba-b94b-455d-b93b-027df0dd9c88
+mediacheky-finaltest  | 2025-11-15T01:25:16.243Z	[34mINFO[0m	service/service_manager.go:813	Loaded existing credentials from Radarr database	{"username": "adminf171a"}
+mediacheky-finaltest  | 2025-11-15T01:25:16.246Z	[34mINFO[0m	middleware/middleware.go:28	HTTP requestmethodGETpath/api/services/radarr/readystatus200duration_ms4ip172.18.0.1request_ide1cbf73e-6f50-403d-9abd-177484d3b7c5
+mediacheky-finaltest  | 2025-11-15T01:25:16.682Z	[34mINFO[0m	middleware/proxy.go:175	Proxying requesthostradarr.docker.internalserviceradarrtargethttp://radarr:7878path/
+mediacheky-finaltest  | 2025-11-15T01:25:16.684Z	[34mINFO[0m	middleware/middleware.go:28	HTTP requestmethodGETpath/status200duration_ms2ip172.18.0.1request_id8c3f2f5e-bc47-4ae0-85d8-dd44761bacb6
+mediacheky-finaltest  | 2025-11-15T01:25:16.838Z	[34mINFO[0m	middleware/proxy.go:175	Proxying requesthostradarr.docker.internalserviceradarrtargethttp://radarr:7878path/initialize.json
+mediacheky-finaltest  | 2025-11-15T01:25:16.841Z	[34mINFO[0m	middleware/middleware.go:28	HTTP requestmethodGETpath/initialize.jsonstatus200duration_ms3ip172.18.0.1request_idae306d5c-a308-44c7-b9bb-16d05c65f57b
+mediacheky-finaltest  | 2025-11-15T01:25:17.048Z	[34mINFO[0m	middleware/proxy.go:175	Proxying requesthostradarr.docker.internalserviceradarrtargethttp://radarr:7878path/api/v3/localization/language
+mediacheky-finaltest  | 2025-11-15T01:25:17.051Z	[34mINFO[0m	middleware/middleware.go:28	HTTP requestmethodGETpath/api/v3/localization/languagestatus200duration_ms3ip172.18.0.1request_id9a39d3e6-c71b-435e-ac0a-6583fd58278b
+mediacheky-finaltest  | 2025-11-15T01:25:17.086Z	[34mINFO[0m	middleware/proxy.go:175	Proxying requesthostradarr.docker.internalserviceradarrtargethttp://radarr:7878path/api/v3/movie
+mediacheky-finaltest  | 2025-11-15T01:25:17.094Z	[34mINFO[0m	middleware/middleware.go:28	HTTP requestmethodGETpath/api/v3/moviestatus200duration_ms8ip172.18.0.1request_id7a2bd8c6-02ee-49c4-8cc6-c35486be7920
+mediacheky-finaltest  | 2025-11-15T01:25:17.110Z	[34mINFO[0m	middleware/proxy.go:175	Proxying requesthostradarr.docker.internalserviceradarrtargethttp://radarr:7878path/api/v3/collection
+mediacheky-finaltest  | 2025-11-15T01:25:17.114Z	[34mINFO[0m	middleware/proxy.go:175	Proxying requesthostradarr.docker.internalserviceradarrtargethttp://radarr:7878path/api/v3/customFilter
+mediacheky-finaltest  | 2025-11-15T01:25:17.115Z	[34mINFO[0m	middleware/middleware.go:28	HTTP requestmethodGETpath/api/v3/collectionstatus200duration_ms5ip172.18.0.1request_id6696a226-3bd9-4275-a063-e8cd898bbef9
+mediacheky-finaltest  | 2025-11-15T01:25:17.115Z	[34mINFO[0m	middleware/proxy.go:175	Proxying requesthostradarr.docker.internalserviceradarrtargethttp://radarr:7878path/api/v3/tag
+mediacheky-finaltest  | 2025-11-15T01:25:17.118Z	[34mINFO[0m	middleware/middleware.go:28	HTTP requestmethodGETpath/api/v3/tagstatus200duration_ms3ip172.18.0.1request_idc5475f33-cc03-48d5-8e51-3d1190a0336e
+mediacheky-finaltest  | 2025-11-15T01:25:17.119Z	[34mINFO[0m	middleware/middleware.go:28	HTTP requestmethodGETpath/api/v3/customFilterstatus200duration_ms5ip172.18.0.1request_idba910bb4-a937-4473-b7a7-6ba40068d12b
+mediacheky-finaltest  | 2025-11-15T01:25:17.121Z	[34mINFO[0m	middleware/proxy.go:175	Proxying requesthostradarr.docker.internalserviceradarrtargethttp://radarr:7878path/api/v3/qualityprofile
+mediacheky-finaltest  | 2025-11-15T01:25:17.125Z	[34mINFO[0m	middleware/middleware.go:28	HTTP requestmethodGETpath/api/v3/qualityprofilestatus200duration_ms3ip172.18.0.1request_id35a8152f-4c30-458b-a7ad-e2ec50913984
+mediacheky-finaltest  | 2025-11-15T01:25:17.127Z	[34mINFO[0m	middleware/proxy.go:175	Proxying requesthostradarr.docker.internalserviceradarrtargethttp://radarr:7878path/api/v3/language
+mediacheky-finaltest  | 2025-11-15T01:25:17.130Z	[34mINFO[0m	middleware/middleware.go:28	HTTP requestmethodGETpath/api/v3/languagestatus200duration_ms3ip172.18.0.1request_id449ccd32-5974-4570-a4a2-0bb732b5ca8d
+mediacheky-finaltest  | 2025-11-15T01:25:17.132Z	[34mINFO[0m	middleware/proxy.go:175	Proxying requesthostradarr.docker.internalserviceradarrtargethttp://radarr:7878path/api/v3/importlist
+mediacheky-finaltest  | 2025-11-15T01:25:17.135Z	[34mINFO[0m	middleware/middleware.go:28	HTTP requestmethodGETpath/api/v3/importliststatus200duration_ms3ip172.18.0.1request_id2d3cd1ec-b13c-4c10-9b0d-4e298a3762fa
+mediacheky-finaltest  | 2025-11-15T01:25:17.137Z	[34mINFO[0m	middleware/proxy.go:175	Proxying requesthostradarr.docker.internalserviceradarrtargethttp://radarr:7878path/api/v3/config/ui
+mediacheky-finaltest  | 2025-11-15T01:25:17.137Z	[34mINFO[0m	middleware/proxy.go:175	Proxying requesthostradarr.docker.internalserviceradarrtargethttp://radarr:7878path/api/v3/indexerFlag
+mediacheky-finaltest  | 2025-11-15T01:25:17.139Z	[34mINFO[0m	middleware/middleware.go:28	HTTP requestmethodGETpath/api/v3/indexerFlagstatus200duration_ms2ip172.18.0.1request_id5b3e1c2e-b95f-42d6-bb9d-87cf2dab8f55
+mediacheky-finaltest  | 2025-11-15T01:25:17.140Z	[34mINFO[0m	middleware/proxy.go:175	Proxying requesthostradarr.docker.internalserviceradarrtargethttp://radarr:7878path/api/v3/system/status
+mediacheky-finaltest  | 2025-11-15T01:25:17.141Z	[34mINFO[0m	middleware/proxy.go:175	Proxying requesthostradarr.docker.internalserviceradarrtargethttp://radarr:7878path/api/v3/localization
+mediacheky-finaltest  | 2025-11-15T01:25:17.144Z	[34mINFO[0m	middleware/middleware.go:28	HTTP requestmethodGETpath/api/v3/system/statusstatus200duration_ms5ip172.18.0.1request_id1115aace-3bb0-4a2b-9d3a-04419f254e3a
+mediacheky-finaltest  | 2025-11-15T01:25:17.147Z	[34mINFO[0m	middleware/middleware.go:28	HTTP requestmethodGETpath/api/v3/config/uistatus200duration_ms10ip172.18.0.1request_idb48dd98a-9348-4e9a-9c33-72f28cff744e
+mediacheky-finaltest  | 2025-11-15T01:25:17.148Z	[34mINFO[0m	middleware/middleware.go:28	HTTP requestmethodGETpath/api/v3/localizationstatus200duration_ms7ip172.18.0.1request_idb66169e5-3f90-4dab-9932-037765524390
+mediacheky-finaltest  | 2025-11-15T01:25:17.221Z	[34mINFO[0m	middleware/proxy.go:175	Proxying requesthostradarr.docker.internalserviceradarrtargethttp://radarr:7878path/api/v3/queue/status
+mediacheky-finaltest  | 2025-11-15T01:25:17.221Z	[34mINFO[0m	middleware/proxy.go:175	Proxying requesthostradarr.docker.internalserviceradarrtargethttp://radarr:7878path/signalr/messages/negotiate
+mediacheky-finaltest  | 2025-11-15T01:25:17.223Z	[34mINFO[0m	middleware/middleware.go:28	HTTP requestmethodPOSTpath/signalr/messages/negotiatestatus200duration_ms2ip172.18.0.1request_iddacdd5f9-ff01-406b-8b55-34e563340324
+mediacheky-finaltest  | 2025-11-15T01:25:17.225Z	[34mINFO[0m	middleware/middleware.go:28	HTTP requestmethodGETpath/api/v3/queue/statusstatus200duration_ms3ip172.18.0.1request_id08cfd5bd-b715-466f-8434-af33aa6c3bb8
+mediacheky-finaltest  | 2025-11-15T01:25:17.227Z	[34mINFO[0m	middleware/proxy.go:175	Proxying requesthostradarr.docker.internalserviceradarrtargethttp://radarr:7878path/api/v3/health
+mediacheky-finaltest  | 2025-11-15T01:25:17.229Z	[34mINFO[0m	middleware/middleware.go:28	HTTP requestmethodGETpath/api/v3/healthstatus200duration_ms2ip172.18.0.1request_id1105f97c-2897-48db-a4d1-dd85910ee4f3
+mediacheky-finaltest  | 2025-11-15T01:25:17.238Z	[34mINFO[0m	middleware/proxy.go:175	Proxying requesthostradarr.docker.internalserviceradarrtargethttp://radarr:7878path/api/v3/queue/details
+mediacheky-finaltest  | 2025-11-15T01:25:17.242Z	[34mINFO[0m	middleware/middleware.go:28	HTTP requestmethodGETpath/api/v3/queue/detailsstatus200duration_ms3ip172.18.0.1request_id4224c9ab-ec71-467c-9127-9da4751b4a17
+mediacheky-finaltest  | 2025-11-15T01:25:17.291Z	[34mINFO[0m	middleware/proxy.go:175	Proxying requesthostradarr.docker.internalserviceradarrtargethttp://radarr:7878path/signalr/messages
+mediacheky-finaltest  | 2025-11-15T01:25:17.293Z	[34mINFO[0m	middleware/middleware.go:28	HTTP requestmethodGETpath/signalr/messagesstatus200duration_ms3ip172.18.0.1request_idbc6a9815-5350-4692-bde4-e3ca74ff47db
+mediacheky-finaltest  | 2025-11-15T01:25:17.308Z	[34mINFO[0m	middleware/proxy.go:175	Proxying requesthostradarr.docker.internalserviceradarrtargethttp://radarr:7878path/signalr/messages/negotiate
+mediacheky-finaltest  | 2025-11-15T01:25:17.310Z	[34mINFO[0m	middleware/middleware.go:28	HTTP requestmethodPOSTpath/signalr/messages/negotiatestatus200duration_ms1ip172.18.0.1request_id6e1bf50a-048d-46c3-a943-944647dd9450
+mediacheky-finaltest  | 2025-11-15T01:25:17.367Z	[34mINFO[0m	middleware/proxy.go:175	Proxying requesthostradarr.docker.internalserviceradarrtargethttp://radarr:7878path/signalr/messages
+mediacheky-finaltest  | 2025-11-15T01:25:19.295Z	[34mINFO[0m	service/service_manager.go:813	Loaded existing credentials from Radarr database	{"username": "adminf171a"}
+mediacheky-finaltest  | 2025-11-15T01:25:19.298Z	[34mINFO[0m	middleware/middleware.go:28	HTTP requestmethodGETpath/api/services/radarr/readystatus200duration_ms4ip172.18.0.1request_id971c04a4-71e8-4701-b2fd-768be82ab5e5
+mediacheky-finaltest  | 2025-11-15T01:25:19.732Z	[34mINFO[0m	middleware/proxy.go:175	Proxying requesthostradarr.docker.internalserviceradarrtargethttp://radarr:7878path/api/v3/health
+mediacheky-finaltest  | 2025-11-15T01:25:19.733Z	[34mINFO[0m	middleware/proxy.go:175	Proxying requesthostradarr.docker.internalserviceradarrtargethttp://radarr:7878path/api/v3/diskspace
+mediacheky-finaltest  | 2025-11-15T01:25:19.734Z	[34mINFO[0m	middleware/proxy.go:175	Proxying requesthostradarr.docker.internalserviceradarrtargethttp://radarr:7878path/api/v3/system/status
+mediacheky-finaltest  | 2025-11-15T01:25:19.734Z	[34mINFO[0m	middleware/middleware.go:28	HTTP requestmethodGETpath/api/v3/healthstatus200duration_ms2ip172.18.0.1request_id905b91f6-49e4-43a1-99ab-2bd88874e0af
+mediacheky-finaltest  | 2025-11-15T01:25:19.736Z	[34mINFO[0m	middleware/middleware.go:28	HTTP requestmethodGETpath/api/v3/system/statusstatus200duration_ms4ip172.18.0.1request_id1aa884c3-63f5-4a30-a893-6d5f339309b5
+mediacheky-finaltest  | 2025-11-15T01:25:19.740Z	[34mINFO[0m	middleware/middleware.go:28	HTTP requestmethodGETpath/api/v3/diskspacestatus200duration_ms8ip172.18.0.1request_id3023a644-688c-4787-ba13-157edf9d9241
+mediacheky-finaltest  | 2025-11-15T01:25:20.272Z	[34mINFO[0m	handler/service.go:104	🔍 GetService: Checking container statusserviceradarrcontainer_nameradarrdb_statusrunning
+mediacheky-finaltest  | 2025-11-15T01:25:20.272Z	[34mINFO[0m	handler/service.go:104	🔍 GetService: Checking container statusserviceradarrcontainer_nameradarrdb_statusrunning
+mediacheky-finaltest  | 2025-11-15T01:25:20.273Z	[34mINFO[0m	handler/service.go:122	✅ Container found (direct inspect)serviceradarrcontainerradarrstatusrunning
+mediacheky-finaltest  | 2025-11-15T01:25:20.273Z	[34mINFO[0m	handler/service.go:190	ℹ️ Status unchangedserviceradarrstatusrunning
+mediacheky-finaltest  | 2025-11-15T01:25:20.273Z	[34mINFO[0m	middleware/middleware.go:28	HTTP requestmethodGETpath/api/services/radarrstatus200duration_ms1ip172.18.0.1request_idf76ae843-1e0c-4a56-81ee-83e622aa7f3d
+mediacheky-finaltest  | 2025-11-15T01:25:20.274Z	[34mINFO[0m	handler/service.go:122	✅ Container found (direct inspect)serviceradarrcontainerradarrstatusrunning
+mediacheky-finaltest  | 2025-11-15T01:25:20.274Z	[34mINFO[0m	handler/service.go:190	ℹ️ Status unchangedserviceradarrstatusrunning
+mediacheky-finaltest  | 2025-11-15T01:25:20.274Z	[34mINFO[0m	middleware/middleware.go:28	HTTP requestmethodGETpath/api/services/radarrstatus200duration_ms2ip172.18.0.1request_id20944dba-d424-4800-8afd-a7343afd57d1
+mediacheky-finaltest  | 2025-11-15T01:25:21.257Z	[34mINFO[0m	middleware/middleware.go:28	HTTP requestmethodGETpath/signalr/messagesstatus200duration_ms15007ip172.18.0.1request_id732148db-5985-4c4f-ad40-8bf9237cd722
+mediacheky-finaltest  | 2025-11-15T01:25:22.282Z	[34mINFO[0m	service/service_manager.go:813	Loaded existing credentials from Radarr database	{"username": "adminf171a"}
+mediacheky-finaltest  | 2025-11-15T01:25:22.285Z	[34mINFO[0m	middleware/middleware.go:28	HTTP requestmethodGETpath/api/services/radarr/readystatus200duration_ms4ip172.18.0.1request_id855240e9-bcdf-43dc-87d4-81d7dfe6dcaa
+mediacheky-finaltest  | 2025-11-15T01:25:22.618Z	[34mINFO[0m	middleware/proxy.go:175	Proxying requesthostradarr.docker.internalserviceradarrtargethttp://radarr:7878path/api/v3/config/host
+mediacheky-finaltest  | 2025-11-15T01:25:22.685Z	[34mINFO[0m	middleware/middleware.go:28	HTTP requestmethodGETpath/api/v3/config/hoststatus200duration_ms67ip172.18.0.1request_idfcf0a516-6249-43d4-ad24-325b5ea76383
+mediacheky-finaltest  | 2025-11-15T01:25:25.294Z	[34mINFO[0m	handler/service.go:104	🔍 GetService: Checking container statusserviceradarrcontainer_nameradarrdb_statusrunning
+mediacheky-finaltest  | 2025-11-15T01:25:25.296Z	[34mINFO[0m	handler/service.go:122	✅ Container found (direct inspect)serviceradarrcontainerradarrstatusrunning
+mediacheky-finaltest  | 2025-11-15T01:25:25.296Z	[34mINFO[0m	handler/service.go:190	ℹ️ Status unchangedserviceradarrstatusrunning
+mediacheky-finaltest  | 2025-11-15T01:25:25.296Z	[34mINFO[0m	middleware/middleware.go:28	HTTP requestmethodGETpath/api/services/radarrstatus200duration_ms2ip172.18.0.1request_id7db13e61-d8f3-43df-8cea-13c105158701
+mediacheky-finaltest  | 2025-11-15T01:25:25.301Z	[34mINFO[0m	service/service_manager.go:813	Loaded existing credentials from Radarr database	{"username": "adminf171a"}
+mediacheky-finaltest  | 2025-11-15T01:25:25.304Z	[34mINFO[0m	middleware/middleware.go:28	HTTP requestmethodGETpath/api/services/radarr/readystatus200duration_ms5ip172.18.0.1request_idd68531c2-5de7-4f93-8aad-263ac0f2a108
+mediacheky-finaltest  | 2025-11-15T01:25:25.307Z	[34mINFO[0m	handler/service.go:104	🔍 GetService: Checking container statusserviceradarrcontainer_nameradarrdb_statusrunning
+mediacheky-finaltest  | 2025-11-15T01:25:25.308Z	[34mINFO[0m	handler/service.go:122	✅ Container found (direct inspect)serviceradarrcontainerradarrstatusrunning
+mediacheky-finaltest  | 2025-11-15T01:25:25.308Z	[34mINFO[0m	handler/service.go:190	ℹ️ Status unchangedserviceradarrstatusrunning
+mediacheky-finaltest  | 2025-11-15T01:25:25.308Z	[34mINFO[0m	middleware/middleware.go:28	HTTP requestmethodGETpath/api/services/radarrstatus200duration_ms1ip172.18.0.1request_ide855d2a8-17bb-4784-80d2-a9ced1910c64
+mediacheky-finaltest  | 2025-11-15T01:25:26.362Z	[34mINFO[0m	middleware/middleware.go:28	HTTP requestmethodGETpath/signalr/messagesstatus200duration_ms15003ip172.18.0.1request_idb9497846-86ba-44eb-b9f4-0139faf242c7
+mediacheky-finaltest  | 2025-11-15T01:25:28.311Z	[34mINFO[0m	service/service_manager.go:813	Loaded existing credentials from Radarr database	{"username": "adminf171a"}
+mediacheky-finaltest  | 2025-11-15T01:25:28.314Z	[34mINFO[0m	middleware/middleware.go:28	HTTP requestmethodGETpath/api/services/radarr/readystatus200duration_ms4ip172.18.0.1request_id791748b4-959d-46e0-8db5-2ecf1956f290
+mediacheky-finaltest  | 2025-11-15T01:25:30.337Z	[34mINFO[0m	handler/service.go:104	🔍 GetService: Checking container statusserviceradarrcontainer_nameradarrdb_statusrunning
+mediacheky-finaltest  | 2025-11-15T01:25:30.337Z	[34mINFO[0m	handler/service.go:104	🔍 GetService: Checking container statusserviceradarrcontainer_nameradarrdb_statusrunning
+mediacheky-finaltest  | 2025-11-15T01:25:30.339Z	[34mINFO[0m	handler/service.go:122	✅ Container found (direct inspect)serviceradarrcontainerradarrstatusrunning
+mediacheky-finaltest  | 2025-11-15T01:25:30.339Z	[34mINFO[0m	handler/service.go:190	ℹ️ Status unchangedserviceradarrstatusrunning
+mediacheky-finaltest  | 2025-11-15T01:25:30.339Z	[34mINFO[0m	middleware/middleware.go:28	HTTP requestmethodGETpath/api/services/radarrstatus200duration_ms2ip172.18.0.1request_ida7ece440-69e6-4f1f-b6c3-b0ba4e05ec32
+mediacheky-finaltest  | 2025-11-15T01:25:30.340Z	[34mINFO[0m	handler/service.go:122	✅ Container found (direct inspect)serviceradarrcontainerradarrstatusrunning
+mediacheky-finaltest  | 2025-11-15T01:25:30.340Z	[34mINFO[0m	handler/service.go:190	ℹ️ Status unchangedserviceradarrstatusrunning
+mediacheky-finaltest  | 2025-11-15T01:25:30.340Z	[34mINFO[0m	middleware/middleware.go:28	HTTP requestmethodGETpath/api/services/radarrstatus200duration_ms2ip172.18.0.1request_id4fe03989-473d-466a-a3a7-de241183648e
+mediacheky-finaltest  | 2025-11-15T01:25:31.436Z	[34mINFO[0m	service/service_manager.go:813	Loaded existing credentials from Radarr database	{"username": "adminf171a"}
+mediacheky-finaltest  | 2025-11-15T01:25:31.449Z	[34mINFO[0m	middleware/middleware.go:28	HTTP requestmethodGETpath/api/services/radarr/readystatus200duration_ms14ip172.18.0.1request_id428d5d1f-8f7e-4528-bb81-ca2b4a11fac6
+mediacheky-finaltest  | 2025-11-15T01:25:32.370Z	[34mINFO[0m	middleware/middleware.go:28	HTTP requestmethodGETpath/signalr/messagesstatus200duration_ms15003ip172.18.0.1request_id49001764-6b59-4784-bcb4-4dc9482ae584
+mediacheky-finaltest  | 2025-11-15T01:25:34.363Z	[34mINFO[0m	service/service_manager.go:813	Loaded existing credentials from Radarr database	{"username": "adminf171a"}
+mediacheky-finaltest  | 2025-11-15T01:25:34.366Z	[34mINFO[0m	middleware/middleware.go:28	HTTP requestmethodGETpath/api/services/radarr/readystatus200duration_ms5ip172.18.0.1request_id2762bc99-cbec-4866-bcce-b09809a01d3c
+mediacheky-finaltest  | 2025-11-15T01:25:35.405Z	[34mINFO[0m	handler/service.go:104	🔍 GetService: Checking container statusserviceradarrcontainer_nameradarrdb_statusrunning
+mediacheky-finaltest  | 2025-11-15T01:25:35.405Z	[34mINFO[0m	handler/service.go:104	🔍 GetService: Checking container statusserviceradarrcontainer_nameradarrdb_statusrunning
+mediacheky-finaltest  | 2025-11-15T01:25:35.406Z	[34mINFO[0m	handler/service.go:122	✅ Container found (direct inspect)serviceradarrcontainerradarrstatusrunning
+mediacheky-finaltest  | 2025-11-15T01:25:35.406Z	[34mINFO[0m	handler/service.go:190	ℹ️ Status unchangedserviceradarrstatusrunning
+mediacheky-finaltest  | 2025-11-15T01:25:35.406Z	[34mINFO[0m	middleware/middleware.go:28	HTTP requestmethodGETpath/api/services/radarrstatus200duration_ms1ip172.18.0.1request_id64bc5886-9b4e-46c0-a0cf-f2a3cc9ea6c2
+mediacheky-finaltest  | 2025-11-15T01:25:35.406Z	[34mINFO[0m	handler/service.go:122	✅ Container found (direct inspect)serviceradarrcontainerradarrstatusrunning
+mediacheky-finaltest  | 2025-11-15T01:25:35.406Z	[34mINFO[0m	handler/service.go:190	ℹ️ Status unchangedserviceradarrstatusrunning
+mediacheky-finaltest  | 2025-11-15T01:25:35.406Z	[34mINFO[0m	middleware/middleware.go:28	HTTP requestmethodGETpath/api/services/radarrstatus200duration_ms2ip172.18.0.1request_idfa90763f-93d0-4928-aa11-c0f2db3f09eb
+mediacheky-finaltest  | 2025-11-15T01:25:37.356Z	[34mINFO[0m	service/service_manager.go:813	Loaded existing credentials from Radarr database	{"username": "adminf171a"}
+mediacheky-finaltest  | 2025-11-15T01:25:37.360Z	[34mINFO[0m	middleware/middleware.go:28	HTTP requestmethodGETpath/api/services/radarr/readystatus200duration_ms4ip172.18.0.1request_id6cb9131f-4d30-4a72-b485-90182c62f582
+mediacheky-finaltest  | 2025-11-15T01:25:40.390Z	[34mINFO[0m	service/service_manager.go:813	Loaded existing credentials from Radarr database	{"username": "adminf171a"}
+mediacheky-finaltest  | 2025-11-15T01:25:40.394Z	[34mINFO[0m	middleware/middleware.go:28	HTTP requestmethodGETpath/api/services/radarr/readystatus200duration_ms6ip172.18.0.1request_id330ce62b-796d-4909-b62e-fe3cf69efb46
+mediacheky-finaltest  | 2025-11-15T01:25:41.526Z	[34mINFO[0m	handler/service.go:104	🔍 GetService: Checking container statusserviceradarrcontainer_nameradarrdb_statusrunning
+mediacheky-finaltest  | 2025-11-15T01:25:41.526Z	[34mINFO[0m	handler/service.go:104	🔍 GetService: Checking container statusserviceradarrcontainer_nameradarrdb_statusrunning
+mediacheky-finaltest  | 2025-11-15T01:25:41.527Z	[34mINFO[0m	handler/service.go:122	✅ Container found (direct inspect)serviceradarrcontainerradarrstatusrunning
+mediacheky-finaltest  | 2025-11-15T01:25:41.527Z	[34mINFO[0m	handler/service.go:190	ℹ️ Status unchangedserviceradarrstatusrunning
+mediacheky-finaltest  | 2025-11-15T01:25:41.527Z	[34mINFO[0m	middleware/middleware.go:28	HTTP requestmethodGETpath/api/services/radarrstatus200duration_ms1ip172.18.0.1request_idc452850c-3c13-4e00-a921-9b32a1e7c796
+mediacheky-finaltest  | 2025-11-15T01:25:41.528Z	[34mINFO[0m	handler/service.go:122	✅ Container found (direct inspect)serviceradarrcontainerradarrstatusrunning
+mediacheky-finaltest  | 2025-11-15T01:25:41.528Z	[34mINFO[0m	handler/service.go:190	ℹ️ Status unchangedserviceradarrstatusrunning
+mediacheky-finaltest  | 2025-11-15T01:25:41.528Z	[34mINFO[0m	middleware/middleware.go:28	HTTP requestmethodGETpath/api/services/radarrstatus200duration_ms2ip172.18.0.1request_id9673943f-a740-4c44-90e8-e47315c523d1
+mediacheky-finaltest  | 2025-11-15T01:25:43.559Z	[34mINFO[0m	service/service_manager.go:813	Loaded existing credentials from Radarr database	{"username": "adminf171a"}
+mediacheky-finaltest  | 2025-11-15T01:25:43.562Z	[34mINFO[0m	middleware/middleware.go:28	HTTP requestmethodGETpath/api/services/radarr/readystatus200duration_ms5ip172.18.0.1request_id7eec9978-9568-4090-a865-7c37ec026012
+mediacheky-finaltest  | 2025-11-15T01:25:46.774Z	[34mINFO[0m	handler/service.go:104	🔍 GetService: Checking container statusserviceradarrcontainer_nameradarrdb_statusrunning
+mediacheky-finaltest  | 2025-11-15T01:25:46.776Z	[34mINFO[0m	handler/service.go:122	✅ Container found (direct inspect)serviceradarrcontainerradarrstatusrunning
+mediacheky-finaltest  | 2025-11-15T01:25:46.776Z	[34mINFO[0m	handler/service.go:190	ℹ️ Status unchangedserviceradarrstatusrunning
+mediacheky-finaltest  | 2025-11-15T01:25:46.776Z	[34mINFO[0m	middleware/middleware.go:28	HTTP requestmethodGETpath/api/services/radarrstatus200duration_ms2ip172.18.0.1request_id2540111a-1df0-4e6f-9a4c-fec895fae680
+mediacheky-finaltest  | 2025-11-15T01:25:46.776Z	[34mINFO[0m	service/service_manager.go:813	Loaded existing credentials from Radarr database	{"username": "adminf171a"}
+mediacheky-finaltest  | 2025-11-15T01:25:46.779Z	[34mINFO[0m	middleware/middleware.go:28	HTTP requestmethodGETpath/api/services/radarr/readystatus200duration_ms4ip172.18.0.1request_id4ecd22d7-203b-4fee-9335-7c89a536d214
+mediacheky-finaltest  | 2025-11-15T01:25:46.792Z	[34mINFO[0m	handler/service.go:104	🔍 GetService: Checking container statusserviceradarrcontainer_nameradarrdb_statusrunning
+mediacheky-finaltest  | 2025-11-15T01:25:46.794Z	[34mINFO[0m	handler/service.go:122	✅ Container found (direct inspect)serviceradarrcontainerradarrstatusrunning
+mediacheky-finaltest  | 2025-11-15T01:25:46.794Z	[34mINFO[0m	handler/service.go:190	ℹ️ Status unchangedserviceradarrstatusrunning
+mediacheky-finaltest  | 2025-11-15T01:25:46.794Z	[34mINFO[0m	middleware/middleware.go:28	HTTP requestmethodGETpath/api/services/radarrstatus200duration_ms2ip172.18.0.1request_idb8ace031-6c18-4b71-9f2e-d6eb2b2a0819
+mediacheky-finaltest  | 2025-11-15T01:25:50.495Z	[34mINFO[0m	service/service_manager.go:813	Loaded existing credentials from Radarr database	{"username": "adminf171a"}
+mediacheky-finaltest  | 2025-11-15T01:25:50.499Z	[34mINFO[0m	middleware/middleware.go:28	HTTP requestmethodGETpath/api/services/radarr/readystatus200duration_ms4ip172.18.0.1request_id6a117aab-1605-47fd-9792-a9fe000ca27f
+mediacheky-finaltest  | 2025-11-15T01:25:52.077Z	[34mINFO[0m	handler/service.go:104	🔍 GetService: Checking container statusserviceradarrcontainer_nameradarrdb_statusrunning
+mediacheky-finaltest  | 2025-11-15T01:25:52.079Z	[34mINFO[0m	handler/service.go:122	✅ Container found (direct inspect)serviceradarrcontainerradarrstatusrunning
+mediacheky-finaltest  | 2025-11-15T01:25:52.079Z	[34mINFO[0m	handler/service.go:190	ℹ️ Status unchangedserviceradarrstatusrunning
+mediacheky-finaltest  | 2025-11-15T01:25:52.079Z	[34mINFO[0m	middleware/middleware.go:28	HTTP requestmethodGETpath/api/services/radarrstatus200duration_ms2ip172.18.0.1request_idb6b0be37-aa0c-4b7d-a3fe-5e7bd1154dad
+mediacheky-finaltest  | 2025-11-15T01:25:52.131Z	[34mINFO[0m	handler/service.go:104	🔍 GetService: Checking container statusserviceradarrcontainer_nameradarrdb_statusrunning
+mediacheky-finaltest  | 2025-11-15T01:25:52.132Z	[34mINFO[0m	handler/service.go:122	✅ Container found (direct inspect)serviceradarrcontainerradarrstatusrunning
+mediacheky-finaltest  | 2025-11-15T01:25:52.132Z	[34mINFO[0m	handler/service.go:190	ℹ️ Status unchangedserviceradarrstatusrunning
+mediacheky-finaltest  | 2025-11-15T01:25:52.132Z	[34mINFO[0m	middleware/middleware.go:28	HTTP requestmethodGETpath/api/services/radarrstatus200duration_ms2ip172.18.0.1request_id6325bb9a-43da-43b1-acb0-dcb60412ea0c
+mediacheky-finaltest  | 2025-11-15T01:25:52.782Z	[34mINFO[0m	service/service_manager.go:813	Loaded existing credentials from Radarr database	{"username": "adminf171a"}
+mediacheky-finaltest  | 2025-11-15T01:25:52.785Z	[34mINFO[0m	middleware/middleware.go:28	HTTP requestmethodGETpath/api/services/radarr/readystatus200duration_ms3ip172.18.0.1request_id1d85eee1-86b8-4ffc-ade3-c99d44cd530a
