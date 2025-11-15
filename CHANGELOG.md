@@ -1,3 +1,10 @@
+# [1.0.0-dev.20](https://github.com/carcheky/mediacheky/compare/v1.0.0-dev.19...v1.0.0-dev.20) (2025-11-15)
+
+
+### Features
+
+* **docker:** add endpoint to fetch saved Docker tags and store tags from Docker Hub ([#34](https://github.com/carcheky/mediacheky/issues/34)) ([8f54267](https://github.com/carcheky/mediacheky/commit/8f5426717ca7010ebeb0e1debea0a381e6515636))
+
 # [1.0.0-dev.19](https://github.com/carcheky/mediacheky/compare/v1.0.0-dev.18...v1.0.0-dev.19) (2025-11-15)
 
 
