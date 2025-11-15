@@ -517,10 +517,26 @@ func (sm *ServiceManager) UpdateService(ctx context.Context, serviceName string)
 func (sm *ServiceManager) UpdateServiceConfig(ctx context.Context, serviceName string, config models.ServiceConfig) error {
 	sm.logger.Info("Updating service configuration", zap.String("service", serviceName))
 
-	// Get service from database
+	// Get service from database, create if doesn't exist
 	svc, err := sm.serviceRepo.GetByName(serviceName)
 	if err != nil {
-		return fmt.Errorf("failed to get service: %w", err)
+		if err.Error() == "record not found" || err.Error() == "failed to get service: record not found" {
+			// Create service with provided configuration
+			sm.logger.Info("Service not found, creating with provided config", zap.String("service", serviceName))
+			svc = &models.Service{
+				Name:    serviceName,
+				Enabled: false,
+				Status:  "stopped",
+				Config:  config,
+			}
+
+			if err := sm.serviceRepo.Create(svc); err != nil {
+				return fmt.Errorf("failed to create service: %w", err)
+			}
+			sm.logger.Info("Service created successfully", zap.String("service", serviceName))
+		} else {
+			return fmt.Errorf("failed to get service: %w", err)
+		}
 	}
 
 	// Keep previous port exposure values to decide if restart is needed
