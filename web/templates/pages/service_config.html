@@ -192,81 +192,26 @@
                     </button>
                 </div>
 
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div class="md:col-span-2">
-                        <label class="block text-sm font-medium text-dark-text mb-1">Api Key
-                            <span class="ml-2 inline-block px-2 py-0.5 bg-blue-900/40 border border-blue-700/50 text-blue-300 rounded text-xs font-normal italic">config.xml</span>
-                        </label>
-                        <div class="flex gap-2">
-                            <input type="text" x-model="radarrConfig.ApiKey" readonly
-                                class="flex-1 px-3 py-2 border border-dark-border rounded-md bg-dark-surface text-dark-muted cursor-not-allowed">
-                            <button @click="copyToClipboard(radarrConfig.ApiKey)"
-                                class="px-3 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 flex items-center gap-2">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
-                                </svg>
-                                Copy
-                            </button>
-                        </div>
-                        <p class="text-xs text-dark-muted mt-1">Radarr-generated value for API integrations.</p>
+                <!-- 1. API Key (lo más importante) -->
+                <div class="mb-6">
+                    <label class="block text-sm font-medium text-dark-text mb-1">Api Key
+                        <span class="ml-2 inline-block px-2 py-0.5 bg-blue-900/40 border border-blue-700/50 text-blue-300 rounded text-xs font-normal italic">config.xml</span>
+                    </label>
+                    <div class="flex gap-2">
+                        <input type="text" x-model="radarrConfig.ApiKey" readonly
+                            class="flex-1 px-3 py-2 border border-dark-border rounded-md bg-dark-surface text-dark-muted cursor-not-allowed">
+                        <button @click="copyToClipboard(radarrConfig.ApiKey)"
+                            class="px-3 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 flex items-center gap-2">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
+                            </svg>
+                            Copy
+                        </button>
                     </div>
-
-                    <div>
-                        <label class="block text-sm font-medium text-dark-text mb-1">
-                            Authentication Method
-                            <span class="ml-2 inline-block px-2 py-0.5 bg-blue-900/40 border border-blue-700/50 text-blue-300 rounded text-xs font-normal italic">config.xml</span>
-                        </label>
-                        <select x-model="radarrConfig.AuthenticationMethod"
-                            class="w-full px-3 py-2 border border-dark-border rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 bg-dark-bg text-dark-text">
-                            <option value="None">None</option>
-                            <option value="Basic">Basic (Browser popup)</option>
-                            <option value="Forms">Forms (Login page)</option>
-                            <option value="External">External</option>
-                        </select>
-                        <p class="text-xs text-dark-muted mt-1">Choose the native authentication mechanism.</p>
-                    </div>
-
-                    <div>
-                        <label class="block text-sm font-medium text-dark-text mb-1">
-                            Authentication Required
-                            <span class="ml-2 inline-block px-2 py-0.5 bg-blue-900/40 border border-blue-700/50 text-blue-300 rounded text-xs font-normal italic">config.xml</span>
-                        </label>
-                        <select x-model="radarrConfig.AuthenticationRequired"
-                            class="w-full px-3 py-2 border border-dark-border rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 bg-dark-bg text-dark-text">
-                            <option value="Enabled">Enabled (Always require auth)</option>
-                            <option value="DisabledForLocalAddresses">Disabled for Local Addresses</option>
-                        </select>
-                        <p class="text-xs text-dark-muted mt-1">Controls when Radarr enforces authentication.</p>
-                    </div>
-
-                    <div>
-                        <label class="block text-sm font-medium text-dark-text mb-1">
-                            Log Level
-                            <span class="ml-2 inline-block px-2 py-0.5 bg-blue-900/40 border border-blue-700/50 text-blue-300 rounded text-xs font-normal italic">config.xml</span>
-                        </label>
-                        <select x-model="radarrConfig.LogLevel"
-                            class="w-full px-3 py-2 border border-dark-border rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 bg-dark-bg text-dark-text">
-                            <option value="trace">Trace</option>
-                            <option value="debug">Debug</option>
-                            <option value="info">Info</option>
-                            <option value="warn">Warning</option>
-                            <option value="error">Error</option>
-                        </select>
-                        <p class="text-xs text-dark-muted mt-1">Logging verbosity level.</p>
-                    </div>
-
-                    <div>
-                        <label class="block text-sm font-medium text-dark-text mb-1">
-                            Instance Name
-                            <span class="ml-2 inline-block px-2 py-0.5 bg-blue-900/40 border border-blue-700/50 text-blue-300 rounded text-xs font-normal italic">config.xml</span>
-                        </label>
-                        <input type="text" x-model="radarrConfig.InstanceName"
-                            class="w-full px-3 py-2 border border-dark-border rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 bg-dark-bg text-dark-text">
-                        <p class="text-xs text-dark-muted mt-1">Friendly name displayed across Radarr UI.</p>
-                    </div>
+                    <p class="text-xs text-dark-muted mt-1">Radarr-generated value for API integrations.</p>
                 </div>
 
-                <!-- Authentication Credentials -->
+                <!-- 2. Login Credentials (Username + Password) -->
                 <div class="mt-6 pt-6 border-t border-dark-border">
                     <div class="flex items-center gap-3 mb-2">
                         <svg class="w-5 h-5 text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -302,54 +247,121 @@
                                     <p class="text-green-200/80 text-xs mt-1">Current username is shown. Password is hidden for security. Change only if needed.</p>
                                 </div>
                             </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-dark-text mb-1">
+                                Username
+                                <span class="ml-2 inline-block px-2 py-0.5 bg-yellow-900/40 border border-yellow-700/50 text-yellow-300 rounded text-xs font-normal italic">database</span>
+                            </label>
+                            <div class="flex gap-2">
+                                <input type="text" x-model="radarrConfig.Username"
+                                    class="flex-1 px-3 py-2 border border-dark-border rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 bg-dark-bg text-dark-text"
+                                    placeholder="Enter username">
+                                <button @click="copyToClipboard(radarrConfig.Username)"
+                                    class="px-3 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 flex items-center gap-2">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
+                                    </svg>
+                                </button>
+                            </div>
+                            <p class="text-xs text-dark-muted mt-1">Username for Radarr web UI login.</p>
                         </div>
 
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div>
-                                <label class="block text-sm font-medium text-dark-text mb-1">
-                                    Username
-                                    <span class="ml-2 inline-block px-2 py-0.5 bg-yellow-900/40 border border-yellow-700/50 text-yellow-300 rounded text-xs font-normal italic">database</span>
-                                </label>
-                                <div class="flex gap-2">
-                                    <input type="text" x-model="radarrConfig.Username"
-                                        class="flex-1 px-3 py-2 border border-dark-border rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 bg-dark-bg text-dark-text"
-                                        placeholder="Enter username">
-                                    <button @click="copyToClipboard(radarrConfig.Username)"
-                                        class="px-3 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 flex items-center gap-2">
-                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
-                                        </svg>
-                                    </button>
-                                </div>
-                                <p class="text-xs text-dark-muted mt-1">Username for Radarr web UI login.</p>
+                        <div>
+                            <label class="block text-sm font-medium text-dark-text mb-1">
+                                Password
+                                <span class="ml-2 inline-block px-2 py-0.5 bg-yellow-900/40 border border-yellow-700/50 text-yellow-300 rounded text-xs font-normal italic">database</span>
+                            </label>
+                            <div class="flex gap-2">
+                                <input type="password" x-model="radarrConfig.Password"
+                                    x-ref="passwordField"
+                                    class="flex-1 px-3 py-2 border border-dark-border rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 bg-dark-bg text-dark-text"
+                                    placeholder="Enter password">
+                                <button @click="copyToClipboard(radarrConfig.Password)"
+                                    class="px-3 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 flex items-center gap-2">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
+                                    </svg>
+                                </button>
+                                <button @click="$refs.passwordField.type = $refs.passwordField.type === 'password' ? 'text' : 'password'"
+                                    class="px-3 py-2 bg-slate-700 text-white rounded-md hover:bg-slate-600">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+                                    </svg>
+                                </button>
                             </div>
+                            <p class="text-xs text-dark-muted mt-1">Password will be hashed with PBKDF2-HMAC-SHA512.</p>
+                        </div>
+                    </div>
+                </div>
 
-                            <div>
-                                <label class="block text-sm font-medium text-dark-text mb-1">
-                                    Password
-                                    <span class="ml-2 inline-block px-2 py-0.5 bg-yellow-900/40 border border-yellow-700/50 text-yellow-300 rounded text-xs font-normal italic">database</span>
-                                </label>
-                                <div class="flex gap-2">
-                                    <input type="password" x-model="radarrConfig.Password"
-                                        x-ref="passwordField"
-                                        class="flex-1 px-3 py-2 border border-dark-border rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 bg-dark-bg text-dark-text"
-                                        placeholder="Enter password">
-                                    <button @click="copyToClipboard(radarrConfig.Password)"
-                                        class="px-3 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 flex items-center gap-2">
-                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
-                                        </svg>
-                                    </button>
-                                    <button @click="$refs.passwordField.type = $refs.passwordField.type === 'password' ? 'text' : 'password'"
-                                        class="px-3 py-2 bg-slate-700 text-white rounded-md hover:bg-slate-600">
-                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
-                                        </svg>
-                                    </button>
-                                </div>
-                                <p class="text-xs text-dark-muted mt-1">Password will be hashed with PBKDF2-HMAC-SHA512.</p>
-                            </div>
+                <!-- 3. Authentication Settings -->
+                <div class="mt-6 pt-6 border-t border-dark-border">
+                    <h3 class="text-sm font-semibold text-purple-400 uppercase tracking-wide mb-4">Authentication Settings</h3>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-dark-text mb-1">
+                                Authentication Method
+                                <span class="ml-2 inline-block px-2 py-0.5 bg-blue-900/40 border border-blue-700/50 text-blue-300 rounded text-xs font-normal italic">config.xml</span>
+                            </label>
+                            <select x-model="radarrConfig.AuthenticationMethod"
+                                class="w-full px-3 py-2 border border-dark-border rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 bg-dark-bg text-dark-text">
+                                <option value="None">None</option>
+                                <option value="Basic">Basic (Browser popup)</option>
+                                <option value="Forms">Forms (Login page)</option>
+                                <option value="External">External</option>
+                            </select>
+                            <p class="text-xs text-dark-muted mt-1">Choose the native authentication mechanism.</p>
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-dark-text mb-1">
+                                Authentication Required
+                                <span class="ml-2 inline-block px-2 py-0.5 bg-blue-900/40 border border-blue-700/50 text-blue-300 rounded text-xs font-normal italic">config.xml</span>
+                            </label>
+                            <select x-model="radarrConfig.AuthenticationRequired"
+                                class="w-full px-3 py-2 border border-dark-border rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 bg-dark-bg text-dark-text">
+                                <option value="Enabled">Enabled (Always require auth)</option>
+                                <option value="DisabledForLocalAddresses">Disabled for Local Addresses</option>
+                            </select>
+                            <p class="text-xs text-dark-muted mt-1">Controls when Radarr enforces authentication.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 4. General Settings -->
+                <div class="mt-6 pt-6 border-t border-dark-border">
+                    <h3 class="text-sm font-semibold text-purple-400 uppercase tracking-wide mb-4">General Settings</h3>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-dark-text mb-1">
+                                Instance Name
+                                <span class="ml-2 inline-block px-2 py-0.5 bg-blue-900/40 border border-blue-700/50 text-blue-300 rounded text-xs font-normal italic">config.xml</span>
+                            </label>
+                            <input type="text" x-model="radarrConfig.InstanceName"
+                                class="w-full px-3 py-2 border border-dark-border rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 bg-dark-bg text-dark-text">
+                            <p class="text-xs text-dark-muted mt-1">Friendly name displayed across Radarr UI.</p>
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-dark-text mb-1">
+                                Log Level
+                                <span class="ml-2 inline-block px-2 py-0.5 bg-blue-900/40 border border-blue-700/50 text-blue-300 rounded text-xs font-normal italic">config.xml</span>
+                            </label>
+                            <select x-model="radarrConfig.LogLevel"
+                                class="w-full px-3 py-2 border border-dark-border rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 bg-dark-bg text-dark-text">
+                                <option value="trace">Trace</option>
+                                <option value="debug">Debug</option>
+                                <option value="info">Info</option>
+                                <option value="warn">Warning</option>
+                                <option value="error">Error</option>
+                            </select>
+                            <p class="text-xs text-dark-muted mt-1">Logging verbosity level.</p>
                         </div>
                     </div>
                 </div>
