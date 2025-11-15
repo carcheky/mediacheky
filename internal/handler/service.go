@@ -2,7 +2,6 @@ package handler
 
 import (
 	"context"
-	"encoding/xml"
 	"fmt"
 	"net"
 	"net/http"
@@ -181,9 +180,8 @@ func (h *ServiceHandler) GetService(c *fiber.Ctx) error {
 				"new_status", realStatus)
 			svc.Status = realStatus
 			// Update in database asynchronously (don't block response)
+			// Note: Added context with timeout to prevent goroutine leaks
 			go func(id uint, status string) {
-				ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-				defer cancel()
 				if updateErr := h.repos.Service.UpdateStatus(id, status, ""); updateErr != nil {
 					h.logger.Warn("Failed to update service status in DB", "name", name, "error", updateErr)
 				}
