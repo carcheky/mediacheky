@@ -69,6 +69,9 @@ type ServiceRepository interface {
 	Update(service *models.Service) error
 	UpdateStatus(id uint, status string, containerID string) error
 	SetEnabled(id uint, enabled bool) error
+	GetServiceCredentials(serviceName string) (*models.ServiceCredentials, error)
+	SaveServiceCredentials(serviceName, username, password string) error
+	DeleteServiceCredentials(serviceName string) error
 }
 
 // ServiceLogRepository defines the interface for service log data access
@@ -800,34 +803,63 @@ func (sm *ServiceManager) GetRadarrConfig(ctx context.Context, serviceName strin
 		}
 	}
 
-	// Load credentials from database or generate new ones
-	dbPath := filepath.Join("/app/data/services-volumes", serviceName, "radarr.db")
-	username, exists, err := sm.getRadarrCredentialsFromDB(dbPath)
-
-	if err != nil {
-		sm.logger.Warn("Failed to read credentials from database", zap.Error(err))
-	} else if exists {
-		// Credentials exist in database - load them
-		config.Username = username
-		config.Password = "********" // Don't expose actual password
-		sm.logger.Info("Loaded existing credentials from Radarr database", zap.String("username", username))
+	// Load credentials from our MediaCheky database first
+	credentials, err := sm.getServiceCredentials(serviceName)
+	if err == nil && credentials != nil {
+		// Credentials exist in MediaCheky database - use them
+		config.Username = credentials.Username
+		config.Password = credentials.Password // Return real password for copy/autologin
+		sm.logger.Info("Loaded existing credentials from MediaCheky database", zap.String("username", credentials.Username))
 	} else {
-		// No credentials in database - generate random ones
-		generatedUser, generatedPass, err := generateRandomCredentials()
-		if err != nil {
-			return config, fmt.Errorf("failed to generate credentials: %w", err)
-		}
-		config.Username = generatedUser
-		config.Password = generatedPass
-		sm.logger.Info("Generated random credentials for Radarr",
-			zap.String("username", generatedUser),
-			zap.String("password_length", fmt.Sprintf("%d", len(generatedPass))))
+		// Try loading from Radarr's database as fallback
+		dbPath := filepath.Join("/app/data/services-volumes", serviceName, "radarr.db")
+		username, exists, err := sm.getRadarrCredentialsFromDB(dbPath)
 
-		// Automatically save the generated credentials
-		if err := sm.updateRadarrCredentials(dbPath, generatedUser, generatedPass); err != nil {
-			sm.logger.Warn("Failed to save generated credentials", zap.Error(err))
-		} else {
-			sm.logger.Info("Generated credentials saved to database")
+		if err != nil {
+			sm.logger.Warn("Failed to read credentials from Radarr database", zap.Error(err))
+		} else if exists {
+			// Credentials exist in Radarr database - migrate to MediaCheky DB
+			// We need to get the password from Radarr DB (not just username)
+			password, err := sm.getRadarrPasswordFromDB(dbPath, username)
+			if err == nil && password != "" {
+				config.Username = username
+				config.Password = password
+				// Save to MediaCheky database for future use
+				if err := sm.saveServiceCredentials(serviceName, username, password); err != nil {
+					sm.logger.Warn("Failed to save credentials to MediaCheky database", zap.Error(err))
+				} else {
+					sm.logger.Info("Migrated credentials from Radarr DB to MediaCheky DB", zap.String("username", username))
+				}
+			} else {
+				// Fallback: show masked password
+				config.Username = username
+				config.Password = "********"
+				sm.logger.Info("Loaded username from Radarr database (password masked)", zap.String("username", username))
+			}
+		}
+
+		// If still no credentials, generate new ones
+		if config.Username == "" {
+			generatedUser, generatedPass, err := generateRandomCredentials()
+			if err != nil {
+				return config, fmt.Errorf("failed to generate credentials: %w", err)
+			}
+			config.Username = generatedUser
+			config.Password = generatedPass
+			sm.logger.Info("Generated random credentials for Radarr",
+				zap.String("username", generatedUser),
+				zap.String("password_length", fmt.Sprintf("%d", len(generatedPass))))
+
+			// Save to both databases
+			dbPath := filepath.Join("/app/data/services-volumes", serviceName, "radarr.db")
+			if err := sm.updateRadarrCredentials(dbPath, generatedUser, generatedPass); err != nil {
+				sm.logger.Warn("Failed to save credentials to Radarr database", zap.Error(err))
+			}
+			if err := sm.saveServiceCredentials(serviceName, generatedUser, generatedPass); err != nil {
+				sm.logger.Warn("Failed to save credentials to MediaCheky database", zap.Error(err))
+			} else {
+				sm.logger.Info("Generated credentials saved to both databases")
+			}
 		}
 	}
 
@@ -1170,4 +1202,45 @@ func parseInt(s string, defaultVal int) int {
 		return defaultVal
 	}
 	return result
+}
+
+// getServiceCredentials retrieves credentials from MediaCheky's database
+func (sm *ServiceManager) getServiceCredentials(serviceName string) (*models.ServiceCredentials, error) {
+	return sm.serviceRepo.GetServiceCredentials(serviceName)
+}
+
+// saveServiceCredentials saves or updates credentials in MediaCheky's database
+func (sm *ServiceManager) saveServiceCredentials(serviceName, username, password string) error {
+	return sm.serviceRepo.SaveServiceCredentials(serviceName, username, password)
+}
+
+// getRadarrPasswordFromDB retrieves the password from Radarr's database
+// This is a helper method to migrate credentials from Radarr DB to MediaCheky DB
+func (sm *ServiceManager) getRadarrPasswordFromDB(dbPath, username string) (string, error) {
+	// Check if database exists
+	if _, err := os.Stat(dbPath); os.IsNotExist(err) {
+		return "", fmt.Errorf("database not found")
+	}
+
+	// Open database
+	db, err := sql.Open("sqlite3", dbPath)
+	if err != nil {
+		return "", fmt.Errorf("failed to open database: %w", err)
+	}
+	defer db.Close()
+
+	// Query for password hash and salt
+	var passwordB64, saltB64 string
+	var iterations int
+	err = db.QueryRow("SELECT Password, Salt, Iterations FROM Users WHERE Username = ? LIMIT 1", strings.ToLower(username)).Scan(&passwordB64, &saltB64, &iterations)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return "", fmt.Errorf("user not found")
+		}
+		return "", fmt.Errorf("failed to query user: %w", err)
+	}
+
+	// Note: We cannot reverse the hash, so we return an empty string
+	// This means we need to keep the password in MediaCheky DB from the start
+	return "", nil
 }

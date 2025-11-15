@@ -22,6 +22,7 @@ func RunMigrations(db *gorm.DB) error {
 		&models.Template{},
 		&models.GlobalConfig{},
 		&models.ServiceLog{},
+		&models.ServiceCredentials{},
 		// Proxy models
 		&models.ProxyConfig{},
 		&models.Domain{},
