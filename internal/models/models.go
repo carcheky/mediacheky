@@ -158,3 +158,19 @@ type GlobalStats struct {
 	TotalEpisodes         int   `json:"total_episodes"`
 	TotalEpisodesDownload int   `json:"total_episodes_download"`
 }
+
+// ServiceCredentials stores service authentication credentials in mediacheky.db
+type ServiceCredentials struct {
+	ID        uint           `json:"id" gorm:"primaryKey"`
+	CreatedAt time.Time      `json:"created_at"`
+	UpdatedAt time.Time      `json:"updated_at"`
+	DeletedAt gorm.DeletedAt `json:"-" gorm:"index"`
+
+	ServiceName string `json:"service_name" gorm:"uniqueIndex;not null"` // "radarr", "sonarr", etc.
+	Username    string `json:"username" gorm:"not null"`
+	Password    string `json:"password" gorm:"not null"` // Stored in plaintext for autologin functionality
+}
+
+func (ServiceCredentials) TableName() string {
+	return "service_credentials"
+}

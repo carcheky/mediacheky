@@ -42,7 +42,7 @@
         <!-- Service Enable/Disable List -->
         <div class="bg-dark-surface dark:bg-dark-surface shadow-lg rounded-lg border border-dark-border p-6">
             <h2 class="text-xl font-semibold text-dark-text mb-4">Available Services</h2>
-            <p class="text-sm text-dark-muted mb-6">Enable services to configure and use them. Enabled services will appear in the Dashboard.</p>
+            <p class="text-sm text-dark-muted mb-6">🔄 Enable services and use Configure button to set them up. Enabled services appear in the Dashboard.</p>
             
             <div class="space-y-10">
                 <!-- Media Server Section -->
@@ -50,67 +50,22 @@
                     <h3 class="text-lg font-semibold text-dark-text mb-3 flex items-center gap-2">📺 Media Server</h3>
                     <div class="space-y-3">
                         <template x-for="service in getServicesByCategory('media-server')" :key="service.id">
-                            <div :id="'service-' + service.id" 
-                                class="flex items-center justify-between p-4 rounded-lg border transition-colors scroll-mt-6"
-                                :class="config.services[service.id]?.enabled ? 'bg-blue-900/20 border-blue-600/50' : 'bg-dark-bg border-dark-border'">
+                            <div class="flex items-center justify-between p-4 rounded-lg border border-dark-border bg-dark-bg">
                                 <div class="flex items-center gap-4">
                                     <div class="text-3xl" x-text="service.icon || '⚙️'"></div>
                                     <div>
-                                        <h3 class="font-semibold text-dark-text" x-text="service.label"></h3>
+                                        <div class="flex items-center gap-2 mb-1">
+                                            <h3 class="font-semibold text-dark-text" x-text="service.label"></h3>
+                                            <span x-show="serviceStatuses[service.id]?.enabled" class="px-2 py-0.5 text-xs rounded-full bg-green-900/30 border border-green-600/50 text-green-300">Active</span>
+                                            <span x-show="!serviceStatuses[service.id]?.enabled" class="px-2 py-0.5 text-xs rounded-full bg-gray-700 text-gray-400">Inactive</span>
+                                        </div>
                                         <p class="text-sm text-dark-muted" x-text="service.description || 'No description available'"></p>
                                     </div>
                                 </div>
-                                <div class="flex items-center gap-3">
-                                    <template x-if="config.services[service.id]?.enabled">
-                                        <div class="flex items-center gap-2">
-                                            <button x-show="serviceStatuses[service.id] !== 'running'"
-                                                @click="startService(service.id)"
-                                                :disabled="actionInProgress[service.id]"
-                                                class="px-3 py-1 bg-green-600 text-white rounded-md hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed text-sm flex items-center gap-1">
-                                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"/>
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                                                </svg>
-                                                <span>Start</span>
-                                            </button>
-                                            <button x-show="serviceStatuses[service.id] === 'running'"
-                                                @click="stopService(service.id)"
-                                                :disabled="actionInProgress[service.id]"
-                                                class="px-3 py-1 bg-red-600 text-white rounded-md hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed text-sm flex items-center gap-1">
-                                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 10a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1v-4z"/>
-                                                </svg>
-                                                <span>Stop</span>
-                                            </button>
-                                            <button x-show="serviceStatuses[service.id] === 'running'"
-                                                @click="restartService(service.id)"
-                                                :disabled="actionInProgress[service.id]"
-                                                class="px-3 py-1 bg-yellow-600 text-white rounded-md hover:bg-yellow-700 disabled:opacity-50 disabled:cursor-not-allowed text-sm flex items-center gap-1">
-                                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
-                                                </svg>
-                                                <span>Restart</span>
-                                            </button>
-                                            <a :href="'/services/' + service.id"
-                                                class="px-3 py-1 bg-blue-600 text-white rounded-md hover:bg-blue-700 text-sm flex items-center gap-1">
-                                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
-                                                </svg>
-                                                <span>Configure</span>
-                                            </a>
-                                        </div>
-                                    </template>
-                                    <label class="flex items-center cursor-pointer">
-                                        <input type="checkbox" x-model="config.services[service.id].enabled" 
-                                            @change="saveAll()" class="sr-only peer">
-                                        <div class="relative w-11 h-6 bg-gray-600 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-800 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600">
-                                        </div>
-                                        <span class="ml-3 text-sm font-medium text-dark-text" 
-                                            x-text="config.services[service.id]?.enabled ? 'Enabled' : 'Disabled'"></span>
-                                    </label>
-                                </div>
+                                <a :href="'/services/' + service.id"
+                                    class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 text-sm">
+                                    Configure
+                                </a>
                             </div>
                         </template>
                         <template x-if="getServicesByCategory('media-server').length === 0">
@@ -124,41 +79,22 @@
                     <h3 class="text-lg font-semibold text-dark-text mb-3 flex items-center gap-2">📦 *arr Services</h3>
                     <div class="space-y-3">
                         <template x-for="service in getServicesByCategory('arr')" :key="service.id">
-                            <div :id="'service-' + service.id" 
-                                class="flex items-center justify-between p-4 rounded-lg border transition-colors scroll-mt-6"
-                                :class="config.services[service.id]?.enabled ? 'bg-blue-900/20 border-blue-600/50' : 'bg-dark-bg border-dark-border'">
+                            <div class="flex items-center justify-between p-4 rounded-lg border border-dark-border bg-dark-bg">
                                 <div class="flex items-center gap-4">
                                     <div class="text-3xl" x-text="service.icon || '⚙️'"></div>
                                     <div>
-                                        <h3 class="font-semibold text-dark-text" x-text="service.label"></h3>
+                                        <div class="flex items-center gap-2 mb-1">
+                                            <h3 class="font-semibold text-dark-text" x-text="service.label"></h3>
+                                            <span x-show="serviceStatuses[service.id]?.enabled" class="px-2 py-0.5 text-xs rounded-full bg-green-900/30 border border-green-600/50 text-green-300">Active</span>
+                                            <span x-show="!serviceStatuses[service.id]?.enabled" class="px-2 py-0.5 text-xs rounded-full bg-gray-700 text-gray-400">Inactive</span>
+                                        </div>
                                         <p class="text-sm text-dark-muted" x-text="service.description || 'No description available'"></p>
                                     </div>
                                 </div>
-                                <div class="flex items-center gap-3">
-                                    <template x-if="config.services[service.id]?.enabled">
-                                        <div class="flex items-center gap-2">
-                                            <button x-show="serviceStatuses[service.id] !== 'running'"
-                                                @click="startService(service.id)"
-                                                :disabled="actionInProgress[service.id]"
-                                                class="px-3 py-1 bg-green-600 text-white rounded-md hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed text-sm flex items-center gap-1">Start</button>
-                                            <button x-show="serviceStatuses[service.id] === 'running'"
-                                                @click="stopService(service.id)"
-                                                :disabled="actionInProgress[service.id]"
-                                                class="px-3 py-1 bg-red-600 text-white rounded-md hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed text-sm flex items-center gap-1">Stop</button>
-                                            <button x-show="serviceStatuses[service.id] === 'running'"
-                                                @click="restartService(service.id)"
-                                                :disabled="actionInProgress[service.id]"
-                                                class="px-3 py-1 bg-yellow-600 text-white rounded-md hover:bg-yellow-700 disabled:opacity-50 disabled:cursor-not-allowed text-sm flex items-center gap-1">Restart</button>
-                                            <a :href="'/services/' + service.id" class="px-3 py-1 bg-blue-600 text-white rounded-md hover:bg-blue-700 text-sm">Configure</a>
-                                        </div>
-                                    </template>
-                                    <label class="flex items-center cursor-pointer">
-                                        <input type="checkbox" x-model="config.services[service.id].enabled" 
-                                            @change="saveAll()" class="sr-only peer">
-                                        <div class="relative w-11 h-6 bg-gray-600 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-800 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-                                        <span class="ml-3 text-sm font-medium text-dark-text" x-text="config.services[service.id]?.enabled ? 'Enabled' : 'Disabled'"></span>
-                                    </label>
-                                </div>
+                                <a :href="'/services/' + service.id"
+                                    class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 text-sm">
+                                    Configure
+                                </a>
                             </div>
                         </template>
                         <template x-if="getServicesByCategory('arr').length === 0">
@@ -172,31 +108,22 @@
                     <h3 class="text-lg font-semibold text-dark-text mb-3 flex items-center gap-2">🔧 Other Services</h3>
                     <div class="space-y-3">
                         <template x-for="service in getServicesByCategory('other')" :key="service.id">
-                            <div :id="'service-' + service.id" 
-                                class="flex items-center justify-between p-4 rounded-lg border transition-colors scroll-mt-6"
-                                :class="config.services[service.id]?.enabled ? 'bg-blue-900/20 border-blue-600/50' : 'bg-dark-bg border-dark-border'">
+                            <div class="flex items-center justify-between p-4 rounded-lg border border-dark-border bg-dark-bg">
                                 <div class="flex items-center gap-4">
                                     <div class="text-3xl" x-text="service.icon || '⚙️'"></div>
                                     <div>
-                                        <h3 class="font-semibold text-dark-text" x-text="service.label"></h3>
+                                        <div class="flex items-center gap-2 mb-1">
+                                            <h3 class="font-semibold text-dark-text" x-text="service.label"></h3>
+                                            <span x-show="serviceStatuses[service.id]?.enabled" class="px-2 py-0.5 text-xs rounded-full bg-green-900/30 border border-green-600/50 text-green-300">Active</span>
+                                            <span x-show="!serviceStatuses[service.id]?.enabled" class="px-2 py-0.5 text-xs rounded-full bg-gray-700 text-gray-400">Inactive</span>
+                                        </div>
                                         <p class="text-sm text-dark-muted" x-text="service.description || 'No description available'"></p>
                                     </div>
                                 </div>
-                                <div class="flex items-center gap-3">
-                                    <template x-if="config.services[service.id]?.enabled">
-                                        <div class="flex items-center gap-2">
-                                            <button x-show="serviceStatuses[service.id] !== 'running'" @click="startService(service.id)" :disabled="actionInProgress[service.id]" class="px-3 py-1 bg-green-600 text-white rounded-md hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed text-sm">Start</button>
-                                            <button x-show="serviceStatuses[service.id] === 'running'" @click="stopService(service.id)" :disabled="actionInProgress[service.id]" class="px-3 py-1 bg-red-600 text-white rounded-md hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed text-sm">Stop</button>
-                                            <button x-show="serviceStatuses[service.id] === 'running'" @click="restartService(service.id)" :disabled="actionInProgress[service.id]" class="px-3 py-1 bg-yellow-600 text-white rounded-md hover:bg-yellow-700 disabled:opacity-50 disabled:cursor-not-allowed text-sm">Restart</button>
-                                            <a :href="'/services/' + service.id" class="px-3 py-1 bg-blue-600 text-white rounded-md hover:bg-blue-700 text-sm">Configure</a>
-                                        </div>
-                                    </template>
-                                    <label class="flex items-center cursor-pointer">
-                                        <input type="checkbox" x-model="config.services[service.id].enabled" @change="saveAll()" class="sr-only peer">
-                                        <div class="relative w-11 h-6 bg-gray-600 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-800 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-                                        <span class="ml-3 text-sm font-medium text-dark-text" x-text="config.services[service.id]?.enabled ? 'Enabled' : 'Disabled'"></span>
-                                    </label>
-                                </div>
+                                <a :href="'/services/' + service.id"
+                                    class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 text-sm">
+                                    Configure
+                                </a>
                             </div>
                         </template>
                         <template x-if="getServicesByCategory('other').length === 0">
@@ -324,6 +251,63 @@
                         class="w-full px-3 py-2 border border-dark-border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-dark-bg text-dark-text">
                     <p class="text-xs text-dark-muted mt-1">CIDR notation (optional)</p>
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Progress Modal (Bottom Left) -->
+    <div x-show="showProgress" 
+         x-transition:enter="transition ease-out duration-300"
+         x-transition:enter-start="opacity-0 transform -translate-x-2"
+         x-transition:enter-end="opacity-100 transform translate-x-0"
+         x-transition:leave="transition ease-in duration-200"
+         x-transition:leave-start="opacity-100 transform translate-x-0"
+         x-transition:leave-end="opacity-0 transform -translate-x-2"
+         class="fixed bottom-4 left-4 z-40 min-w-[320px] max-w-sm shadow-2xl rounded-lg border-2 border-amber-500/70 overflow-hidden bg-gradient-to-br from-blue-900/98 to-blue-950/98 backdrop-blur-md">
+        
+        <!-- Warning Banner -->
+        <div class="bg-gradient-to-r from-amber-600/30 via-amber-500/30 to-amber-600/30 border-b-2 border-amber-500/50 px-4 py-3">
+            <div class="flex items-center gap-3">
+                <div class="flex-shrink-0">
+                    <svg class="w-7 h-7 text-amber-400 animate-pulse" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
+                    </svg>
+                </div>
+                <div class="flex-1">
+                    <p class="text-sm font-bold text-amber-200 leading-tight">Please wait - Do not close!</p>
+                    <p class="text-xs text-amber-300/90 mt-0.5" x-text="progressWarning"></p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Progress Content -->
+        <div class="p-4">
+            <!-- Header -->
+            <div class="flex items-center gap-3 mb-4">
+                <svg class="w-6 h-6 animate-spin text-blue-400" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                <div class="flex-1">
+                    <p class="text-base font-semibold text-blue-100" x-text="progressTitle"></p>
+                </div>
+            </div>
+            <!-- Steps -->
+            <div class="space-y-2.5">
+                <template x-for="(step, index) in progressSteps" :key="index">
+                    <div class="flex items-center gap-3 text-sm">
+                        <div x-show="index < currentProgressStep" class="w-5 h-5 rounded-full bg-green-500 flex items-center justify-center flex-shrink-0 shadow-lg shadow-green-500/50">
+                            <svg class="w-3.5 h-3.5 text-white" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
+                            </svg>
+                        </div>
+                        <div x-show="index === currentProgressStep" class="w-5 h-5 rounded-full bg-blue-400 flex items-center justify-center flex-shrink-0 shadow-lg shadow-blue-400/50">
+                            <div class="w-2.5 h-2.5 bg-blue-900 rounded-full animate-pulse"></div>
+                        </div>
+                        <div x-show="index > currentProgressStep" class="w-5 h-5 rounded-full border-2 border-blue-500/40 flex-shrink-0"></div>
+                        <span class="text-blue-100 font-medium" x-text="step"></span>
+                    </div>
+                </template>
             </div>
         </div>
     </div>
@@ -462,12 +446,17 @@
             },
             connectionResults: {},
             envSources: {},
-            serviceStatuses: {},
-            actionInProgress: {},
+            serviceStatuses: {}, // Estado de cada servicio desde el backend
             testing: false,
             saving: false,
             message: '',
             messageType: 'success',
+            // Progress tracking
+            showProgress: false,
+            progressTitle: '',
+            progressWarning: 'Operation in progress...',
+            progressSteps: [],
+            currentProgressStep: 0,
 
             // Service definitions with metadata (deduplicated + categorized)
             services: [
@@ -639,8 +628,28 @@
             async init() {
                 await this.loadConfig();
                 await this.loadServiceStatuses();
-                // Poll statuses every 5 seconds
-                setInterval(() => this.loadServiceStatuses(), 5000);
+            },
+
+            async loadServiceStatuses() {
+                try {
+                    const response = await fetch('/api/services');
+                    if (response.ok) {
+                        const data = await response.json();
+                        console.log('API Response:', data);
+                        const services = data.data || data; // Manejar tanto { data: [...] } como [...]
+                        console.log('Services:', services);
+                        services.forEach(service => {
+                            console.log(`Setting status for ${service.name}:`, service.enabled);
+                            this.serviceStatuses[service.name] = {
+                                enabled: service.enabled,
+                                status: service.status
+                            };
+                        });
+                        console.log('Final serviceStatuses:', this.serviceStatuses);
+                    }
+                } catch (error) {
+                    console.error('Error loading service statuses:', error);
+                }
             },
 
             async loadConfig() {
@@ -659,82 +668,7 @@
                 }
             },
 
-            async loadServiceStatuses() {
-                try {
-                    const response = await fetch('/api/services');
-                    if (response.ok) {
-                        const services = await response.json();
-                        services.forEach(service => {
-                            this.serviceStatuses[service.name] = service.status;
-                        });
-                    }
-                } catch (error) {
-                    console.error('Error loading service statuses:', error);
-                }
-            },
 
-            async startService(serviceId) {
-                this.actionInProgress[serviceId] = true;
-                try {
-                    const response = await fetch(`/api/services/${serviceId}/start`, {
-                        method: 'POST'
-                    });
-                    const data = await response.json();
-                    
-                    if (response.ok) {
-                        this.showMessage(`Service ${serviceId} started successfully`, 'success');
-                        await this.loadServiceStatuses();
-                    } else {
-                        this.showMessage(data.error || `Failed to start ${serviceId}`, 'error');
-                    }
-                } catch (error) {
-                    this.showMessage(`Error starting ${serviceId}: ${error.message}`, 'error');
-                } finally {
-                    this.actionInProgress[serviceId] = false;
-                }
-            },
-
-            async stopService(serviceId) {
-                this.actionInProgress[serviceId] = true;
-                try {
-                    const response = await fetch(`/api/services/${serviceId}/stop`, {
-                        method: 'POST'
-                    });
-                    const data = await response.json();
-                    
-                    if (response.ok) {
-                        this.showMessage(`Service ${serviceId} stopped successfully`, 'success');
-                        await this.loadServiceStatuses();
-                    } else {
-                        this.showMessage(data.error || `Failed to stop ${serviceId}`, 'error');
-                    }
-                } catch (error) {
-                    this.showMessage(`Error stopping ${serviceId}: ${error.message}`, 'error');
-                } finally {
-                    this.actionInProgress[serviceId] = false;
-                }
-            },
-
-            async restartService(serviceId) {
-                this.actionInProgress[serviceId] = true;
-                try {
-                    const response = await fetch(`/api/services/${serviceId}/restart`, {
-                        method: 'POST'
-                    });
-                    const data = await response.json();
-                    
-                    if (response.ok) {
-                        this.showMessage(`Service ${serviceId} restarted successfully`, 'success');
-                        await this.loadServiceStatuses();
-                    } else {
-                        this.showMessage(data.error || `Failed to restart ${serviceId}`, 'error');
-                    }
-                } catch (error) {
-                    this.showMessage(`Error restarting ${serviceId}: ${error.message}`, 'error');
-                } finally {
-                    this.actionInProgress[serviceId] = false;
-                }
-            },
 
             async testAllConnections() {
                 this.testing = true;
@@ -792,6 +726,12 @@
                 this.saving = true;
                 this.message = '';
 
+                this.startProgress('Saving all configuration', [
+                    'Processing services',
+                    'Saving settings',
+                    'Finalizing changes'
+                ], 'Saving all configuration changes...');
+
                 try {
                     // First, handle service enable/disable
                     for (const service of this.services) {
@@ -813,6 +753,8 @@
                         }
                     }
 
+                    this.updateProgress(1);
+                    
                     // Then save the rest of the configuration
                     const response = await fetch('/api/config', {
                         method: 'POST',
@@ -821,13 +763,17 @@
                     });
 
                     if (response.ok) {
+                        this.updateProgress(2);
                         this.showMessage('Configuration saved successfully!', 'success');
+                        this.endProgress();
                     } else {
                         const data = await response.json();
                         this.showMessage(data.error || 'Failed to save configuration', 'error');
+                        this.endProgress();
                     }
                 } catch (error) {
                     this.showMessage('Error: ' + error.message, 'error');
+                    this.endProgress();
                 } finally {
                     this.saving = false;
                 }
@@ -860,11 +806,147 @@
                 return fields;
             },
 
+            async toggleService(serviceId) {
+                const serviceConfig = this.config.services[serviceId];
+                if (!serviceConfig) return;
+
+                if (serviceConfig.enabled) {
+                    // Enable service - apply configuration and start
+                    try {
+                        this.startProgress(`Enabling ${serviceId}`, [
+                            'Loading configuration',
+                            'Saving configuration',
+                            'Starting container',
+                            'Reloading data'
+                        ], 'Service startup in progress...');
+
+                        // STEP 1: Load FULL service configuration from backend (Image, Paths, etc.)
+                        const loadResponse = await fetch(`/api/services/${serviceId}`);
+                        if (!loadResponse.ok) {
+                            const data = await loadResponse.json();
+                            this.showMessage(data.error || 'Failed to load service configuration', 'error');
+                            serviceConfig.enabled = false; // Revert toggle
+                            this.endProgress();
+                            return;
+                        }
+                        
+                        const fullServiceData = await loadResponse.json();
+                        this.updateProgress(1); // Step 2: Saving configuration
+                        
+                        // STEP 2: Save FULL config (includes Image, Paths, RestartPolicy, etc.)
+                        const configToSave = fullServiceData.config || {};
+                        if (!configToSave.HostPort || configToSave.HostPort === 0) {
+                            delete configToSave.HostPort;
+                        }
+
+                        const saveResponse = await fetch(`/api/services/${serviceId}/config`, {
+                            method: 'PUT',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(configToSave)
+                        });
+
+                        if (!saveResponse.ok) {
+                            const data = await saveResponse.json();
+                            this.showMessage(data.error || 'Failed to save configuration', 'error');
+                            serviceConfig.enabled = false; // Revert toggle
+                            this.endProgress();
+                            return;
+                        }
+
+                        this.updateProgress(2); // Step 3: Starting container
+
+                        // STEP 3: Enable service
+                        const response = await fetch(`/api/services/${serviceId}/enable`, {
+                            method: 'POST'
+                        });
+                        
+                        if (response.ok) {
+                            this.showMessage(`${serviceId} enabled and started successfully`, 'success');
+                            
+                            this.updateProgress(3); // Step 4: Reloading data
+                            
+                            // Wait for service to start
+                            await new Promise(resolve => setTimeout(resolve, 2000));
+                            
+                            this.endProgress();
+                        } else {
+                            const data = await response.json();
+                            this.showMessage(data.error || `Failed to enable ${serviceId}`, 'error');
+                            serviceConfig.enabled = false; // Revert toggle
+                            this.endProgress();
+                        }
+                    } catch (error) {
+                        this.showMessage('Error: ' + error.message, 'error');
+                        serviceConfig.enabled = false; // Revert toggle
+                        this.endProgress();
+                    }
+                } else {
+                    // Disable service (will stop and remove container)
+                    if (!confirm(`Disabling ${serviceId} will stop and remove the container. Continue?`)) {
+                        serviceConfig.enabled = true; // Revert toggle
+                        return;
+                    }
+                    
+                    try {
+                        this.startProgress(`Disabling ${serviceId}`, [
+                            'Stopping container',
+                            'Complete'
+                        ], 'Service shutdown in progress...');
+
+                        const response = await fetch(`/api/services/${serviceId}/disable`, {
+                            method: 'POST'
+                        });
+                        
+                        if (response.ok) {
+                            this.updateProgress(1); // Update to step 2: Complete
+                            this.showMessage(`${serviceId} disabled successfully`, 'success');
+                            this.endProgress();
+                        } else {
+                            const data = await response.json();
+                            this.showMessage(data.error || `Failed to disable ${serviceId}`, 'error');
+                            serviceConfig.enabled = true; // Revert toggle
+                            this.endProgress();
+                        }
+                    } catch (error) {
+                        this.showMessage('Error: ' + error.message, 'error');
+                        serviceConfig.enabled = true; // Revert toggle
+                        this.endProgress();
+                    }
+                }
+            },
+
             scrollToService(serviceId) {
                 const element = document.getElementById('service-' + serviceId);
                 if (element) {
                     element.scrollIntoView({ behavior: 'smooth', block: 'start' });
                 }
+            },
+
+            startProgress(title, steps, warning = 'Operation in progress...') {
+                this.progressTitle = title;
+                this.progressSteps = steps;
+                this.progressWarning = warning;
+                this.currentProgressStep = 0;
+                this.showProgress = true;
+            },
+
+            updateProgress(stepIndex = null) {
+                if (stepIndex !== null) {
+                    this.currentProgressStep = stepIndex;
+                } else {
+                    this.currentProgressStep++;
+                }
+                if (this.currentProgressStep >= this.progressSteps.length) {
+                    this.currentProgressStep = this.progressSteps.length - 1;
+                }
+            },
+
+            endProgress() {
+                this.showProgress = false;
+                this.progressTitle = '';
+                this.progressWarning = 'Operation in progress...';
+                this.progressSteps = [];
+                this.currentProgressStep = 0;
             },
 
             showMessage(msg, type = 'success') {

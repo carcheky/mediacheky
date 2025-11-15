@@ -388,6 +388,17 @@ func (dc *DockerClient) inspectToInfo(inspect types.ContainerJSON) ContainerInfo
 		startedAt = time.Time{}
 	}
 
+	// Extract mounts
+	mounts := make([]MountInfo, 0, len(inspect.Mounts))
+	for _, mount := range inspect.Mounts {
+		mounts = append(mounts, MountInfo{
+			Source:      mount.Source,
+			Destination: mount.Destination,
+			Type:        string(mount.Type),
+			ReadOnly:    !mount.RW,
+		})
+	}
+
 	return ContainerInfo{
 		ID:        inspect.ID,
 		Name:      name,
@@ -396,6 +407,7 @@ func (dc *DockerClient) inspectToInfo(inspect types.ContainerJSON) ContainerInfo
 		State:     inspect.State.Status,
 		CreatedAt: createdAt,
 		StartedAt: startedAt,
+		Mounts:    mounts,
 		Labels:    inspect.Config.Labels,
 		Ports:     ports,
 	}

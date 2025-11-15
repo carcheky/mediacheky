@@ -69,6 +69,9 @@ type ServiceRepository interface {
 	Update(service *models.Service) error
 	UpdateStatus(id uint, status string, containerID string) error
 	SetEnabled(id uint, enabled bool) error
+	GetServiceCredentials(serviceName string) (*models.ServiceCredentials, error)
+	SaveServiceCredentials(serviceName, username, password string) error
+	DeleteServiceCredentials(serviceName string) error
 }
 
 // ServiceLogRepository defines the interface for service log data access
@@ -439,6 +442,16 @@ func (sm *ServiceManager) ResetService(ctx context.Context, serviceName string) 
 	sm.logger.Info("Service directories deleted",
 		zap.String("service", serviceName))
 
+	// Delete service credentials from MediaCheky database (for Radarr, etc.)
+	if err := sm.serviceRepo.DeleteServiceCredentials(serviceName); err != nil {
+		sm.logger.Warn("Failed to delete service credentials",
+			zap.String("service", serviceName),
+			zap.Error(err))
+	} else {
+		sm.logger.Info("Service credentials deleted from MediaCheky database",
+			zap.String("service", serviceName))
+	}
+
 	// Disable service after prune and set status to stopped
 	if err := sm.serviceRepo.SetEnabled(svc.ID, false); err != nil {
 		sm.logger.Warn("Failed to disable service after prune",
@@ -453,7 +466,7 @@ func (sm *ServiceManager) ResetService(ctx context.Context, serviceName string) 
 			zap.Error(err))
 	}
 
-	sm.logAction(svc.ID, "reset", "success", "Service pruned: down -v, deleted directories, disabled service")
+	sm.logAction(svc.ID, "reset", "success", "Service pruned: down -v, deleted directories, deleted credentials, disabled service")
 	sm.logger.Info("Service prune completed successfully", zap.String("service", serviceName))
 
 	return nil
@@ -514,10 +527,26 @@ func (sm *ServiceManager) UpdateService(ctx context.Context, serviceName string)
 func (sm *ServiceManager) UpdateServiceConfig(ctx context.Context, serviceName string, config models.ServiceConfig) error {
 	sm.logger.Info("Updating service configuration", zap.String("service", serviceName))
 
-	// Get service from database
+	// Get service from database, create if doesn't exist
 	svc, err := sm.serviceRepo.GetByName(serviceName)
 	if err != nil {
-		return fmt.Errorf("failed to get service: %w", err)
+		if err.Error() == "record not found" || err.Error() == "failed to get service: record not found" {
+			// Create service with provided configuration
+			sm.logger.Info("Service not found, creating with provided config", zap.String("service", serviceName))
+			svc = &models.Service{
+				Name:    serviceName,
+				Enabled: false,
+				Status:  "stopped",
+				Config:  config,
+			}
+
+			if err := sm.serviceRepo.Create(svc); err != nil {
+				return fmt.Errorf("failed to create service: %w", err)
+			}
+			sm.logger.Info("Service created successfully", zap.String("service", serviceName))
+		} else {
+			return fmt.Errorf("failed to get service: %w", err)
+		}
 	}
 
 	// Keep previous port exposure values to decide if restart is needed
@@ -800,31 +829,95 @@ func (sm *ServiceManager) GetRadarrConfig(ctx context.Context, serviceName strin
 		}
 	}
 
-	// Load credentials from database or generate new ones
-	dbPath := filepath.Join("/app/data/services-volumes", serviceName, "radarr.db")
-	username, exists, err := sm.getRadarrCredentialsFromDB(dbPath)
-
+	// CRITICAL: Check if Radarr container is fully initialized
+	// We must wait for [ls.io-init] done. in logs before accessing/modifying anything
+	containerInitialized, err := sm.isRadarrContainerInitialized(ctx, serviceName)
 	if err != nil {
-		sm.logger.Warn("Failed to read credentials from database", zap.Error(err))
-	} else if exists {
-		// Credentials exist in database - load them
-		config.Username = username
-		config.Password = "********" // Don't expose actual password
-		sm.logger.Info("Loaded existing credentials from Radarr database", zap.String("username", username))
-	} else {
-		// No credentials in database - generate random ones
-		generatedUser, generatedPass := generateRandomCredentials()
-		config.Username = generatedUser
-		config.Password = generatedPass
-		sm.logger.Info("Generated random credentials for Radarr",
-			zap.String("username", generatedUser),
-			zap.String("password_length", fmt.Sprintf("%d", len(generatedPass))))
+		sm.logger.Warn("Failed to check Radarr container initialization status", zap.Error(err))
+	}
 
-		// Automatically save the generated credentials
-		if err := sm.updateRadarrCredentials(dbPath, generatedUser, generatedPass); err != nil {
-			sm.logger.Warn("Failed to save generated credentials", zap.Error(err))
-		} else {
-			sm.logger.Info("Generated credentials saved to database")
+	if !containerInitialized {
+		sm.logger.Info("Radarr container not fully initialized yet, waiting for [ls.io-init] done.",
+			zap.String("service", serviceName))
+		// Return empty credentials - don't try to access DB or generate anything
+		config.Username = ""
+		config.Password = ""
+		return config, nil
+	}
+
+	sm.logger.Info("Radarr container is fully initialized, proceeding with configuration",
+		zap.String("service", serviceName))
+
+	// Load credentials from our MediaCheky database first
+	credentials, err := sm.getServiceCredentials(serviceName)
+	if err == nil && credentials != nil {
+		// Credentials exist in MediaCheky database - use them
+		config.Username = credentials.Username
+		config.Password = credentials.Password // Return real password for copy/autologin
+		sm.logger.Info("Loaded existing credentials from MediaCheky database", zap.String("username", credentials.Username))
+	} else {
+		// Try loading from Radarr's database as fallback
+		dbPath := filepath.Join("/app/data/services-volumes", serviceName, "radarr.db")
+		dbStatus, err := sm.getRadarrCredentialsFromDB(dbPath)
+
+		if err != nil {
+			sm.logger.Warn("Failed to read credentials from Radarr database", zap.Error(err))
+		} else if dbStatus != nil {
+			// Check database status and act accordingly
+			if !dbStatus.DBExists {
+				// Database doesn't exist yet - Radarr hasn't been started
+				// DO NOT generate credentials yet - wait for Radarr to create its DB
+				sm.logger.Info("Radarr database does not exist yet, waiting for first Radarr startup")
+				config.Username = ""
+				config.Password = ""
+			} else if !dbStatus.TableExists {
+				// Database exists but Users table doesn't - Radarr is initializing
+				// DO NOT generate credentials yet - wait for Radarr to create the table
+				sm.logger.Info("Radarr Users table does not exist yet, waiting for Radarr initialization")
+				config.Username = ""
+				config.Password = ""
+			} else if !dbStatus.UserExists {
+				// Database exists, table exists, but NO user - safe to generate
+				sm.logger.Info("Radarr database ready but no user exists, generating credentials")
+				generatedUser, generatedPass, err := generateRandomCredentials()
+				if err != nil {
+					sm.logger.Error("Failed to generate credentials", zap.Error(err))
+				} else {
+					config.Username = generatedUser
+					config.Password = generatedPass
+					sm.logger.Info("Generated random credentials for Radarr",
+						zap.String("username", generatedUser),
+						zap.String("password_length", fmt.Sprintf("%d", len(generatedPass))))
+
+					// Save to both databases
+					if err := sm.updateRadarrCredentials(dbPath, generatedUser, generatedPass); err != nil {
+						sm.logger.Warn("Failed to save credentials to Radarr database", zap.Error(err))
+					}
+					if err := sm.saveServiceCredentials(serviceName, generatedUser, generatedPass); err != nil {
+						sm.logger.Warn("Failed to save credentials to MediaCheky database", zap.Error(err))
+					} else {
+						sm.logger.Info("Generated credentials saved to both databases")
+					}
+				}
+			} else {
+				// User exists in Radarr database - migrate to MediaCheky DB
+				password, err := sm.getRadarrPasswordFromDB(dbPath, dbStatus.Username)
+				if err == nil && password != "" {
+					config.Username = dbStatus.Username
+					config.Password = password
+					// Save to MediaCheky database for future use
+					if err := sm.saveServiceCredentials(serviceName, dbStatus.Username, password); err != nil {
+						sm.logger.Warn("Failed to save credentials to MediaCheky database", zap.Error(err))
+					} else {
+						sm.logger.Info("Migrated credentials from Radarr DB to MediaCheky DB", zap.String("username", dbStatus.Username))
+					}
+				} else {
+					// Fallback: show masked password
+					config.Username = dbStatus.Username
+					config.Password = "********"
+					sm.logger.Info("Loaded username from Radarr database (password masked)", zap.String("username", dbStatus.Username))
+				}
+			}
 		}
 	}
 
@@ -833,6 +926,20 @@ func (sm *ServiceManager) GetRadarrConfig(ctx context.Context, serviceName strin
 
 // UpdateRadarrConfig updates Radarr's config.xml file and restarts the service
 func (sm *ServiceManager) UpdateRadarrConfig(ctx context.Context, serviceName string, config models.RadarrConfig) error {
+	// CRITICAL: Verify container is fully initialized before saving ANY configuration
+	containerInitialized, err := sm.isRadarrContainerInitialized(ctx, serviceName)
+	if err != nil {
+		sm.logger.Warn("Failed to check Radarr container initialization status",
+			zap.String("service", serviceName),
+			zap.Error(err))
+		return fmt.Errorf("cannot update Radarr config: failed to verify container initialization: %w", err)
+	}
+	if !containerInitialized {
+		sm.logger.Warn("Radarr container not fully initialized yet, refusing to save credentials",
+			zap.String("service", serviceName))
+		return fmt.Errorf("Radarr container is not fully initialized yet. Please wait for the container to finish starting (look for '[ls.io-init] done.' in logs)")
+	}
+
 	// Build path to config.xml inside the container
 	configPath := filepath.Join("/app/data/services-volumes", serviceName, "config.xml")
 
@@ -891,12 +998,12 @@ func parseRadarrConfig(data []byte, config *models.RadarrConfig) error {
 	extractValue := func(tag string) string {
 		start := fmt.Sprintf("<%s>", tag)
 		end := fmt.Sprintf("</%s>", tag)
-		startIdx := indexOf(content, start)
+		startIdx := strings.Index(content, start)
 		if startIdx == -1 {
 			return ""
 		}
 		startIdx += len(start)
-		endIdx := indexOf(content[startIdx:], end)
+		endIdx := strings.Index(content[startIdx:], end)
 		if endIdx == -1 {
 			return ""
 		}
@@ -985,10 +1092,10 @@ func (sm *ServiceManager) initializeRadarrConfig(ctx context.Context, serviceNam
 		if readErr == nil && len(data) > 0 {
 			// File exists and has content, check if ApiKey is set
 			content := string(data)
-			if indexOf(content, "<ApiKey>") != -1 && indexOf(content, "</ApiKey>") != -1 {
+			if strings.Index(content, "<ApiKey>") != -1 && strings.Index(content, "</ApiKey>") != -1 {
 				// Extract ApiKey value
-				start := indexOf(content, "<ApiKey>") + 8
-				end := indexOf(content[start:], "</ApiKey>")
+				start := strings.Index(content, "<ApiKey>") + 8
+				end := strings.Index(content[start:], "</ApiKey>")
 				if end > 0 {
 					apiKey := content[start : start+end]
 					// If ApiKey has value (not empty), assume config is valid
@@ -1017,7 +1124,7 @@ func (sm *ServiceManager) initializeRadarrConfig(ctx context.Context, serviceNam
 		Password:               "",
 		PasswordConfirmation:   "",
 		Branch:                 "master",
-		LogLevel:               "debug",
+		LogLevel:               "info",
 		SslCertPath:            "",
 		SslCertPassword:        "",
 		UrlBase:                "",
@@ -1049,55 +1156,165 @@ func (sm *ServiceManager) initializeRadarrConfig(ctx context.Context, serviceNam
 }
 
 // Helper functions
-func indexOf(s, substr string) int {
-	for i := 0; i <= len(s)-len(substr); i++ {
-		if s[i:i+len(substr)] == substr {
-			return i
-		}
-	}
-	return -1
-}
 
 // generateRandomCredentials generates random username and password
-func generateRandomCredentials() (username, password string) {
+func generateRandomCredentials() (username, password string, err error) {
 	// Generate random username: "admin" + 4 random chars
 	usernameBytes := make([]byte, 4)
-	rand.Read(usernameBytes)
+	if _, err := rand.Read(usernameBytes); err != nil {
+		return "", "", fmt.Errorf("failed to generate random username: %w", err)
+	}
 	username = fmt.Sprintf("admin%x", usernameBytes)[:10] // max 10 chars
 
 	// Generate random password: 16 characters
 	passwordBytes := make([]byte, 12)
-	rand.Read(passwordBytes)
+	if _, err := rand.Read(passwordBytes); err != nil {
+		return "", "", fmt.Errorf("failed to generate random password: %w", err)
+	}
 	password = base64.URLEncoding.EncodeToString(passwordBytes)[:16]
 
-	return username, password
+	return username, password, nil
+}
+
+// isRadarrContainerInitialized checks if Radarr container has completed initialization
+// by looking for "[ls.io-init] done." in the container logs
+func (sm *ServiceManager) isRadarrContainerInitialized(ctx context.Context, serviceName string) (bool, error) {
+	// Get service from database to find container name
+	svc, err := sm.serviceRepo.GetByName(serviceName)
+	if err != nil {
+		sm.logger.Debug("Service not found in database, assuming not initialized",
+			zap.String("service", serviceName))
+		return false, nil
+	}
+
+	// Check if service is enabled and has a container
+	if !svc.Enabled {
+		sm.logger.Debug("Service not enabled",
+			zap.String("service", serviceName))
+		return false, nil
+	}
+
+	// Extract container name from config
+	var containerName string
+	if nameVal, ok := svc.Config["ContainerName"]; ok {
+		if nameStr, ok := nameVal.(string); ok && nameStr != "" {
+			containerName = nameStr
+		}
+	}
+
+	// If no container name in config, use service name
+	if containerName == "" {
+		containerName = serviceName
+	}
+
+	sm.logger.Debug("Checking Radarr container initialization",
+		zap.String("service", serviceName),
+		zap.String("container", containerName))
+
+	// Try to get container info
+	containerInfo, err := sm.dockerClient.GetContainer(ctx, containerName)
+	if err != nil || containerInfo == nil {
+		sm.logger.Debug("Container not found or not accessible",
+			zap.String("container", containerName),
+			zap.Error(err))
+		return false, nil
+	}
+
+	// Check if container is running
+	if containerInfo.Status != "running" {
+		sm.logger.Debug("Container is not running",
+			zap.String("container", containerName),
+			zap.String("status", string(containerInfo.Status)))
+		return false, nil
+	}
+
+	// Get container logs (last 200 lines should be enough to catch init message)
+	logs, err := sm.dockerClient.GetContainerLogs(ctx, containerInfo.ID, "200")
+	if err != nil {
+		sm.logger.Warn("Failed to get container logs for initialization check",
+			zap.String("container", containerName),
+			zap.Error(err))
+		return false, err
+	}
+
+	// Check if logs contain the initialization complete marker
+	initComplete := strings.Contains(logs, "[ls.io-init] done.")
+
+	if initComplete {
+		sm.logger.Info("Radarr container initialization complete",
+			zap.String("service", serviceName),
+			zap.String("container", containerName))
+	} else {
+		sm.logger.Debug("Radarr container still initializing, waiting for [ls.io-init] done.",
+			zap.String("service", serviceName),
+			zap.String("container", containerName))
+	}
+
+	return initComplete, nil
+}
+
+// RadarrDBStatus representa el estado de la base de datos de Radarr
+type RadarrDBStatus struct {
+	DBExists    bool
+	TableExists bool
+	UserExists  bool
+	Username    string
 }
 
 // getRadarrCredentialsFromDB reads existing credentials from Radarr's database
-func (sm *ServiceManager) getRadarrCredentialsFromDB(dbPath string) (username string, exists bool, err error) {
-	// Check if database exists
-	if _, err := os.Stat(dbPath); os.IsNotExist(err) {
-		return "", false, nil
+// Returns detailed status about database, table, and user existence
+func (sm *ServiceManager) getRadarrCredentialsFromDB(dbPath string) (*RadarrDBStatus, error) {
+	status := &RadarrDBStatus{
+		DBExists:    false,
+		TableExists: false,
+		UserExists:  false,
+		Username:    "",
 	}
+
+	// Check if database file exists
+	if _, err := os.Stat(dbPath); os.IsNotExist(err) {
+		sm.logger.Debug("Radarr database does not exist yet", zap.String("path", dbPath))
+		return status, nil // DB doesn't exist - this is normal on first start
+	}
+
+	status.DBExists = true
 
 	// Open database
 	db, err := sql.Open("sqlite3", dbPath)
 	if err != nil {
-		return "", false, fmt.Errorf("failed to open database: %w", err)
+		return status, fmt.Errorf("failed to open database: %w", err)
 	}
 	defer db.Close()
+
+	// Check if Users table exists
+	var tableName string
+	err = db.QueryRow("SELECT name FROM sqlite_master WHERE type='table' AND name='Users'").Scan(&tableName)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			sm.logger.Debug("Users table does not exist yet in Radarr database")
+			return status, nil // Table doesn't exist - Radarr hasn't created it yet
+		}
+		return status, fmt.Errorf("failed to check Users table: %w", err)
+	}
+
+	status.TableExists = true
 
 	// Query for existing user
 	var savedUsername string
 	err = db.QueryRow("SELECT Username FROM Users LIMIT 1").Scan(&savedUsername)
 	if err != nil {
 		if err == sql.ErrNoRows {
-			return "", false, nil // No user exists
+			sm.logger.Debug("Users table is empty")
+			return status, nil // Table exists but no user - we can generate credentials
 		}
-		return "", false, fmt.Errorf("failed to query users: %w", err)
+		return status, fmt.Errorf("failed to query users: %w", err)
 	}
 
-	return savedUsername, true, nil
+	status.UserExists = true
+	status.Username = savedUsername
+	sm.logger.Debug("Found existing user in Radarr database", zap.String("username", savedUsername))
+
+	return status, nil
 }
 
 // updateRadarrCredentials updates username and password in Radarr's database
@@ -1115,7 +1332,10 @@ func (sm *ServiceManager) updateRadarrCredentials(dbPath, username, password str
 		return fmt.Errorf("failed to generate salt: %w", err)
 	}
 
-	// PBKDF2-HMAC-SHA512 with 10000 iterations (same as Radarr)
+	// PBKDF2-HMAC-SHA512 with 10000 iterations
+	// NOTE: 10,000 iterations is intentionally low to match Radarr's implementation for compatibility.
+	// While OWASP recommends 120,000+ iterations for PBKDF2-SHA512, we must use Radarr's exact settings
+	// to ensure generated passwords work with Radarr's authentication system.
 	hashedPassword := pbkdf2.Key([]byte(password), salt, 10000, 32, sha512.New)
 
 	saltB64 := base64.StdEncoding.EncodeToString(salt)
@@ -1168,4 +1388,45 @@ func parseInt(s string, defaultVal int) int {
 		return defaultVal
 	}
 	return result
+}
+
+// getServiceCredentials retrieves credentials from MediaCheky's database
+func (sm *ServiceManager) getServiceCredentials(serviceName string) (*models.ServiceCredentials, error) {
+	return sm.serviceRepo.GetServiceCredentials(serviceName)
+}
+
+// saveServiceCredentials saves or updates credentials in MediaCheky's database
+func (sm *ServiceManager) saveServiceCredentials(serviceName, username, password string) error {
+	return sm.serviceRepo.SaveServiceCredentials(serviceName, username, password)
+}
+
+// getRadarrPasswordFromDB retrieves the password from Radarr's database
+// This is a helper method to migrate credentials from Radarr DB to MediaCheky DB
+func (sm *ServiceManager) getRadarrPasswordFromDB(dbPath, username string) (string, error) {
+	// Check if database exists
+	if _, err := os.Stat(dbPath); os.IsNotExist(err) {
+		return "", fmt.Errorf("database not found")
+	}
+
+	// Open database
+	db, err := sql.Open("sqlite3", dbPath)
+	if err != nil {
+		return "", fmt.Errorf("failed to open database: %w", err)
+	}
+	defer db.Close()
+
+	// Query for password hash and salt
+	var passwordB64, saltB64 string
+	var iterations int
+	err = db.QueryRow("SELECT Password, Salt, Iterations FROM Users WHERE Username = ? LIMIT 1", strings.ToLower(username)).Scan(&passwordB64, &saltB64, &iterations)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return "", fmt.Errorf("user not found")
+		}
+		return "", fmt.Errorf("failed to query user: %w", err)
+	}
+
+	// Note: We cannot reverse the hash, so we return an empty string
+	// This means we need to keep the password in MediaCheky DB from the start
+	return "", nil
 }

@@ -16,9 +16,9 @@
                 <div class="flex-1 min-w-0">
                     <div class="flex items-center gap-2">
                         <h1 class="text-3xl font-bold text-dark-text" x-text="serviceName + ' Configuration'"></h1>
-                        <!-- Link Icon to service (only when running) - with API key auth for Radarr -->
+                        <!-- Link Icon to service (only when running) -->
                         <button x-show="enabled && status === 'running'" 
-                                @click="serviceName.toLowerCase() === 'radarr' ? openRadarrWithAuth() : window.open((proxyConfig.sslEnabled ? 'https://' : 'http://') + serviceEndpoint, '_blank')"
+                                @click="window.open((proxyConfig.sslEnabled ? 'https://' : 'http://') + serviceEndpoint, '_blank')"
                                 class="text-blue-400 hover:text-blue-300 transition-colors flex-shrink-0 cursor-pointer bg-transparent border-0 p-0" 
                                 title="Open service">
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -182,13 +182,13 @@
                         <p class="text-xs text-dark-muted">MediaCheky reads/writes Radarr's config.xml directly.</p>
                     </div>
                     <button x-show="enabled && status === 'running' && serviceEndpoint" 
-                            @click="openRadarrWithAuth()"
+                            @click="window.open((proxyConfig.sslEnabled ? 'https://' : 'http://') + serviceEndpoint + '/settings/general', '_blank')"
                             class="text-blue-400 hover:text-blue-300 transition-colors flex items-center gap-1 text-xs"
-                            title="Open Radarr with automatic login">
+                            title="Open Radarr Settings (manual login required)">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path>
                         </svg>
-                        Open Radarr
+                        Open Radarr Settings
                     </button>
                 </div>
 
@@ -251,12 +251,12 @@
 
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
-                            <label class="block text-sm font-medium text-dark-text mb-1">
+                            <label for="radarr-username" class="block text-sm font-medium text-dark-text mb-1">
                                 Username
                                 <span class="ml-2 inline-block px-2 py-0.5 bg-yellow-900/40 border border-yellow-700/50 text-yellow-300 rounded text-xs font-normal italic">database</span>
                             </label>
                             <div class="flex gap-2">
-                                <input type="text" x-model="radarrConfig.Username"
+                                <input type="text" id="radarr-username" x-model="radarrConfig.Username"
                                     class="flex-1 px-3 py-2 border border-dark-border rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 bg-dark-bg text-dark-text"
                                     placeholder="Enter username">
                                 <button @click="copyToClipboard(radarrConfig.Username)"
@@ -270,12 +270,12 @@
                         </div>
 
                         <div>
-                            <label class="block text-sm font-medium text-dark-text mb-1">
+                            <label for="radarr-password" class="block text-sm font-medium text-dark-text mb-1">
                                 Password
                                 <span class="ml-2 inline-block px-2 py-0.5 bg-yellow-900/40 border border-yellow-700/50 text-yellow-300 rounded text-xs font-normal italic">database</span>
                             </label>
                             <div class="flex gap-2">
-                                <input type="password" x-model="radarrConfig.Password"
+                                <input type="password" id="radarr-password" x-model="radarrConfig.Password"
                                     x-ref="passwordField"
                                     class="flex-1 px-3 py-2 border border-dark-border rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 bg-dark-bg text-dark-text"
                                     placeholder="Enter password">
@@ -286,6 +286,7 @@
                                     </svg>
                                 </button>
                                 <button @click="$refs.passwordField.type = $refs.passwordField.type === 'password' ? 'text' : 'password'"
+                                    aria-label="Toggle password visibility"
                                     class="px-3 py-2 bg-slate-700 text-white rounded-md hover:bg-slate-600">
                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
@@ -667,33 +668,52 @@
          x-transition:leave="transition ease-in duration-200"
          x-transition:leave-start="opacity-100 transform translate-x-0"
          x-transition:leave-end="opacity-0 transform -translate-x-2"
-         class="fixed bottom-4 left-4 z-40 min-w-[280px] max-w-xs shadow-xl rounded-lg border border-blue-600/50 p-4 bg-blue-900/95 backdrop-blur-sm">
-        <!-- Header -->
-        <div class="flex items-center gap-3 mb-3">
-            <svg class="w-5 h-5 animate-spin text-blue-400" fill="none" viewBox="0 0 24 24">
-                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-            </svg>
-            <div class="flex-1">
-                <p class="text-sm font-semibold text-blue-200" x-text="progressTitle"></p>
+         class="fixed bottom-4 left-4 z-40 min-w-[320px] max-w-sm shadow-2xl rounded-lg border-2 border-amber-500/70 overflow-hidden bg-gradient-to-br from-blue-900/98 to-blue-950/98 backdrop-blur-md">
+        
+        <!-- Warning Banner -->
+        <div class="bg-gradient-to-r from-amber-600/30 via-amber-500/30 to-amber-600/30 border-b-2 border-amber-500/50 px-4 py-3">
+            <div class="flex items-center gap-3">
+                <div class="flex-shrink-0">
+                    <svg class="w-7 h-7 text-amber-400 animate-pulse" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
+                    </svg>
+                </div>
+                <div class="flex-1">
+                    <p class="text-sm font-bold text-amber-200 leading-tight">Please wait - Do not close!</p>
+                    <p class="text-xs text-amber-300/90 mt-0.5" x-text="progressWarning"></p>
+                </div>
             </div>
         </div>
-        <!-- Steps -->
-        <div class="space-y-2">
-            <template x-for="(step, index) in progressSteps" :key="index">
-                <div class="flex items-center gap-2 text-xs">
-                    <div x-show="index < currentProgressStep" class="w-4 h-4 rounded-full bg-green-500 flex items-center justify-center flex-shrink-0">
-                        <svg class="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
-                            <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
-                        </svg>
-                    </div>
-                    <div x-show="index === currentProgressStep" class="w-4 h-4 rounded-full bg-blue-400 flex items-center justify-center flex-shrink-0">
-                        <div class="w-2 h-2 bg-blue-900 rounded-full animate-pulse"></div>
-                    </div>
-                    <div x-show="index > currentProgressStep" class="w-4 h-4 rounded-full border-2 border-blue-500/50 flex-shrink-0"></div>
-                    <span class="text-blue-200" x-text="step"></span>
+
+        <!-- Progress Content -->
+        <div class="p-4">
+            <!-- Header -->
+            <div class="flex items-center gap-3 mb-4">
+                <svg class="w-6 h-6 animate-spin text-blue-400" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                <div class="flex-1">
+                    <p class="text-base font-semibold text-blue-100" x-text="progressTitle"></p>
                 </div>
-            </template>
+            </div>
+            <!-- Steps -->
+            <div class="space-y-2.5">
+                <template x-for="(step, index) in progressSteps" :key="index">
+                    <div class="flex items-center gap-3 text-sm">
+                        <div x-show="index < currentProgressStep" class="w-5 h-5 rounded-full bg-green-500 flex items-center justify-center flex-shrink-0 shadow-lg shadow-green-500/50">
+                            <svg class="w-3.5 h-3.5 text-white" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
+                            </svg>
+                        </div>
+                        <div x-show="index === currentProgressStep" class="w-5 h-5 rounded-full bg-blue-400 flex items-center justify-center flex-shrink-0 shadow-lg shadow-blue-400/50">
+                            <div class="w-2.5 h-2.5 bg-blue-900 rounded-full animate-pulse"></div>
+                        </div>
+                        <div x-show="index > currentProgressStep" class="w-5 h-5 rounded-full border-2 border-blue-500/40 flex-shrink-0"></div>
+                        <span class="text-blue-100 font-medium" x-text="step"></span>
+                    </div>
+                </template>
+            </div>
         </div>
     </div>
 </div>
@@ -933,12 +953,19 @@
                                 Paths: { ...this.config.Paths, ...(data.config.Paths || {}) }
                             };
                             
-                            // Set mounted paths for display
-                            if (data.config.Paths && data.config.Paths.Config) {
-                                this.mountedConfigPath = data.config.Paths.Config;
-                            }
-                            if (data.config.Paths && data.config.Paths.Media) {
-                                this.mountedMediaPath = data.config.Paths.Media;
+                            // Set mounted paths for display - prefer mounts from container inspect (real host paths)
+                            if (data.mounts) {
+                                // Mounts is a map of container_path -> host_path from docker inspect
+                                this.mountedConfigPath = data.mounts['/config'] || data.config.Paths?.Config || '';
+                                this.mountedMediaPath = data.mounts['/MEDIACHEKY_LIBRARY'] || data.config.Paths?.Media || '';
+                            } else {
+                                // Fallback to config paths if mounts not available
+                                if (data.config.Paths && data.config.Paths.Config) {
+                                    this.mountedConfigPath = data.config.Paths.Config;
+                                }
+                                if (data.config.Paths && data.config.Paths.Media) {
+                                    this.mountedMediaPath = data.config.Paths.Media;
+                                }
                             }
                         }
                         
@@ -1038,9 +1065,10 @@
                 ]);
             },
 
-            startProgress(title, steps) {
+            startProgress(title, steps, warning = 'Operation in progress...') {
                 this.progressTitle = title;
                 this.progressSteps = steps;
+                this.progressWarning = warning;
                 this.currentProgressStep = 0;
                 this.showProgress = true;
             },
@@ -1059,6 +1087,7 @@
             endProgress() {
                 this.showProgress = false;
                 this.progressTitle = '';
+                this.progressWarning = 'Operation in progress...';
                 this.progressSteps = [];
                 this.currentProgressStep = 0;
             },
@@ -1071,7 +1100,7 @@
                             'Saving configuration',
                             'Starting container',
                             'Reloading data'
-                        ]);
+                        ], 'Service startup in progress...');
 
                         // First save config
                         const configToSave = { ...this.config };
@@ -1135,7 +1164,7 @@
                         this.startProgress('Disabling service', [
                             'Stopping container',
                             'Reloading data'
-                        ]);
+                        ], 'Service shutdown in progress...');
 
                         const response = await fetch(`/api/services/${this.serviceName}/disable`, {
                             method: 'POST'
@@ -1207,7 +1236,7 @@
                         ? ['Saving Docker configuration', 'Saving Radarr config.xml', 'Restarting container', 'Reloading data']
                         : ['Saving configuration', 'Restarting container', 'Reloading data'];
                     
-                    this.startProgress('Applying configuration', steps);
+                    this.startProgress('Applying configuration', steps, 'Applying changes, container will restart...');
 
                     // First save Docker config
                     const configToSave = { ...this.config };
@@ -1361,6 +1390,12 @@
                 this.testing = true;
                 this.testResult = null;
 
+                this.startProgress('Testing connection', [
+                    'Connecting to service',
+                    'Verifying credentials',
+                    'Checking response'
+                ], 'Testing service connection...');
+
                 try {
                     const response = await fetch(`/api/config/test/${this.serviceName}`, {
                         method: 'POST',
@@ -1371,21 +1406,26 @@
                     const data = await response.json();
 
                     if (response.ok) {
+                        this.updateProgress(2);
                         this.testResult = {
                             success: true,
                             message: data.message || 'Service is reachable and responding correctly'
                         };
+                        await new Promise(resolve => setTimeout(resolve, 500));
+                        this.endProgress();
                     } else {
                         this.testResult = {
                             success: false,
                             message: data.error || 'Unable to connect to service'
                         };
+                        this.endProgress();
                     }
                 } catch (error) {
                     this.testResult = {
                         success: false,
                         message: 'Error: ' + error.message
                     };
+                    this.endProgress();
                 } finally {
                     this.testing = false;
                 }
@@ -1399,6 +1439,12 @@
 
                 this.saving = true;
                 this.message = '';
+
+                this.startProgress('Saving configuration', [
+                    'Validating changes',
+                    'Updating configuration',
+                    'Reloading service data'
+                ], 'Saving configuration changes...');
 
                 try {
                     // Prepare config - remove HostPort if empty/0 (use static compose instead)
@@ -1414,14 +1460,19 @@
                     });
 
                     if (response.ok) {
+                        this.updateProgress(1);
                         this.showMessage('Configuration saved successfully!', 'success');
+                        this.updateProgress(2);
                         await this.loadServiceData();
+                        this.endProgress();
                     } else {
                         const data = await response.json();
                         this.showMessage(data.error || 'Failed to save configuration', 'error');
+                        this.endProgress();
                     }
                 } catch (error) {
                     this.showMessage('Error: ' + error.message, 'error');
+                    this.endProgress();
                 } finally {
                     this.saving = false;
                 }
@@ -1452,7 +1503,7 @@
                         'Killing process',
                         'Removing container',
                         'Reloading data'
-                    ]);
+                    ], 'Force stopping container...');
 
                     const response = await fetch(`/api/services/${this.serviceName}/kill-down`, {
                         method: 'POST'
@@ -1486,6 +1537,28 @@
                 this.actionInProgress = true;
                 this.message = '';
 
+                const actionTitles = {
+                    'start': 'Starting service',
+                    'stop': 'Stopping service',
+                    'restart': 'Restarting service'
+                };
+                const actionSteps = {
+                    'start': ['Starting container', 'Waiting for service', 'Verifying status'],
+                    'stop': ['Stopping container', 'Waiting for shutdown', 'Verifying status'],
+                    'restart': ['Stopping container', 'Starting container', 'Waiting for service', 'Verifying status']
+                };
+                const actionWarnings = {
+                    'start': 'Service startup in progress...',
+                    'stop': 'Service shutdown in progress...',
+                    'restart': 'Service restart in progress, please wait...'
+                };
+
+                this.startProgress(
+                    actionTitles[action] || 'Processing action',
+                    actionSteps[action] || ['Processing'],
+                    actionWarnings[action] || 'Operation in progress...'
+                );
+
                 try {
                     // Set timeout based on action
                     const timeout = action === 'restart' ? 120 : 60;
@@ -1500,6 +1573,8 @@
 
                     if (response.ok) {
                         const data = await response.json();
+                        const lastStep = actionSteps[action].length - 1;
+                        this.updateProgress(lastStep - 1);
                         this.showMessage(data.message || `Service ${action}ed successfully`, 'success');
                         
                         // Update status optimistically
@@ -1516,13 +1591,16 @@
                         }
                         
                         // Wait longer and reload full service data to confirm
+                        this.updateProgress(lastStep);
                         await new Promise(resolve => setTimeout(resolve, 2000));
                         await this.reloadAllData();
+                        this.endProgress();
                     } else {
                         const data = await response.json();
                         this.showMessage(data.error || `Failed to ${action} service`, 'error');
                         // Reload to get actual status
                         await this.reloadAllData();
+                        this.endProgress();
                     }
                 } catch (error) {
                     if (error.name === 'AbortError') {
@@ -1532,6 +1610,7 @@
                     }
                     // Reload to get actual status
                     await this.reloadAllData();
+                    this.endProgress();
                 } finally {
                     this.actionInProgress = false;
                 }
@@ -1579,6 +1658,12 @@
                 this.proxyUpdating = true;
                 this.message = '';
 
+                this.startProgress('Updating proxy configuration', [
+                    'Validating domain',
+                    'Updating settings',
+                    'Reloading endpoint'
+                ], 'Updating proxy configuration...');
+
                 try {
                     const response = await fetch(`/api/services/${this.serviceName}/subdomain`, {
                         method: 'PUT',
@@ -1590,14 +1675,19 @@
                     });
 
                     if (response.ok) {
+                        this.updateProgress(1);
                         this.showMessage('Proxy configuration updated successfully!', 'success');
+                        this.updateProgress(2);
                         await this.loadServiceEndpoint();
+                        this.endProgress();
                     } else {
                         const data = await response.json();
                         this.showMessage(data.error || 'Failed to update proxy configuration', 'error');
+                        this.endProgress();
                     }
                 } catch (error) {
                     this.showMessage('Error: ' + error.message, 'error');
+                    this.endProgress();
                 } finally {
                     this.proxyUpdating = false;
                 }
@@ -1636,28 +1726,6 @@
                 }
             },
 
-            async openRadarrWithAuth() {
-                if (this.serviceName.toLowerCase() !== 'radarr') return;
-                
-                try {
-                    // Build URL to open Radarr UI
-                    // NOTE: Radarr does not support auto-login via URL parameters for the web UI
-                    // The API key (via ?apikey=XXX or X-Api-Key header) only works for API endpoints (/api/*)
-                    // The web UI requires manual login through Radarr's authentication system
-                    // Reference: https://github.com/Radarr/Radarr (ApiKeyAuthenticationHandler.cs)
-                    const protocol = this.proxyConfig.sslEnabled ? 'https://' : 'http://';
-                    const url = `${protocol}${this.serviceEndpoint}`;
-                    
-                    console.log('🚀 Opening Radarr UI (manual login required):', url);
-                    
-                    // Open in new tab
-                    window.open(url, '_blank', 'noopener,noreferrer');
-                } catch (error) {
-                    console.error('Error opening Radarr:', error);
-                    this.showToast('Error opening Radarr: ' + error.message, 'error');
-                }
-            },
-
 
             async copyToClipboard(text) {
                 try {
@@ -1671,6 +1739,7 @@
             showMessage: createShowMessage(),
             
             // Cleanup interval on component destroy
+            // Note: Alpine.js will automatically handle cleanup when the component is destroyed
             destroy() {
                 if (this.statusInterval) {
                     clearInterval(this.statusInterval);
@@ -1681,12 +1750,4 @@
             }
         }
     }
-    
-    // Cleanup on page unload
-    window.addEventListener('beforeunload', () => {
-        const component = Alpine.$data(document.querySelector('[x-data]'));
-        if (component && component.destroy) {
-            component.destroy();
-        }
-    });
 </script>

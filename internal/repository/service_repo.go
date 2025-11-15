@@ -101,3 +101,46 @@ func (r *ServiceRepository) CreateOrUpdate(service *models.Service) error {
 	service.CreatedAt = existing.CreatedAt
 	return r.db.Save(service).Error
 }
+
+// GetServiceCredentials retrieves credentials for a service
+func (r *ServiceRepository) GetServiceCredentials(serviceName string) (*models.ServiceCredentials, error) {
+	var credentials models.ServiceCredentials
+	result := r.db.Where("service_name = ?", serviceName).First(&credentials)
+	if result.Error != nil {
+		if result.Error == gorm.ErrRecordNotFound {
+			return nil, nil // No credentials found
+		}
+		return nil, result.Error
+	}
+	return &credentials, nil
+}
+
+// SaveServiceCredentials saves or updates service credentials
+func (r *ServiceRepository) SaveServiceCredentials(serviceName, username, password string) error {
+	var existing models.ServiceCredentials
+	result := r.db.Where("service_name = ?", serviceName).First(&existing)
+
+	if result.Error == gorm.ErrRecordNotFound {
+		// Create new
+		credentials := models.ServiceCredentials{
+			ServiceName: serviceName,
+			Username:    username,
+			Password:    password,
+		}
+		return r.db.Create(&credentials).Error
+	}
+
+	if result.Error != nil {
+		return fmt.Errorf("failed to check existing credentials: %w", result.Error)
+	}
+
+	// Update existing
+	existing.Username = username
+	existing.Password = password
+	return r.db.Save(&existing).Error
+}
+
+// DeleteServiceCredentials deletes credentials for a service
+func (r *ServiceRepository) DeleteServiceCredentials(serviceName string) error {
+	return r.db.Where("service_name = ?", serviceName).Delete(&models.ServiceCredentials{}).Error
+}
