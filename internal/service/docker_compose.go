@@ -291,6 +291,74 @@ func (dcc *DockerComposeClient) ComposeDown(ctx context.Context, composePath str
 	return result, nil
 }
 
+// ComposeDownWithVolumes handles 'docker compose down -v' for a service (removes volumes)
+func (dcc *DockerComposeClient) ComposeDownWithVolumes(ctx context.Context, composePath string, configMap map[string]string) (*ComposeResult, error) {
+	if ctx == nil {
+		var cancel context.CancelFunc
+		ctx, cancel = context.WithTimeout(context.Background(), dcc.timeout)
+		defer cancel()
+	}
+
+	// Validate and sanitize path
+	if !filepath.IsAbs(composePath) {
+		return nil, fmt.Errorf("compose path must be absolute: %s", composePath)
+	}
+
+	// Sanitize path to prevent traversal
+	cleanPath := filepath.Clean(composePath)
+	if cleanPath != composePath {
+		return nil, fmt.Errorf("compose path contains invalid sequences: %s", composePath)
+	}
+
+	composeDir := filepath.Dir(cleanPath)
+	if _, err := os.Stat(cleanPath); err != nil {
+		return nil, fmt.Errorf("compose file not found: %s: %w", cleanPath, err)
+	}
+
+	dcc.logger.Info("Executing docker compose down -v (removing volumes)",
+		zap.String("path", cleanPath),
+		zap.String("directory", composeDir))
+
+	// Prepare command with -v flag to remove volumes
+	cmd := exec.CommandContext(ctx, "docker", "compose", "-f", cleanPath, "down", "-v")
+	cmd.Dir = composeDir
+
+	// Set environment variables from config
+	cmd.Env = os.Environ()
+	for key, value := range configMap {
+		cmd.Env = append(cmd.Env, key+"="+value)
+	}
+
+	// Capture output
+	var stdout, stderr bytes.Buffer
+	cmd.Stdout = &stdout
+	cmd.Stderr = &stderr
+
+	// Execute command
+	err := cmd.Run()
+
+	result := &ComposeResult{
+		Success: err == nil,
+		Output:  stdout.String(),
+		Error:   stderr.String(),
+	}
+
+	if err != nil {
+		dcc.logger.Error("Failed to execute docker compose down -v",
+			zap.String("path", cleanPath),
+			zap.String("stdout", result.Output),
+			zap.String("stderr", result.Error),
+			zap.Error(err))
+		return result, fmt.Errorf("docker compose down -v failed: %w", err)
+	}
+
+	dcc.logger.Info("Docker compose down -v executed successfully",
+		zap.String("path", cleanPath),
+		zap.String("output", result.Output))
+
+	return result, nil
+}
+
 // ComposeStop executes 'docker compose stop' to stop containers without removing them.
 // This preserves the container so Docker can auto-restart it based on restart policy.
 func (dcc *DockerComposeClient) ComposeStop(ctx context.Context, composePath string, configMap map[string]string) (*ComposeResult, error) {

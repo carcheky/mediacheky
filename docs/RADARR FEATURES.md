@@ -6,8 +6,9 @@ La página de configuración de radar tendrá varias secciones de configuración
 
 - [ ] botones:
   - [ ] Toggle para activar desactivar radarr, desactivado desactiva todos los campos y elimina radarr, si se activa levanta radarr
-  - [ ] botón Aplicar (apply) (sustituye guardar configuración): aplica los cambios, y reconstruye el contenedor si corresponde
+  - [ ] botón Aplicar (apply): aplica los cambios sin confirmación y reconstruye el contenedor si corresponde
   - [ ] botón start/stop: aparece uno de los dos dinámicamente según el estado del contenedor
+  - [ ] botón Reset: borra la configuración (volumen config) y recrea el contenedor con valores por defecto. **Requiere confirmación antes de ejecutar**
 - [ ] Configuraciones:
   - [ ] configuración de docker con los campos (cualquiera de estas opciones eliminará el contenedor, guardará la configuración y levantará de nuevo radarr con la nueva configuración) :
     - [ ] tag de la imagen docker (se podrán cargar dinámicamente los últimos tags para seleccionarlos) si está vacío usará latest
@@ -21,11 +22,48 @@ La página de configuración de radar tendrá varias secciones de configuración
     - [ ] dominio: si está vacío usará la configuración global, por defecto vacío
 
 ------
-a tener en cuenta
--por defecto el valor del puerto debe estar vacío (puerto sin exponer)
--el host port debe poder quedarse vacío, no a 0, vacío
--los botones de stop start se intercambian según si el contenedor está en ejecución o no
--el botón de restart se lanzará con --forcde-recreate, haciendo un kill y un down antes
--docker image no se podrá cambiar, pero el tag sí tendrá un desplegable con las versiones disponibles además de latest como primera opción y por defecto
--añade otro botón reset que borre la configuración (volumen config) y recree el contenedor con los valores por defecto
--si cambia cualquier configuración de docker al guardar se debe recrear el contenedor, con pull si cambia el tag, y sin pull si no cambia el tag,
+
+## Notas de implementación
+
+### Comportamiento de Botones
+
+- **Apply**: Aplica cambios **sin confirmación**. Si cambia configuración de Docker, recrea el contenedor. **Solo visible cuando el servicio está habilitado**
+- **Prune**: **Requiere confirmación** antes de ejecutar. **Solo visible cuando existen archivos de configuración**. Al pulsar:
+  1. Ejecuta `docker compose down -v` (para y elimina volúmenes)
+  2. Borra la carpeta `services/radarr` (docker compose files)
+  3. Borra la carpeta `services-volumes/radarr` (datos de configuración)
+  4. Actualiza el estado de la UI a "deshabilitado"
+  5. El botón desaparece al completarse (ya no hay archivos que limpiar)
+- **Test Connection**: **ELIMINADO** - no se muestra en la UI
+- **Start/Stop**: Se intercambian dinámicamente según el estado del contenedor. **Solo visibles cuando el servicio está habilitado**
+- **Restart**: Se lanza con `--force-recreate`, haciendo kill y down antes. **Solo visible cuando el servicio está habilitado**
+- **Enable Toggle**: Al habilitar el servicio, aplica la configuración automáticamente (igual que Apply)
+
+### Configuración de Puerto
+
+- Por defecto el valor del puerto debe estar **vacío** (puerto sin exponer)
+- El host port debe poder quedarse **vacío**, no a 0, literalmente vacío
+- Si está vacío, no se expone el puerto; si está relleno, se expone
+
+### Configuración de Docker
+
+- Docker image **no se puede cambiar** (siempre linuxserver/radarr)
+- El tag **sí es configurable** con desplegable de versiones disponibles
+- **latest** es la primera opción y valor por defecto
+- Si cambia cualquier configuración de Docker al guardar, se debe recrear el contenedor:
+  - Con pull si cambia el tag
+  - Sin pull si no cambia el tag
+
+### Configuración de Radarr
+
+- Config path es **SOLO LECTURA**: `./volumes/mediacheky-data/services/radarr/config`
+- NO es configurable por el usuario, solo informativo
+
+### Gestión de Permisos
+
+- **PUID/PGID**: MediaCheky aplica automáticamente el UID/GID del usuario del sistema
+- **Variables de entorno**: Se configuran en `.env` o se obtienen del usuario actual
+- **Permisos de archivos**: Todos los archivos y directorios creados por MediaCheky usan el PUID/PGID configurado
+- **Servicios gestionados**: Los servicios (Radarr, Sonarr, etc.) reciben PUID/PGID en sus variables de entorno
+- **Configuración por defecto**: 1000:1000 si no se especifica
+- **Obtener valores**: Ejecutar `id -u` (PUID) e `id -g` (PGID) en el host

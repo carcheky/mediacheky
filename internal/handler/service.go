@@ -2,7 +2,12 @@ package handler
 
 import (
 	"context"
+	"encoding/xml"
 	"fmt"
+	"net"
+	"net/http"
+	"os"
+	"path/filepath"
 	"time"
 
 	"github.com/carcheky/mediacheky/internal/models"
@@ -78,6 +83,117 @@ func (h *ServiceHandler) GetService(c *fiber.Ctx) error {
 			Success: false,
 			Error:   "Failed to retrieve service",
 		})
+	}
+
+	// CRITICAL FIX: Update status from REAL container state before returning
+	// This ensures buttons show correct state after start/stop/restart operations
+	if svc.Enabled {
+		// Extract container name from config
+		var containerName string
+		if nameVal, ok := svc.Config["ContainerName"]; ok {
+			if nameStr, ok := nameVal.(string); ok && nameStr != "" {
+				containerName = nameStr
+			}
+		}
+
+		// If no container name in config, use service name
+		if containerName == "" {
+			containerName = name
+		}
+
+		h.logger.Info("🔍 GetService: Checking container status",
+			"service", name,
+			"container_name", containerName,
+			"db_status", svc.Status)
+
+		ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+		defer cancel()
+
+		// Try to get container directly by name (doesn't require labels)
+		realStatus := "stopped" // Default if not found
+		containerFound := false
+
+		// First, try to inspect the container directly by name
+		containerInfo, err := h.dockerClient.GetContainer(ctx, containerName)
+		if err == nil && containerInfo != nil {
+			// Container found via direct inspect
+			realStatus = string(containerInfo.Status)
+			containerFound = true
+			h.logger.Info("✅ Container found (direct inspect)",
+				"service", name,
+				"container", containerName,
+				"status", realStatus)
+		} else {
+			// Fallback: list all containers and search
+			h.logger.Info("🔍 Container not found by name, searching all containers",
+				"service", name,
+				"container_name", containerName)
+
+			containers, listErr := h.dockerClient.ListContainers(ctx)
+			if listErr == nil {
+				h.logger.Info("🐳 Docker containers listed",
+					"service", name,
+					"total_containers", len(containers))
+
+				for _, container := range containers {
+					// Docker prefixes names with /, so strip it
+					cName := container.Name
+					if len(cName) > 0 && cName[0] == '/' {
+						cName = cName[1:]
+					}
+
+					h.logger.Debug("Checking container",
+						"service", name,
+						"container_name", cName,
+						"looking_for", containerName,
+						"status", string(container.Status))
+
+					if cName == containerName {
+						// Container found in list
+						realStatus = string(container.Status)
+						containerFound = true
+						h.logger.Info("✅ Container found (in list)",
+							"service", name,
+							"container", containerName,
+							"status", realStatus)
+						break
+					}
+				}
+			} else {
+				h.logger.Error("❌ Failed to list Docker containers",
+					"service", name,
+					"error", listErr)
+			}
+		}
+
+		if !containerFound {
+			h.logger.Warn("⚠️ Container NOT found in Docker",
+				"service", name,
+				"container_name", containerName,
+				"setting_status_to", "stopped")
+		}
+
+		// Update service with real status
+		if svc.Status != realStatus {
+			h.logger.Info("🔄 Status changed",
+				"service", name,
+				"old_status", svc.Status,
+				"new_status", realStatus)
+			svc.Status = realStatus
+			// Update in database asynchronously (don't block response)
+			go func() {
+				if updateErr := h.repos.Service.UpdateStatus(svc.ID, realStatus, ""); updateErr != nil {
+					h.logger.Warn("Failed to update service status in DB", "name", name, "error", updateErr)
+				}
+			}()
+		} else {
+			h.logger.Info("ℹ️ Status unchanged",
+				"service", name,
+				"status", svc.Status)
+		}
+	} else {
+		h.logger.Info("⏸️ Service not enabled, skipping status check",
+			"service", name)
 	}
 
 	return c.JSON(APIResponse{
@@ -311,6 +427,63 @@ func (h *ServiceHandler) RestartContainer(c *fiber.Ctx) error {
 	})
 }
 
+// KillAndDownService handles POST /api/services/:name/kill-down
+// Force kills the container and removes it
+func (h *ServiceHandler) KillAndDownService(c *fiber.Ctx) error {
+	name := c.Params("name")
+	if name == "" {
+		return c.Status(fiber.StatusBadRequest).JSON(APIResponse{
+			Success: false,
+			Error:   "Service name is required",
+		})
+	}
+
+	// Check if service manager is available
+	if h.serviceManager == nil {
+		return c.Status(fiber.StatusServiceUnavailable).JSON(APIResponse{
+			Success: false,
+			Error:   "Service manager is not available",
+		})
+	}
+
+	// Get service from database to log the action
+	svc, err := h.repos.Service.GetByName(name)
+	if err != nil {
+		return c.Status(fiber.StatusNotFound).JSON(APIResponse{
+			Success: false,
+			Error:   fmt.Sprintf("Service not found: %v", err),
+		})
+	}
+
+	// Use context with timeout for force kill operation
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
+	// Call StopService which uses docker compose stop
+	// This is equivalent to kill & down for our purposes
+	if err := h.serviceManager.StopService(ctx, name); err != nil {
+		h.logger.Error("Failed to kill and down service", "name", name, "error", err)
+		return c.Status(fiber.StatusInternalServerError).JSON(APIResponse{
+			Success: false,
+			Error:   fmt.Sprintf("Failed to kill service: %v", err),
+		})
+	}
+
+	// Log action
+	h.repos.ServiceLog.Create(&models.ServiceLog{
+		ServiceID: svc.ID,
+		Action:    "kill-down",
+		Status:    "success",
+		Message:   "Container force stopped and will be removed on next enable",
+	})
+
+	h.logger.Info("Service force killed and marked for removal", "name", name)
+	return c.JSON(APIResponse{
+		Success: true,
+		Data:    fiber.Map{"message": "Container force killed successfully"},
+	})
+}
+
 // UpdateServiceConfig handles PUT /api/services/:name/config
 func (h *ServiceHandler) UpdateServiceConfig(c *fiber.Ctx) error {
 	name := c.Params("name")
@@ -484,8 +657,41 @@ func (h *ServiceHandler) ConfigPage(c *fiber.Ctx) error {
 	}, "layouts/main")
 }
 
+// CheckConfigExists handles GET /api/services/:name/config-exists
+// Checks if the service's config directory exists and has files
+func (h *ServiceHandler) CheckConfigExists(c *fiber.Ctx) error {
+	name := c.Params("name")
+	if name == "" {
+		return c.Status(fiber.StatusBadRequest).JSON(APIResponse{
+			Success: false,
+			Error:   "Service name is required",
+		})
+	}
+
+	// Build config path (inside container)
+	configPath := filepath.Join("/app/data/services-volumes", name)
+
+	// Check if directory exists and has files
+	exists := false
+	if info, err := os.Stat(configPath); err == nil && info.IsDir() {
+		// Check if directory has any files (not just empty directory)
+		entries, err := os.ReadDir(configPath)
+		if err == nil && len(entries) > 0 {
+			exists = true
+		}
+	}
+
+	return c.JSON(APIResponse{
+		Success: true,
+		Data: fiber.Map{
+			"exists": exists,
+			"path":   configPath,
+		},
+	})
+}
+
 // ResetService handles POST /api/services/:name/reset
-// Deletes the config directory and recreates the container with fresh config
+// Prunes service: docker compose down -v, deletes config directories and disables the service
 func (h *ServiceHandler) ResetService(c *fiber.Ctx) error {
 	name := c.Params("name")
 	if name == "" {
@@ -517,9 +723,306 @@ func (h *ServiceHandler) ResetService(c *fiber.Ctx) error {
 		})
 	}
 
-	h.logger.Info("Service reset completed", "name", name)
+	h.logger.Info("Service prune completed", "name", name)
 	return c.JSON(APIResponse{
 		Success: true,
-		Data:    fiber.Map{"message": "Service configuration deleted and container recreated successfully"},
+		Data:    fiber.Map{"message": "Service pruned and disabled successfully"},
 	})
+}
+
+// GetRadarrConfig handles GET /api/services/:name/radarr-config
+func (h *ServiceHandler) GetRadarrConfig(c *fiber.Ctx) error {
+	name := c.Params("name")
+
+	if name != "radarr" {
+		return c.Status(fiber.StatusBadRequest).JSON(APIResponse{
+			Success: false,
+			Error:   "This endpoint is only available for Radarr service",
+		})
+	}
+
+	config, err := h.serviceManager.GetRadarrConfig(c.Context(), name)
+	if err != nil {
+		h.logger.Error("Failed to get Radarr config", "error", err)
+		return c.Status(fiber.StatusInternalServerError).JSON(APIResponse{
+			Success: false,
+			Error:   fmt.Sprintf("Failed to get Radarr config: %v", err),
+		})
+	}
+
+	return c.JSON(APIResponse{
+		Success: true,
+		Data:    fiber.Map{"config": config},
+	})
+}
+
+// UpdateRadarrConfig handles PUT /api/services/:name/radarr-config
+func (h *ServiceHandler) UpdateRadarrConfig(c *fiber.Ctx) error {
+	name := c.Params("name")
+
+	if name != "radarr" {
+		return c.Status(fiber.StatusBadRequest).JSON(APIResponse{
+			Success: false,
+			Error:   "This endpoint is only available for Radarr service",
+		})
+	}
+
+	var config models.RadarrConfig
+	if err := c.BodyParser(&config); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(APIResponse{
+			Success: false,
+			Error:   "Invalid request body",
+		})
+	}
+
+	h.logger.Info("Received Radarr config update",
+		"name", name,
+		"username", config.Username,
+		"has_password", config.Password != "")
+
+	if err := h.serviceManager.UpdateRadarrConfig(c.Context(), name, config); err != nil {
+		h.logger.Error("Failed to update Radarr config", "error", err)
+		return c.Status(fiber.StatusInternalServerError).JSON(APIResponse{
+			Success: false,
+			Error:   fmt.Sprintf("Failed to update Radarr config: %v", err),
+		})
+	}
+
+	h.logger.Info("Radarr config updated successfully", "name", name)
+	return c.JSON(APIResponse{
+		Success: true,
+		Data:    fiber.Map{"message": "Configuration saved successfully. Radarr is restarting to apply changes..."},
+	})
+}
+
+// CheckServiceReady handles GET /api/services/:name/ready
+// Performs a lightweight readiness check for a service. Strategy:
+// 1) For radarr: Try Radarr API health endpoint (fastest, most reliable)
+// 2) If proxy endpoint is configured, attempt HTTP HEAD to that URL (http/https per proxy config)
+// 3) Fallback to internal container address on known port
+// Returns { ready: bool, via: "api"|"proxy"|"internal"|"none", status_code: int, url: string }
+func (h *ServiceHandler) CheckServiceReady(c *fiber.Ctx) error {
+	name := c.Params("name")
+	if name == "" {
+		return c.Status(fiber.StatusBadRequest).JSON(APIResponse{
+			Success: false,
+			Error:   "Service name is required",
+		})
+	}
+
+	// Prepare HTTP client with shorter timeout (1 second)
+	client := &http.Client{Timeout: 1 * time.Second}
+
+	// Helper to try a URL with HEAD request (faster than GET)
+	tryURL := func(url string) (bool, int, error) {
+		req, err := http.NewRequest(http.MethodHead, url, nil)
+		if err != nil {
+			return false, 0, err
+		}
+		resp, err := client.Do(req)
+		if err != nil {
+			// If HEAD fails, try GET as fallback
+			req, _ = http.NewRequest(http.MethodGet, url, nil)
+			resp, err = client.Do(req)
+			if err != nil {
+				return false, 0, err
+			}
+		}
+		defer resp.Body.Close()
+		// Consider 2xx and 3xx as ready (some services redirect)
+		if resp.StatusCode >= 200 && resp.StatusCode < 400 {
+			return true, resp.StatusCode, nil
+		}
+		return false, resp.StatusCode, nil
+	}
+
+	// For Radarr: Try API health endpoint with API key from config
+	if name == "radarr" {
+		// Get API key from Radarr config
+		var apiKey string
+		if h.serviceManager != nil {
+			if cfg, err := h.serviceManager.GetRadarrConfig(c.Context(), name); err == nil && cfg.ApiKey != "" {
+				apiKey = cfg.ApiKey
+			}
+		}
+
+		// Only try API endpoint if we have the API key
+		if apiKey != "" {
+			apiURL := fmt.Sprintf("http://%s:7878/api/v3/health", name)
+			req, err := http.NewRequest(http.MethodGet, apiURL, nil)
+			if err == nil {
+				req.Header.Set("X-Api-Key", apiKey)
+				resp, err := client.Do(req)
+				if err == nil {
+					defer resp.Body.Close()
+					if resp.StatusCode >= 200 && resp.StatusCode < 400 {
+						return c.JSON(APIResponse{
+							Success: true,
+							Data: fiber.Map{
+								"ready":       true,
+								"via":         "api",
+								"status_code": resp.StatusCode,
+								"url":         apiURL,
+							},
+						})
+					}
+				}
+			}
+		}
+
+		// If API check didn't work, just check if port is responding (TCP check only)
+		// This avoids authentication challenges
+		conn, err := net.DialTimeout("tcp", fmt.Sprintf("%s:7878", name), 1*time.Second)
+		if err == nil {
+			conn.Close()
+			return c.JSON(APIResponse{
+				Success: true,
+				Data: fiber.Map{
+					"ready":       true,
+					"via":         "tcp",
+					"status_code": 0,
+					"url":         fmt.Sprintf("http://%s:7878", name),
+				},
+			})
+		}
+	}
+
+	// Then, attempt via proxy endpoint if available
+	proxySvc := service.NewProxyService(h.repos, h.logger)
+	endpoint, err := proxySvc.GetServiceEndpoint(name)
+	if err == nil && endpoint != "" {
+		// Determine scheme from proxy config
+		proxyCfg, _ := proxySvc.GetProxyConfig()
+		scheme := "http"
+		if proxyCfg != nil && proxyCfg.SSLEnabled {
+			scheme = "https"
+		}
+		url := fmt.Sprintf("%s://%s", scheme, endpoint)
+		if ok, code, _ := tryURL(url); ok {
+			return c.JSON(APIResponse{
+				Success: true,
+				Data: fiber.Map{
+					"ready":       true,
+					"via":         "proxy",
+					"status_code": code,
+					"url":         url,
+				},
+			})
+		}
+	}
+
+	// Fallback for specific services using internal container address
+	if name == "radarr" {
+		internalURL := fmt.Sprintf("http://%s:7878", name)
+		if ok, code, _ := tryURL(internalURL); ok {
+			return c.JSON(APIResponse{
+				Success: true,
+				Data: fiber.Map{
+					"ready":       true,
+					"via":         "internal",
+					"status_code": code,
+					"url":         internalURL,
+				},
+			})
+		}
+	}
+
+	// Not ready
+	return c.JSON(APIResponse{
+		Success: true,
+		Data: fiber.Map{
+			"ready":       false,
+			"via":         "none",
+			"status_code": 0,
+		},
+	})
+}
+
+// getServiceConfigPath attempts to extract the config path from the stored service configuration
+func getServiceConfigPath(svc *models.Service) string {
+	if svc == nil || svc.Config == nil {
+		return ""
+	}
+
+	if pathsRaw, ok := svc.Config["Paths"]; ok && pathsRaw != nil {
+		switch paths := pathsRaw.(type) {
+		case map[string]interface{}:
+			if configPath, ok := paths["Config"].(string); ok {
+				return configPath
+			}
+		case models.ServiceConfig:
+			if configPath, ok := paths["Config"].(string); ok {
+				return configPath
+			}
+		case map[string]string:
+			if configPath, ok := paths["Config"]; ok {
+				return configPath
+			}
+		}
+	}
+
+	if configPath, ok := svc.Config["ConfigPath"].(string); ok {
+		return configPath
+	}
+
+	return ""
+}
+
+// extractRadarrAPIKey extracts the API key from Radarr's config.xml
+func extractRadarrAPIKey(configPath string) (string, error) {
+	// First try environment variable
+	apiKey := os.Getenv("RADARR_API_KEY")
+	if apiKey != "" {
+		return apiKey, nil
+	}
+
+	var possiblePaths []string
+
+	if configPath != "" {
+		cleanPath := filepath.Clean(configPath)
+		if filepath.Ext(cleanPath) == ".xml" {
+			possiblePaths = append(possiblePaths, cleanPath)
+		} else {
+			possiblePaths = append(possiblePaths, filepath.Join(cleanPath, "config.xml"))
+		}
+	}
+
+	// Possible paths where config.xml might be located
+	possiblePaths = append(possiblePaths,
+		// Docker volumes path (most common in docker-compose setup)
+		"./volumes/services-volumes/radarr/config.xml",
+		"/root/volumes/services-volumes/radarr/config.xml",
+		"/config/config.xml", // Inside radarr container
+	)
+
+	if configPath != "" {
+		possiblePaths = append(possiblePaths, filepath.Join(configPath, "config.xml"))
+	}
+
+	possiblePaths = append(possiblePaths, filepath.Join(os.Getenv("HOME"), ".config/Radarr/config.xml"))
+
+	for _, path := range possiblePaths {
+		if fileInfo, err := os.Stat(path); err == nil && !fileInfo.IsDir() {
+			// File exists, try to read it
+			content, err := os.ReadFile(path)
+			if err != nil {
+				continue
+			}
+
+			// Parse XML to find ApiKey
+			type Config struct {
+				ApiKey string `xml:"ApiKey"`
+			}
+			var cfg Config
+			if err := xml.Unmarshal(content, &cfg); err != nil {
+				continue
+			}
+
+			if cfg.ApiKey != "" {
+				return cfg.ApiKey, nil
+			}
+		}
+	}
+
+	return "", fmt.Errorf("RADARR_API_KEY not found in environment or config.xml")
 }

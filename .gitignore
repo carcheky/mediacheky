@@ -22,7 +22,7 @@ logs/
 # Build artifacts
 bin/
 tmp/
-server
+/server
 mediacheky
 *.exe
 *.exe~
@@ -103,3 +103,4 @@ coverage.html
 
 prompt.md
 prompt.md
+.codacy/codacy.yaml

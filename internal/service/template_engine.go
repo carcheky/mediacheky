@@ -8,7 +8,9 @@ import (
 	"embed"
 	"fmt"
 	"os"
+	"os/user"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"text/template"
 	"time"
@@ -473,10 +475,24 @@ func (te *TemplateEngine) validateYAML(content string) error {
 
 // writeComposeFile writes the compose content to the appropriate file location
 func (te *TemplateEngine) writeComposeFile(serviceName, content string) (string, error) {
+	// Get UID/GID for proper ownership
+	uid, gid, err := te.getSystemUIDGID()
+	if err != nil {
+		te.logger.Warn("Failed to get UID/GID, files will be created with default ownership", zap.Error(err))
+		uid, gid = -1, -1 // Use -1 to skip ownership change
+	}
+
 	// Create service directory
 	serviceDir := filepath.Join(te.servicesDir, serviceName)
 	if err := os.MkdirAll(serviceDir, 0755); err != nil {
 		return "", fmt.Errorf("failed to create service directory: %w", err)
+	}
+
+	// Set directory ownership
+	if uid != -1 && gid != -1 {
+		if err := te.setOwnership(serviceDir, uid, gid); err != nil {
+			te.logger.Warn("Could not set directory ownership", zap.String("path", serviceDir), zap.Error(err))
+		}
 	}
 
 	composePath := filepath.Join(serviceDir, "docker compose.yml")
@@ -493,6 +509,13 @@ func (te *TemplateEngine) writeComposeFile(serviceName, content string) (string,
 	// Write new compose file
 	if err := os.WriteFile(composePath, []byte(content), 0644); err != nil {
 		return "", fmt.Errorf("failed to write compose file: %w", err)
+	}
+
+	// Set file ownership
+	if uid != -1 && gid != -1 {
+		if err := te.setOwnership(composePath, uid, gid); err != nil {
+			te.logger.Warn("Could not set file ownership", zap.String("path", composePath), zap.Error(err))
+		}
 	}
 
 	// Get absolute path before returning (required for docker compose)
@@ -645,12 +668,77 @@ func (te *TemplateEngine) ExtractVolumePaths(composePath string, configMap map[s
 	return volumePaths, nil
 }
 
-// EnsureDirectoryExists creates a directory if it doesn't exist
+// getSystemUIDGID returns the UID and GID from environment or current user
+func (te *TemplateEngine) getSystemUIDGID() (int, int, error) {
+	// Try to get from environment first (PUID/PGID)
+	puidStr := os.Getenv("PUID")
+	pgidStr := os.Getenv("PGID")
+
+	var uid, gid int
+	var err error
+
+	if puidStr != "" && pgidStr != "" {
+		uid, err = strconv.Atoi(puidStr)
+		if err != nil {
+			return 0, 0, fmt.Errorf("invalid PUID: %w", err)
+		}
+		gid, err = strconv.Atoi(pgidStr)
+		if err != nil {
+			return 0, 0, fmt.Errorf("invalid PGID: %w", err)
+		}
+		return uid, gid, nil
+	}
+
+	// Fallback to current user
+	currentUser, err := user.Current()
+	if err != nil {
+		return 0, 0, fmt.Errorf("failed to get current user: %w", err)
+	}
+
+	uid, err = strconv.Atoi(currentUser.Uid)
+	if err != nil {
+		return 0, 0, fmt.Errorf("invalid user UID: %w", err)
+	}
+
+	gid, err = strconv.Atoi(currentUser.Gid)
+	if err != nil {
+		return 0, 0, fmt.Errorf("invalid user GID: %w", err)
+	}
+
+	return uid, gid, nil
+}
+
+// setOwnership sets the owner and group of a file or directory
+func (te *TemplateEngine) setOwnership(path string, uid, gid int) error {
+	if err := os.Chown(path, uid, gid); err != nil {
+		te.logger.Warn("Failed to set ownership",
+			zap.String("path", path),
+			zap.Int("uid", uid),
+			zap.Int("gid", gid),
+			zap.Error(err))
+		return fmt.Errorf("failed to set ownership: %w", err)
+	}
+	return nil
+}
+
+// EnsureDirectoryExists creates a directory if it doesn't exist and sets proper ownership
 func (te *TemplateEngine) EnsureDirectoryExists(path string) error {
 	if _, err := os.Stat(path); os.IsNotExist(err) {
 		te.logger.Debug("Creating volume directory", zap.String("path", path))
 		if err := os.MkdirAll(path, 0755); err != nil {
 			return fmt.Errorf("failed to create directory: %w", err)
+		}
+
+		// Set ownership
+		uid, gid, err := te.getSystemUIDGID()
+		if err != nil {
+			te.logger.Warn("Failed to get UID/GID, skipping ownership change", zap.Error(err))
+			return nil
+		}
+
+		if err := te.setOwnership(path, uid, gid); err != nil {
+			// Don't fail if we can't set ownership, just warn
+			te.logger.Warn("Could not set directory ownership", zap.String("path", path), zap.Error(err))
 		}
 	}
 	return nil
@@ -659,7 +747,10 @@ func (te *TemplateEngine) EnsureDirectoryExists(path string) error {
 // RemoveDirectory removes a directory and all its contents
 func (te *TemplateEngine) RemoveDirectory(path string) error {
 	// Security check: ensure path is within allowed directories
-	if !strings.HasPrefix(path, "/app/data/services/") && !strings.HasPrefix(path, "./volumes/mediacheky-data/services/") {
+	if !strings.HasPrefix(path, "/app/data/services/") &&
+		!strings.HasPrefix(path, "./volumes/mediacheky-data/services/") &&
+		!strings.HasPrefix(path, "/app/data/services-volumes/") &&
+		!strings.HasPrefix(path, "./volumes/mediacheky-data/services-volumes/") {
 		return fmt.Errorf("refusing to delete directory outside of services config area: %s", path)
 	}
 

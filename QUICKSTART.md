@@ -19,7 +19,10 @@ MediaCheky solo requiere **Docker** para funcionar. El comando `make dev` verifi
 git clone https://github.com/carcheky/mediacheky.git
 cd mediacheky
 
-# 2. ¡Ejecutar! (hace todo automáticamente)
+# 2. Configurar permisos de usuario (recomendado)
+./scripts/setup-permissions.sh
+
+# 3. ¡Ejecutar! (hace todo automáticamente)
 make dev
 ```
 
@@ -32,6 +35,12 @@ El comando `make dev` automáticamente:
 - ✅ Hace los scripts ejecutables
 - ✅ Construye e inicia los contenedores Docker
 - ✅ Habilita hot-reload (los cambios en el código se recargan automáticamente)
+
+**💡 Sobre permisos:**
+
+El script `setup-permissions.sh` configura automáticamente `PUID` y `PGID` en el archivo `.env` con los valores de tu usuario. Esto evita problemas de permisos con archivos creados por MediaCheky y los servicios que gestiona.
+
+Si no ejecutas el script, se usarán los valores por defecto (1000:1000). Si encuentras problemas de permisos más adelante, ejecuta el script y reinicia con `make restart`.
 
 ### Acceder a la Aplicación
 
