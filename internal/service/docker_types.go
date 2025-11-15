@@ -35,6 +35,15 @@ type ContainerInfo struct {
 	StartedAt time.Time
 	Labels    map[string]string
 	Ports     []PortBinding
+	Mounts    []MountInfo
+}
+
+// MountInfo represents a volume mount for a container
+type MountInfo struct {
+	Source      string // Path on host
+	Destination string // Path inside container
+	Type        string // bind, volume, tmpfs
+	ReadOnly    bool
 }
 
 // PortBinding represents a port mapping for a container

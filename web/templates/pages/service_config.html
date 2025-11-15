@@ -953,12 +953,19 @@
                                 Paths: { ...this.config.Paths, ...(data.config.Paths || {}) }
                             };
                             
-                            // Set mounted paths for display
-                            if (data.config.Paths && data.config.Paths.Config) {
-                                this.mountedConfigPath = data.config.Paths.Config;
-                            }
-                            if (data.config.Paths && data.config.Paths.Media) {
-                                this.mountedMediaPath = data.config.Paths.Media;
+                            // Set mounted paths for display - prefer mounts from container inspect (real host paths)
+                            if (data.mounts) {
+                                // Mounts is a map of container_path -> host_path from docker inspect
+                                this.mountedConfigPath = data.mounts['/config'] || data.config.Paths?.Config || '';
+                                this.mountedMediaPath = data.mounts['/MEDIACHEKY_LIBRARY'] || data.config.Paths?.Media || '';
+                            } else {
+                                // Fallback to config paths if mounts not available
+                                if (data.config.Paths && data.config.Paths.Config) {
+                                    this.mountedConfigPath = data.config.Paths.Config;
+                                }
+                                if (data.config.Paths && data.config.Paths.Media) {
+                                    this.mountedMediaPath = data.config.Paths.Media;
+                                }
                             }
                         }
                         

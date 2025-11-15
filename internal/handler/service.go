@@ -191,6 +191,30 @@ func (h *ServiceHandler) GetService(c *fiber.Ctx) error {
 				"service", name,
 				"status", svc.Status)
 		}
+
+		// Add volume mount information from container inspect if available
+		if containerInfo != nil && len(containerInfo.Mounts) > 0 {
+			mounts := make(map[string]string)
+			for _, mount := range containerInfo.Mounts {
+				mounts[mount.Destination] = mount.Source
+			}
+			// Add mounts to response data
+			return c.JSON(APIResponse{
+				Success: true,
+				Data: fiber.Map{
+					"id":         svc.ID,
+					"name":       svc.Name,
+					"enabled":    svc.Enabled,
+					"status":     svc.Status,
+					"image":      svc.Image,
+					"port":       svc.Port,
+					"config":     svc.Config,
+					"mounts":     mounts,
+					"created_at": svc.CreatedAt,
+					"updated_at": svc.UpdatedAt,
+				},
+			})
+		}
 	} else {
 		h.logger.Info("⏸️ Service not enabled, skipping status check",
 			"service", name)
