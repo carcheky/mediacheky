@@ -2,12 +2,20 @@ package handler
 
 import (
 	"context"
+	"encoding/json"
+	"fmt"
+	"io"
+	"net/http"
+	"strings"
 	"time"
 
+	"github.com/carcheky/mediacheky/internal/models"
+	"github.com/carcheky/mediacheky/internal/repository"
 	"github.com/carcheky/mediacheky/internal/service"
 	"github.com/carcheky/mediacheky/pkg/logger"
 	"github.com/docker/docker/client"
 	"github.com/gofiber/fiber/v2"
+	"gorm.io/gorm"
 )
 
 // DockerHandler handles Docker-related HTTP requests
@@ -15,10 +23,12 @@ type DockerHandler struct {
 	logger       *logger.Logger
 	dockerClient *service.DockerClient
 	rawClient    *client.Client
+	db           *gorm.DB
+	repos        *repository.Repositories
 }
 
 // NewDockerHandler creates a new DockerHandler instance
-func NewDockerHandler(logger *logger.Logger, dockerClient *service.DockerClient) *DockerHandler {
+func NewDockerHandler(logger *logger.Logger, dockerClient *service.DockerClient, db *gorm.DB, repos *repository.Repositories) *DockerHandler {
 	// Get raw Docker client for info API
 	var rawClient *client.Client
 	if dockerClient != nil {
@@ -38,6 +48,8 @@ func NewDockerHandler(logger *logger.Logger, dockerClient *service.DockerClient)
 		logger:       logger,
 		dockerClient: dockerClient,
 		rawClient:    rawClient,
+		db:           db,
+		repos:        repos,
 	}
 }
 
@@ -113,8 +125,109 @@ func (h *DockerHandler) ListContainers(c *fiber.Ctx) error {
 	})
 }
 
+// DockerHubTagsResponse represents the response from Docker Hub tags API
+type DockerHubTagsResponse struct {
+	Count   int `json:"count"`
+	Results []struct {
+		Name string `json:"name"`
+	} `json:"results"`
+}
+
+// isStableTag checks if a tag is a clean version number (X.X.X)
+func isStableTag(tag string) bool {
+	// Exclude "latest" as it's always available by default
+	if tag == "latest" {
+		return false
+	}
+
+	// Only allow tags that match version pattern: X.X.X or X.X.X.X (numbers and dots only)
+	// Must start with a digit and contain only digits, dots, and optionally "v" prefix
+	tagClean := strings.TrimPrefix(tag, "v")
+
+	// Check if it contains ONLY digits and dots
+	for _, char := range tagClean {
+		if char != '.' && (char < '0' || char > '9') {
+			return false
+		}
+	}
+
+	// Must contain at least one dot (to be a version)
+	if !strings.Contains(tagClean, ".") {
+		return false
+	}
+
+	// Must not start or end with a dot
+	if strings.HasPrefix(tagClean, ".") || strings.HasSuffix(tagClean, ".") {
+		return false
+	}
+
+	return true
+} // fetchDockerHubTags fetches stable tags from Docker Hub API for a given image
+func (h *DockerHandler) fetchDockerHubTags(imageName string) ([]string, error) {
+	// Remove tag if present
+	if idx := strings.Index(imageName, ":"); idx != -1 {
+		imageName = imageName[:idx]
+	}
+
+	// Build Docker Hub API URL - fetch more tags to filter stable ones
+	// For official images (no namespace): library/image
+	// For user/org images: namespace/image
+	var apiURL string
+	if !strings.Contains(imageName, "/") {
+		// Official image
+		apiURL = fmt.Sprintf("https://hub.docker.com/v2/repositories/library/%s/tags?page_size=100&ordering=last_updated", imageName)
+	} else {
+		// User/org image
+		apiURL = fmt.Sprintf("https://hub.docker.com/v2/repositories/%s/tags?page_size=100&ordering=last_updated", imageName)
+	}
+
+	h.logger.Info("Fetching tags from Docker Hub", "image", imageName, "url", apiURL)
+
+	// Make HTTP request
+	client := &http.Client{
+		Timeout: 10 * time.Second,
+	}
+
+	resp, err := client.Get(apiURL)
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch tags from Docker Hub: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		body, _ := io.ReadAll(resp.Body)
+		return nil, fmt.Errorf("Docker Hub API returned status %d: %s", resp.StatusCode, string(body))
+	}
+
+	// Parse response
+	var tagsResp DockerHubTagsResponse
+	if err := json.NewDecoder(resp.Body).Decode(&tagsResp); err != nil {
+		return nil, fmt.Errorf("failed to parse Docker Hub response: %w", err)
+	}
+
+	// Extract and filter tag names - ONLY stable tags
+	stableTags := make([]string, 0, 10)
+
+	for _, result := range tagsResp.Results {
+		if result.Name == "" {
+			continue
+		}
+
+		// Only collect stable tags (exclude nightly, dev, architecture-specific, etc.)
+		if isStableTag(result.Name) {
+			stableTags = append(stableTags, result.Name)
+			if len(stableTags) >= 10 {
+				break
+			}
+		}
+	}
+
+	// Always return only stable tags, even if there are few
+	return stableTags, nil
+}
+
 // GetDockerTags handles GET /api/docker/tags?image=linuxserver/radarr
-// Fetches available tags from Docker Hub for a given image
+// Fetches available tags from Docker Hub for a given image and stores them in database
 func (h *DockerHandler) GetDockerTags(c *fiber.Ctx) error {
 	imageName := c.Query("image")
 	if imageName == "" {
@@ -124,61 +237,102 @@ func (h *DockerHandler) GetDockerTags(c *fiber.Ctx) error {
 		})
 	}
 
+	// Remove tag if present for consistency
+	if idx := strings.Index(imageName, ":"); idx != -1 {
+		imageName = imageName[:idx]
+	}
+
 	h.logger.Info("Fetching Docker tags", "image", imageName)
 
-	// Parse image name to extract repository
-	// Format: [registry/]repository[:tag]
-	// For Docker Hub: linuxserver/radarr -> library: linuxserver, name: radarr
-	var namespace, repository string
+	// Fetch tags from Docker Hub
+	tags, err := h.fetchDockerHubTags(imageName)
+	if err != nil {
+		h.logger.Error("Failed to fetch Docker Hub tags", "image", imageName, "error", err)
+		return c.Status(fiber.StatusInternalServerError).JSON(APIResponse{
+			Success: false,
+			Error:   fmt.Sprintf("Failed to fetch tags: %v", err),
+		})
+	}
 
-	// Remove tag if present
-	if idx := len(imageName) - 1; idx > 0 {
-		for i := idx; i >= 0; i-- {
-			if imageName[i] == ':' {
-				imageName = imageName[:i]
-				break
-			}
+	if len(tags) == 0 {
+		return c.Status(fiber.StatusNotFound).JSON(APIResponse{
+			Success: false,
+			Error:   "No tags found for this image",
+		})
+	}
+
+	// Delete old tags for this image
+	if err := h.db.Where("image_name = ?", imageName).Delete(&models.DockerTag{}).Error; err != nil {
+		h.logger.Error("Failed to delete old tags", "image", imageName, "error", err)
+		// Continue anyway - not critical
+	}
+
+	// Save new tags to database
+	for _, tag := range tags {
+		dockerTag := models.DockerTag{
+			ImageName: imageName,
+			Tag:       tag,
+		}
+		if err := h.db.Create(&dockerTag).Error; err != nil {
+			h.logger.Error("Failed to save tag", "image", imageName, "tag", tag, "error", err)
+			// Continue anyway - save what we can
 		}
 	}
 
-	// Split namespace and repository
-	foundSlash := false
-	for i := 0; i < len(imageName); i++ {
-		if imageName[i] == '/' {
-			namespace = imageName[:i]
-			repository = imageName[i+1:]
-			foundSlash = true
-			break
-		}
-	}
-
-	if !foundSlash {
-		// No namespace, use 'library' as default
-		namespace = "library"
-		repository = imageName
-	}
-
-	// Fetch tags from Docker Hub API
-	// Note: This is a simplified implementation
-	// For production, consider using official Docker Registry API client
-	tags := []string{
-		"latest",
-		"develop",
-		"nightly",
-		"5.14.0",
-		"5.13.4",
-		"5.12.2",
-	}
-
-	h.logger.Info("Docker tags fetched", "image", imageName, "count", len(tags))
+	h.logger.Info("Docker tags fetched and saved", "image", imageName, "count", len(tags))
 
 	return c.JSON(APIResponse{
 		Success: true,
 		Data: fiber.Map{
-			"image":      imageName,
-			"namespace":  namespace,
-			"repository": repository,
-			"tags":       tags,
+			"image": imageName,
+			"tags":  tags,
+			"count": len(tags),
+		},
+	})
+}
+
+// GetSavedDockerTags handles GET /api/docker/tags/saved?image=linuxserver/radarr
+// Returns tags saved in database for a given image
+func (h *DockerHandler) GetSavedDockerTags(c *fiber.Ctx) error {
+	imageName := c.Query("image")
+	if imageName == "" {
+		return c.Status(fiber.StatusBadRequest).JSON(APIResponse{
+			Success: false,
+			Error:   "Image name is required",
+		})
+	}
+
+	// Remove tag if present for consistency
+	if idx := strings.Index(imageName, ":"); idx != -1 {
+		imageName = imageName[:idx]
+	}
+
+	h.logger.Info("Fetching saved Docker tags", "image", imageName)
+
+	// Query database for saved tags
+	var dockerTags []models.DockerTag
+	if err := h.db.Where("image_name = ?", imageName).Order("updated_at DESC").Find(&dockerTags).Error; err != nil {
+		h.logger.Error("Failed to fetch saved tags", "image", imageName, "error", err)
+		return c.Status(fiber.StatusInternalServerError).JSON(APIResponse{
+			Success: false,
+			Error:   "Failed to fetch saved tags",
+		})
+	}
+
+	// Extract tag names
+	tags := make([]string, 0, len(dockerTags))
+	for _, dt := range dockerTags {
+		tags = append(tags, dt.Tag)
+	}
+
+	h.logger.Info("Saved Docker tags fetched", "image", imageName, "count", len(tags))
+
+	return c.JSON(APIResponse{
+		Success: true,
+		Data: fiber.Map{
+			"image": imageName,
+			"tags":  tags,
+			"count": len(tags),
 		},
 	})
 }

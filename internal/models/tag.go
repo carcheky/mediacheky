@@ -25,3 +25,23 @@ type Tag struct {
 func (Tag) TableName() string {
 	return "tags"
 }
+
+// DockerTag represents a Docker image tag from Docker Hub
+type DockerTag struct {
+	ID        uint           `json:"id" gorm:"primaryKey"`
+	CreatedAt time.Time      `json:"created_at"`
+	UpdatedAt time.Time      `json:"updated_at"`
+	DeletedAt gorm.DeletedAt `json:"-" gorm:"index"`
+
+	// Docker image information
+	ImageName string `json:"image_name" gorm:"not null;index"` // Full image name (e.g., "linuxserver/radarr")
+	Tag       string `json:"tag" gorm:"not null"`              // Tag name (e.g., "latest", "5.14.0")
+
+	// Composite unique index to prevent duplicate tags for same image
+	// gorm:"uniqueIndex:idx_image_tag"
+}
+
+// TableName specifies the table name for DockerTag model.
+func (DockerTag) TableName() string {
+	return "docker_tags"
+}

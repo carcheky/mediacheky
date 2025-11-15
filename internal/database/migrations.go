@@ -26,6 +26,8 @@ func RunMigrations(db *gorm.DB) error {
 		// Proxy models
 		&models.ProxyConfig{},
 		&models.Domain{},
+		// Docker tags
+		&models.DockerTag{},
 	); err != nil {
 		return fmt.Errorf("failed to run migrations: %w", err)
 	}

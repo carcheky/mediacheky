@@ -229,6 +229,7 @@ func setupRoutes(app *fiber.App, h *handler.Handlers) {
 		api.Get("/docker/info", h.Docker.GetDockerInfo)
 		api.Get("/docker/containers", h.Docker.ListContainers)
 		api.Get("/docker/tags", h.Docker.GetDockerTags)
+		api.Get("/docker/tags/saved", h.Docker.GetSavedDockerTags)
 
 		// Configuration (Settings) - legacy endpoints
 		api.Get("/config", h.Settings.Get)
