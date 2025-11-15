@@ -2,9 +2,11 @@ package service
 
 import (
 	"context"
+	"encoding/xml"
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/carcheky/mediacheky/internal/models"
@@ -833,45 +835,62 @@ func (sm *ServiceManager) UpdateRadarrConfig(ctx context.Context, serviceName st
 
 // parseRadarrConfig parses the XML config into RadarrConfig struct
 func parseRadarrConfig(data []byte, config *models.RadarrConfig) error {
-	// Simple XML parsing - extract values between tags
-	content := string(data)
-
-	// Helper function to extract value between tags
-	extractValue := func(tag string) string {
-		start := fmt.Sprintf("<%s>", tag)
-		end := fmt.Sprintf("</%s>", tag)
-		startIdx := indexOf(content, start)
-		if startIdx == -1 {
-			return ""
-		}
-		startIdx += len(start)
-		endIdx := indexOf(content[startIdx:], end)
-		if endIdx == -1 {
-			return ""
-		}
-		return content[startIdx : startIdx+endIdx]
+	// Define XML structure matching Radarr's config.xml
+	type ConfigXML struct {
+		BindAddress              string `xml:"BindAddress"`
+		Port                     int    `xml:"Port"`
+		SslPort                  int    `xml:"SslPort"`
+		EnableSsl                string `xml:"EnableSsl"`
+		LaunchBrowser            string `xml:"LaunchBrowser"`
+		ApiKey                   string `xml:"ApiKey"`
+		AuthenticationMethod     string `xml:"AuthenticationMethod"`
+		AuthenticationRequired   string `xml:"AuthenticationRequired"`
+		Username                 string `xml:"Username"`
+		Password                 string `xml:"Password"`
+		PasswordConfirmation     string `xml:"PasswordConfirmation"`
+		Branch                   string `xml:"Branch"`
+		LogLevel                 string `xml:"LogLevel"`
+		SslCertPath              string `xml:"SslCertPath"`
+		SslCertPassword          string `xml:"SslCertPassword"`
+		UrlBase                  string `xml:"UrlBase"`
+		InstanceName             string `xml:"InstanceName"`
+		UpdateMechanism          string `xml:"UpdateMechanism"`
+		UseProxy                 string `xml:"UseProxy"`
+		SendAnonymousUsageData   string `xml:"SendAnonymousUsageData"`
 	}
 
-	config.BindAddress = extractValue("BindAddress")
-	config.Port = parseInt(extractValue("Port"), 7878)
-	config.SslPort = parseInt(extractValue("SslPort"), 9898)
-	config.EnableSsl = extractValue("EnableSsl") == "True"
-	config.LaunchBrowser = extractValue("LaunchBrowser") == "True"
-	config.ApiKey = extractValue("ApiKey")
-	config.AuthenticationMethod = extractValue("AuthenticationMethod")
-	config.AuthenticationRequired = extractValue("AuthenticationRequired")
-	config.Username = extractValue("Username")
-	config.Password = extractValue("Password")
-	config.PasswordConfirmation = extractValue("PasswordConfirmation")
-	config.Branch = extractValue("Branch")
-	config.LogLevel = extractValue("LogLevel")
-	config.SslCertPath = extractValue("SslCertPath")
-	config.SslCertPassword = extractValue("SslCertPassword")
-	config.UrlBase = extractValue("UrlBase")
-	config.InstanceName = extractValue("InstanceName")
-	config.UpdateMechanism = extractValue("UpdateMechanism")
-	config.UseProxy = extractValue("UseProxy") == "True"
-	config.SendAnonymousUsageData = extractValue("SendAnonymousUsageData") == "True"
+	var xmlConfig ConfigXML
+	if err := xml.Unmarshal(data, &xmlConfig); err != nil {
+		return fmt.Errorf("failed to parse XML: %w", err)
+	}
+
+	// Map XML fields to config struct
+	config.BindAddress = xmlConfig.BindAddress
+	config.Port = xmlConfig.Port
+	if config.Port == 0 {
+		config.Port = 7878 // Default port
+	}
+	config.SslPort = xmlConfig.SslPort
+	if config.SslPort == 0 {
+		config.SslPort = 9898 // Default SSL port
+	}
+	config.EnableSsl = xmlConfig.EnableSsl == "True"
+	config.LaunchBrowser = xmlConfig.LaunchBrowser == "True"
+	config.ApiKey = xmlConfig.ApiKey
+	config.AuthenticationMethod = xmlConfig.AuthenticationMethod
+	config.AuthenticationRequired = xmlConfig.AuthenticationRequired
+	config.Username = xmlConfig.Username
+	config.Password = xmlConfig.Password
+	config.PasswordConfirmation = xmlConfig.PasswordConfirmation
+	config.Branch = xmlConfig.Branch
+	config.LogLevel = xmlConfig.LogLevel
+	config.SslCertPath = xmlConfig.SslCertPath
+	config.SslCertPassword = xmlConfig.SslCertPassword
+	config.UrlBase = xmlConfig.UrlBase
+	config.InstanceName = xmlConfig.InstanceName
+	config.UpdateMechanism = xmlConfig.UpdateMechanism
+	config.UseProxy = xmlConfig.UseProxy == "True"
+	config.SendAnonymousUsageData = xmlConfig.SendAnonymousUsageData == "True"
 
 	return nil
 }
@@ -934,10 +953,10 @@ func (sm *ServiceManager) initializeRadarrConfig(ctx context.Context, serviceNam
 		if readErr == nil && len(data) > 0 {
 			// File exists and has content, check if ApiKey is set
 			content := string(data)
-			if indexOf(content, "<ApiKey>") != -1 && indexOf(content, "</ApiKey>") != -1 {
+			if strings.Index(content, "<ApiKey>") != -1 && strings.Index(content, "</ApiKey>") != -1 {
 				// Extract ApiKey value
-				start := indexOf(content, "<ApiKey>") + 8
-				end := indexOf(content[start:], "</ApiKey>")
+				start := strings.Index(content, "<ApiKey>") + 8
+				end := strings.Index(content[start:], "</ApiKey>")
 				if end > 0 {
 					apiKey := content[start : start+end]
 					// If ApiKey has value (not empty), assume config is valid
@@ -995,23 +1014,4 @@ func (sm *ServiceManager) initializeRadarrConfig(ctx context.Context, serviceNam
 
 	sm.logger.Info("Radarr config.xml initialized with default values", zap.String("path", configPath))
 	return nil
-}
-
-// Helper functions
-func indexOf(s, substr string) int {
-	for i := 0; i <= len(s)-len(substr); i++ {
-		if s[i:i+len(substr)] == substr {
-			return i
-		}
-	}
-	return -1
-}
-
-func parseInt(s string, defaultVal int) int {
-	var result int
-	_, err := fmt.Sscanf(s, "%d", &result)
-	if err != nil {
-		return defaultVal
-	}
-	return result
 }

@@ -490,9 +490,7 @@ func (te *TemplateEngine) writeComposeFile(serviceName, content string) (string,
 
 	// Set directory ownership
 	if uid != -1 && gid != -1 {
-		if err := te.setOwnership(serviceDir, uid, gid); err != nil {
-			te.logger.Warn("Could not set directory ownership", zap.String("path", serviceDir), zap.Error(err))
-		}
+		te.setOwnership(serviceDir, uid, gid)
 	}
 
 	composePath := filepath.Join(serviceDir, "docker compose.yml")
@@ -513,9 +511,7 @@ func (te *TemplateEngine) writeComposeFile(serviceName, content string) (string,
 
 	// Set file ownership
 	if uid != -1 && gid != -1 {
-		if err := te.setOwnership(composePath, uid, gid); err != nil {
-			te.logger.Warn("Could not set file ownership", zap.String("path", composePath), zap.Error(err))
-		}
+		te.setOwnership(composePath, uid, gid)
 	}
 
 	// Get absolute path before returning (required for docker compose)
@@ -709,16 +705,15 @@ func (te *TemplateEngine) getSystemUIDGID() (int, int, error) {
 }
 
 // setOwnership sets the owner and group of a file or directory
-func (te *TemplateEngine) setOwnership(path string, uid, gid int) error {
+// Logs a warning if ownership cannot be set (e.g., insufficient permissions)
+func (te *TemplateEngine) setOwnership(path string, uid, gid int) {
 	if err := os.Chown(path, uid, gid); err != nil {
 		te.logger.Warn("Failed to set ownership",
 			zap.String("path", path),
 			zap.Int("uid", uid),
 			zap.Int("gid", gid),
 			zap.Error(err))
-		return fmt.Errorf("failed to set ownership: %w", err)
 	}
-	return nil
 }
 
 // EnsureDirectoryExists creates a directory if it doesn't exist and sets proper ownership
@@ -736,10 +731,7 @@ func (te *TemplateEngine) EnsureDirectoryExists(path string) error {
 			return nil
 		}
 
-		if err := te.setOwnership(path, uid, gid); err != nil {
-			// Don't fail if we can't set ownership, just warn
-			te.logger.Warn("Could not set directory ownership", zap.String("path", path), zap.Error(err))
-		}
+		te.setOwnership(path, uid, gid)
 	}
 	return nil
 }

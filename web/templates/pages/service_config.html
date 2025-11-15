@@ -16,9 +16,9 @@
                 <div class="flex-1 min-w-0">
                     <div class="flex items-center gap-2">
                         <h1 class="text-3xl font-bold text-dark-text" x-text="serviceName + ' Configuration'"></h1>
-                        <!-- Link Icon to service (only when running) - with API key auth for Radarr -->
+                        <!-- Link Icon to service (only when running) -->
                         <button x-show="enabled && status === 'running'" 
-                                @click="serviceName.toLowerCase() === 'radarr' ? openRadarrWithAuth() : window.open((proxyConfig.sslEnabled ? 'https://' : 'http://') + serviceEndpoint, '_blank')"
+                                @click="window.open((proxyConfig.sslEnabled ? 'https://' : 'http://') + serviceEndpoint, '_blank')"
                                 class="text-blue-400 hover:text-blue-300 transition-colors flex-shrink-0 cursor-pointer bg-transparent border-0 p-0" 
                                 title="Open service">
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -166,9 +166,9 @@
                             <p class="text-xs text-dark-muted">MediaCheky reads/writes Radarr's config.xml directly.</p>
                         </div>
                         <button x-show="enabled && status === 'running' && serviceEndpoint" 
-                                @click="openRadarrWithAuth()"
+                                @click="window.open((proxyConfig.sslEnabled ? 'https://' : 'http://') + serviceEndpoint, '_blank')"
                                 class="text-blue-400 hover:text-blue-300 transition-colors flex items-center gap-1 text-xs"
-                                title="Open Radarr with automatic login">
+                                title="Open Radarr">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path>
                             </svg>
@@ -1497,27 +1497,7 @@
                 }
             },
 
-            async openRadarrWithAuth() {
-                if (this.serviceName.toLowerCase() !== 'radarr') return;
-                
-                try {
-                    // Build URL to open Radarr UI
-                    // NOTE: Radarr does not support auto-login via URL parameters for the web UI
-                    // The API key (via ?apikey=XXX or X-Api-Key header) only works for API endpoints (/api/*)
-                    // The web UI requires manual login through Radarr's authentication system
-                    // Reference: https://github.com/Radarr/Radarr (ApiKeyAuthenticationHandler.cs)
-                    const protocol = this.proxyConfig.sslEnabled ? 'https://' : 'http://';
-                    const url = `${protocol}${this.serviceEndpoint}`;
-                    
-                    console.log('🚀 Opening Radarr UI (manual login required):', url);
-                    
-                    // Open in new tab
-                    window.open(url, '_blank', 'noopener,noreferrer');
-                } catch (error) {
-                    console.error('Error opening Radarr:', error);
-                    this.showToast('Error opening Radarr: ' + error.message, 'error');
-                }
-            },
+
 
 
             async copyToClipboard(text) {
@@ -1545,9 +1525,8 @@
     
     // Cleanup on page unload
     window.addEventListener('beforeunload', () => {
-        const component = Alpine.$data(document.querySelector('[x-data]'));
-        if (component && component.destroy) {
-            component.destroy();
-        }
+        // Clear intervals directly if they're stored globally
+        if (window.statusInterval) clearInterval(window.statusInterval);
+        if (window.readyInterval) clearInterval(window.readyInterval);
     });
 </script>
