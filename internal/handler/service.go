@@ -632,24 +632,7 @@ func (h *ServiceHandler) ConfigPage(c *fiber.Ctx) error {
 		}, "layouts/main")
 	}
 
-	// Verify service exists
-	_, err := h.repos.Service.GetByName(name)
-	if err != nil {
-		if err == gorm.ErrRecordNotFound {
-			return c.Status(fiber.StatusNotFound).Render("pages/error", fiber.Map{
-				"Title":   "Service Not Found",
-				"Message": fmt.Sprintf("Service '%s' not found", name),
-				"Version": "dev",
-			}, "layouts/main")
-		}
-		h.logger.Error("Failed to get service", "name", name, "error", err)
-		return c.Status(fiber.StatusInternalServerError).Render("pages/error", fiber.Map{
-			"Title":   "Server Error",
-			"Message": "Failed to retrieve service information",
-			"Version": "dev",
-		}, "layouts/main")
-	}
-
+	// Always render config page, regardless of service existence in database
 	return c.Render("pages/service_config", fiber.Map{
 		"Title":       name,
 		"ServiceName": name,
