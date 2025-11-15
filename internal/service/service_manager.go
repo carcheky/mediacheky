@@ -803,7 +803,7 @@ func (sm *ServiceManager) GetRadarrConfig(ctx context.Context, serviceName strin
 	// Load credentials from database or generate new ones
 	dbPath := filepath.Join("/app/data/services-volumes", serviceName, "radarr.db")
 	username, exists, err := sm.getRadarrCredentialsFromDB(dbPath)
-	
+
 	if err != nil {
 		sm.logger.Warn("Failed to read credentials from database", zap.Error(err))
 	} else if exists {
@@ -819,7 +819,7 @@ func (sm *ServiceManager) GetRadarrConfig(ctx context.Context, serviceName strin
 		sm.logger.Info("Generated random credentials for Radarr",
 			zap.String("username", generatedUser),
 			zap.String("password_length", fmt.Sprintf("%d", len(generatedPass))))
-		
+
 		// Automatically save the generated credentials
 		if err := sm.updateRadarrCredentials(dbPath, generatedUser, generatedPass); err != nil {
 			sm.logger.Warn("Failed to save generated credentials", zap.Error(err))
