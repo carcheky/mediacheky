@@ -124,3 +124,11 @@ type SonarrConfig struct {
 	UseProxy               bool   `json:"UseProxy" xml:"UseProxy"`
 	SendAnonymousUsageData bool   `json:"SendAnonymousUsageData" xml:"SendAnonymousUsageData"`
 }
+
+// JellyfinConfig represents Jellyfin's configuration
+type JellyfinConfig struct {
+	Port             int    `json:"Port"`
+	Image            string `json:"Image"`
+	PublicUrl        string `json:"PublicUrl"`
+	DeviceProcessing bool   `json:"DeviceProcessing"` // Enable hardware transcoding devices
+}

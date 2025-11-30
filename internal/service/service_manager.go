@@ -1163,6 +1163,8 @@ func (sm *ServiceManager) initializeRadarrConfig(ctx context.Context, serviceNam
 	return nil
 }
 
+
+
 // Helper functions
 
 // generateRandomCredentials generates random username and password
@@ -1468,7 +1470,7 @@ func (sm *ServiceManager) GetSonarrConfig(ctx context.Context, serviceName strin
 				Username:               "",
 				Password:               "",
 				PasswordConfirmation:   "",
-				Branch:                 "main",
+				Branch:                 "master",
 				LogLevel:               "debug",
 				SslCertPath:            "",
 				SslCertPassword:        "",
@@ -1649,58 +1651,45 @@ func (sm *ServiceManager) UpdateSonarrConfig(ctx context.Context, serviceName st
 
 // parseSonarrConfig parses the XML config into SonarrConfig struct
 func parseSonarrConfig(data []byte, config *models.SonarrConfig) error {
-	// Simple XML parsing using string search
-	// This is more reliable than full XML parsing for this specific use case
+	// Simple XML parsing - extract values between tags
 	content := string(data)
 
-	// Parse BindAddress
-	if start := strings.Index(content, "<BindAddress>"); start != -1 {
-		end := strings.Index(content[start:], "</BindAddress>")
-		if end != -1 {
-			config.BindAddress = content[start+len("<BindAddress>") : start+end]
+	// Helper function to extract value between tags
+	extractValue := func(tag string) string {
+		start := fmt.Sprintf("<%s>", tag)
+		end := fmt.Sprintf("</%s>", tag)
+		startIdx := strings.Index(content, start)
+		if startIdx == -1 {
+			return ""
 		}
+		startIdx += len(start)
+		endIdx := strings.Index(content[startIdx:], end)
+		if endIdx == -1 {
+			return ""
+		}
+		return content[startIdx : startIdx+endIdx]
 	}
 
-	// Parse Port
-	if start := strings.Index(content, "<Port>"); start != -1 {
-		end := strings.Index(content[start:], "</Port>")
-		if end != -1 {
-			portStr := content[start+len("<Port>") : start+end]
-			fmt.Sscanf(portStr, "%d", &config.Port)
-		}
-	}
-
-	// Parse ApiKey
-	if start := strings.Index(content, "<ApiKey>"); start != -1 {
-		end := strings.Index(content[start:], "</ApiKey>")
-		if end != -1 {
-			config.ApiKey = content[start+len("<ApiKey>") : start+end]
-		}
-	}
-
-	// Parse AuthenticationMethod
-	if start := strings.Index(content, "<AuthenticationMethod>"); start != -1 {
-		end := strings.Index(content[start:], "</AuthenticationMethod>")
-		if end != -1 {
-			config.AuthenticationMethod = content[start+len("<AuthenticationMethod>") : start+end]
-		}
-	}
-
-	// Parse UrlBase
-	if start := strings.Index(content, "<UrlBase>"); start != -1 {
-		end := strings.Index(content[start:], "</UrlBase>")
-		if end != -1 {
-			config.UrlBase = content[start+len("<UrlBase>") : start+end]
-		}
-	}
-
-	// Parse InstanceName
-	if start := strings.Index(content, "<InstanceName>"); start != -1 {
-		end := strings.Index(content[start:], "</InstanceName>")
-		if end != -1 {
-			config.InstanceName = content[start+len("<InstanceName>") : start+end]
-		}
-	}
+	config.BindAddress = extractValue("BindAddress")
+	config.Port = parseInt(extractValue("Port"), 8989)
+	config.SslPort = parseInt(extractValue("SslPort"), 9898)
+	config.EnableSsl = extractValue("EnableSsl") == "True"
+	config.LaunchBrowser = extractValue("LaunchBrowser") == "True"
+	config.ApiKey = extractValue("ApiKey")
+	config.AuthenticationMethod = extractValue("AuthenticationMethod")
+	config.AuthenticationRequired = extractValue("AuthenticationRequired")
+	config.Username = extractValue("Username")
+	config.Password = extractValue("Password")
+	config.PasswordConfirmation = extractValue("PasswordConfirmation")
+	config.Branch = extractValue("Branch")
+	config.LogLevel = extractValue("LogLevel")
+	config.SslCertPath = extractValue("SslCertPath")
+	config.SslCertPassword = extractValue("SslCertPassword")
+	config.UrlBase = extractValue("UrlBase")
+	config.InstanceName = extractValue("InstanceName")
+	config.UpdateMechanism = extractValue("UpdateMechanism")
+	config.UseProxy = extractValue("UseProxy") == "True"
+	config.SendAnonymousUsageData = extractValue("SendAnonymousUsageData") == "True"
 
 	return nil
 }
@@ -1813,6 +1802,19 @@ func (sm *ServiceManager) initializeSonarrConfig(ctx context.Context, serviceNam
 	}
 
 	sm.logger.Info("Sonarr config.xml initialized with default values", zap.String("path", configPath))
+	return nil
+}
+
+// initializeJellyfinConfig creates necessary directories for Jellyfin
+func (sm *ServiceManager) initializeJellyfinConfig(ctx context.Context, serviceName string) error {
+	// Jellyfin doesn't use a single config file like *arr services, but we should ensure directories exist
+	configDir := filepath.Join("/app/data/services-volumes", serviceName)
+
+	if err := os.MkdirAll(configDir, 0755); err != nil {
+		return fmt.Errorf("failed to create config directory: %w", err)
+	}
+
+	sm.logger.Info("Jellyfin config directory ensured", zap.String("path", configDir))
 	return nil
 }
 
