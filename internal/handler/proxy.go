@@ -16,11 +16,12 @@ type ProxyHandler struct {
 }
 
 // NewProxyHandler creates a new ProxyHandler instance
-func NewProxyHandler(repos *repository.Repositories, logger *logger.Logger) *ProxyHandler {
+// NewProxyHandler creates a new ProxyHandler instance
+func NewProxyHandler(repos *repository.Repositories, logger *logger.Logger, proxyService *service.ProxyService) *ProxyHandler {
 	return &ProxyHandler{
 		repos:        repos,
 		logger:       logger,
-		proxyService: service.NewProxyService(repos, logger),
+		proxyService: proxyService,
 	}
 }
 

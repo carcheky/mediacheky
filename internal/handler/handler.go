@@ -58,15 +58,18 @@ func NewHandlers(db *gorm.DB, repos *repository.Repositories, logger *logger.Log
 		)
 	}
 
+	// Initialize Proxy Service
+	proxyService := service.NewProxyService(repos, logger)
+
 	return &Handlers{
 		Health:         NewHealthHandler(db, logger),
 		Dashboard:      NewDashboardHandler(repos, logger, cfg, syncSvc, dockerClient),
 		Settings:       NewSettingsHandler(repos, logger, cfg, syncSvc),
 		Logs:           NewLogsHandler(repos, logger),
-		Service:        NewServiceHandler(repos, logger, dockerClient, serviceManager),
+		Service:        NewServiceHandler(repos, logger, dockerClient, serviceManager, proxyService),
 		Config:         NewConfigHandler(repos, logger),
 		Docker:         NewDockerHandler(logger, dockerClient, db, repos),
-		Proxy:          NewProxyHandler(repos, logger),
+		Proxy:          NewProxyHandler(repos, logger, proxyService),
 		ServiceManager: serviceManager, // Expose for auto-start
 	}
 }

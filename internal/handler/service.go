@@ -30,18 +30,22 @@ type ServiceHandler struct {
 	logger         *logger.Logger
 	dockerClient   *service.DockerClient
 	serviceManager *service.ServiceManager
+	proxyService   *service.ProxyService
 }
 
 // NewServiceHandler creates a new ServiceHandler instance
-func NewServiceHandler(repos *repository.Repositories, logger *logger.Logger, dockerClient *service.DockerClient, serviceManager *service.ServiceManager) *ServiceHandler {
+// NewServiceHandler creates a new ServiceHandler instance
+func NewServiceHandler(repos *repository.Repositories, logger *logger.Logger, dockerClient *service.DockerClient, serviceManager *service.ServiceManager, proxyService *service.ProxyService) *ServiceHandler {
 	return &ServiceHandler{
 		repos:          repos,
 		logger:         logger,
 		dockerClient:   dockerClient,
 		serviceManager: serviceManager,
+		proxyService:   proxyService,
 	}
 }
 
+// ListServices handles GET /api/services
 // ListServices handles GET /api/services
 func (h *ServiceHandler) ListServices(c *fiber.Ctx) error {
 	services, err := h.repos.Service.GetAll()
@@ -53,9 +57,38 @@ func (h *ServiceHandler) ListServices(c *fiber.Ctx) error {
 		})
 	}
 
+	// Get proxy config for SSL check
+	proxyCfg, _ := h.proxyService.GetProxyConfig()
+	scheme := "http"
+	if proxyCfg != nil && proxyCfg.SSLEnabled {
+		scheme = "https"
+	}
+
+	// Create enriched response with calculated URLs
+	type ServiceResponse struct {
+		models.Service
+		Endpoint string `json:"endpoint"`
+		URL      string `json:"url"`
+	}
+
+	response := make([]ServiceResponse, 0, len(services))
+	for _, svc := range services {
+		endpoint, _ := h.proxyService.GetServiceEndpoint(svc.Name)
+		url := ""
+		if endpoint != "" {
+			url = fmt.Sprintf("%s://%s", scheme, endpoint)
+		}
+
+		response = append(response, ServiceResponse{
+			Service:  svc,
+			Endpoint: endpoint,
+			URL:      url,
+		})
+	}
+
 	return c.JSON(APIResponse{
 		Success: true,
-		Data:    services,
+		Data:    response,
 	})
 }
 
