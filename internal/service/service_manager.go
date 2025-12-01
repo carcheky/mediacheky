@@ -906,6 +906,11 @@ func (sm *ServiceManager) GetRadarrConfig(ctx context.Context, serviceName strin
 					} else {
 						sm.logger.Info("Generated credentials saved to both databases")
 					}
+
+					// Ensure default root folder exists
+					if err := sm.ensureRootFoldersInDB(ctx, serviceName); err != nil {
+						sm.logger.Warn("Failed to ensure root folders in Radarr DB", zap.String("service", serviceName), zap.Error(err))
+					}
 				}
 			} else {
 				// User exists in Radarr database - migrate to MediaCheky DB
@@ -1163,7 +1168,91 @@ func (sm *ServiceManager) initializeRadarrConfig(ctx context.Context, serviceNam
 	return nil
 }
 
+// ensureRootFoldersInDB ensures default root folders exist in Radarr/Sonarr database
+func (sm *ServiceManager) ensureRootFoldersInDB(ctx context.Context, serviceName string) error {
+	var desiredPath string
+	switch serviceName {
+	case "radarr":
+		desiredPath = "/MEDIACHEKY_LIBRARY/library/movies"
+	case "sonarr":
+		desiredPath = "/MEDIACHEKY_LIBRARY/library/tv"
+	default:
+		return nil // Not applicable for this service
+	}
 
+	dbPath := filepath.Join(getHostDataPath(), "services-volumes", serviceName, serviceName+".db")
+
+	// Wait for DB file to exist (with timeout)
+	retries := 30 // 30 seconds max wait
+	for i := 0; i < retries; i++ {
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		default:
+		}
+
+		if _, err := os.Stat(dbPath); err != nil {
+			if os.IsNotExist(err) {
+				time.Sleep(time.Second)
+				continue
+			}
+			sm.logger.Warn("Error checking DB file for root folder",
+				zap.String("dbPath", dbPath),
+				zap.Error(err))
+			return nil // Non-fatal
+		}
+
+		// DB file exists, try to insert root folder
+		db, err := sql.Open("sqlite3", dbPath)
+		if err != nil {
+			sm.logger.Warn("Failed to open service DB for root folder",
+				zap.String("dbPath", dbPath),
+				zap.Error(err))
+			return nil // Non-fatal
+		}
+
+		// Check if RootFolders table exists and if our path is already there
+		var count int
+		err = db.QueryRow("SELECT COUNT(*) FROM RootFolders WHERE Path = ?", desiredPath).Scan(&count)
+		if err != nil {
+			_ = db.Close()
+			// Table might not exist yet, wait a bit
+			time.Sleep(500 * time.Millisecond)
+			continue
+		}
+
+		if count == 0 {
+			// Insert the default root folder
+			_, err = db.Exec("INSERT OR IGNORE INTO RootFolders (Path) VALUES (?)", desiredPath)
+			if err != nil {
+				_ = db.Close()
+				if strings.Contains(err.Error(), "database is locked") || strings.Contains(err.Error(), "busy") {
+					// Retry on lock
+					time.Sleep(250 * time.Millisecond)
+					continue
+				}
+				sm.logger.Warn("Failed to insert root folder",
+					zap.String("dbPath", dbPath),
+					zap.Error(err))
+				return nil // Non-fatal
+			}
+			sm.logger.Info("Inserted default root folder for service",
+				zap.String("service", serviceName),
+				zap.String("path", desiredPath))
+		} else {
+			sm.logger.Debug("Root folder already exists",
+				zap.String("service", serviceName),
+				zap.String("path", desiredPath))
+		}
+
+		_ = db.Close()
+		return nil
+	}
+
+	sm.logger.Warn("Database not ready to ensure root folder",
+		zap.String("dbPath", dbPath))
+	return nil
+}
 
 // Helper functions
 
@@ -1558,6 +1647,11 @@ func (sm *ServiceManager) GetSonarrConfig(ctx context.Context, serviceName strin
 						sm.logger.Warn("Failed to save credentials to MediaCheky database", zap.Error(err))
 					} else {
 						sm.logger.Info("Generated credentials saved to both databases")
+					}
+
+					// Ensure default root folder exists
+					if err := sm.ensureRootFoldersInDB(ctx, serviceName); err != nil {
+						sm.logger.Warn("Failed to ensure root folders in Sonarr DB", zap.String("service", serviceName), zap.Error(err))
 					}
 				}
 			} else {

@@ -167,6 +167,12 @@
                         class="whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors">
                         General
                     </button>
+                    <button @click="radarrTab = 'media'"
+                        :class="radarrTab === 'media' ? 'border-purple-500 text-purple-400' : 'border-transparent text-dark-muted hover:text-dark-text hover:border-slate-600'"
+                        class="whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors">
+                        Media Management
+                    </button>
+
                     <button @click="radarrTab = 'todo'"
                         :class="radarrTab === 'todo' ? 'border-purple-500 text-purple-400' : 'border-transparent text-dark-muted hover:text-dark-text hover:border-slate-600'"
                         class="whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors">
@@ -369,6 +375,46 @@
                 </div>
             </div>
 
+            <!-- Media Management Tab -->
+            <div x-show="radarrTab === 'media'" class="space-y-6">
+                <div class="mb-4 flex items-center justify-between">
+                    <div>
+                        <h3 class="text-sm font-semibold text-purple-400 uppercase tracking-wide">Media Management</h3>
+                        <p class="text-xs text-dark-muted">Root folders registered in Radarr (read-only view).</p>
+                    </div>
+                    <button x-show="enabled && status === 'running' && serviceEndpoint"
+                            @click="window.open((proxyConfig.sslEnabled ? 'https://' : 'http://') + serviceEndpoint + '/settings/mediamanagement', '_blank')"
+                            class="text-blue-400 hover:text-blue-300 transition-colors flex items-center gap-1 text-xs"
+                            title="Open Radarr Media Management page">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path>
+                        </svg>
+                        Open Media Management
+                    </button>
+                </div>
+
+                <div class="grid grid-cols-1 gap-3">
+                    <template x-if="radarrRootFolders && radarrRootFolders.length">
+                        <div class="text-sm text-dark-muted">
+                            <div class="flex items-center justify-between">
+                                <div class="font-semibold">Current Root Folders</div>
+                                <div class="text-xs text-dark-muted">Managed by Radarr</div>
+                            </div>
+                            <ul class="mt-2 list-disc list-inside text-sm">
+                                <template x-for="f in radarrRootFolders" :key="f.id">
+                                    <li x-text="f.path"></li>
+                                </template>
+                            </ul>
+                        </div>
+                    </template>
+                    <template x-if="!radarrRootFolders || radarrRootFolders.length === 0">
+                        <div class="text-sm text-dark-muted">
+                            <p>No root folders configured. The default root folder will be created automatically when Radarr is enabled.</p>
+                        </div>
+                    </template>
+                </div>
+            </div>
+
             <!-- TODO Tab -->
             <div x-show="radarrTab === 'todo'" class="space-y-6">
                 <div class="mb-4">
@@ -436,12 +482,58 @@
                         class="whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors">
                         General
                     </button>
+                    <button @click="sonarrTab = 'media'"
+                        :class="sonarrTab === 'media' ? 'border-purple-500 text-purple-400' : 'border-transparent text-dark-muted hover:text-dark-text hover:border-slate-600'"
+                        class="whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors">
+                        Media Management
+                    </button>
+
                     <button @click="sonarrTab = 'todo'"
                         :class="sonarrTab === 'todo' ? 'border-purple-500 text-purple-400' : 'border-transparent text-dark-muted hover:text-dark-text hover:border-slate-600'"
                         class="whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors">
                         TODO
                     </button>
                 </nav>
+            </div>
+
+            <!-- Media Management Tab -->
+            <div x-show="sonarrTab === 'media'" class="space-y-6">
+                <div class="mb-4 flex items-center justify-between">
+                    <div>
+                        <h3 class="text-sm font-semibold text-purple-400 uppercase tracking-wide">Media Management</h3>
+                        <p class="text-xs text-dark-muted">Root folders registered in Sonarr (read-only view).</p>
+                    </div>
+                    <button x-show="enabled && status === 'running' && serviceEndpoint"
+                            @click="window.open((proxyConfig.sslEnabled ? 'https://' : 'http://') + serviceEndpoint + '/settings/mediamanagement', '_blank')"
+                            class="text-blue-400 hover:text-blue-300 transition-colors flex items-center gap-1 text-xs"
+                            title="Open Sonarr Media Management page">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path>
+                        </svg>
+                        Open Media Management
+                    </button>
+                </div>
+
+                <div class="grid grid-cols-1 gap-3">
+                    <template x-if="sonarrRootFolders && sonarrRootFolders.length">
+                        <div class="text-sm text-dark-muted">
+                            <div class="flex items-center justify-between">
+                                <div class="font-semibold">Current Root Folders</div>
+                                <div class="text-xs text-dark-muted">Managed by Sonarr</div>
+                            </div>
+                            <ul class="mt-2 list-disc list-inside text-sm">
+                                <template x-for="f in sonarrRootFolders" :key="f.id">
+                                    <li x-text="f.path"></li>
+                                </template>
+                            </ul>
+                        </div>
+                    </template>
+                    <template x-if="!sonarrRootFolders || sonarrRootFolders.length === 0">
+                        <div class="text-sm text-dark-muted">
+                            <p>No root folders configured. The default root folder will be created automatically when Sonarr is enabled.</p>
+                        </div>
+                    </template>
+                </div>
             </div>
 
             <!-- General Tab -->
@@ -1024,7 +1116,8 @@
                 advanced: true
             },
             // Radarr tabs state
-            radarrTab: 'general',  // Active tab: 'general', 'authentication', 'todo'
+            radarrTab: 'general',  // Active tab: 'general', 'media', 'authentication', 'todo'
+            radarrRootFolders: [],
             // Radarr Application Settings
             radarrConfig: {
                 BindAddress: '*',
@@ -1049,7 +1142,8 @@
                 SendAnonymousUsageData: true
             },
             // Sonarr tabs state
-            sonarrTab: 'general',  // Active tab: 'general', 'authentication', 'todo'
+            sonarrTab: 'general',  // Active tab: 'general', 'media', 'authentication', 'todo'
+            sonarrRootFolders: [],
             // Sonarr Application Settings
             sonarrConfig: {
                 BindAddress: '*',
@@ -1110,6 +1204,7 @@
                 this.loadServiceEndpoint().catch(e => console.error('Failed to load service endpoint:', e));
                 this.loadRadarrConfig().catch(e => console.error('Failed to load Radarr config:', e));
                 this.loadSonarrConfig().catch(e => console.error('Failed to load Sonarr config:', e));
+                this.loadRootFolders().catch(e => console.error('Failed to load root folders:', e));
                 this.loadSavedDockerTags().catch(e => console.error('Failed to load saved Docker tags:', e));
                 // Don't load auth settings on init - they require API key which may not be ready yet
                 
@@ -2076,6 +2171,34 @@
                     }
                 } catch (error) {
                     console.error('Error loading Radarr config:', error);
+                }
+            },
+
+            async loadRootFolders() {
+                // Load root folders for both radarr and sonarr when applicable
+                try {
+                    if (this.serviceName.toLowerCase() === 'radarr' || this.serviceName === undefined) {
+                        const resp = await fetch(`/api/services/radarr/rootfolders`);
+                        if (resp.ok) {
+                            const data = await resp.json();
+                            // Expect array or object
+                            this.radarrRootFolders = data.data || data || [];
+                        }
+                    }
+                } catch (e) {
+                    console.error('Failed to load radarr root folders:', e);
+                }
+
+                try {
+                    if (this.serviceName.toLowerCase() === 'sonarr' || this.serviceName === undefined) {
+                        const resp = await fetch(`/api/services/sonarr/rootfolders`);
+                        if (resp.ok) {
+                            const data = await resp.json();
+                            this.sonarrRootFolders = data.data || data || [];
+                        }
+                    }
+                } catch (e) {
+                    console.error('Failed to load sonarr root folders:', e);
                 }
             },
 

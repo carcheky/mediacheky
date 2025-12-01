@@ -142,5 +142,8 @@ func (r *ServiceRepository) SaveServiceCredentials(serviceName, username, passwo
 
 // DeleteServiceCredentials deletes credentials for a service
 func (r *ServiceRepository) DeleteServiceCredentials(serviceName string) error {
-	return r.db.Where("service_name = ?", serviceName).Delete(&models.ServiceCredentials{}).Error
+	// Use Unscoped() to perform HARD DELETE (permanent deletion)
+	// This is necessary because service_name has a UNIQUE constraint
+	// and soft-deleted records would still conflict with new inserts
+	return r.db.Unscoped().Where("service_name = ?", serviceName).Delete(&models.ServiceCredentials{}).Error
 }
