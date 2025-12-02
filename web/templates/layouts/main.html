@@ -34,7 +34,7 @@
 
 <body class="bg-dark-bg dark:bg-dark-bg min-h-screen flex flex-col">
     <!-- Top Navigation Bar -->
-    <nav class="bg-dark-surface dark:bg-dark-surface shadow-lg border-b border-dark-border sticky top-0 z-50" x-data="{ mobileMenuOpen: false }">
+    <nav class="bg-dark-surface dark:bg-dark-surface shadow-lg border-b border-dark-border sticky top-0 z-50" x-data="{ mobileMenuOpen: false, currentPath: window.location.pathname }">
         <div class="max-w-7xl mx-auto px-4">
             <div class="flex justify-between h-16">
                 <div class="flex">
@@ -46,19 +46,28 @@
                     </div>
                     <div class="hidden sm:ml-6 sm:flex sm:space-x-8" x-data>
                         <a href="/"
-                            class="border-transparent text-dark-muted hover:border-blue-500 hover:text-dark-text dark:text-dark-muted dark:hover:text-dark-text inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium transition-colors">
+                            :class="currentPath==='/' ? 'border-blue-500 text-dark-text' : 'border-transparent text-dark-muted hover:border-blue-500 hover:text-dark-text dark:text-dark-muted dark:hover:text-dark-text'"
+                            class="inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium transition-colors">
                             <span class="mr-1">📊</span>
                             <span data-i18n-key="nav.dashboard">Dashboard</span>
                         </a>
                         <a href="/services"
-                            class="border-transparent text-dark-muted hover:border-blue-500 hover:text-dark-text dark:text-dark-muted dark:hover:text-dark-text inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium transition-colors">
+                            :class="currentPath.startsWith('/services') ? 'border-blue-500 text-dark-text' : 'border-transparent text-dark-muted hover:border-blue-500 hover:text-dark-text dark:text-dark-muted dark:hover:text-dark-text'"
+                            class="inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium transition-colors">
                             <span class="mr-1">🎬</span>
                             <span data-i18n-key="nav.services">Services</span>
                         </a>
                         <a href="/settings"
-                            class="border-transparent text-dark-muted hover:border-blue-500 hover:text-dark-text dark:text-dark-muted dark:hover:text-dark-text inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium transition-colors">
+                            :class="currentPath.startsWith('/settings') ? 'border-blue-500 text-dark-text' : 'border-transparent text-dark-muted hover:border-blue-500 hover:text-dark-text dark:text-dark-muted dark:hover:text-dark-text'"
+                            class="inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium transition-colors">
                             <span class="mr-1">⚙️</span>
                             <span data-i18n-key="nav.settings">Settings</span>
+                        </a>
+                        <a href="/logs"
+                            :class="currentPath.startsWith('/logs') ? 'border-blue-500 text-dark-text' : 'border-transparent text-dark-muted hover:border-blue-500 hover:text-dark-text dark:text-dark-muted dark:hover:text-dark-text'"
+                            class="inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium transition-colors">
+                            <span class="mr-1">📜</span>
+                            <span data-i18n-key="nav.logs">Logs</span>
                         </a>
                     </div>
                 </div>
@@ -90,17 +99,21 @@
         <!-- Mobile menu -->
         <div x-show="mobileMenuOpen" x-transition class="sm:hidden border-t border-dark-border">
             <div class="pt-2 pb-3 space-y-1">
-                <a href="/" class="block pl-3 pr-4 py-2 border-l-4 border-transparent text-dark-muted hover:bg-dark-bg hover;border-blue-500 hover:text-dark-text">
+                <a href="/" :class="currentPath==='/' ? 'border-blue-500 text-dark-text' : 'border-transparent text-dark-muted hover:bg-dark-bg hover:text-dark-text'" class="block pl-3 pr-4 py-2 border-l-4">
                     <span class="mr-1">📊</span>
                     <span data-i18n-key="nav.dashboard">Dashboard</span>
                 </a>
-                <a href="/services" class="block pl-3 pr-4 py-2 border-l-4 border-transparent text-dark-muted hover:bg-dark-bg hover;border-blue-500 hover:text-dark-text">
+                <a href="/services" :class="currentPath.startsWith('/services') ? 'border-blue-500 text-dark-text' : 'border-transparent text-dark-muted hover:bg-dark-bg hover:text-dark-text'" class="block pl-3 pr-4 py-2 border-l-4">
                     <span class="mr-1">🎬</span>
                     <span data-i18n-key="nav.services">Services</span>
                 </a>
-                <a href="/settings" class="block pl-3 pr-4 py-2 border-l-4 border-transparent text-dark-muted hover:bg-dark-bg hover;border-blue-500 hover:text-dark-text">
+                <a href="/settings" :class="currentPath.startsWith('/settings') ? 'border-blue-500 text-dark-text' : 'border-transparent text-dark-muted hover:bg-dark-bg hover:text-dark-text'" class="block pl-3 pr-4 py-2 border-l-4">
                     <span class="mr-1">⚙️</span>
                     <span data-i18n-key="nav.settings">Settings</span>
+                </a>
+                <a href="/logs" :class="currentPath.startsWith('/logs') ? 'border-blue-500 text-dark-text' : 'border-transparent text-dark-muted hover:bg-dark-bg hover:text-dark-text'" class="block pl-3 pr-4 py-2 border-l-4">
+                    <span class="mr-1">📜</span>
+                    <span data-i18n-key="nav.logs">Logs</span>
                 </a>
                 <!-- Mobile: Language selector -->
                 <div class="px-3 pt-2">
@@ -195,6 +208,7 @@ window.i18n = (function() {
             'nav.dashboard': 'Dashboard',
             'nav.services': 'Services',
             'nav.settings': 'Settings',
+            'nav.logs': 'Logs',
             'settings.title': 'Settings',
 
             // Common
@@ -229,6 +243,7 @@ window.i18n = (function() {
             'nav.dashboard': 'Panel',
             'nav.services': 'Servicios',
             'nav.settings': 'Ajustes',
+            'nav.logs': 'Logs',
             'settings.title': 'Ajustes',
 
             // Common
