@@ -45,6 +45,13 @@ func NewServiceHandler(repos *repository.Repositories, logger *logger.Logger, do
 	}
 }
 
+// Index renders the top-level Services page
+func (h *ServiceHandler) Index(c *fiber.Ctx) error {
+	return c.Render("pages/services", fiber.Map{
+		"Title": "Services - KeeperCheky",
+	}, "layouts/main")
+}
+
 // ListServices handles GET /api/services
 // ListServices handles GET /api/services
 func (h *ServiceHandler) ListServices(c *fiber.Ctx) error {

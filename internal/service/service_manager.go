@@ -1173,9 +1173,9 @@ func (sm *ServiceManager) ensureRootFoldersInDB(ctx context.Context, serviceName
 	var desiredPath string
 	switch serviceName {
 	case "radarr":
-		desiredPath = "/MEDIACHEKY_LIBRARY/library/movies"
+		desiredPath = "/MEDIACHEKY_LIBRARY/library/movies/"
 	case "sonarr":
-		desiredPath = "/MEDIACHEKY_LIBRARY/library/tv"
+		desiredPath = "/MEDIACHEKY_LIBRARY/library/tv/"
 	default:
 		return nil // Not applicable for this service
 	}

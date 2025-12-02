@@ -174,8 +174,8 @@ func setupRoutes(app *fiber.App, h *handler.Handlers) {
 
 	// Web UI routes
 	app.Get("/", h.Dashboard.Index)
+	app.Get("/services", h.Service.Index)
 	app.Get("/settings", h.Settings.Index)
-	app.Get("/global", h.Config.Index)
 	app.Get("/services/:name", h.Service.ConfigPage)
 	app.Get("/logs", h.Logs.Index)
 

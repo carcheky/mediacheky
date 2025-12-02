@@ -8,6 +8,7 @@ import (
 	"github.com/carcheky/mediacheky/pkg/logger"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
+	gormlogger "gorm.io/gorm/logger"
 )
 
 // Config holds database configuration
@@ -29,7 +30,12 @@ func Initialize(cfg Config, log *logger.Logger) (*gorm.DB, error) {
 		return nil, fmt.Errorf("failed to create database directory: %w", err)
 	}
 
-	db, err := gorm.Open(sqlite.Open(cfg.Path), &gorm.Config{})
+	// Configure GORM logger to suppress "record not found" errors
+	gormConfig := &gorm.Config{
+		Logger: gormlogger.Default.LogMode(gormlogger.Warn),
+	}
+	
+	db, err := gorm.Open(sqlite.Open(cfg.Path), gormConfig)
 	if err != nil {
 		return nil, fmt.Errorf("failed to open database: %w", err)
 	}

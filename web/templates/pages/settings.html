@@ -21,119 +21,7 @@
         </div>
     </div>
 
-    <!-- Main Tabs -->
-    <div class="border-b border-dark-border">
-        <nav class="-mb-px flex space-x-8">
-            <button @click="activeTab = 'services'"
-                :class="activeTab === 'services' ? 'border-blue-500 text-blue-400' : 'border-transparent text-dark-muted hover:text-dark-text hover:border-slate-600'"
-                class="whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors">
-                Services
-            </button>
-            <button @click="activeTab = 'global'"
-                :class="activeTab === 'global' ? 'border-blue-500 text-blue-400' : 'border-transparent text-dark-muted hover:text-dark-text hover:border-slate-600'"
-                class="whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors">
-                Global Variables
-            </button>
-        </nav>
-    </div>
-
-    <!-- Services Tab Content -->
-    <div x-show="activeTab === 'services'" class="space-y-6">
-        <!-- Service Enable/Disable List -->
-        <div class="bg-dark-surface dark:bg-dark-surface shadow-lg rounded-lg border border-dark-border p-6">
-            <h2 class="text-xl font-semibold text-dark-text mb-4">Available Services</h2>
-            <p class="text-sm text-dark-muted mb-6">🔄 Enable services and use Configure button to set them up. Enabled services appear in the Dashboard.</p>
-            
-            <div class="space-y-10">
-                <!-- Media Server Section -->
-                <div>
-                    <h3 class="text-lg font-semibold text-dark-text mb-3 flex items-center gap-2">📺 Media Server</h3>
-                    <div class="space-y-3">
-                        <template x-for="service in getServicesByCategory('media-server')" :key="service.id">
-                            <div class="flex items-center justify-between p-4 rounded-lg border border-dark-border bg-dark-bg">
-                                <div class="flex items-center gap-4">
-                                    <div class="text-3xl" x-text="service.icon || '⚙️'"></div>
-                                    <div>
-                                        <div class="flex items-center gap-2 mb-1">
-                                            <h3 class="font-semibold text-dark-text" x-text="service.label"></h3>
-                                            <span x-show="serviceStatuses[service.id]?.enabled" class="px-2 py-0.5 text-xs rounded-full bg-green-900/30 border border-green-600/50 text-green-300">Active</span>
-                                            <span x-show="!serviceStatuses[service.id]?.enabled" class="px-2 py-0.5 text-xs rounded-full bg-gray-700 text-gray-400">Inactive</span>
-                                        </div>
-                                        <p class="text-sm text-dark-muted" x-text="service.description || 'No description available'"></p>
-                                    </div>
-                                </div>
-                                <a :href="'/services/' + service.id"
-                                    class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 text-sm">
-                                    Configure
-                                </a>
-                            </div>
-                        </template>
-                        <template x-if="getServicesByCategory('media-server').length === 0">
-                            <p class="text-sm text-dark-muted">No media server services found.</p>
-                        </template>
-                    </div>
-                </div>
-
-                <!-- *arr Services Section -->
-                <div>
-                    <h3 class="text-lg font-semibold text-dark-text mb-3 flex items-center gap-2">📦 *arr Services</h3>
-                    <div class="space-y-3">
-                        <template x-for="service in getServicesByCategory('arr')" :key="service.id">
-                            <div class="flex items-center justify-between p-4 rounded-lg border border-dark-border bg-dark-bg">
-                                <div class="flex items-center gap-4">
-                                    <div class="text-3xl" x-text="service.icon || '⚙️'"></div>
-                                    <div>
-                                        <div class="flex items-center gap-2 mb-1">
-                                            <h3 class="font-semibold text-dark-text" x-text="service.label"></h3>
-                                            <span x-show="serviceStatuses[service.id]?.enabled" class="px-2 py-0.5 text-xs rounded-full bg-green-900/30 border border-green-600/50 text-green-300">Active</span>
-                                            <span x-show="!serviceStatuses[service.id]?.enabled" class="px-2 py-0.5 text-xs rounded-full bg-gray-700 text-gray-400">Inactive</span>
-                                        </div>
-                                        <p class="text-sm text-dark-muted" x-text="service.description || 'No description available'"></p>
-                                    </div>
-                                </div>
-                                <a :href="'/services/' + service.id"
-                                    class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 text-sm">
-                                    Configure
-                                </a>
-                            </div>
-                        </template>
-                        <template x-if="getServicesByCategory('arr').length === 0">
-                            <p class="text-sm text-dark-muted">No *arr services found.</p>
-                        </template>
-                    </div>
-                </div>
-
-                <!-- Other Services Section -->
-                <div>
-                    <h3 class="text-lg font-semibold text-dark-text mb-3 flex items-center gap-2">🔧 Other Services</h3>
-                    <div class="space-y-3">
-                        <template x-for="service in getServicesByCategory('other')" :key="service.id">
-                            <div class="flex items-center justify-between p-4 rounded-lg border border-dark-border bg-dark-bg">
-                                <div class="flex items-center gap-4">
-                                    <div class="text-3xl" x-text="service.icon || '⚙️'"></div>
-                                    <div>
-                                        <div class="flex items-center gap-2 mb-1">
-                                            <h3 class="font-semibold text-dark-text" x-text="service.label"></h3>
-                                            <span x-show="serviceStatuses[service.id]?.enabled" class="px-2 py-0.5 text-xs rounded-full bg-green-900/30 border border-green-600/50 text-green-300">Active</span>
-                                            <span x-show="!serviceStatuses[service.id]?.enabled" class="px-2 py-0.5 text-xs rounded-full bg-gray-700 text-gray-400">Inactive</span>
-                                        </div>
-                                        <p class="text-sm text-dark-muted" x-text="service.description || 'No description available'"></p>
-                                    </div>
-                                </div>
-                                <a :href="'/services/' + service.id"
-                                    class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 text-sm">
-                                    Configure
-                                </a>
-                            </div>
-                        </template>
-                        <template x-if="getServicesByCategory('other').length === 0">
-                            <p class="text-sm text-dark-muted">No other services found.</p>
-                        </template>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
+    <!-- No main tabs: Settings now only shows Global Variables -->
 
     <!-- Global Variables Tab Content -->
     <div x-show="activeTab === 'global'" class="space-y-6">
@@ -193,63 +81,173 @@
             </div>
         </div>
 
-        <!-- Base Paths Configuration -->
+        <!-- Container Volume Mounts -->
         <div class="bg-dark-surface dark:bg-dark-surface rounded-lg shadow-lg border border-dark-border p-6">
-            <h2 class="text-xl font-semibold text-dark-text mb-4">Base Paths</h2>
-            <p class="text-sm text-dark-muted mb-4">Default paths for media storage</p>
+            <h2 class="text-xl font-semibold text-dark-text mb-4">Container Volume Mounts</h2>
+            <p class="text-sm text-dark-muted mb-4">Volume paths mounted from host to containers</p>
             
             <div class="space-y-4">
-                <div>
-                    <label class="block text-sm font-medium text-dark-text mb-1">
-                        Media Directory
-                    </label>
-                    <input type="text" x-model="config.global.media_path" placeholder="/data/media"
-                        class="w-full px-3 py-2 border border-dark-border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-dark-bg text-dark-text">
-                    <p class="text-xs text-dark-muted mt-1">Root path for movies, TV shows, music, etc.</p>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-dark-text mb-1">
+                            Host Media Path
+                        </label>
+                        <input type="text" x-model="config.global.media_path" placeholder="./volumes/library"
+                            class="w-full px-3 py-2 border border-dark-border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-dark-bg text-dark-text">
+                        <p class="text-xs text-dark-muted mt-1">Host directory for media library</p>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-dark-text mb-1">
+                            Container Media Path
+                        </label>
+                        <input type="text" value="/MEDIACHEKY_LIBRARY" readonly
+                            class="w-full px-3 py-2 border border-dark-border rounded-md bg-dark-bg/50 text-dark-muted cursor-not-allowed">
+                        <p class="text-xs text-dark-muted mt-1">Container mount point (read-only)</p>
+                    </div>
                 </div>
                 
-                <div>
-                    <label class="block text-sm font-medium text-dark-text mb-1">
-                        Downloads Directory
-                    </label>
-                    <input type="text" x-model="config.global.downloads_path" placeholder="/data/downloads"
-                        class="w-full px-3 py-2 border border-dark-border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-dark-bg text-dark-text">
-                    <p class="text-xs text-dark-muted mt-1">Path for download clients</p>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-dark-text mb-1">
+                            Host Config Path
+                        </label>
+                        <input type="text" x-model="config.global.config_path" placeholder="./volumes/mediacheky-data/services-volumes"
+                            class="w-full px-3 py-2 border border-dark-border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-dark-bg text-dark-text">
+                        <p class="text-xs text-dark-muted mt-1">Host directory for service configs</p>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-dark-text mb-1">
+                            Container Config Path
+                        </label>
+                        <input type="text" value="/config" readonly
+                            class="w-full px-3 py-2 border border-dark-border rounded-md bg-dark-bg/50 text-dark-muted cursor-not-allowed">
+                        <p class="text-xs text-dark-muted mt-1">Container mount point (read-only)</p>
+                    </div>
                 </div>
-                
-                <div>
-                    <label class="block text-sm font-medium text-dark-text mb-1">
-                        Config Directory
-                    </label>
-                    <input type="text" x-model="config.global.config_path" placeholder="/data/config"
-                        class="w-full px-3 py-2 border border-dark-border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-dark-bg text-dark-text">
-                    <p class="text-xs text-dark-muted mt-1">Path for service configurations</p>
+
+                <div class="p-4 bg-blue-900/20 border border-blue-700/50 rounded-lg">
+                    <div class="flex items-start gap-3">
+                        <svg class="w-6 h-6 text-blue-400 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd" />
+                        </svg>
+                        <div class="flex-1">
+                            <h3 class="font-semibold text-blue-300 mb-1">Volume Mount Information</h3>
+                            <p class="text-sm text-blue-200">
+                                Host paths are mounted into containers at fixed mount points. Services like Radarr, Sonarr, and Jellyfin access media at <code class="text-blue-400">/MEDIACHEKY_LIBRARY</code> and store their configurations at <code class="text-blue-400">/config</code>.
+                            </p>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
 
-        <!-- Network Configuration -->
+        <!-- Proxy & Domains Configuration -->
         <div class="bg-dark-surface dark:bg-dark-surface rounded-lg shadow-lg border border-dark-border p-6">
-            <h2 class="text-xl font-semibold text-dark-text mb-4">Network</h2>
-            <p class="text-sm text-dark-muted mb-4">Docker network configuration</p>
-            
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="flex justify-between items-start mb-4">
                 <div>
-                    <label class="block text-sm font-medium text-dark-text mb-1">
-                        Network Name
-                    </label>
-                    <input type="text" x-model="config.global.network_name" placeholder="mediacheky-net"
-                        class="w-full px-3 py-2 border border-dark-border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-dark-bg text-dark-text">
-                    <p class="text-xs text-dark-muted mt-1">Docker network for services</p>
+                    <h2 class="text-xl font-semibold text-dark-text">Proxy & Domains</h2>
+                    <p class="text-sm text-dark-muted mt-1">Configure reverse proxy and domain routing for services</p>
                 </div>
-                
-                <div>
-                    <label class="block text-sm font-medium text-dark-text mb-1">
-                        Subnet
+                <button @click="proxyEnabled = !proxyEnabled; updateProxyConfig()" 
+                    :class="proxyEnabled ? 'bg-green-600 hover:bg-green-700' : 'bg-gray-600 hover:bg-gray-700'"
+                    class="px-4 py-2 text-white rounded-lg text-sm flex items-center gap-2">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                    </svg>
+                    <span x-text="proxyEnabled ? 'Enabled' : 'Disabled'"></span>
+                </button>
+            </div>
+
+            <!-- Domain List -->
+            <div class="space-y-3 mb-4">
+                <label class="block text-sm font-medium text-dark-text mb-2">
+                    Configured Domains
+                </label>
+                <div x-show="domains.length === 0" class="text-sm text-dark-muted italic">
+                    No domains configured. Add a domain to enable proxy routing.
+                </div>
+                <template x-for="domain in domains" :key="domain.id">
+                    <div class="flex items-center justify-between p-3 bg-dark-bg rounded-lg border border-dark-border">
+                        <div class="flex items-center gap-3">
+                            <span class="text-dark-text font-medium" x-text="domain.name"></span>
+                            <span x-show="domain.is_primary" 
+                                class="px-2 py-1 bg-blue-600/20 text-blue-400 text-xs rounded">
+                                Primary
+                            </span>
+                        </div>
+                        <button @click="deleteDomain(domain.name)" 
+                            class="text-red-400 hover:text-red-300">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                            </svg>
+                        </button>
+                    </div>
+                </template>
+            </div>
+
+            <!-- Add Domain Form -->
+            <div class="space-y-3">
+                <label class="block text-sm font-medium text-dark-text">
+                    Add Domain
+                </label>
+                <div class="flex gap-3">
+                    <input type="text" x-model="newDomain" placeholder="mediacheky or media.local"
+                        @keyup.enter="addDomain()"
+                        class="flex-1 px-3 py-2 border border-dark-border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-dark-bg text-dark-text">
+                    <label class="flex items-center gap-2 px-3 py-2 bg-dark-bg border border-dark-border rounded-md">
+                        <input type="checkbox" x-model="newDomainPrimary"
+                            class="w-4 h-4 text-blue-600 bg-dark-bg border-dark-border rounded focus:ring-blue-500">
+                        <span class="text-sm text-dark-text">Primary</span>
                     </label>
-                    <input type="text" x-model="config.global.subnet" placeholder="172.20.0.0/16"
-                        class="w-full px-3 py-2 border border-dark-border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-dark-bg text-dark-text">
-                    <p class="text-xs text-dark-muted mt-1">CIDR notation (optional)</p>
+                    <button @click="addDomain()" :disabled="!newDomain"
+                        class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed">
+                        Add
+                    </button>
+                </div>
+                <p class="text-xs text-dark-muted">
+                    Examples: <code class="text-blue-400">mediacheky</code>, <code class="text-blue-400">media.local</code>, <code class="text-blue-400">example.com</code>
+                </p>
+            </div>
+
+            <!-- Proxy Info -->
+            <div x-show="proxyEnabled && domains.length > 0" class="mt-4 p-4 bg-blue-900/20 border border-blue-700/50 rounded-lg">
+                <div class="flex items-start gap-3">
+                    <svg class="w-6 h-6 text-blue-400 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd" />
+                    </svg>
+                    <div class="flex-1">
+                        <h3 class="font-semibold text-blue-300 mb-1">Proxy Routing Enabled</h3>
+                        <p class="text-sm text-blue-200">
+                            Services can now be accessed via subdomains. Configure individual service subdomains in their respective service configuration pages.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Affected Services Preview -->
+        <div x-show="affectedServices.length > 0" class="bg-yellow-900/20 border border-yellow-700/50 rounded-lg p-6">
+            <div class="flex items-start gap-3">
+                <svg class="w-6 h-6 text-yellow-400 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd"
+                        d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
+                        clip-rule="evenodd" />
+                </svg>
+                <div>
+                    <h3 class="font-semibold text-yellow-300 mb-2">Warning: Services Will Be Affected</h3>
+                    <p class="text-sm text-yellow-200 mb-3">
+                        Changing these global variables will affect the following services:
+                    </p>
+                    <div class="flex flex-wrap gap-2">
+                        <template x-for="service in affectedServices" :key="service">
+                            <span class="px-3 py-1 bg-yellow-800/40 text-yellow-200 rounded-md text-sm" x-text="service"></span>
+                        </template>
+                    </div>
+                    <p class="text-sm text-yellow-200 mt-3">
+                        <strong>Note:</strong> Running services may need to be restarted for changes to take effect.
+                    </p>
                 </div>
             </div>
         </div>
@@ -421,7 +419,7 @@
 
     function settings() {
         return {
-            activeTab: 'services',
+            activeTab: 'global',
             config: {
                 services: {
                     radarr: { enabled: false, url: '', api_key: '' },
@@ -437,11 +435,8 @@
                     pgid: 1000,
                     timezone: 'UTC',
                     language: 'en',
-                    media_path: '/data/media',
-                    downloads_path: '/data/downloads',
-                    config_path: '/data/config',
-                    network_name: 'mediacheky-net',
-                    subnet: ''
+                    media_path: './volumes/library',
+                    config_path: './volumes/mediacheky-data/services-volumes'
                 }
             },
             connectionResults: {},
@@ -628,6 +623,8 @@
             async init() {
                 await this.loadConfig();
                 await this.loadServiceStatuses();
+                await this.loadProxyConfig();
+                await this.loadDomains();
             },
 
             async loadServiceStatuses() {
@@ -956,6 +953,105 @@
                 setTimeout(() => {
                     this.message = '';
                 }, delay);
+            },
+
+            // Proxy & Domains functionality
+            proxyEnabled: false,
+            domains: [],
+            newDomain: '',
+            newDomainPrimary: false,
+            affectedServices: [],
+
+            async loadProxyConfig() {
+                try {
+                    const response = await fetch('/api/proxy/config');
+                    if (response.ok) {
+                        const res = await response.json();
+                        this.proxyEnabled = (res && res.data && typeof res.data.enabled === 'boolean') ? res.data.enabled : false;
+                    }
+                } catch (error) {
+                    console.error('Error loading proxy config:', error);
+                }
+            },
+
+            async updateProxyConfig() {
+                try {
+                    const response = await fetch('/api/proxy/config', {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ enabled: this.proxyEnabled })
+                    });
+
+                    if (response.ok) {
+                        this.showMessage(`Proxy ${this.proxyEnabled ? 'enabled' : 'disabled'} successfully`, 'success');
+                    } else {
+                        const data = await response.json();
+                        this.showMessage(data.error || 'Failed to update proxy config', 'error');
+                    }
+                } catch (error) {
+                    this.showMessage('Error: ' + error.message, 'error');
+                }
+            },
+
+            async loadDomains() {
+                try {
+                    const response = await fetch('/api/proxy/domains');
+                    if (response.ok) {
+                        const res = await response.json();
+                        this.domains = (res && Array.isArray(res.data)) ? res.data : [];
+                    }
+                } catch (error) {
+                    console.error('Error loading domains:', error);
+                }
+            },
+
+            async addDomain() {
+                if (!this.newDomain) return;
+
+                try {
+                    const response = await fetch('/api/proxy/domains', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            name: this.newDomain,
+                            is_primary: this.newDomainPrimary
+                        })
+                    });
+
+                    if (response.ok) {
+                        this.showMessage('Domain added successfully', 'success');
+                        this.newDomain = '';
+                        this.newDomainPrimary = false;
+                        await this.loadDomains();
+                    } else {
+                        const data = await response.json();
+                        this.showMessage(data.error || 'Failed to add domain', 'error');
+                    }
+                } catch (error) {
+                    this.showMessage('Error: ' + error.message, 'error');
+                }
+            },
+
+            async deleteDomain(domainName) {
+                if (!confirm(`Are you sure you want to delete domain "${domainName}"?`)) {
+                    return;
+                }
+
+                try {
+                    const response = await fetch(`/api/proxy/domains/${encodeURIComponent(domainName)}`, {
+                        method: 'DELETE'
+                    });
+
+                    if (response.ok) {
+                        this.showMessage('Domain deleted successfully', 'success');
+                        await this.loadDomains();
+                    } else {
+                        const data = await response.json();
+                        this.showMessage(data.error || 'Failed to delete domain', 'error');
+                    }
+                } catch (error) {
+                    this.showMessage('Error: ' + error.message, 'error');
+                }
             }
         }
     }
