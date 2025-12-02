@@ -191,8 +191,74 @@
 // Minimal i18n
 window.i18n = (function() {
     const dict = {
-        en: { 'nav.dashboard': 'Dashboard', 'nav.services': 'Services', 'nav.settings': 'Settings', 'settings.title': 'Settings' },
-        es: { 'nav.dashboard': 'Panel', 'nav.services': 'Servicios', 'nav.settings': 'Ajustes', 'settings.title': 'Ajustes' },
+        en: {
+            'nav.dashboard': 'Dashboard',
+            'nav.services': 'Services',
+            'nav.settings': 'Settings',
+            'settings.title': 'Settings',
+
+            // Common
+            'common.refresh': 'Refresh',
+            'common.loading': 'Loading...',
+            'common.syncing': 'Syncing...',
+
+            // Dashboard
+            'dashboard.title': 'Dashboard',
+            'dashboard.sync': 'Sync Now',
+            'dashboard.services': 'Services',
+            'dashboard.empty.noEnabled': 'No enabled services yet.',
+            'dashboard.empty.enable': 'Enable Services →',
+
+            // Queues / Sections
+            'radarr.queue.title': 'Radarr Download Queue',
+            'sonarr.queue.title': 'Sonarr Download Queue',
+            'jellyfin.sessions.title': 'Jellyfin - Active Sessions',
+            'jellyfin.recent.title': 'Jellyfin - Recently Added',
+            'qb.title': 'qBittorrent',
+
+            // Quick Actions
+            'dashboard.quick.title': 'Quick Actions',
+            'dashboard.quick.viewmedia': 'View Media',
+            'dashboard.quick.viewmedia.help': 'Browse and manage your media library',
+            'dashboard.quick.configure': 'Configure Services',
+            'dashboard.quick.configure.help': 'Set up Radarr, Sonarr, Jellyfin, etc.',
+            'dashboard.quick.schedules': 'Manage Schedules',
+            'dashboard.quick.schedules.help': 'Configure cleanup schedules'
+        },
+        es: {
+            'nav.dashboard': 'Panel',
+            'nav.services': 'Servicios',
+            'nav.settings': 'Ajustes',
+            'settings.title': 'Ajustes',
+
+            // Common
+            'common.refresh': 'Actualizar',
+            'common.loading': 'Cargando...',
+            'common.syncing': 'Sincronizando...',
+
+            // Dashboard
+            'dashboard.title': 'Panel',
+            'dashboard.sync': 'Sincronizar ahora',
+            'dashboard.services': 'Servicios',
+            'dashboard.empty.noEnabled': 'Aún no hay servicios habilitados.',
+            'dashboard.empty.enable': 'Habilitar servicios →',
+
+            // Queues / Sections
+            'radarr.queue.title': 'Cola de descargas de Radarr',
+            'sonarr.queue.title': 'Cola de descargas de Sonarr',
+            'jellyfin.sessions.title': 'Jellyfin - Sesiones activas',
+            'jellyfin.recent.title': 'Jellyfin - Agregados recientemente',
+            'qb.title': 'qBittorrent',
+
+            // Quick Actions
+            'dashboard.quick.title': 'Acciones rápidas',
+            'dashboard.quick.viewmedia': 'Ver biblioteca',
+            'dashboard.quick.viewmedia.help': 'Explora y gestiona tu biblioteca multimedia',
+            'dashboard.quick.configure': 'Configurar servicios',
+            'dashboard.quick.configure.help': 'Configura Radarr, Sonarr, Jellyfin, etc.',
+            'dashboard.quick.schedules': 'Gestionar horarios',
+            'dashboard.quick.schedules.help': 'Configura tareas de limpieza'
+        },
         
     };
     let lang = 'en';
