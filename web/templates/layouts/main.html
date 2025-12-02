@@ -64,7 +64,7 @@
                 </div>
                 <!-- Right side: Language selector (desktop) -->
                 <div class="hidden sm:flex items-center gap-3">
-                    <div x-data="{ lang: 'en', updateLanguage() { window.i18n.setLang(this.lang); } }" x-init="lang = window.i18n.lang">
+                    <div x-data="{ lang: 'en', updateLanguage() { window.i18n.setLang(this.lang); }, init() { this.lang = window.i18n.lang; document.addEventListener('i18n:changed', (e) => { this.lang = e.detail.lang; }); } }" x-init="init()">
                         <label class="sr-only" for="global-language">Language</label>
                         <select id="global-language" x-model="lang" @change="updateLanguage()"
                                 class="px-2 py-2 border border-dark-border rounded-md bg-dark-bg text-dark-text focus:outline-none focus:ring-1 focus:ring-blue-500 text-sm">
@@ -104,7 +104,7 @@
                 </a>
                 <!-- Mobile: Language selector -->
                 <div class="px-3 pt-2">
-                    <div x-data="{ lang: 'en', updateLanguage() { window.i18n.setLang(this.lang); } }" x-init="lang = window.i18n.lang">
+                    <div x-data="{ lang: 'en', updateLanguage() { window.i18n.setLang(this.lang); }, init() { this.lang = window.i18n.lang; document.addEventListener('i18n:changed', (e) => { this.lang = e.detail.lang; }); } }" x-init="init()">
                         <label class="sr-only" for="global-language-mobile">Language</label>
                         <select id="global-language-mobile" x-model="lang" @change="updateLanguage()"
                                 class="w-full px-3 py-2 border border-dark-border rounded-md bg-dark-bg text-dark-text focus:outline-none focus:ring-1 focus:ring-blue-500 text-sm">
