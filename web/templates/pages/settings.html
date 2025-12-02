@@ -1,10 +1,10 @@
 <div x-data="settings()" x-init="init()" class="space-y-6">
     <!-- Header -->
     <div class="flex justify-between items-center">
-        <h1 class="text-3xl font-bold text-dark-text dark:text-dark-text">Settings</h1>
-        <div class="flex gap-3">
+        <h1 class="text-2xl font-semibold text-dark-text dark:text-dark-text"><span data-i18n-key="settings.title">Settings</span></h1>
+        <div class="flex items-center gap-2">
             <button @click="saveAll()" :disabled="saving"
-                class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2">
+                class="px-3 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1">
                 <svg x-show="!saving" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                         d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4">
@@ -16,7 +16,7 @@
                         d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
                     </path>
                 </svg>
-                <span x-text="saving ? 'Saving...' : 'Save Changes'"></span>
+                <span class="text-sm" x-text="saving ? 'Saving...' : 'Save'"></span>
             </button>
         </div>
     </div>
@@ -26,18 +26,15 @@
     <!-- Global Variables Tab Content -->
     <div x-show="activeTab === 'global'" class="space-y-6">
         <!-- User & Group Configuration -->
-        <div class="bg-dark-surface dark:bg-dark-surface rounded-lg shadow-lg border border-dark-border p-6">
-            <h2 class="text-xl font-semibold text-dark-text mb-4">User & Group</h2>
-            <p class="text-sm text-dark-muted mb-4">Linux user and group IDs for containers</p>
-            
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div class="bg-dark-surface dark:bg-dark-surface rounded-lg border border-dark-border p-4">
+            <h2 class="text-lg font-semibold text-dark-text mb-3">Basics</h2>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
                 <div>
                     <label class="block text-sm font-medium text-dark-text mb-1">
                         PUID (User ID)
                     </label>
                     <input type="number" x-model.number="config.global.puid" placeholder="1000"
-                        class="w-full px-3 py-2 border border-dark-border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-dark-bg text-dark-text">
-                    <p class="text-xs text-dark-muted mt-1">Default: 1000</p>
+                        class="w-full px-3 py-2 border border-dark-border rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 bg-dark-bg text-dark-text">
                 </div>
                 
                 <div>
@@ -45,54 +42,31 @@
                         PGID (Group ID)
                     </label>
                     <input type="number" x-model.number="config.global.pgid" placeholder="1000"
-                        class="w-full px-3 py-2 border border-dark-border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-dark-bg text-dark-text">
-                    <p class="text-xs text-dark-muted mt-1">Default: 1000</p>
+                        class="w-full px-3 py-2 border border-dark-border rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 bg-dark-bg text-dark-text">
                 </div>
-            </div>
-        </div>
-
-        <!-- System Configuration -->
-        <div class="bg-dark-surface dark:bg-dark-surface rounded-lg shadow-lg border border-dark-border p-6">
-            <h2 class="text-xl font-semibold text-dark-text mb-4">System</h2>
-            <p class="text-sm text-dark-muted mb-4">General system settings</p>
-            
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                     <label class="block text-sm font-medium text-dark-text mb-1">
                         Timezone (TZ)
                     </label>
-                    <input type="text" x-model="config.global.timezone" placeholder="America/New_York"
-                        class="w-full px-3 py-2 border border-dark-border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-dark-bg text-dark-text">
-                    <p class="text-xs text-dark-muted mt-1">Example: America/New_York, Europe/London</p>
-                </div>
-                
-                <div>
-                    <label class="block text-sm font-medium text-dark-text mb-1">
-                        Language
-                    </label>
-                    <select x-model="config.global.language"
-                        class="w-full px-3 py-2 border border-dark-border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-dark-bg text-dark-text">
-                        <option value="en">English</option>
-                        <option value="es">Español</option>
-                        <option value="fr">Français</option>
-                        <option value="de">Deutsch</option>
-                    </select>
+                    <input type="text" x-model="config.global.timezone" placeholder="Europe/Madrid"
+                        class="w-full px-3 py-2 border border-dark-border rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 bg-dark-bg text-dark-text">
                 </div>
             </div>
         </div>
 
+        <!-- Language section removed; moved to header selector -->
+
         
 
         <!-- Proxy & Domains Configuration -->
-        <div class="bg-dark-surface dark:bg-dark-surface rounded-lg shadow-lg border border-dark-border p-6">
+        <div class="bg-dark-surface dark:bg-dark-surface rounded-lg border border-dark-border p-4">
             <div class="flex justify-between items-start mb-4">
                 <div>
-                    <h2 class="text-xl font-semibold text-dark-text">Proxy & Domains</h2>
-                    <p class="text-sm text-dark-muted mt-1">Configure reverse proxy and domain routing for services</p>
+                    <h2 class="text-lg font-semibold text-dark-text">Proxy & Domains</h2>
                 </div>
                 <button @click="proxyEnabled = !proxyEnabled; updateProxyConfig()" 
                     :class="proxyEnabled ? 'bg-green-600 hover:bg-green-700' : 'bg-gray-600 hover:bg-gray-700'"
-                    class="px-4 py-2 text-white rounded-lg text-sm flex items-center gap-2">
+                    class="px-3 py-2 text-white rounded-md text-sm flex items-center gap-2">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
                     </svg>
@@ -101,7 +75,7 @@
             </div>
 
             <!-- Domain List -->
-            <div class="space-y-3 mb-4">
+            <div class="space-y-2 mb-3">
                 <label class="block text-sm font-medium text-dark-text mb-2">
                     Configured Domains
                 </label>
@@ -109,11 +83,11 @@
                     No domains configured. Add a domain to enable proxy routing.
                 </div>
                 <template x-for="domain in domains" :key="domain.id">
-                    <div class="flex items-center justify-between p-3 bg-dark-bg rounded-lg border border-dark-border">
+                    <div class="flex items-center justify-between p-2 bg-dark-bg rounded-md border border-dark-border">
                         <div class="flex items-center gap-3">
                             <span class="text-dark-text font-medium" x-text="domain.name"></span>
                             <span x-show="domain.is_primary" 
-                                class="px-2 py-1 bg-blue-600/20 text-blue-400 text-xs rounded">
+                                class="px-2 py-0.5 bg-blue-600/20 text-blue-400 text-xs rounded">
                                 Primary
                             </span>
                         </div>
@@ -128,37 +102,35 @@
             </div>
 
             <!-- Add Domain Form -->
-            <div class="space-y-3">
+            <div class="space-y-2">
                 <label class="block text-sm font-medium text-dark-text">
                     Add Domain
                 </label>
-                <div class="flex gap-3">
+                <div class="flex gap-2">
                     <input type="text" x-model="newDomain" placeholder="mediacheky or media.local"
                         @keyup.enter="addDomain()"
-                        class="flex-1 px-3 py-2 border border-dark-border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-dark-bg text-dark-text">
+                        class="flex-1 px-3 py-2 border border-dark-border rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 bg-dark-bg text-dark-text">
                     <label class="flex items-center gap-2 px-3 py-2 bg-dark-bg border border-dark-border rounded-md">
                         <input type="checkbox" x-model="newDomainPrimary"
                             class="w-4 h-4 text-blue-600 bg-dark-bg border-dark-border rounded focus:ring-blue-500">
                         <span class="text-sm text-dark-text">Primary</span>
                     </label>
                     <button @click="addDomain()" :disabled="!newDomain"
-                        class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed">
+                        class="px-3 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed">
                         Add
                     </button>
                 </div>
-                <p class="text-xs text-dark-muted">
-                    Examples: <code class="text-blue-400">mediacheky</code>, <code class="text-blue-400">media.local</code>, <code class="text-blue-400">example.com</code>
-                </p>
+                <p class="text-xs text-dark-muted">Examples: <code class="text-blue-400">mediacheky</code>, <code class="text-blue-400">media.local</code></p>
             </div>
 
             <!-- Proxy Info -->
-            <div x-show="proxyEnabled && domains.length > 0" class="mt-4 p-4 bg-blue-900/20 border border-blue-700/50 rounded-lg">
+            <div x-show="proxyEnabled && domains.length > 0" class="mt-3 p-3 bg-blue-900/20 border border-blue-700/50 rounded-md">
                 <div class="flex items-start gap-3">
                     <svg class="w-6 h-6 text-blue-400 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
                         <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd" />
                     </svg>
                     <div class="flex-1">
-                        <h3 class="font-semibold text-blue-300 mb-1">Proxy Routing Enabled</h3>
+                        <h3 class="font-semibold text-blue-300 mb-1">Proxy enabled</h3>
                         <p class="text-sm text-blue-200">
                             Services can now be accessed via subdomains. Configure individual service subdomains in their respective service configuration pages.
                         </p>
@@ -168,7 +140,7 @@
         </div>
 
         <!-- Affected Services Preview -->
-        <div x-show="affectedServices.length > 0" class="bg-yellow-900/20 border border-yellow-700/50 rounded-lg p-6">
+        <div x-show="affectedServices.length > 0" class="bg-yellow-900/20 border border-yellow-700/50 rounded-md p-4">
             <div class="flex items-start gap-3">
                 <svg class="w-6 h-6 text-yellow-400 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
                     <path fill-rule="evenodd"
@@ -176,17 +148,17 @@
                         clip-rule="evenodd" />
                 </svg>
                 <div>
-                    <h3 class="font-semibold text-yellow-300 mb-2">Warning: Services Will Be Affected</h3>
+                    <h3 class="font-semibold text-yellow-300 mb-1">Affected services</h3>
                     <p class="text-sm text-yellow-200 mb-3">
-                        Changing these global variables will affect the following services:
+                        Changing global variables will affect:
                     </p>
                     <div class="flex flex-wrap gap-2">
                         <template x-for="service in affectedServices" :key="service">
                             <span class="px-3 py-1 bg-yellow-800/40 text-yellow-200 rounded-md text-sm" x-text="service"></span>
                         </template>
                     </div>
-                    <p class="text-sm text-yellow-200 mt-3">
-                        <strong>Note:</strong> Running services may need to be restarted for changes to take effect.
+                    <p class="text-xs text-yellow-200 mt-2">
+                        Note: Restart running services for changes to take effect.
                     </p>
                 </div>
             </div>

@@ -34,7 +34,7 @@ func Initialize(cfg Config, log *logger.Logger) (*gorm.DB, error) {
 	gormConfig := &gorm.Config{
 		Logger: gormlogger.Default.LogMode(gormlogger.Warn),
 	}
-	
+
 	db, err := gorm.Open(sqlite.Open(cfg.Path), gormConfig)
 	if err != nil {
 		return nil, fmt.Errorf("failed to open database: %w", err)
