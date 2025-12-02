@@ -1,7 +1,7 @@
 <div x-data="dashboard()" x-init="init()" class="space-y-6">
     <!-- Header with Sync Button -->
     <div class="flex justify-between items-center">
-        <h1 class="text-3xl font-bold text-dark-text dark:text-dark-text">Dashboard</h1>
+        <h1 class="text-3xl font-bold text-dark-text dark:text-dark-text"><span data-i18n-key="dashboard.title">Dashboard</span></h1>
         <button @click="syncNow()" :disabled="syncing"
             class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2">
             <svg x-show="!syncing" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -16,7 +16,8 @@
                     d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
                 </path>
             </svg>
-            <span x-text="syncing ? 'Syncing...' : 'Sync Now'"></span>
+            <span x-show="!syncing" data-i18n-key="dashboard.sync">Sync Now</span>
+            <span x-show="syncing" data-i18n-key="common.syncing">Syncing...</span>
         </button>
     </div>
 
@@ -80,11 +81,11 @@
     <!-- Services Section -->
     <div x-data="servicesStatus()" x-init="init()" class="bg-dark-surface dark:bg-dark-surface rounded-lg shadow-lg border border-dark-border p-6">
         <div class="flex justify-between items-center mb-6">
-            <h2 class="text-xl font-semibold text-dark-text">Services</h2>
+            <h2 class="text-xl font-semibold text-dark-text"><span data-i18n-key="dashboard.services">Services</span></h2>
             <button @click="refresh()" :disabled="loading" 
                     class="px-3 py-1 text-sm bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50">
-                <span x-show="!loading">Refresh</span>
-                <span x-show="loading">Loading...</span>
+                <span x-show="!loading" data-i18n-key="common.refresh">Refresh</span>
+                <span x-show="loading" data-i18n-key="common.loading">Loading...</span>
             </button>
         </div>
 
@@ -128,8 +129,8 @@
 
         <!-- Empty State -->
         <div x-show="enabledServices.length === 0 && !loading" class="text-center py-8 text-dark-muted">
-            <p>No enabled services yet.</p>
-            <a href="/services" class="text-blue-400 hover:text-blue-300 mt-2 inline-block">Enable Services →</a>
+            <p data-i18n-key="dashboard.empty.noEnabled">No enabled services yet.</p>
+            <a href="/services" class="text-blue-400 hover:text-blue-300 mt-2 inline-block" data-i18n-key="dashboard.empty.enable">Enable Services →</a>
         </div>
 
         <!-- Loading State -->
@@ -142,11 +143,11 @@
     <div x-data="radarrQueue()" x-init="init()" x-show="queueItems && queueItems.length > 0" 
          class="bg-dark-surface dark:bg-dark-surface rounded-lg shadow-lg border border-dark-border p-6">
         <div class="flex justify-between items-center mb-4">
-            <h2 class="text-xl font-semibold text-dark-text">📥 Radarr Download Queue</h2>
+            <h2 class="text-xl font-semibold text-dark-text">📥 <span data-i18n-key="radarr.queue.title">Radarr Download Queue</span></h2>
             <button @click="loadQueue()" :disabled="loading" 
                     class="px-3 py-1 text-sm bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50">
-                <span x-show="!loading">Refresh</span>
-                <span x-show="loading">Loading...</span>
+                <span x-show="!loading" data-i18n-key="common.refresh">Refresh</span>
+                <span x-show="loading" data-i18n-key="common.loading">Loading...</span>
             </button>
         </div>
         
@@ -193,11 +194,11 @@
     <div x-data="sonarrQueue()" x-init="init()" x-show="queueItems && queueItems.length > 0" 
          class="bg-dark-surface dark:bg-dark-surface rounded-lg shadow-lg border border-dark-border p-6">
         <div class="flex justify-between items-center mb-4">
-            <h2 class="text-xl font-semibold text-dark-text">📺 Sonarr Download Queue</h2>
+            <h2 class="text-xl font-semibold text-dark-text">📺 <span data-i18n-key="sonarr.queue.title">Sonarr Download Queue</span></h2>
             <button @click="loadQueue()" :disabled="loading" 
                     class="px-3 py-1 text-sm bg-purple-600 text-white rounded hover:bg-purple-700 disabled:opacity-50">
-                <span x-show="!loading">Refresh</span>
-                <span x-show="loading">Loading...</span>
+                <span x-show="!loading" data-i18n-key="common.refresh">Refresh</span>
+                <span x-show="loading" data-i18n-key="common.loading">Loading...</span>
             </button>
         </div>
         
@@ -244,11 +245,11 @@
     <div x-data="jellyfinSessions()" x-init="init()" x-show="sessions && sessions.length > 0" 
          class="bg-dark-surface dark:bg-dark-surface rounded-lg shadow-lg border border-dark-border p-6">
         <div class="flex justify-between items-center mb-4">
-            <h2 class="text-xl font-semibold text-dark-text">🎬 Jellyfin - Sesiones Activas</h2>
+            <h2 class="text-xl font-semibold text-dark-text">🎬 <span data-i18n-key="jellyfin.sessions.title">Jellyfin - Active Sessions</span></h2>
             <button @click="loadSessions()" :disabled="loading" 
                     class="px-3 py-1 text-sm bg-purple-600 text-white rounded hover:bg-purple-700 disabled:opacity-50">
-                <span x-show="!loading">Actualizar</span>
-                <span x-show="loading">Cargando...</span>
+                <span x-show="!loading" data-i18n-key="common.refresh">Refresh</span>
+                <span x-show="loading" data-i18n-key="common.loading">Loading...</span>
             </button>
         </div>
         
@@ -303,11 +304,11 @@
     <div x-data="jellyfinRecentlyAdded()" x-init="init()" x-show="items && items.length > 0" 
          class="bg-dark-surface dark:bg-dark-surface rounded-lg shadow-lg border border-dark-border p-6">
         <div class="flex justify-between items-center mb-4">
-            <h2 class="text-xl font-semibold text-dark-text">📺 Jellyfin - Agregados Recientemente</h2>
+            <h2 class="text-xl font-semibold text-dark-text">📺 <span data-i18n-key="jellyfin.recent.title">Jellyfin - Recently Added</span></h2>
             <button @click="loadItems()" :disabled="loading" 
                     class="px-3 py-1 text-sm bg-purple-600 text-white rounded hover:bg-purple-700 disabled:opacity-50">
-                <span x-show="!loading">Actualizar</span>
-                <span x-show="loading">Cargando...</span>
+                <span x-show="!loading" data-i18n-key="common.refresh">Refresh</span>
+                <span x-show="loading" data-i18n-key="common.loading">Loading...</span>
             </button>
         </div>
         
@@ -334,11 +335,11 @@
     <div x-data="qbittorrentDashboard()" x-init="init()" x-show="enabled" 
          class="bg-dark-surface dark:bg-dark-surface rounded-lg shadow-lg border border-dark-border p-6">
         <div class="flex justify-between items-center mb-4">
-            <h2 class="text-xl font-semibold text-dark-text">📡 qBittorrent</h2>
+            <h2 class="text-xl font-semibold text-dark-text">📡 <span data-i18n-key="qb.title">qBittorrent</span></h2>
             <button @click="refresh()" :disabled="loading" 
                     class="px-3 py-1 text-sm bg-teal-600 text-white rounded hover:bg-teal-700 disabled:opacity-50">
-                <span x-show="!loading">Actualizar</span>
-                <span x-show="loading">Cargando...</span>
+                <span x-show="!loading" data-i18n-key="common.refresh">Refresh</span>
+                <span x-show="loading" data-i18n-key="common.loading">Loading...</span>
             </button>
         </div>
 
@@ -585,19 +586,19 @@
 
     <!-- Quick Actions -->
     <div class="bg-dark-surface dark:bg-dark-surface rounded-lg shadow-lg border border-dark-border p-6">
-        <h2 class="text-xl font-semibold text-dark-text mb-4">Quick Actions</h2>
+        <h2 class="text-xl font-semibold text-dark-text mb-4"><span data-i18n-key="dashboard.quick.title">Quick Actions</span></h2>
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
             <a href="/media" class="block p-4 border-2 border-dark-border rounded-lg hover:border-blue-500 transition bg-dark-bg hover:bg-slate-700/30">
-                <h3 class="font-semibold text-dark-text">View Media</h3>
-                <p class="text-sm text-dark-muted mt-1">Browse and manage your media library</p>
+                <h3 class="font-semibold text-dark-text"><span data-i18n-key="dashboard.quick.viewmedia">View Media</span></h3>
+                <p class="text-sm text-dark-muted mt-1"><span data-i18n-key="dashboard.quick.viewmedia.help">Browse and manage your media library</span></p>
             </a>
             <a href="/services" class="block p-4 border-2 border-dark-border rounded-lg hover:border-blue-500 transition bg-dark-bg hover:bg-slate-700/30">
-                <h3 class="font-semibold text-dark-text">Configure Services</h3>
-                <p class="text-sm text-dark-muted mt-1">Set up Radarr, Sonarr, Jellyfin, etc.</p>
+                <h3 class="font-semibold text-dark-text"><span data-i18n-key="dashboard.quick.configure">Configure Services</span></h3>
+                <p class="text-sm text-dark-muted mt-1"><span data-i18n-key="dashboard.quick.configure.help">Set up Radarr, Sonarr, Jellyfin, etc.</span></p>
             </a>
             <a href="/schedules" class="block p-4 border-2 border-dark-border rounded-lg hover:border-blue-500 transition bg-dark-bg hover:bg-slate-700/30">
-                <h3 class="font-semibold text-dark-text">Manage Schedules</h3>
-                <p class="text-sm text-dark-muted mt-1">Configure cleanup schedules</p>
+                <h3 class="font-semibold text-dark-text"><span data-i18n-key="dashboard.quick.schedules">Manage Schedules</span></h3>
+                <p class="text-sm text-dark-muted mt-1"><span data-i18n-key="dashboard.quick.schedules.help">Configure cleanup schedules</span></p>
             </a>
         </div>
     </div>
