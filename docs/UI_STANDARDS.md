@@ -83,6 +83,7 @@ showToast(message, type = 'success') {
 ### DO NOT Use
 
 ❌ **Inline messages:**
+
 ```html
 <!-- WRONG -->
 <div x-show="message" class="p-4 rounded-lg border">
@@ -107,6 +108,7 @@ showToast(message, type = 'success') {
 
 Settings should only have the Global Variables tab:
 
+
 ```html
 <div class="border-b border-dark-border">
     <nav class="-mb-px flex space-x-8">
@@ -123,6 +125,7 @@ Settings should only have the Global Variables tab:
 ### Configure Button
 
 Only show when service is enabled (on `/services` page):
+
 
 ```html
 <a x-show="config.services[service.id]?.enabled" 
@@ -151,6 +154,7 @@ Only show when service is enabled (on `/services` page):
 Prefix: `MEDIACHEKY_` (NOT `KEEPERCHEKY_`)
 
 Examples:
+
 ```bash
 MEDIACHEKY_CLIENTS_RADARR_ENABLED=true
 MEDIACHEKY_CLIENTS_RADARR_URL=http://radarr:7878
@@ -162,13 +166,14 @@ MEDIACHEKY_CLIENTS_RADARR_URL=http://radarr:7878
 
 All services MUST use: `mediacheky-net` network
 
-**ALWAYS connected, not conditional**
+ALWAYS connected, not conditional
 
 ### Port Exposure
 
 Ports are **NOT exposed by default**
 
 Optional exposure via checkbox:
+
 ```yaml
 {{- if .ExposePort }}
 ports:
@@ -185,6 +190,7 @@ ALL documentation must be in `/docs` folder.
 ### Root Files
 
 Only keep in root:
+
 - `README.md` - Project overview
 - `QUICKSTART.md` - Quick start guide
 - `DEVELOPMENT.md` - Development setup
@@ -195,6 +201,7 @@ Only keep in root:
 ### Deprecated Files
 
 Remove from root if found:
+
 - Architecture diagrams
 - Detailed implementation guides
 - API documentation
@@ -207,6 +214,7 @@ Move to `/docs` instead.
 ### ✅ Correct Implementation
 
 **settings.html:**
+
 ```html
 <div x-data="settings()">
     <!-- Tab Navigation (Global only) -->
@@ -231,6 +239,7 @@ Move to `/docs` instead.
 ### ❌ Incorrect Implementation
 
 **Wrong:**
+
 ```html
 <!-- Separate /global page -->
 <nav>
