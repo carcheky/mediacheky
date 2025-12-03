@@ -32,7 +32,7 @@ func Initialize(cfg Config, log *logger.Logger) (*gorm.DB, error) {
 
 	// Configure GORM logger to suppress "record not found" errors
 	gormConfig := &gorm.Config{
-		Logger: gormlogger.Default.LogMode(gormlogger.Warn),
+		Logger: gormlogger.Default.LogMode(gormlogger.Silent),
 	}
 
 	db, err := gorm.Open(sqlite.Open(cfg.Path), gormConfig)

@@ -922,6 +922,19 @@ func (h *ServiceHandler) CheckServiceReady(c *fiber.Ctx) error {
 		})
 	}
 
+	// Check if service exists in database first to avoid unnecessary queries
+	_, err := h.repos.Service.GetByName(name)
+	if err != nil {
+		if err == gorm.ErrRecordNotFound {
+			// Service not configured yet - just check container availability directly
+			return h.checkServiceReadyDirect(c, name)
+		}
+		return c.Status(fiber.StatusInternalServerError).JSON(APIResponse{
+			Success: false,
+			Error:   "Failed to check service",
+		})
+	}
+
 	// Prepare HTTP client with increased timeout (3 seconds)
 	// Services may be slow to start or under load, so we need a reasonable timeout
 	client := &http.Client{Timeout: 3 * time.Second}
@@ -1098,6 +1111,59 @@ func (h *ServiceHandler) CheckServiceReady(c *fiber.Ctx) error {
 			"ready":       false,
 			"via":         "none",
 			"status_code": 0,
+		},
+	})
+}
+
+// checkServiceReadyDirect checks if a service container is ready without database config
+// Used when service is not yet configured in the database
+func (h *ServiceHandler) checkServiceReadyDirect(c *fiber.Ctx, name string) error {
+	// Check if container port is responding (TCP check only)
+	var port int
+	switch name {
+	case "radarr":
+		port = 7878
+	case "sonarr":
+		port = 8989
+	case "jellyfin":
+		port = 8096
+	case "prowlarr":
+		port = 9696
+	case "bazarr":
+		port = 6767
+	case "qbittorrent":
+		port = 8080
+	default:
+		// Unknown service, assume not ready
+		return c.JSON(APIResponse{
+			Success: true,
+			Data: fiber.Map{
+				"ready": false,
+				"via":   "unknown",
+			},
+		})
+	}
+
+	conn, err := net.DialTimeout("tcp", fmt.Sprintf("%s:%d", name, port), 1*time.Second)
+	if err == nil {
+		conn.Close()
+		return c.JSON(APIResponse{
+			Success: true,
+			Data: fiber.Map{
+				"ready":       true,
+				"via":         "tcp",
+				"status_code": 0,
+				"url":         fmt.Sprintf("http://%s:%d", name, port),
+			},
+		})
+	}
+
+	// Not ready
+	return c.JSON(APIResponse{
+		Success: true,
+		Data: fiber.Map{
+			"ready": false,
+			"via":   "tcp-failed",
 		},
 	})
 }
