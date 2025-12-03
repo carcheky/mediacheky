@@ -377,21 +377,34 @@ func (te *TemplateEngine) buildTemplateData(config models.ServiceConfig, globalC
 	}
 
 	// Extract paths and convert to absolute paths
-	if paths, ok := config["Paths"].(map[string]interface{}); ok {
+	// Accept both map[string]interface{} (from JSON) and map[string]string (internal structs)
+	if raw := config["Paths"]; raw != nil {
 		data.Paths = make(map[string]string)
-		for k, v := range paths {
-			if strVal, ok := v.(string); ok {
-				// Convert to absolute path if relative
-				data.Paths[k] = te.toAbsolutePath(strVal)
+		switch p := raw.(type) {
+		case map[string]interface{}:
+			for k, v := range p {
+				if strVal, ok := v.(string); ok {
+					data.Paths[k] = te.toAbsolutePath(strVal)
+				}
 			}
+			te.logger.Info("Extracted paths (map[string]interface{})",
+				zap.Any("paths_interface", p),
+				zap.Any("paths_absolute", data.Paths))
+		case map[string]string:
+			for k, v := range p {
+				data.Paths[k] = te.toAbsolutePath(v)
+			}
+			te.logger.Info("Extracted paths (map[string]string)",
+				zap.Any("paths_string", p),
+				zap.Any("paths_absolute", data.Paths))
+		default:
+			te.logger.Warn("Paths field wrong type",
+				zap.Any("paths_value", raw),
+				zap.String("paths_type", fmt.Sprintf("%T", raw)))
 		}
-		te.logger.Info("Extracted and converted paths to absolute",
-			zap.Any("paths_interface", paths),
-			zap.Any("paths_absolute", data.Paths))
 	} else {
-		te.logger.Warn("Paths field missing or wrong type",
-			zap.Any("paths_value", config["Paths"]),
-			zap.String("paths_type", fmt.Sprintf("%T", config["Paths"])))
+		te.logger.Warn("Paths field missing",
+			zap.Any("paths_value", config["Paths"]))
 	}
 
 	// Validate required paths for compose generation
