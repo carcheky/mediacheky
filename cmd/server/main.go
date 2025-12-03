@@ -34,10 +34,11 @@ func main() {
 
 	// Initialize logger with file output
 	logFilePath := "./logs/mediacheky-dev.log"
+	errorLogFilePath := "./logs/mediacheky-error.log"
 	if cfg.App.Environment == "production" {
 		logFilePath = "./logs/mediacheky.log"
 	}
-	appLogger := logger.NewWithFile(cfg.App.LogLevel, logFilePath)
+	appLogger := logger.NewWithErrorFile(cfg.App.LogLevel, logFilePath, errorLogFilePath)
 	defer appLogger.Sync()
 
 	appLogger.Info("Starting MediaCheky",
@@ -185,6 +186,7 @@ func setupRoutes(app *fiber.App, h *handler.Handlers) {
 		// Dashboard endpoints
 		api.Get("/dashboard/stats", h.Dashboard.GetDashboardStats)
 		api.Get("/dashboard/health", h.Dashboard.HealthCheck)
+		api.Get("/dashboard/system-info", h.Dashboard.SystemInfo)
 
 		// Stats (legacy endpoint)
 		api.Get("/stats", h.Dashboard.Stats)

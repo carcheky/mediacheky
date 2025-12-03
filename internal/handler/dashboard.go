@@ -9,6 +9,7 @@ import (
 	"github.com/carcheky/mediacheky/internal/service"
 	"github.com/carcheky/mediacheky/pkg/logger"
 	"github.com/gofiber/fiber/v2"
+	"golang.org/x/sys/unix"
 )
 
 type DashboardHandler struct {
@@ -303,5 +304,42 @@ func (h *DashboardHandler) HealthCheck(c *fiber.Ctx) error {
 	return c.JSON(APIResponse{
 		Success: true,
 		Data:    healthStatus,
+	})
+}
+
+// SystemInfo returns system information including disk space for the media library
+func (h *DashboardHandler) SystemInfo(c *fiber.Ctx) error {
+	// Media library is always mounted at /MEDIACHEKY_LIBRARY in container
+	mediaPath := "/MEDIACHEKY_LIBRARY"
+
+	// Get filesystem statistics
+	var stat unix.Statfs_t
+	err := unix.Statfs(mediaPath, &stat)
+	if err != nil {
+		h.logger.Error("Failed to get filesystem stats",
+			"path", mediaPath,
+			"error", err,
+		)
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": "Failed to retrieve disk space information",
+		})
+	}
+
+	// Calculate disk space metrics
+	// Note: Statfs_t fields might be uint64 or int64 depending on platform
+	totalBytes := uint64(stat.Blocks) * uint64(stat.Bsize)
+	availableBytes := uint64(stat.Bavail) * uint64(stat.Bsize)
+	usedBytes := totalBytes - (uint64(stat.Bfree) * uint64(stat.Bsize))
+	usedPercent := 0.0
+	if totalBytes > 0 {
+		usedPercent = float64(usedBytes) / float64(totalBytes) * 100
+	}
+
+	return c.JSON(fiber.Map{
+		"path":            mediaPath,
+		"total_bytes":     totalBytes,
+		"used_bytes":      usedBytes,
+		"available_bytes": availableBytes,
+		"used_percent":    usedPercent,
 	})
 }
