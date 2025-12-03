@@ -20,12 +20,12 @@ type DashboardHandler struct {
 }
 
 func NewDashboardHandler(repos *repository.Repositories, logger *logger.Logger, cfg *config.Config, dockerClient *service.DockerClient) *DashboardHandler {
-       return &DashboardHandler{
-	       repos:        repos,
-	       logger:       logger,
-	       config:       cfg,
-	       dockerClient: dockerClient,
-       }
+	return &DashboardHandler{
+		repos:        repos,
+		logger:       logger,
+		config:       cfg,
+		dockerClient: dockerClient,
+	}
 }
 
 func (h *DashboardHandler) Index(c *fiber.Ctx) error {
@@ -49,7 +49,6 @@ func (h *DashboardHandler) Stats(c *fiber.Ctx) error {
 
 	return c.JSON(stats)
 }
-
 
 // addServiceStats adds service statistics to the stats map
 func (h *DashboardHandler) addServiceStats(stats fiber.Map) {
