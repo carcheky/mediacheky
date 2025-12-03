@@ -406,14 +406,18 @@ document.addEventListener('i18n:changed', applyI18nTexts);
 </script>
 
 <!-- Global Work Queue Indicator (Floating) -->
-<div x-data="globalProgress()" x-show="showProgress" 
+<div x-data="globalProgress()" 
+     x-show="showProgress" 
+     x-cloak
+     @click.away="false"
      x-transition:enter="transition ease-out duration-300"
      x-transition:enter-start="opacity-0 transform -translate-x-2"
      x-transition:enter-end="opacity-100 transform translate-x-0"
      x-transition:leave="transition ease-in duration-200"
      x-transition:leave-start="opacity-100 transform translate-x-0"
      x-transition:leave-end="opacity-0 transform -translate-x-2"
-     class="fixed bottom-4 left-4 z-50 w-[480px] max-h-[600px] shadow-2xl rounded-lg border-2 border-amber-500/70 overflow-hidden bg-gradient-to-br from-blue-900/98 to-blue-950/98 backdrop-blur-md flex flex-col">
+     class="fixed bottom-4 left-4 z-50 w-[480px] max-h-[600px] shadow-2xl rounded-lg border-2 border-amber-500/70 overflow-hidden bg-gradient-to-br from-blue-900/98 to-blue-950/98 backdrop-blur-md flex flex-col"
+     style="display: none;">
     
     <!-- Warning Banner -->
     <div class="bg-gradient-to-r from-amber-600/30 via-amber-500/30 to-amber-600/30 border-b-2 border-amber-500/50 px-4 py-3 flex-shrink-0">

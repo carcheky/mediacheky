@@ -121,7 +121,7 @@ func (sm *ServiceManager) EnableService(ctx context.Context, serviceName string)
 			defaultConfig := map[string]interface{}{
 				"Image":         fmt.Sprintf("linuxserver/%s:latest", serviceName),
 				"ContainerName": serviceName,
-				"Paths": map[string]string{
+				"Paths": map[string]interface{}{
 					"Config": buildServiceConfigPath(serviceName),
 					"Media":  getMediaLibraryPath(),
 				},
@@ -147,6 +147,56 @@ func (sm *ServiceManager) EnableService(ctx context.Context, serviceName string)
 	if svc.Enabled {
 		sm.logger.Info("Service already enabled", zap.String("service", serviceName))
 		return nil
+	}
+
+	// Ensure service has required configuration (Paths)
+	if svc.Config == nil {
+		svc.Config = make(map[string]interface{})
+	}
+
+	// Check if Paths configuration exists and is valid
+	pathsConfig, pathsOK := svc.Config["Paths"]
+	if !pathsOK || pathsConfig == nil {
+		sm.logger.Info("Service missing Paths configuration, adding defaults", zap.String("service", serviceName))
+		svc.Config["Paths"] = map[string]interface{}{
+			"Config": buildServiceConfigPath(serviceName),
+			"Media":  getMediaLibraryPath(),
+		}
+	} else {
+		// Verify Paths has at least Config
+		if paths, ok := pathsConfig.(map[string]interface{}); ok {
+			if _, hasConfig := paths["Config"]; !hasConfig {
+				sm.logger.Info("Service Paths missing Config, adding default", zap.String("service", serviceName))
+				paths["Config"] = buildServiceConfigPath(serviceName)
+			}
+		} else if paths, ok := pathsConfig.(map[string]string); ok {
+			// Convert map[string]string to map[string]interface{}
+			newPaths := make(map[string]interface{})
+			for k, v := range paths {
+				newPaths[k] = v
+			}
+			if _, hasConfig := newPaths["Config"]; !hasConfig {
+				newPaths["Config"] = buildServiceConfigPath(serviceName)
+			}
+			svc.Config["Paths"] = newPaths
+		}
+	}
+
+	// Ensure other required fields
+	if _, ok := svc.Config["Image"]; !ok {
+		svc.Config["Image"] = fmt.Sprintf("linuxserver/%s:latest", serviceName)
+	}
+	if _, ok := svc.Config["ContainerName"]; !ok {
+		svc.Config["ContainerName"] = serviceName
+	}
+	if _, ok := svc.Config["RestartPolicy"]; !ok {
+		svc.Config["RestartPolicy"] = "unless-stopped"
+	}
+
+	// Save updated config
+	if err := sm.serviceRepo.Update(svc); err != nil {
+		sm.logger.Error("Failed to update service config", zap.String("service", serviceName), zap.Error(err))
+		// Continue anyway, we'll try to generate compose with what we have
 	}
 
 	// Generate docker compose file

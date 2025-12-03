@@ -198,17 +198,20 @@
             if (this.current) {
                 jobs.push({
                     ...this.current,
-                    status: 'running'
+                    status: 'running',
+                    currentStep: this.current.currentStep || 0
                 });
             }
             
             // Add pending jobs
             jobs.push(...this.queue.map(job => ({
                 ...job,
-                status: 'pending'
+                status: 'pending',
+                currentStep: 0
             })));
             
-            return jobs;
+            // Return a new array to ensure Alpine detects changes
+            return [...jobs];
         },
 
         // Progress listeners
@@ -257,10 +260,20 @@
                 
                 const updateProgress = () => {
                     const jobs = window.WorkQueue.getAllJobs();
-                    this.allJobs = jobs;
-                    this.showProgress = jobs.length > 0;
+                    const hasJobs = jobs.length > 0;
                     
-                    console.log('[globalProgress] Updated jobs:', jobs.length);
+                    console.log('[globalProgress] Update called:', {
+                        jobCount: jobs.length,
+                        currentlyVisible: this.showProgress,
+                        shouldBeVisible: hasJobs,
+                        jobs: jobs.map(j => ({ id: j.id, status: j.status, step: j.currentStep }))
+                    });
+                    
+                    // ALWAYS update the jobs array with a new reference
+                    this.allJobs = [...jobs];
+                    
+                    // Update visibility
+                    this.showProgress = hasJobs;
                 };
 
                 // Initial state
@@ -269,8 +282,8 @@
                 // Listen for updates (called on enqueue, step changes, completion)
                 window.WorkQueue.addProgressListener(updateProgress);
                 
-                // Poll for changes every 500ms as backup
-                setInterval(updateProgress, 500);
+                // Poll for changes every 250ms for responsiveness
+                setInterval(updateProgress, 250);
             },
 
             getJobIcon(status) {
