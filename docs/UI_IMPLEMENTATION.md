@@ -36,15 +36,15 @@ November 9, 2025
 
 - Already implemented
 
-- Service configuration management
+- Global Variables management only (PUID, PGID, TZ, paths, network)
 
-- Connection testing
+- Connection testing for global configuration
 
-- Two tabs: Services and Configuration
+- Single section: Global Variables (services management moved to `/services`)
 
-#### Global Variables (Settings Tab) - **UPDATED**
+#### Global Variables (Settings) - **UPDATED**
 
-**NOTE: Global Variables is now a tab within Settings page, NOT a separate route**
+NOTE: Global Variables is a section within Settings (only section). There is no separate `/global` route.
 
 - User & Group configuration (PUID, PGID)
 
@@ -56,7 +56,7 @@ November 9, 2025
 
 - **Floating toast notifications** for all feedback
 
-#### Service Config (`/services/:name`) - **NEW**
+#### Service Config (`/services/:name`)
 
 - Service-specific configuration page
 
@@ -128,20 +128,24 @@ November 9, 2025
 
 ```go
 app.Get("/", h.Dashboard.Index)
-app.Get("/settings", h.Settings.Index)          // Includes Global Variables tab
-app.Get("/services/:name", h.Service.ConfigPage) // NEW
+app.Get("/settings", h.Settings.Index)          // Global Variables only
+app.Get("/services", h.Service.ListPage)        // Services overview + enable/disable + Configure
+app.Get("/services/:name", h.Service.ConfigPage)
 app.Get("/logs", h.Logs.Index)
-```text
+```
 
 #### API Routes (existing)
 
 ```go
 api.Get("/config/global", h.Config.GetGlobalConfig)
 api.Put("/config/global", h.Config.UpdateGlobalConfig)
+api.Get("/services", h.Service.List)
 api.Get("/services/:name", h.Service.GetService)
 api.Put("/services/:name/config", h.Service.UpdateServiceConfig)
+api.Post("/services/:name/enable", h.Service.Enable)
+api.Post("/services/:name/disable", h.Service.Disable)
 api.Post("/config/test/:service", h.Settings.TestConnection)
-```text
+```
 
 ### 5. Alpine.js Components
 
@@ -234,9 +238,9 @@ web/
 
 ### Creating a New Service Configuration
 
-1. Navigate to `/settings`
+1. Navigate to `/services`
 
-2. Enable the service
+2. Enable the service (toggle)
 
 3. Click "Configure" or navigate to `/services/servicename`
 
@@ -250,7 +254,7 @@ web/
 
 1. Navigate to `/settings`
 
-2. Click on "Global Variables" tab
+2. Global Variables is the only section
 
 3. Update desired values
 
