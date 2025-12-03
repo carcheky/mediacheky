@@ -72,6 +72,7 @@
             
             this.queue.push(jobWithId);
             this.saveToStorage();
+            this.notifyProgressListeners(); // Notify immediately on enqueue
             console.log(`[WorkQueue] Enqueued job: ${jobWithId.id}`, jobWithId);
             
             // Start processing if not already running
@@ -189,6 +190,27 @@
             };
         },
 
+        // Get all jobs for display (current + pending)
+        getAllJobs() {
+            const jobs = [];
+            
+            // Add current job if exists
+            if (this.current) {
+                jobs.push({
+                    ...this.current,
+                    status: 'running'
+                });
+            }
+            
+            // Add pending jobs
+            jobs.push(...this.queue.map(job => ({
+                ...job,
+                status: 'pending'
+            })));
+            
+            return jobs;
+        },
+
         // Progress listeners
         progressListeners: [],
 
@@ -228,38 +250,51 @@
         
         Alpine.data('globalProgress', () => ({
             showProgress: false,
-            progressTitle: '',
-            progressSteps: [],
-            progressWarning: 'Operation in progress...',
-            currentProgressStep: 0,
+            allJobs: [],
 
             init() {
                 console.log('[globalProgress] Component initialized');
                 
-                const updateProgress = (progress) => {
-                    if (progress) {
-                        console.log('[globalProgress] Showing progress:', progress);
-                        this.showProgress = true;
-                        this.progressTitle = progress.title || 'Processing...';
-                        this.progressSteps = progress.steps || [];
-                        this.progressWarning = progress.warning || 'Operation in progress...';
-                        this.currentProgressStep = progress.currentStep || 0;
-                    } else {
-                        console.log('[globalProgress] Hiding progress');
-                        this.showProgress = false;
-                        this.progressTitle = '';
-                        this.progressSteps = [];
-                        this.progressWarning = 'Operation in progress...';
-                        this.currentProgressStep = 0;
-                    }
+                const updateProgress = () => {
+                    const jobs = window.WorkQueue.getAllJobs();
+                    this.allJobs = jobs;
+                    this.showProgress = jobs.length > 0;
+                    
+                    console.log('[globalProgress] Updated jobs:', jobs.length);
                 };
 
                 // Initial state
-                const current = window.WorkQueue.getCurrentProgress();
-                updateProgress(current);
+                updateProgress();
 
-                // Listen for updates
+                // Listen for updates (called on enqueue, step changes, completion)
                 window.WorkQueue.addProgressListener(updateProgress);
+                
+                // Poll for changes every 500ms as backup
+                setInterval(updateProgress, 500);
+            },
+
+            getJobIcon(status) {
+                if (status === 'completed') return '✅';
+                if (status === 'running') return '⏳';
+                return '⏸️';
+            },
+
+            getStepIcon(job, stepIndex) {
+                if (job.status === 'pending') return '⏸️';
+                if (job.status === 'completed') return '✅';
+                // Running job
+                if (stepIndex < job.currentStep) return '✅';
+                if (stepIndex === job.currentStep) return '⏳';
+                return '⏸️';
+            },
+
+            getStepStatus(job, stepIndex) {
+                if (job.status === 'pending') return 'PENDING';
+                if (job.status === 'completed') return 'OK';
+                // Running job
+                if (stepIndex < job.currentStep) return 'OK';
+                if (stepIndex === job.currentStep) return 'RUNNING';
+                return 'PENDING';
             }
         }));
     });

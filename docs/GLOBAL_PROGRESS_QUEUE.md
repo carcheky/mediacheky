@@ -22,7 +22,10 @@ Si el usuario activa/desactiva/prune múltiples servicios rápidamente, las acci
 
 - ✅ **Persistencia**: Las acciones en progreso se guardan en `localStorage`
 - ✅ **Multi-pestaña**: Sincronización automática entre pestañas del navegador
-- ✅ **Visual consistente**: Mismo tooltip de progreso en todas las páginas
+- ✅ **Vista completa de la cola**: Muestra TODOS los trabajos (actual + pendientes)
+- ✅ **Progreso detallado**: Cada paso muestra estado (✅ OK, ⏳ RUNNING, ⏸️ PENDING)
+- ✅ **Tooltip grande con scroll**: 480px de ancho, hasta 600px de alto
+- ✅ **Mensajes descriptivos**: Cada paso describe operaciones reales de MediaCheky
 - ✅ **Auto-limpieza**: Elimina progreso obsoleto (>5 minutos)
 - ✅ **Integración Alpine.js**: Componente reactivo global
 
@@ -183,6 +186,39 @@ window.WorkQueue.enqueue({ id: 'prune-jellyfin', ... }); // ⏳ En cola
 
 // Resultado: Se ejecutan una tras otra, sin conflictos
 ```
+
+## Vista del Tooltip
+
+Cuando el usuario activa Radarr y Sonarr rápidamente, el tooltip muestra:
+
+```text
+┌────────────────────────────────────────────────────┐
+│ ⚠️ Please wait - Do not close!                    │
+│ Operations in progress - MediaCheky is managing... │
+├────────────────────────────────────────────────────┤
+│ ⏳ Work Queue (2 jobs)                             │
+├────────────────────────────────────────────────────┤
+│                                                    │
+│ ⏳ ENABLING RADARR                                 │
+│   ✅ radarr: generating docker compose... OK      │
+│   ✅ radarr: saving environment variables  OK      │
+│   ⏳ radarr: starting docker container    RUNNING  │
+│   ⏸️ radarr: saving service config       PENDING  │
+│                                                    │
+│ ⏸️ ENABLING SONARR                                 │
+│   ⏸️ sonarr: generating docker compose... PENDING │
+│   ⏸️ sonarr: saving environment variables  PENDING │
+│   ⏸️ sonarr: starting docker container    PENDING │
+│   ⏸️ sonarr: saving service config       PENDING  │
+│                                                    │
+└────────────────────────────────────────────────────┘
+```
+
+**Significado de los iconos:**
+
+- ✅ **OK**: Paso completado exitosamente
+- ⏳ **RUNNING**: Paso ejecutándose actualmente
+- ⏸️ **PENDING**: Paso esperando a ejecutarse
 
 ## Beneficios
 

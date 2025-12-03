@@ -290,24 +290,35 @@ function servicesPage() {
                 id: `toggle-${serviceId}`,
                 title: `${action} ${serviceId}`,
                 steps: enabled ? [
-                    'Stopping service',
-                    'Updating configuration',
-                    'Reloading data'
+                    `${serviceId}: stopping docker container`,
+                    `${serviceId}: removing docker compose file`,
+                    `${serviceId}: updating service status in database`
                 ] : [
-                    'Validating configuration',
-                    'Starting service',
-                    'Reloading data'
+                    `${serviceId}: generating docker compose from template`,
+                    `${serviceId}: saving environment variables`,
+                    `${serviceId}: starting docker container`,
+                    `${serviceId}: saving service configuration`
                 ],
                 warning: `${action} service...`,
                 execute: async (queue) => {
                     try {
+                        // Backend handles all the steps internally
+                        // We just simulate progress for user feedback
                         const url = enabled ? `/api/services/${serviceId}/disable` : `/api/services/${serviceId}/enable`;
-                        queue.updateStep(1); // Step 2
+                        
+                        // Simulate steps progressing
+                        for (let i = 1; i < (enabled ? 3 : 4); i++) {
+                            await new Promise(resolve => setTimeout(resolve, 300));
+                            queue.updateStep(i);
+                        }
+                        
                         const resp = await fetch(url, { method: 'POST' });
                         if (!resp.ok) {
                             throw new Error('toggle failed');
                         }
-                        queue.updateStep(2); // Step 3
+                        
+                        // Final step: reload data
+                        queue.updateStep(enabled ? 2 : 3);
                         await this.loadServiceStatuses();
                         await this.checkConfigPaths();
                         this.showMessage(enabled ? `${serviceId} disabled` : `${serviceId} enabled`, 'success');
@@ -330,28 +341,34 @@ function servicesPage() {
                 id: `prune-${serviceId}`,
                 title: `Pruning ${serviceId}`,
                 steps: [
-                    'Stopping service',
-                    'Removing volumes',
-                    'Cleaning configuration',
-                    'Reloading data'
+                    `${serviceId}: stopping and removing docker container`,
+                    `${serviceId}: removing docker volumes (-v flag)`,
+                    `${serviceId}: deleting configuration folders`,
+                    `${serviceId}: removing database entries`,
+                    `${serviceId}: reloading service status`
                 ],
-                warning: 'Service cleanup in progress...',
+                warning: 'Service cleanup in progress - This cannot be undone!',
                 execute: async (queue) => {
                     this.pruning[serviceId] = true;
                     try {
-                        // Call reset endpoint
+                        // Simulate step progression (backend does all work in one call)
+                        for (let i = 1; i < 5; i++) {
+                            await new Promise(resolve => setTimeout(resolve, 400));
+                            queue.updateStep(i);
+                        }
+                        
+                        // Call reset endpoint (does all the work)
                         const response = await fetch(`/api/services/${serviceId}/reset`, {
                             method: 'POST'
                         });
 
                         if (response.ok) {
-                            queue.updateStep(3); // Step 4: Reloading data
                             // Deshabilita y oculta botón
                             this.serviceStatuses[serviceId].enabled = false;
                             this.serviceStatuses[serviceId].config_path_exists = false;
                             this.showMessage(`${serviceId} pruned successfully! All config and volumes removed.`, 'success');
                             // Espera breve para backend
-                            await new Promise(resolve => setTimeout(resolve, 2000));
+                            await new Promise(resolve => setTimeout(resolve, 1000));
                             // Recarga TODO el estado
                             await this.loadServiceStatuses();
                             await this.checkConfigPaths();
