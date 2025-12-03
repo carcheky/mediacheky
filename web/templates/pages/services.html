@@ -1,7 +1,7 @@
 <div x-data="servicesPage()" x-init="init()" class="space-y-6">
     <!-- Header -->
     <div class="flex justify-between items-center">
-        <h1 class="text-3xl font-bold text-dark-text dark:text-dark-text">Services</h1>
+        <h1 class="text-3xl font-bold text-dark-text dark:text-dark-text">Services <span class="ml-2 px-2 py-1 text-xs rounded bg-blue-900/40 border border-blue-700 text-blue-200">new-ui</span></h1>
         <div class="flex gap-3">
             <button @click="reload()"
                 class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center gap-2">
@@ -32,14 +32,19 @@
                                 <p class="text-sm text-dark-muted" x-text="service.description || 'No description available'"></p>
                             </div>
                         </div>
-                        <a :href="'/services/' + service.id"
-                            class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 text-sm">
-                            Configure
-                        </a>
+                        <div class="flex items-center gap-3">
+                            <button @click="toggleService(service.id)"
+                                    class="px-3 py-2 rounded-md text-sm"
+                                    :class="serviceStatuses[service.id]?.enabled ? 'bg-red-600 text-white hover:bg-red-700' : 'bg-green-600 text-white hover:bg-green-700'">
+                                <span x-text="serviceStatuses[service.id]?.enabled ? 'Disable' : 'Enable'"></span>
+                            </button>
+                            <a x-show="serviceStatuses[service.id]?.enabled"
+                               :href="'/services/' + service.id"
+                               class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 text-sm">
+                                Configure
+                            </a>
+                        </div>
                     </div>
-                </template>
-                <template x-if="getServicesByCategory('media-server').length === 0">
-                    <p class="text-sm text-dark-muted">No media server services found.</p>
                 </template>
             </div>
         </div>
@@ -61,14 +66,19 @@
                                 <p class="text-sm text-dark-muted" x-text="service.description || 'No description available'"></p>
                             </div>
                         </div>
-                        <a :href="'/services/' + service.id"
-                            class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 text-sm">
-                            Configure
-                        </a>
+                        <div class="flex items-center gap-3">
+                            <button @click="toggleService(service.id)"
+                                    class="px-3 py-2 rounded-md text-sm"
+                                    :class="serviceStatuses[service.id]?.enabled ? 'bg-red-600 text-white hover:bg-red-700' : 'bg-green-600 text-white hover:bg-green-700'">
+                                <span x-text="serviceStatuses[service.id]?.enabled ? 'Disable' : 'Enable'"></span>
+                            </button>
+                            <a x-show="serviceStatuses[service.id]?.enabled"
+                               :href="'/services/' + service.id"
+                               class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 text-sm">
+                                Configure
+                            </a>
+                        </div>
                     </div>
-                </template>
-                <template x-if="getServicesByCategory('arr').length === 0">
-                    <p class="text-sm text-dark-muted">No *arr services found.</p>
                 </template>
             </div>
         </div>
@@ -90,14 +100,19 @@
                                 <p class="text-sm text-dark-muted" x-text="service.description || 'No description available'"></p>
                             </div>
                         </div>
-                        <a :href="'/services/' + service.id"
-                            class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 text-sm">
-                            Configure
-                        </a>
+                        <div class="flex items-center gap-3">
+                            <button @click="toggleService(service.id)"
+                                    class="px-3 py-2 rounded-md text-sm"
+                                    :class="serviceStatuses[service.id]?.enabled ? 'bg-red-600 text-white hover:bg-red-700' : 'bg-green-600 text-white hover:bg-green-700'">
+                                <span x-text="serviceStatuses[service.id]?.enabled ? 'Disable' : 'Enable'"></span>
+                            </button>
+                            <a x-show="serviceStatuses[service.id]?.enabled"
+                               :href="'/services/' + service.id"
+                               class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 text-sm">
+                                Configure
+                            </a>
+                        </div>
                     </div>
-                </template>
-                <template x-if="getServicesByCategory('other').length === 0">
-                    <p class="text-sm text-dark-muted">No other services found.</p>
                 </template>
             </div>
         </div>
@@ -156,6 +171,10 @@ function servicesPage() {
             { id: 'qbittorrent',label: 'qBittorrent',icon: '⬇️', category: 'other',        description: 'BitTorrent client for downloading media' }
         ],
         getServicesByCategory(category) { return this.services.filter(s => s.category === category); },
+            getEnabledByCategory(category) {
+                const list = this.getServicesByCategory(category);
+                return list.filter(s => this.serviceStatuses[s.id]?.enabled);
+            },
         async init() { await this.loadServiceStatuses(); },
         async reload() { await this.loadServiceStatuses(); this.showMessage('Services reloaded', 'success'); },
         async loadServiceStatuses() {
@@ -168,6 +187,19 @@ function servicesPage() {
                     list.forEach(svc => { this.serviceStatuses[svc.name] = { enabled: svc.enabled, status: svc.status }; });
                 }
             } catch (err) { console.error('Failed to load services', err); }
+        },
+        async toggleService(serviceId) {
+            try {
+                const enabled = !!this.serviceStatuses[serviceId]?.enabled;
+                const url = enabled ? `/api/services/${serviceId}/disable` : `/api/services/${serviceId}/enable`;
+                const resp = await fetch(url, { method: 'POST' });
+                if (!resp.ok) throw new Error('toggle failed');
+                await this.loadServiceStatuses();
+                this.showMessage(enabled ? `${serviceId} disabled` : `${serviceId} enabled`, 'success');
+            } catch (e) {
+                console.error('toggleService error', e);
+                this.showMessage(`Failed to toggle ${serviceId}`, 'error');
+            }
         },
         showMessage(msg, type = 'success') {
             this.message = msg; this.messageType = type;
