@@ -164,13 +164,13 @@ func (h *ServiceHandler) GetService(c *fiber.Ctx) error {
 				"status", realStatus)
 		} else {
 			// Fallback: list all containers and search
-			h.logger.Info("🔍 Container not found by name, searching all containers",
+			h.logger.Debug("🔍 Container not found by name, searching all containers",
 				"service", name,
 				"container_name", containerName)
 
 			containers, listErr := h.dockerClient.ListContainers(ctx)
 			if listErr == nil {
-				h.logger.Info("🐳 Docker containers listed",
+				h.logger.Debug("🐳 Docker containers listed",
 					"service", name,
 					"total_containers", len(containers))
 
@@ -227,7 +227,7 @@ func (h *ServiceHandler) GetService(c *fiber.Ctx) error {
 				}
 			}(svc.ID, realStatus)
 		} else {
-			h.logger.Info("ℹ️ Status unchanged",
+			h.logger.Debug("ℹ️ Status unchanged",
 				"service", name,
 				"status", svc.Status)
 		}
@@ -256,7 +256,7 @@ func (h *ServiceHandler) GetService(c *fiber.Ctx) error {
 			})
 		}
 	} else {
-		h.logger.Info("⏸️ Service not enabled, skipping status check",
+		h.logger.Debug("⏸️ Service not enabled, skipping status check",
 			"service", name)
 	}
 

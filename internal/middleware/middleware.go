@@ -2,6 +2,7 @@ package middleware
 
 import (
 	"regexp"
+	"strings"
 	"time"
 
 	"github.com/carcheky/mediacheky/pkg/logger"
@@ -29,13 +30,14 @@ func Logger(log *logger.Logger) fiber.Handler {
 		path := c.Path()
 		status := c.Response().StatusCode()
 		duration := time.Since(start).Milliseconds()
-		
+
 		// Use DEBUG level for:
 		// - Successful requests to /api/services (polled frequently by multiple components)
+		// - Successful requests to /api/services/:name GET (individual service status polling)
 		// - Successful requests to /api/stats (polled every 30s)
 		// - Successful requests to /status (health checks)
 		if status >= 200 && status < 300 {
-			if path == "/api/services" || path == "/api/stats" || path == "/status" {
+			if path == "/api/services" || strings.HasPrefix(path, "/api/services/") && c.Method() == "GET" || path == "/api/stats" || path == "/status" {
 				log.Debug("HTTP request",
 					"method", c.Method(),
 					"path", path,
