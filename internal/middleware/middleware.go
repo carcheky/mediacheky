@@ -66,13 +66,23 @@ func ErrorHandler(log *logger.Logger) fiber.ErrorHandler {
 			code = e.Code
 		}
 
-		log.Error("Request error",
-			"error", err,
-			"path", c.Path(),
-			"method", c.Method(),
-			"status", code,
-			"request_id", c.Locals("requestid"),
-		)
+		// Only log 404s as debug, not errors (endpoints may not exist yet during setup)
+		if code == fiber.StatusNotFound {
+			log.Debug("Route not found",
+				"path", c.Path(),
+				"method", c.Method(),
+				"status", code,
+				"request_id", c.Locals("requestid"),
+			)
+		} else {
+			log.Error("Request error",
+				"error", err,
+				"path", c.Path(),
+				"method", c.Method(),
+				"status", code,
+				"request_id", c.Locals("requestid"),
+			)
+		}
 
 		return c.Status(code).JSON(fiber.Map{
 			"error":      err.Error(),
