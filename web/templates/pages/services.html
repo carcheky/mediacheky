@@ -52,9 +52,14 @@
                                 </button>
                             </template>
                             <button @click="toggleService(service.id)"
-                                    class="px-3 py-2 rounded-md text-sm"
-                                    :class="serviceStatuses[service.id]?.enabled ? 'bg-red-600 text-white hover:bg-red-700' : 'bg-green-600 text-white hover:bg-green-700'">
-                                <span x-text="serviceStatuses[service.id]?.enabled ? 'Disable' : 'Enable'"></span>
+                                    :disabled="toggling[service.id]"
+                                    class="px-3 py-2 rounded-md text-sm transition-opacity"
+                                    :class="{
+                                        'bg-red-600 text-white hover:bg-red-700': serviceStatuses[service.id]?.enabled && !toggling[service.id],
+                                        'bg-green-600 text-white hover:bg-green-700': !serviceStatuses[service.id]?.enabled && !toggling[service.id],
+                                        'opacity-50 cursor-not-allowed': toggling[service.id]
+                                    }">
+                                <span x-text="toggling[service.id] ? 'Processing...' : (serviceStatuses[service.id]?.enabled ? 'Disable' : 'Enable')"></span>
                             </button>
                             <a x-show="serviceStatuses[service.id]?.enabled"
                                :href="'/services/' + service.id"
@@ -104,9 +109,14 @@
                                 </button>
                             </template>
                             <button @click="toggleService(service.id)"
-                                    class="px-3 py-2 rounded-md text-sm"
-                                    :class="serviceStatuses[service.id]?.enabled ? 'bg-red-600 text-white hover:bg-red-700' : 'bg-green-600 text-white hover:bg-green-700'">
-                                <span x-text="serviceStatuses[service.id]?.enabled ? 'Disable' : 'Enable'"></span>
+                                    :disabled="toggling[service.id]"
+                                    class="px-3 py-2 rounded-md text-sm transition-opacity"
+                                    :class="{
+                                        'bg-red-600 text-white hover:bg-red-700': serviceStatuses[service.id]?.enabled && !toggling[service.id],
+                                        'bg-green-600 text-white hover:bg-green-700': !serviceStatuses[service.id]?.enabled && !toggling[service.id],
+                                        'opacity-50 cursor-not-allowed': toggling[service.id]
+                                    }">
+                                <span x-text="toggling[service.id] ? 'Processing...' : (serviceStatuses[service.id]?.enabled ? 'Disable' : 'Enable')"></span>
                             </button>
                             <a x-show="serviceStatuses[service.id]?.enabled"
                                :href="'/services/' + service.id"
@@ -156,9 +166,14 @@
                                 </button>
                             </template>
                             <button @click="toggleService(service.id)"
-                                    class="px-3 py-2 rounded-md text-sm"
-                                    :class="serviceStatuses[service.id]?.enabled ? 'bg-red-600 text-white hover:bg-red-700' : 'bg-green-600 text-white hover:bg-green-700'">
-                                <span x-text="serviceStatuses[service.id]?.enabled ? 'Disable' : 'Enable'"></span>
+                                    :disabled="toggling[service.id]"
+                                    class="px-3 py-2 rounded-md text-sm transition-opacity"
+                                    :class="{
+                                        'bg-red-600 text-white hover:bg-red-700': serviceStatuses[service.id]?.enabled && !toggling[service.id],
+                                        'bg-green-600 text-white hover:bg-green-700': !serviceStatuses[service.id]?.enabled && !toggling[service.id],
+                                        'opacity-50 cursor-not-allowed': toggling[service.id]
+                                    }">
+                                <span x-text="toggling[service.id] ? 'Processing...' : (serviceStatuses[service.id]?.enabled ? 'Disable' : 'Enable')"></span>
                             </button>
                             <a x-show="serviceStatuses[service.id]?.enabled"
                                :href="'/services/' + service.id"
@@ -215,6 +230,7 @@ function servicesPage() {
         messageType: 'success',
         serviceStatuses: {},
         pruning: {},
+        toggling: {},
         services: [
             { id: 'jellyfin',   label: 'Jellyfin',   icon: '🍿', category: 'media-server', description: 'Media server for streaming movies, TV shows, and music' },
             { id: 'radarr',     label: 'Radarr',     icon: '🎬', category: 'arr',          description: 'Movie collection manager for Usenet and BitTorrent' },
@@ -231,8 +247,11 @@ function servicesPage() {
             return list.filter(s => this.serviceStatuses[s.id]?.enabled);
         },
         async init() { 
-            // Initialize pruning state for all services
-            this.services.forEach(s => { this.pruning[s.id] = false; });
+            // Initialize pruning and toggling state for all services
+            this.services.forEach(s => { 
+                this.pruning[s.id] = false;
+                this.toggling[s.id] = false;
+            });
             await this.loadServiceStatuses(); 
             await this.checkConfigPaths();
         },
@@ -285,6 +304,9 @@ function servicesPage() {
             const enabled = !!this.serviceStatuses[serviceId]?.enabled;
             const action = enabled ? 'Disabling' : 'Enabling';
             
+            // Mark as toggling immediately
+            this.toggling[serviceId] = true;
+            
             // Add job to work queue
             window.WorkQueue.enqueue({
                 id: `toggle-${serviceId}`,
@@ -325,6 +347,9 @@ function servicesPage() {
                     } catch (e) {
                         console.error('toggleService error', e);
                         this.showMessage(`Failed to toggle ${serviceId}`, 'error');
+                    } finally {
+                        // Clear toggling state when done
+                        this.toggling[serviceId] = false;
                     }
                 }
             });
