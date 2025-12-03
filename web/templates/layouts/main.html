@@ -34,113 +34,155 @@
 
 <body class="bg-dark-bg dark:bg-dark-bg min-h-screen flex flex-col">
     <!-- Top Navigation Bar -->
-    <nav class="bg-dark-surface dark:bg-dark-surface shadow-lg border-b border-dark-border sticky top-0 z-50" x-data="{ mobileMenuOpen: false, currentPath: window.location.pathname }">
+    <nav class="bg-dark-surface shadow-lg sticky top-0 z-50 border-b border-dark-border" x-data="{ mobileMenuOpen: false, currentPath: window.location.pathname, i18nReady: false }" @i18n:changed.window="i18nReady = true" x-init="setTimeout(() => i18nReady = true, 100)">
         <div class="max-w-7xl mx-auto px-4">
-            <div class="flex items-center justify-between h-20 border-b border-dark-border/70 bg-gradient-to-r from-dark-surface via-dark-bg to-dark-surface shadow-lg">
-                <div class="flex items-center w-full">
-                    <div class="flex-shrink-0 flex items-center">
-                        <a href="/" class="flex items-center gap-2">
-                            <span class="text-2xl">🦊</span>
-                            <h1 class="text-2xl font-extrabold tracking-tight text-dark-text dark:text-dark-text drop-shadow">MediaCheky</h1>
+            <div class="flex items-stretch justify-between h-16">
+                <!-- Logo -->
+                <div class="flex items-center flex-shrink-0">
+                    <a href="/" class="flex items-center gap-2">
+                        <span class="text-2xl">🦊</span>
+                        <h1 class="text-xl font-bold text-dark-text">MediaCheky</h1>
+                    </a>
+                </div>
+
+                <!-- Desktop Menu -->
+                <div class="hidden md:flex items-stretch ml-8 space-x-1" x-show="i18nReady" x-transition:opacity>
+                    <a href="/"
+                        :class="currentPath === '/' ? 'border-blue-500 text-dark-text' : 'border-transparent text-dark-muted hover:border-blue-400 hover:text-dark-text'"
+                        class="inline-flex items-center px-4 border-b-2 text-sm font-medium transition-all duration-150">
+                        <span class="mr-2">📊</span>
+                        <span data-i18n-key="nav.dashboard">Dashboard</span>
+                    </a>
+
+                    <div class="relative flex items-stretch" x-data="servicesMenu()" @mouseenter="open = true" @mouseleave="open = false" x-init="init()">
+                        <a href="/services"
+                            :class="currentPath.startsWith('/services') ? 'border-blue-500 text-dark-text' : 'border-transparent text-dark-muted hover:border-blue-400 hover:text-dark-text'"
+                            class="inline-flex items-center px-4 border-b-2 text-sm font-medium transition-all duration-150">
+                            <span class="mr-2">🎬</span>
+                            <span data-i18n-key="nav.services">Services</span>
+                            <svg class="w-4 h-4 ml-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                            </svg>
                         </a>
-                    </div>
-                    <div class="hidden sm:flex sm:space-x-2 ml-6 transition-opacity duration-300" x-data x-bind:class="i18nReady ? 'opacity-100' : 'opacity-0'">
-                        <a href="/"
-                            :class="currentPath==='/' ? 'border-blue-500 text-dark-text' : 'border-transparent text-dark-muted hover:border-blue-500 hover:text-dark-text dark:text-dark-muted dark:hover:text-dark-text'"
-                            class="inline-flex items-center px-3 py-6 border-b-2 text-sm font-medium min-w-[100px] transition-all duration-200">
-                            <span class="mr-1">📊</span>
-                            <span data-i18n-key="nav.dashboard">Dashboard</span>
-                        </a>
-                        <div class="relative min-w-[100px]" x-data="servicesMenu()" @mouseenter="open = true" @mouseleave="open = false" x-init="init()">
-                            <a href="/services"
-                                :class="currentPath.startsWith('/services') ? 'border-blue-500 text-dark-text' : 'border-transparent text-dark-muted hover:border-blue-500 hover:text-dark-text dark:text-dark-muted dark:hover:text-dark-text'"
-                                class="inline-flex items-center px-3 py-6 border-b-2 text-sm font-medium min-w-[100px] transition-all duration-200">
-                                <span class="mr-1">🎬</span>
-                                <span data-i18n-key="nav.services">Services</span>
-                                <svg class="w-4 h-4 ml-1 text-dark-muted" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-                                </svg>
-                            </a>
-                            <!-- Services Dropdown -->
-                            <div x-show="open" x-transition class="absolute mt-2 w-56 bg-dark-surface border border-dark-border rounded-md shadow-xl py-2">
-                                <template x-for="svc in enabledServices" :key="svc.name">
-                                    <a :href="'/services/' + svc.name" class="block px-3 py-2 text-sm text-dark-text hover:bg-dark-bg">
-                                        <span x-text="iconFor(svc.name)"></span>
-                                        <span class="ml-1" x-text="labelFor(svc.name)"></span>
-                                    </a>
-                                </template>
-                                <div x-show="enabledServices.length === 0" class="px-3 py-2 text-sm text-dark-muted">No services enabled</div>
+                        <!-- Services Dropdown -->
+                        <div x-show="open" 
+                             x-transition:enter="transition ease-out duration-100"
+                             x-transition:enter-start="transform opacity-0 scale-95"
+                             x-transition:enter-end="transform opacity-100 scale-100"
+                             class="absolute left-0 top-full mt-0 w-56 bg-dark-surface border border-dark-border rounded-md shadow-xl py-1 z-50">
+                            <template x-for="svc in enabledServices" :key="svc.name">
+                                <a :href="'/services/' + svc.name" 
+                                   class="block px-4 py-2 text-sm text-dark-text hover:bg-dark-bg transition-colors">
+                                    <span x-text="iconFor(svc.name)"></span>
+                                    <span class="ml-2" x-text="labelFor(svc.name)"></span>
+                                </a>
+                            </template>
+                            <div x-show="enabledServices.length === 0" class="px-4 py-2 text-sm text-dark-muted italic">
+                                No services enabled
                             </div>
                         </div>
-                        <a href="/settings"
-                            :class="currentPath.startsWith('/settings') ? 'border-blue-500 text-dark-text' : 'border-transparent text-dark-muted hover:border-blue-500 hover:text-dark-text dark:text-dark-muted dark:hover:text-dark-text'"
-                            class="inline-flex items-center px-3 py-6 border-b-2 text-sm font-medium min-w-[100px] transition-all duration-200">
-                            <span class="mr-1">⚙️</span>
-                            <span data-i18n-key="nav.settings">Settings</span>
-                        </a>
-                        <a href="/logs"
-                            :class="currentPath.startsWith('/logs') ? 'border-blue-500 text-dark-text' : 'border-transparent text-dark-muted hover:border-blue-500 hover:text-dark-text dark:text-dark-muted dark:hover:text-dark-text'"
-                            class="inline-flex items-center px-3 py-6 border-b-2 text-sm font-medium min-w-[100px] transition-all duration-200">
-                            <span class="mr-1">📜</span>
-                            <span data-i18n-key="nav.logs">Logs</span>
-                        </a>
                     </div>
+
+                    <a href="/settings"
+                        :class="currentPath.startsWith('/settings') ? 'border-blue-500 text-dark-text' : 'border-transparent text-dark-muted hover:border-blue-400 hover:text-dark-text'"
+                        class="inline-flex items-center px-4 border-b-2 text-sm font-medium transition-all duration-150">
+                        <span class="mr-2">⚙️</span>
+                        <span data-i18n-key="nav.settings">Settings</span>
+                    </a>
+
+                    <a href="/logs"
+                        :class="currentPath.startsWith('/logs') ? 'border-blue-500 text-dark-text' : 'border-transparent text-dark-muted hover:border-blue-400 hover:text-dark-text'"
+                        class="inline-flex items-center px-4 border-b-2 text-sm font-medium transition-all duration-150">
+                        <span class="mr-2">📜</span>
+                        <span data-i18n-key="nav.logs">Logs</span>
+                    </a>
                 </div>
-                <!-- Right side: Language selector (desktop) -->
-                <div class="hidden sm:flex items-center gap-3 justify-end">
+
+                <!-- Language Selector (Desktop) -->
+                <div class="hidden md:flex items-center ml-auto">
                     <div x-data="{ lang: 'en', updateLanguage() { window.i18n.setLang(this.lang); }, init() { this.lang = window.i18n.lang; document.addEventListener('i18n:changed', (e) => { this.lang = e.detail.lang; }); } }" x-init="init()">
-                        <label class="sr-only" for="global-language">Language</label>
-                        <select id="global-language" x-model="lang" @change="updateLanguage()"
-                                class="px-2 py-2 border border-dark-border rounded-md bg-dark-bg text-dark-text focus:outline-none focus:ring-1 focus:ring-blue-500 text-sm">
-                            <option value="en">English</option>
-                            <option value="es">Español</option>
-                            
+                        <label class="sr-only" for="language-selector">Language</label>
+                        <select id="language-selector" 
+                                x-model="lang" 
+                                @change="updateLanguage()"
+                                class="px-3 py-1.5 border border-dark-border rounded-md bg-dark-bg text-dark-text text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-shadow">
+                            <option value="en">🇬🇧 English</option>
+                            <option value="es">🇪🇸 Español</option>
                         </select>
                     </div>
                 </div>
-                <!-- Mobile menu button -->
-                <div class="flex items-center sm:hidden">
-                    <button @click="mobileMenuOpen = !mobileMenuOpen" type="button" 
-                        aria-label="Toggle mobile menu"
-                        class="inline-flex items-center justify-center p-2 rounded-md text-dark-muted hover:text-dark-text hover:bg-dark-bg focus:outline-none">
+
+                <!-- Mobile Menu Button -->
+                <div class="flex items-center md:hidden ml-auto">
+                    <button @click="mobileMenuOpen = !mobileMenuOpen" 
+                            type="button" 
+                            aria-label="Toggle menu"
+                            class="p-2 rounded-md text-dark-muted hover:text-dark-text hover:bg-dark-bg transition-colors">
                         <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+                            <path x-show="!mobileMenuOpen" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+                            <path x-show="mobileMenuOpen" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
                         </svg>
                     </button>
                 </div>
             </div>
         </div>
-        
-        <!-- Mobile menu -->
-        <div x-show="mobileMenuOpen" x-transition class="sm:hidden border-t border-dark-border">
-            <div class="pt-2 pb-3 space-y-1">
-                <a href="/" :class="currentPath==='/' ? 'border-blue-500 text-dark-text' : 'border-transparent text-dark-muted hover:bg-dark-bg hover:text-dark-text'" class="block pl-3 pr-4 py-2 border-l-4">
-                    <span class="mr-1">📊</span>
+
+        <!-- Mobile Menu -->
+        <div x-show="mobileMenuOpen" 
+             x-transition:enter="transition ease-out duration-200"
+             x-transition:enter-start="opacity-0 -translate-y-1"
+             x-transition:enter-end="opacity-100 translate-y-0"
+             x-transition:leave="transition ease-in duration-150"
+             x-transition:leave-start="opacity-100 translate-y-0"
+             x-transition:leave-end="opacity-0 -translate-y-1"
+             class="md:hidden border-t border-dark-border bg-dark-surface">
+            <div class="px-2 pt-2 pb-3 space-y-1">
+                <a href="/" 
+                   @click="mobileMenuOpen = false"
+                   :class="currentPath === '/' ? 'bg-dark-bg border-blue-500 text-dark-text' : 'border-transparent text-dark-muted hover:bg-dark-bg hover:text-dark-text'"
+                   class="flex items-center px-3 py-2 rounded-md text-sm font-medium border-l-4 transition-colors">
+                    <span class="mr-2">📊</span>
                     <span data-i18n-key="nav.dashboard">Dashboard</span>
                 </a>
-                <a href="/services" :class="currentPath.startsWith('/services') ? 'border-blue-500 text-dark-text' : 'border-transparent text-dark-muted hover:bg-dark-bg hover:text-dark-text'" class="block pl-3 pr-4 py-2 border-l-4">
-                    <span class="mr-1">🎬</span>
+
+                <a href="/services" 
+                   @click="mobileMenuOpen = false"
+                   :class="currentPath.startsWith('/services') ? 'bg-dark-bg border-blue-500 text-dark-text' : 'border-transparent text-dark-muted hover:bg-dark-bg hover:text-dark-text'"
+                   class="flex items-center px-3 py-2 rounded-md text-sm font-medium border-l-4 transition-colors">
+                    <span class="mr-2">🎬</span>
                     <span data-i18n-key="nav.services">Services</span>
                 </a>
-                <a href="/settings" :class="currentPath.startsWith('/settings') ? 'border-blue-500 text-dark-text' : 'border-transparent text-dark-muted hover:bg-dark-bg hover:text-dark-text'" class="block pl-3 pr-4 py-2 border-l-4">
-                    <span class="mr-1">⚙️</span>
+
+                <a href="/settings" 
+                   @click="mobileMenuOpen = false"
+                   :class="currentPath.startsWith('/settings') ? 'bg-dark-bg border-blue-500 text-dark-text' : 'border-transparent text-dark-muted hover:bg-dark-bg hover:text-dark-text'"
+                   class="flex items-center px-3 py-2 rounded-md text-sm font-medium border-l-4 transition-colors">
+                    <span class="mr-2">⚙️</span>
                     <span data-i18n-key="nav.settings">Settings</span>
                 </a>
-                <a href="/logs" :class="currentPath.startsWith('/logs') ? 'border-blue-500 text-dark-text' : 'border-transparent text-dark-muted hover:bg-dark-bg hover:text-dark-text'" class="block pl-3 pr-4 py-2 border-l-4">
-                    <span class="mr-1">📜</span>
+
+                <a href="/logs" 
+                   @click="mobileMenuOpen = false"
+                   :class="currentPath.startsWith('/logs') ? 'bg-dark-bg border-blue-500 text-dark-text' : 'border-transparent text-dark-muted hover:bg-dark-bg hover:text-dark-text'"
+                   class="flex items-center px-3 py-2 rounded-md text-sm font-medium border-l-4 transition-colors">
+                    <span class="mr-2">📜</span>
                     <span data-i18n-key="nav.logs">Logs</span>
                 </a>
-                <!-- Mobile: Language selector -->
-                <div class="px-3 pt-2">
-                    <div x-data="{ lang: 'en', updateLanguage() { window.i18n.setLang(this.lang); }, init() { this.lang = window.i18n.lang; document.addEventListener('i18n:changed', (e) => { this.lang = e.detail.lang; }); } }" x-init="init()">
-                        <label class="sr-only" for="global-language-mobile">Language</label>
-                        <select id="global-language-mobile" x-model="lang" @change="updateLanguage()"
-                                class="w-full px-3 py-2 border border-dark-border rounded-md bg-dark-bg text-dark-text focus:outline-none focus:ring-1 focus:ring-blue-500 text-sm">
-                            <option value="en">English</option>
-                            <option value="es">Español</option>
-                            
-                        </select>
-                    </div>
+            </div>
+
+            <!-- Mobile Language Selector -->
+            <div class="border-t border-dark-border px-4 py-3">
+                <div x-data="{ lang: 'en', updateLanguage() { window.i18n.setLang(this.lang); }, init() { this.lang = window.i18n.lang; document.addEventListener('i18n:changed', (e) => { this.lang = e.detail.lang; }); } }" x-init="init()">
+                    <label class="block text-xs font-medium text-dark-muted mb-1.5" for="language-selector-mobile">
+                        Language / Idioma
+                    </label>
+                    <select id="language-selector-mobile" 
+                            x-model="lang" 
+                            @change="updateLanguage()"
+                            class="w-full px-3 py-2 border border-dark-border rounded-md bg-dark-bg text-dark-text text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <option value="en">🇬🇧 English</option>
+                        <option value="es">🇪🇸 Español</option>
+                    </select>
                 </div>
             </div>
         </div>
