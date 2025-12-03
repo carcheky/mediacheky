@@ -1,7 +1,7 @@
 <div x-data="settings()" x-init="init()" class="space-y-6">
     <!-- Header -->
     <div class="flex justify-between items-center">
-        <h1 class="text-2xl font-semibold text-dark-text dark:text-dark-text"><span data-i18n-key="settings.title">Settings</span></h1>
+        <h1 class="text-2xl font-semibold text-dark-text dark:text-dark-text"><span data-i18n-key="settings.title">Configuración</span></h1>
         <div class="flex items-center gap-2">
             <button @click="saveAll()" :disabled="saving"
                 class="px-3 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1">
@@ -16,7 +16,7 @@
                         d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
                     </path>
                 </svg>
-                <span class="text-sm" x-text="saving ? 'Saving...' : 'Save'"></span>
+                <span class="text-sm" x-text="saving ? 'Guardando...' : 'Guardar'"></span>
             </button>
         </div>
     </div>
@@ -30,11 +30,11 @@
     <div class="space-y-6">
         <!-- User & Group Configuration -->
         <div class="bg-dark-surface dark:bg-dark-surface rounded-lg border border-dark-border p-4">
-            <h2 class="text-lg font-semibold text-dark-text mb-3">Global Variables</h2>
+            <h2 class="text-lg font-semibold text-dark-text mb-3">Variables Globales</h2>
             <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
                 <div>
                     <label class="block text-sm font-medium text-dark-text mb-1">
-                        PUID (User ID)
+                        PUID (ID de Usuario)
                     </label>
                     <input type="number" x-model.number="config.global.puid" placeholder="1000"
                         class="w-full px-3 py-2 border border-dark-border rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 bg-dark-bg text-dark-text">
@@ -42,14 +42,14 @@
                 
                 <div>
                     <label class="block text-sm font-medium text-dark-text mb-1">
-                        PGID (Group ID)
+                        PGID (ID de Grupo)
                     </label>
                     <input type="number" x-model.number="config.global.pgid" placeholder="1000"
                         class="w-full px-3 py-2 border border-dark-border rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 bg-dark-bg text-dark-text">
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-dark-text mb-1">
-                        Timezone (TZ)
+                        Zona Horaria (TZ)
                     </label>
                     <input type="text" x-model="config.global.timezone" placeholder="Europe/Madrid"
                         class="w-full px-3 py-2 border border-dark-border rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 bg-dark-bg text-dark-text">
@@ -65,7 +65,7 @@
         <div class="bg-dark-surface dark:bg-dark-surface rounded-lg border border-dark-border p-4">
             <div class="flex justify-between items-start mb-4">
                 <div>
-                    <h2 class="text-lg font-semibold text-dark-text">Proxy & Domains</h2>
+                    <h2 class="text-lg font-semibold text-dark-text">Proxy y Dominios</h2>
                 </div>
                 <button @click="proxyEnabled = !proxyEnabled; updateProxyConfig()" 
                     :class="proxyEnabled ? 'bg-green-600 hover:bg-green-700' : 'bg-gray-600 hover:bg-gray-700'"
@@ -73,17 +73,17 @@
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
                     </svg>
-                    <span x-text="proxyEnabled ? 'Enabled' : 'Disabled'"></span>
+                    <span x-text="proxyEnabled ? 'Activado' : 'Desactivado'"></span>
                 </button>
             </div>
 
             <!-- Domain List -->
             <div class="space-y-2 mb-3">
                 <label class="block text-sm font-medium text-dark-text mb-2">
-                    Configured Domains
+                    Dominios Configurados
                 </label>
                 <div x-show="domains.length === 0" class="text-sm text-dark-muted italic">
-                    No domains configured. Add a domain to enable proxy routing.
+                    No hay dominios configurados. Agrega un dominio para habilitar el enrutamiento por proxy.
                 </div>
                 <template x-for="domain in domains" :key="domain.id">
                     <div class="flex items-center justify-between p-2 bg-dark-bg rounded-md border border-dark-border">
@@ -91,7 +91,7 @@
                             <span class="text-dark-text font-medium" x-text="domain.name"></span>
                             <span x-show="domain.is_primary" 
                                 class="px-2 py-0.5 bg-blue-600/20 text-blue-400 text-xs rounded">
-                                Primary
+                                Principal
                             </span>
                         </div>
                         <button @click="deleteDomain(domain.name)" 
@@ -107,23 +107,23 @@
             <!-- Add Domain Form -->
             <div class="space-y-2">
                 <label class="block text-sm font-medium text-dark-text">
-                    Add Domain
+                    Agregar Dominio
                 </label>
                 <div class="flex gap-2">
-                    <input type="text" x-model="newDomain" placeholder="mediacheky or media.local"
+                    <input type="text" x-model="newDomain" placeholder="mediacheky o media.local"
                         @keyup.enter="addDomain()"
                         class="flex-1 px-3 py-2 border border-dark-border rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 bg-dark-bg text-dark-text">
                     <label class="flex items-center gap-2 px-3 py-2 bg-dark-bg border border-dark-border rounded-md">
                         <input type="checkbox" x-model="newDomainPrimary"
                             class="w-4 h-4 text-blue-600 bg-dark-bg border-dark-border rounded focus:ring-blue-500">
-                        <span class="text-sm text-dark-text">Primary</span>
+                        <span class="text-sm text-dark-text">Principal</span>
                     </label>
                     <button @click="addDomain()" :disabled="!newDomain"
                         class="px-3 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed">
-                        Add
+                        Agregar
                     </button>
                 </div>
-                <p class="text-xs text-dark-muted">Examples: <code class="text-blue-400">mediacheky</code>, <code class="text-blue-400">media.local</code></p>
+                <p class="text-xs text-dark-muted">Ejemplos: <code class="text-blue-400">mediacheky</code>, <code class="text-blue-400">media.local</code></p>
             </div>
 
             <!-- Proxy Info -->
@@ -133,9 +133,9 @@
                         <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd" />
                     </svg>
                     <div class="flex-1">
-                        <h3 class="font-semibold text-blue-300 mb-1">Proxy enabled</h3>
+                        <h3 class="font-semibold text-blue-300 mb-1">Proxy activado</h3>
                         <p class="text-sm text-blue-200">
-                            Services can now be accessed via subdomains. Configure individual service subdomains in their respective service configuration pages.
+                            Los servicios ahora se pueden acceder mediante subdominios. Configura los subdominios de cada servicio en sus respectivas páginas de configuración.
                         </p>
                     </div>
                 </div>
@@ -151,9 +151,9 @@
                         clip-rule="evenodd" />
                 </svg>
                 <div>
-                    <h3 class="font-semibold text-yellow-300 mb-1">Affected services</h3>
+                    <h3 class="font-semibold text-yellow-300 mb-1">Servicios afectados</h3>
                     <p class="text-sm text-yellow-200 mb-3">
-                        Changing global variables will affect:
+                        Cambiar las variables globales afectará a:
                     </p>
                     <div class="flex flex-wrap gap-2">
                         <template x-for="service in affectedServices" :key="service">
@@ -161,7 +161,7 @@
                         </template>
                     </div>
                     <p class="text-xs text-yellow-200 mt-2">
-                        Note: Restart running services for changes to take effect.
+                        Nota: Reinicia los servicios en ejecución para que los cambios surtan efecto.
                     </p>
                 </div>
             </div>
@@ -262,7 +262,7 @@
                 if (typeof value === 'boolean') {
                     // Return HTML for boolean values (styled badges)
                     return value ? 
-                        '<span class="px-2 py-1 bg-green-900/30 border border-green-600/50 text-green-300 rounded text-xs">Yes</span>' :
+                        '<span class="px-2 py-1 bg-green-900/30 border border-green-600/50 text-green-300 rounded text-xs">Sí</span>' :
                         '<span class="px-2 py-1 bg-gray-900/30 border border-gray-600/50 text-gray-300 rounded text-xs">No</span>';
                 }
                 // Return escaped plain text for all other values
@@ -554,14 +554,14 @@
                     if (response.ok) {
                         this.connectionResults[service] = {
                             success: true,
-                            message: data.message || 'Connection successful',
+                            message: data.message || 'Conexión exitosa',
                             system_info: data.system_info || null,
                             preferences: data.preferences || null
                         };
                     } else {
                         this.connectionResults[service] = {
                             success: false,
-                            message: `✗ Connection failed: ${data.error || 'Unknown error'}`
+                            message: `✗ Falló la conexión: ${data.error || 'Error desconocido'}`
                         };
                     }
                 } catch (error) {
@@ -578,11 +578,11 @@
                 this.saving = true;
                 this.message = '';
 
-                this.startProgress('Saving all configuration', [
-                    'Processing services',
-                    'Saving settings',
-                    'Finalizing changes'
-                ], 'Saving all configuration changes...');
+                this.startProgress('Guardando toda la configuración', [
+                    'Procesando servicios',
+                    'Guardando configuración',
+                    'Finalizando cambios'
+                ], 'Guardando todos los cambios de configuración...');
 
                 try {
                     // First, handle service enable/disable
@@ -616,11 +616,11 @@
 
                     if (response.ok) {
                         this.updateProgress(2);
-                        this.showMessage('Configuration saved successfully!', 'success');
+                        this.showMessage('¡Configuración guardada exitosamente!', 'success');
                         this.endProgress();
                     } else {
                         const data = await response.json();
-                        this.showMessage(data.error || 'Failed to save configuration', 'error');
+                        this.showMessage(data.error || 'Error al guardar la configuración', 'error');
                         this.endProgress();
                     }
                 } catch (error) {
@@ -665,18 +665,18 @@
                 if (serviceConfig.enabled) {
                     // Enable service - apply configuration and start
                     try {
-                        this.startProgress(`Enabling ${serviceId}`, [
-                            'Loading configuration',
-                            'Saving configuration',
-                            'Starting container',
-                            'Reloading data'
-                        ], 'Service startup in progress...');
+                        this.startProgress(`Activando ${serviceId}`, [
+                            'Cargando configuración',
+                            'Guardando configuración',
+                            'Iniciando contenedor',
+                            'Recargando datos'
+                        ], 'Inicio de servicio en progreso...');
 
                         // STEP 1: Load FULL service configuration from backend (Image, Paths, etc.)
                         const loadResponse = await fetch(`/api/services/${serviceId}`);
                         if (!loadResponse.ok) {
                             const data = await loadResponse.json();
-                            this.showMessage(data.error || 'Failed to load service configuration', 'error');
+                            this.showMessage(data.error || 'Error al cargar la configuración del servicio', 'error');
                             serviceConfig.enabled = false; // Revert toggle
                             this.endProgress();
                             return;
@@ -699,7 +699,7 @@
 
                         if (!saveResponse.ok) {
                             const data = await saveResponse.json();
-                            this.showMessage(data.error || 'Failed to save configuration', 'error');
+                            this.showMessage(data.error || 'Error al guardar la configuración', 'error');
                             serviceConfig.enabled = false; // Revert toggle
                             this.endProgress();
                             return;
@@ -713,7 +713,7 @@
                         });
                         
                         if (response.ok) {
-                            this.showMessage(`${serviceId} enabled and started successfully`, 'success');
+                            this.showMessage(`${serviceId} activado e iniciado exitosamente`, 'success');
                             
                             this.updateProgress(3); // Step 4: Reloading data
                             
@@ -723,7 +723,7 @@
                             this.endProgress();
                         } else {
                             const data = await response.json();
-                            this.showMessage(data.error || `Failed to enable ${serviceId}`, 'error');
+                            this.showMessage(data.error || `Error al activar ${serviceId}`, 'error');
                             serviceConfig.enabled = false; // Revert toggle
                             this.endProgress();
                         }
@@ -734,16 +734,16 @@
                     }
                 } else {
                     // Disable service (will stop and remove container)
-                    if (!confirm(`Disabling ${serviceId} will stop and remove the container. Continue?`)) {
+                    if (!confirm(`Desactivar ${serviceId} detendrá y eliminará el contenedor. ¿Continuar?`)) {
                         serviceConfig.enabled = true; // Revert toggle
                         return;
                     }
                     
                     try {
-                        this.startProgress(`Disabling ${serviceId}`, [
-                            'Stopping container',
-                            'Complete'
-                        ], 'Service shutdown in progress...');
+                        this.startProgress(`Desactivando ${serviceId}`, [
+                            'Deteniendo contenedor',
+                            'Completado'
+                        ], 'Apagado de servicio en progreso...');
 
                         const response = await fetch(`/api/services/${serviceId}/disable`, {
                             method: 'POST'
@@ -751,11 +751,11 @@
                         
                         if (response.ok) {
                             this.updateProgress(1); // Update to step 2: Complete
-                            this.showMessage(`${serviceId} disabled successfully`, 'success');
+                            this.showMessage(`${serviceId} desactivado exitosamente`, 'success');
                             this.endProgress();
                         } else {
                             const data = await response.json();
-                            this.showMessage(data.error || `Failed to disable ${serviceId}`, 'error');
+                            this.showMessage(data.error || `Error al desactivar ${serviceId}`, 'error');
                             serviceConfig.enabled = true; // Revert toggle
                             this.endProgress();
                         }
@@ -825,10 +825,10 @@
                     });
 
                     if (response.ok) {
-                        this.showMessage(`Proxy ${this.proxyEnabled ? 'enabled' : 'disabled'} successfully`, 'success');
+                        this.showMessage(`Proxy ${this.proxyEnabled ? 'activado' : 'desactivado'} exitosamente`, 'success');
                     } else {
                         const data = await response.json();
-                        this.showMessage(data.error || 'Failed to update proxy config', 'error');
+                        this.showMessage(data.error || 'Error al actualizar la configuración del proxy', 'error');
                     }
                 } catch (error) {
                     this.showMessage('Error: ' + error.message, 'error');
@@ -861,13 +861,13 @@
                     });
 
                     if (response.ok) {
-                        this.showMessage('Domain added successfully', 'success');
+                        this.showMessage('Dominio agregado exitosamente', 'success');
                         this.newDomain = '';
                         this.newDomainPrimary = false;
                         await this.loadDomains();
                     } else {
                         const data = await response.json();
-                        this.showMessage(data.error || 'Failed to add domain', 'error');
+                        this.showMessage(data.error || 'Error al agregar dominio', 'error');
                     }
                 } catch (error) {
                     this.showMessage('Error: ' + error.message, 'error');
@@ -875,7 +875,7 @@
             },
 
             async deleteDomain(domainName) {
-                if (!confirm(`Are you sure you want to delete domain "${domainName}"?`)) {
+                if (!confirm(`¿Estás seguro de que quieres eliminar el dominio "${domainName}"?`)) {
                     return;
                 }
 
@@ -885,11 +885,11 @@
                     });
 
                     if (response.ok) {
-                        this.showMessage('Domain deleted successfully', 'success');
+                        this.showMessage('Dominio eliminado exitosamente', 'success');
                         await this.loadDomains();
                     } else {
                         const data = await response.json();
-                        this.showMessage(data.error || 'Failed to delete domain', 'error');
+                        this.showMessage(data.error || 'Error al eliminar dominio', 'error');
                     }
                 } catch (error) {
                     this.showMessage('Error: ' + error.message, 'error');
