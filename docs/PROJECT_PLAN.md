@@ -97,12 +97,12 @@ MediaCheky centraliza todo en una interfaz web donde puedes:
 ┌────────────────────────────────────────────────┐
 │  MediaCheky                    [User] [Logout] │
 ├────────────────────────────────────────────────┤
-│  [Dashboard] [Settings] [Services] [Global]    │
+│  [Dashboard] [Settings] [Services] [Logs]       │
 ├────────────────────────────────────────────────┤
 │                                                 │
 │  [Contenido de la pestaña activa]             │
 │                                                 │
-└────────────────────────────────────────────────┘
+└─────────────────────────────────────────────────┘
 ```
 
 ### 1. 📊 Dashboard (Vista Principal)
@@ -138,31 +138,40 @@ MediaCheky centraliza todo en una interfaz web donde puedes:
 
 ### 2. ⚙️ Settings (Configuración Global)
 
-**Objetivo**: Habilitar/deshabilitar servicios y configuración general
+**Objetivo**: Configuración de variables globales compartidas
 
 **Contenido**:
 ```
 ┌─────────────────────────────────────────────┐
-│  Enable/Disable Services                    │
+│  Global Configuration                       │
 │                                             │
-│  [x] Jellyfin     [Start] [Stop] [Config]  │
-│  [x] Radarr       [Start] [Stop] [Config]  │
-│  [x] Sonarr       [Start] [Stop] [Config]  │
-│  [ ] Prowlarr     [Enable]                  │
-│  [ ] Bazarr       [Enable]                  │
-│  [x] qBittorrent  [Start] [Stop] [Config]  │
-│  [x] Jellyseerr   [Start] [Stop] [Config]  │
-│  [x] Jellystat    [Start] [Stop] [Config]  │
+│  User/Group:                                │
+│  PUID:    [1000]                            │
+│  PGID:    [1000]                            │
 │                                             │
-│  [+ Add Custom Service]                     │
+│  System:                                    │
+│  Timezone: [Europe/Madrid ▼]                │
+│  Language: [es-ES ▼]                        │
+│                                             │
+│  Base Paths:                                │
+│  Media:     [/media]                        │
+│  Downloads: [/downloads]                    │
+│  Config:    [/config]                       │
+│                                             │
+│  Network:                                   │
+│  Network name: [mediacheky-net]             │
+│                                             │
+│  [Save Global Settings]                     │
 └─────────────────────────────────────────────┘
 ```
 
 **Funcionalidades**:
-- Toggle enable/disable
-- Quick start/stop
-- Link a configuración específica
-- Badge de estado (running/stopped/error)
+- Configuración de variables globales (PUID, PGID, TZ)
+- Paths compartidos entre servicios
+- Configuración de red
+- Validación de rutas y permisos
+
+NOTA: La gestión de servicios (enable/disable, start/stop) se encuentra en la página `/services`
 
 ### 3. 🔧 Services (Configuración Individual)
 
@@ -211,40 +220,36 @@ MediaCheky centraliza todo en una interfaz web donde puedes:
 | Bazarr | Port, subtitle providers |
 | Jellystat | Port, database config |
 
-### 4. 🌐 Global Variables
+### 4. 🔧 Services (Gestión de Servicios)
 
-**Objetivo**: Variables compartidas entre todos los servicios
+**Objetivo**: Habilitar/deshabilitar servicios y acceso rápido a configuración
 
 **Contenido**:
 ```
 ┌─────────────────────────────────────────────┐
-│  Global Configuration                       │
+│  Services Management                        │
 │                                             │
-│  User/Group:                                │
-│  PUID:    [1000]                            │
-│  PGID:    [1000]                            │
+│  Media Servers:                             │
+│  [Jellyfin]  ✅ Active  [Disable] [Config] │
 │                                             │
-│  System:                                    │
-│  Timezone: [Europe/Madrid ▼]                │
-│  Language: [es-ES ▼]                        │
+│  *arr Services:                             │
+│  [Radarr]    ✅ Active  [Disable] [Config] │
+│  [Sonarr]    ✅ Active  [Disable] [Config] │
+│  [Prowlarr]  ⚫ Inactive [Enable]          │
+│  [Bazarr]    ⚫ Inactive [Enable]          │
 │                                             │
-│  Base Paths:                                │
-│  Media:     [/media]                        │
-│  Downloads: [/downloads]                    │
-│  Config:    [/config]                       │
-│                                             │
-│  Network:                                   │
-│  Network name: [mediacheky-net]             │
-│  Subnet:       [172.20.0.0/16]              │
-│                                             │
-│  [Save Global Settings]                     │
+│  Other Services:                            │
+│  [qBittorrent] ✅ Active [Disable] [Config]│
+│  [Jellyseerr]  ✅ Active [Disable] [Config]│
+│  [Jellystat]   ✅ Active [Disable] [Config]│
 └─────────────────────────────────────────────┘
 ```
 
 **Funcionalidades**:
-- Valores heredados por todos los servicios
-- Override individual si es necesario
-- Validación de rutas y permisos
+- Toggle enable/disable por servicio
+- Estado visual (Active/Inactive)
+- Botón Configure solo visible cuando está habilitado
+- Categorización por tipo de servicio
 
 ---
 
