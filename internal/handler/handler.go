@@ -63,7 +63,7 @@ func NewHandlers(db *gorm.DB, repos *repository.Repositories, logger *logger.Log
 
 	return &Handlers{
 		Health:         NewHealthHandler(db, logger),
-		Dashboard:      NewDashboardHandler(repos, logger, cfg, syncSvc, dockerClient),
+		Dashboard:      NewDashboardHandler(repos, logger, cfg, dockerClient),
 		Settings:       NewSettingsHandler(repos, logger, cfg, syncSvc),
 		Logs:           NewLogsHandler(repos, logger),
 		Service:        NewServiceHandler(repos, logger, dockerClient, serviceManager, proxyService),
