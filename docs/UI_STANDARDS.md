@@ -98,29 +98,23 @@ showToast(message, type = 'success') {
 
 ### Navigation
 
-All pages must include in Settings:
-- **Services Tab**: Enable/disable services with Configure button
-- **Global Variables Tab**: PUID, PGID, TZ, paths, network config
+- Services management resides exclusively in `/services` (overview, enable/disable, Configure links).
+- Settings includes only the **Global Variables** tab: PUID, PGID, TZ, paths, network config.
 
 **DO NOT create separate `/global` route** - Global Variables is a tab within Settings.
 
-### Tabs Structure
+### Tabs Structure (Settings)
+
+Settings should only have the Global Variables tab:
 
 ```html
-<!-- Main Tabs -->
 <div class="border-b border-dark-border">
     <nav class="-mb-px flex space-x-8">
-        <button @click="activeTab = 'services'"
-            :class="activeTab === 'services' ? 'border-blue-500 text-blue-400' : 'border-transparent text-dark-muted hover:text-dark-text hover:border-slate-600'"
-            class="whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors">
-            Services
-        </button>
-        <button @click="activeTab = 'global'"
-            :class="activeTab === 'global' ? 'border-blue-500 text-blue-400' : 'border-transparent text-dark-muted hover:text-dark-text hover:border-slate-600'"
-            class="whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors">
+        <button @click="activeTab = 'global'" class="whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors">
             Global Variables
         </button>
     </nav>
+    <!-- Services management moved to /services -->
 </div>
 ```
 
@@ -128,7 +122,7 @@ All pages must include in Settings:
 
 ### Configure Button
 
-Only show when service is enabled:
+Only show when service is enabled (on `/services` page):
 
 ```html
 <a x-show="config.services[service.id]?.enabled" 
@@ -140,7 +134,8 @@ Only show when service is enabled:
 
 ### URL Pattern
 
-Service configuration pages use: `/services/:name`
+- Services overview and toggles: `/services`
+- Service configuration pages: `/services/:name`
 
 **NOT**: `/services/:name/config` ❌
 
@@ -214,17 +209,11 @@ Move to `/docs` instead.
 **settings.html:**
 ```html
 <div x-data="settings()">
-    <!-- Tab Navigation -->
+    <!-- Tab Navigation (Global only) -->
     <div class="border-b border-dark-border">
         <nav class="-mb-px flex space-x-8">
-            <button @click="activeTab = 'services'">Services</button>
             <button @click="activeTab = 'global'">Global Variables</button>
         </nav>
-    </div>
-    
-    <!-- Services Tab -->
-    <div x-show="activeTab === 'services'">
-        <!-- Enable/disable with Configure button -->
     </div>
     
     <!-- Global Tab -->
@@ -263,7 +252,7 @@ Move to `/docs` instead.
 - [ ] Correct database path (`mediacheky.db`)
 - [ ] Correct environment variable prefix (`MEDIACHEKY_`)
 - [ ] Service URLs without `/config` suffix
-- [ ] Global Variables in Settings tab (not separate page)
+- [ ] Global Variables in Settings tab (only tab in Settings)
 - [ ] Documentation in `/docs` folder
 
 ## Related Documents

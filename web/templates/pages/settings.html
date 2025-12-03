@@ -21,57 +21,16 @@
         </div>
     </div>
 
-    <!-- Main Tabs: Services + Global Variables -->
-    <div class="border-b border-dark-border">
-        <nav class="-mb-px flex items-center space-x-8">
-            <button @click="activeTab = 'services'"
-                :class="activeTab === 'services' ? 'border-blue-500 text-blue-400' : 'border-transparent text-dark-muted hover:text-dark-text hover:border-slate-600'"
-                class="inline-flex items-center whitespace-nowrap py-3 sm:py-4 px-2 sm:px-3 border-b-2 font-medium text-sm transition-colors">
-                Services
-            </button>
-            <button @click="activeTab = 'global'"
-                :class="activeTab === 'global' ? 'border-blue-500 text-blue-400' : 'border-transparent text-dark-muted hover:text-dark-text hover:border-slate-600'"
-                class="inline-flex items-center whitespace-nowrap py-3 sm:py-4 px-2 sm:px-3 border-b-2 font-medium text-sm transition-colors">
-                Global Variables
-            </button>
-        </nav>
-    </div>
+    <!-- Global Variables section (no tabs) -->
+    <div class="border-b border-dark-border"></div>
 
-    <!-- Services Tab -->
-    <div x-show="activeTab === 'services'" class="space-y-6">
-        <div class="bg-dark-surface rounded-lg border border-dark-border p-4">
-            <h2 class="text-lg font-semibold text-dark-text mb-3">Enable/Disable Services</h2>
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-                <template x-for="svc in services" :key="svc.id">
-                    <div :id="'service-' + svc.id" class="p-3 bg-dark-bg border border-dark-border rounded-md flex flex-col gap-2">
-                        <div class="flex items-center justify-between">
-                            <div class="flex items-center gap-2">
-                                <span class="text-xl" x-text="svc.icon"></span>
-                                <span class="font-medium text-dark-text" x-text="svc.label"></span>
-                            </div>
-                            <span class="text-xs px-2 py-0.5 rounded"
-                                  :class="serviceStatuses[svc.id]?.status==='running' ? 'bg-green-800/40 text-green-300 border border-green-600/40' : 'bg-gray-800/40 text-gray-300 border border-gray-600/40'"
-                                  x-text="serviceStatuses[svc.id]?.status || 'stopped'"></span>
-                        </div>
-                        <div class="flex items-center justify-between">
-                            <label class="flex items-center gap-2">
-                                <input type="checkbox" x-model="config.services[svc.id].enabled" @change="toggleService(svc.id)" class="w-4 h-4 text-blue-600 bg-dark-bg border-dark-border rounded focus:ring-blue-500">
-                                <span class="text-sm text-dark-text" x-text="config.services[svc.id].enabled ? 'Enabled' : 'Disabled'"></span>
-                            </label>
-                            <a x-show="config.services[svc.id]?.enabled" :href="'/services/' + svc.id" class="px-3 py-1 bg-blue-600 text-white rounded-md hover:bg-blue-700 text-sm">Configure</a>
-                        </div>
-                        <p class="text-xs text-dark-muted" x-text="svc.description"></p>
-                    </div>
-                </template>
-            </div>
-        </div>
-    </div>
+    <!-- Services Tab removed: Services management now lives under /services -->
 
-    <!-- Global Variables Tab Content -->
-    <div x-show="activeTab === 'global'" class="space-y-6">
+    <!-- Global Variables Content -->
+    <div class="space-y-6">
         <!-- User & Group Configuration -->
         <div class="bg-dark-surface dark:bg-dark-surface rounded-lg border border-dark-border p-4">
-            <h2 class="text-lg font-semibold text-dark-text mb-3">Basics</h2>
+            <h2 class="text-lg font-semibold text-dark-text mb-3">Global Variables</h2>
             <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
                 <div>
                     <label class="block text-sm font-medium text-dark-text mb-1">
