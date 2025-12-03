@@ -212,23 +212,13 @@ docker-run:
 # Run tests
 test:
 	@echo "🧪 Running tests..."
-	@command -v go >/dev/null 2>&1 || { \
-		echo "❌ Go is not installed"; \
-		echo "📥 Install from: https://golang.org/dl/"; \
-		exit 1; \
-	}
-	@go test -v ./...
+	@docker compose exec -T mediacheky go test -v ./...
 
 # Run tests with coverage
 test-coverage:
 	@echo "🧪 Running tests with coverage..."
-	@command -v go >/dev/null 2>&1 || { \
-		echo "❌ Go is not installed"; \
-		echo "📥 Install from: https://golang.org/dl/"; \
-		exit 1; \
-	}
-	@go test -v -coverprofile=coverage.out ./...
-	@go tool cover -html=coverage.out -o coverage.html
+	@docker compose exec -T mediacheky go test -v -coverprofile=coverage.out ./...
+	@docker compose exec -T mediacheky go tool cover -html=coverage.out -o coverage.html
 	@echo "✅ Coverage report: coverage.html"
 
 # Format code
@@ -279,41 +269,26 @@ validate-quick: lint-check vet test
 # Check code format (without modifying files)
 lint-check:
 	@echo "📝 Checking Go code format..."
-	@command -v go >/dev/null 2>&1 || { \
-		echo "❌ Go is not installed"; \
-		echo "📥 Install from: https://golang.org/dl/"; \
-		exit 1; \
-	}
-	@OUTPUT=$$(gofmt -s -l . 2>&1 | grep -v '^vendor/' | grep -v '^volumes/' | grep '.go$$' || true); \
+	@docker compose exec -T mediacheky sh -c 'OUTPUT=$$(gofmt -s -l . 2>&1 | grep -v "^vendor/" | grep -v "^volumes/" | grep ".go$$" || true); \
 	if [ -n "$$OUTPUT" ]; then \
 		echo "❌ The following files need formatting:"; \
 		echo "$$OUTPUT"; \
 		echo ""; \
-		echo "💡 Run 'make lint-fix' to fix automatically"; \
+		echo "💡 Run \"make lint-fix\" to fix automatically"; \
 		exit 1; \
-	fi
+	fi'
 	@echo "✅ All files are properly formatted"
 
 # Fix code format automatically
 lint-fix:
 	@echo "🔧 Fixing code format..."
-	@command -v go >/dev/null 2>&1 || { \
-		echo "❌ Go is not installed"; \
-		echo "📥 Install from: https://golang.org/dl/"; \
-		exit 1; \
-	}
-	@find . -name "*.go" -not -path "./volumes/*" -not -path "./vendor/*" -exec gofmt -s -w {} \;
+	@docker compose exec -T mediacheky sh -c 'find . -name "*.go" -not -path "./volumes/*" -not -path "./vendor/*" -exec gofmt -s -w {} \;'
 	@echo "✅ Format applied successfully"
 
 # Run go vet
 vet:
 	@echo "🔍 Running go vet..."
-	@command -v go >/dev/null 2>&1 || { \
-		echo "❌ Go is not installed"; \
-		echo "📥 Install from: https://golang.org/dl/"; \
-		exit 1; \
-	}
-	@go vet ./...
+	@docker compose exec -T mediacheky go vet ./...
 	@echo "✅ Go vet passed"
 
 # Check and fix common issues, then validate
@@ -327,12 +302,7 @@ check-and-fix: lint-fix mod-tidy validate-quick
 # Tidy go modules
 mod-tidy:
 	@echo "📦 Tidying go modules..."
-	@command -v go >/dev/null 2>&1 || { \
-		echo "❌ Go is not installed"; \
-		echo "📥 Install from: https://golang.org/dl/"; \
-		exit 1; \
-	}
-	@go mod tidy
+	@docker compose exec -T mediacheky go mod tidy
 	@echo "✅ Dependencies cleaned"
 
 # Install git hooks (optional)
