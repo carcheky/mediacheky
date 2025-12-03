@@ -36,15 +36,15 @@
     <!-- Top Navigation Bar -->
     <nav class="bg-dark-surface dark:bg-dark-surface shadow-lg border-b border-dark-border sticky top-0 z-50" x-data="{ mobileMenuOpen: false, currentPath: window.location.pathname }">
         <div class="max-w-7xl mx-auto px-4">
-            <div class="flex items-center justify-between h-16">
-                <div class="flex items-center gap-8 w-full">
+            <div class="flex items-center justify-between h-20 border-b border-dark-border/70 bg-gradient-to-r from-dark-surface via-dark-bg to-dark-surface shadow-lg">
+                <div class="flex items-center w-full">
                     <div class="flex-shrink-0 flex items-center">
                         <a href="/" class="flex items-center gap-2">
                             <span class="text-2xl">🦊</span>
-                            <h1 class="text-xl font-bold text-dark-text dark:text-dark-text">MediaCheky</h1>
+                            <h1 class="text-2xl font-extrabold tracking-tight text-dark-text dark:text-dark-text drop-shadow">MediaCheky</h1>
                         </a>
                     </div>
-                    <div class="hidden sm:flex sm:space-x-8 flex-1 justify-center" x-data>
+                    <div class="hidden sm:flex sm:space-x-8 ml-6" x-data>
                         <a href="/"
                             :class="currentPath==='/' ? 'border-blue-500 text-dark-text' : 'border-transparent text-dark-muted hover:border-blue-500 hover:text-dark-text dark:text-dark-muted dark:hover:text-dark-text'"
                             class="inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium transition-colors">
