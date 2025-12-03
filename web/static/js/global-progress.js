@@ -73,6 +73,12 @@
             this.queue.push(jobWithId);
             this.saveToStorage();
             this.notifyProgressListeners(); // Notify immediately on enqueue
+            
+            // Dispatch event for immediate UI update
+            window.dispatchEvent(new CustomEvent('workqueue:changed', {
+                detail: { queueLength: this.queue.length, current: this.current }
+            }));
+            
             console.log(`[WorkQueue] Enqueued job: ${jobWithId.id}`, jobWithId);
             
             // Start processing if not already running
@@ -116,14 +122,30 @@
                 console.error(`[WorkQueue] Job failed: ${job.id}`, error);
                 // Could add retry logic here
             } finally {
+                // Clear current job
                 this.current = null;
                 this.processing = false;
+                
+                // Save state (this will clear current from localStorage)
                 this.saveToStorage();
+                
+                console.log(`[WorkQueue] Job finished, queue length: ${this.queue.length}`);
+                
+                // Notify listeners (this will hide tooltip if no jobs remain)
                 this.notifyProgressListeners();
+                
+                // Dispatch event for immediate UI update
+                window.dispatchEvent(new CustomEvent('workqueue:changed', {
+                    detail: { queueLength: this.queue.length, current: null }
+                }));
                 
                 // Process next job if any
                 if (this.queue.length > 0) {
                     setTimeout(() => this.processNext(), 100);
+                } else {
+                    console.log('[WorkQueue] All jobs completed, queue empty');
+                    // Force one more notification to ensure UI updates
+                    setTimeout(() => this.notifyProgressListeners(), 50);
                 }
             }
         },
@@ -174,6 +196,11 @@
             
             this.saveToStorage();
             this.notifyProgressListeners();
+            
+            // Dispatch event for immediate UI update
+            window.dispatchEvent(new CustomEvent('workqueue:changed', {
+                detail: { queueLength: this.queue.length, current: this.current }
+            }));
         },
 
         // Get current progress for display
@@ -282,8 +309,29 @@
                 // Listen for updates (called on enqueue, step changes, completion)
                 window.WorkQueue.addProgressListener(updateProgress);
                 
+                // Listen for storage changes (from other tabs or same page)
+                window.addEventListener('storage', (e) => {
+                    if (e.key === 'mediacheky_work_queue' || e.key === 'mediacheky_current_progress') {
+                        console.log('[globalProgress] Storage changed, updating');
+                        updateProgress();
+                    }
+                });
+                
+                // Listen for custom workqueue events for immediate updates
+                window.addEventListener('workqueue:changed', () => {
+                    console.log('[globalProgress] Workqueue changed event, updating immediately');
+                    updateProgress();
+                });
+                
                 // Poll for changes every 250ms for responsiveness
-                setInterval(updateProgress, 250);
+                const pollInterval = setInterval(updateProgress, 250);
+                
+                // Cleanup on destroy
+                this.$watch('$el', (value) => {
+                    if (!value) {
+                        clearInterval(pollInterval);
+                    }
+                });
             },
 
             getJobIcon(status) {
