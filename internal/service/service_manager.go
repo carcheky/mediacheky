@@ -460,6 +460,26 @@ func (sm *ServiceManager) ResetService(ctx context.Context, serviceName string) 
 			zap.String("service", serviceName))
 	}
 
+	// Reset service configuration to defaults so it can be enabled again
+	defaultConfig := map[string]interface{}{
+		"Image":         fmt.Sprintf("linuxserver/%s:latest", serviceName),
+		"ContainerName": serviceName,
+		"Paths": map[string]string{
+			"Config": buildServiceConfigPath(serviceName),
+			"Media":  getMediaLibraryPath(),
+		},
+		"RestartPolicy": "unless-stopped",
+	}
+
+	svc.Config = defaultConfig
+	if err := sm.serviceRepo.Update(svc); err != nil {
+		sm.logger.Warn("Failed to reset service config to defaults",
+			zap.String("service", serviceName),
+			zap.Error(err))
+	} else {
+		sm.logger.Info("Service config reset to defaults", zap.String("service", serviceName))
+	}
+
 	// Disable service after prune and set status to stopped
 	if err := sm.serviceRepo.SetEnabled(svc.ID, false); err != nil {
 		sm.logger.Warn("Failed to disable service after prune",
