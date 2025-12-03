@@ -93,9 +93,7 @@ MediaCheky centraliza todo en una interfaz web donde puedes:
 
 ### Estructura de Pestañas
 
-```
 ┌────────────────────────────────────────────────┐
-│  MediaCheky                    [User] [Logout] │
 ├────────────────────────────────────────────────┤
 │  [Dashboard] [Settings] [Services] [Logs]       │
 ├────────────────────────────────────────────────┤
@@ -224,9 +222,7 @@ NOTA: La gestión de servicios (enable/disable, start/stop) se encuentra en la p
 
 **Objetivo**: Habilitar/deshabilitar servicios y acceso rápido a configuración
 
-**Contenido**:
 ```
-┌─────────────────────────────────────────────┐
 │  Services Management                        │
 │                                             │
 │  Media Servers:                             │
@@ -344,6 +340,32 @@ services:
       - {{ .Global.NetworkName }}
     restart: {{ .RestartPolicy }}
 
+  
+#### Template de Docker Compose (Ejemplo: Sonarr)
+
+```yaml
+version: '3.8'
+services:
+  sonarr:
+    image: {{ .Image }}
+    container_name: {{ .ContainerName }}
+    environment:
+      - PUID={{ .Global.PUID }}
+      - PGID={{ .Global.PGID }}
+      - TZ={{ .Global.Timezone }}
+      {{- if .Config.UMASK }}
+      - UMASK={{ .Config.UMASK }}
+      {{- end }}
+    volumes:
+      - {{ .Paths.Config }}:/config
+      - {{ .Paths.Movies }}:/movies
+      - {{ .Paths.Downloads }}:/downloads
+    ports:
+      - "{{ .Port }}:8989"
+    networks:
+      - {{ .Global.NetworkName }}
+    restart: {{ .RestartPolicy }}
+
 networks:
   {{ .Global.NetworkName }}:
     external: true
@@ -390,6 +412,46 @@ networks:
 }
 ```
 
+#### Sonarr Schema (JSON Schema)
+
+```json
+{
+  "title": "Sonarr Configuration",
+  "type": "object",
+  "properties": {
+    "port": {
+      "type": "integer",
+      "minimum": 1024,
+      "maximum": 65535,
+      "default": 8989
+    },
+    "image": {
+      "type": "string",
+      "enum": [
+        "linuxserver/sonarr:latest",
+        "linuxserver/sonarr:develop",
+        "linuxserver/sonarr:nightly"
+      ],
+      "default": "linuxserver/sonarr:latest"
+    },
+    "paths": {
+      "type": "object",
+      "properties": {
+        "config": { "type": "string" },
+        "series": { "type": "string" },
+        "downloads": { "type": "string" }
+      },
+      "required": ["config", "series", "downloads"]
+    },
+    "umask": {
+      "type": "string",
+      "pattern": "^[0-7]{3,4}$",
+      "default": "022"
+    }
+  },
+  "required": ["port", "image", "paths"]
+}
+```
 ---
 
 ## 🔌 API REST

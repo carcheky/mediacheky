@@ -377,6 +377,8 @@ See [docs/UI_STANDARDS.md](../docs/UI_STANDARDS.md) for complete guidelines.
 - [UI Standards](../docs/UI_STANDARDS.md) - **READ THIS FIRST** for UI changes
 - [Development Plan](../docs/PROJECT_PLAN.md) - Complete roadmap
 - [UI Implementation](../docs/UI_IMPLEMENTATION.md) - Technical details
+- Active work: Sonarr implementation following Radarr pattern (PR #37)
+- Codacy MCP: After ANY file edit, run analysis per [.github/instructions/codacy.instructions.md](instructions/codacy.instructions.md)
 - [Docker API](https://docs.docker.com/engine/api/)
 - [Fiber Framework](https://docs.gofiber.io/)
 - [Alpine.js](https://alpinejs.dev/)

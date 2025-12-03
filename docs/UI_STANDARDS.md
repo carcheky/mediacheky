@@ -104,6 +104,14 @@ showToast(message, type = 'success') {
 
 **DO NOT create separate `/global` route** - Global Variables is a tab within Settings.
 
+ 
+### Do/Don't (Services vs Settings)
+
+- Do: Keep services management exclusively under `/services` (overview, enable/disable, Configure links).
+- Do: Keep Global Variables as the only tab in `/settings`.
+- Don't: Add service toggles or configuration forms inside `/settings`.
+- Don't: Use `/services/:name/config` URLs; use `/services/:name`.
+
 ### Tabs Structure (Settings)
 
 Settings should only have the Global Variables tab:
@@ -133,6 +141,15 @@ Only show when service is enabled (on `/services` page):
    class="px-3 py-1 bg-blue-600 text-white rounded-md hover:bg-blue-700 text-sm">
     Configure
 </a>
+
+ 
+### Quick Checklist (Service Pages)
+
+- Toasts: Floating top-right notifications per `UI_STANDARDS`.
+- URL: Use `/services/:name` (no `/config` suffix).
+- Configure button: Hidden when service is disabled.
+- Network: Ensure `mediacheky-net` connection in templates.
+- Ports: Not exposed by default; optional exposure via checkbox.
 ```
 
 ### URL Pattern
@@ -178,6 +195,15 @@ Optional exposure via checkbox:
 {{- if .ExposePort }}
 ports:
   - "{{ if .HostPort }}{{ .HostPort }}{{ else }}{{ .Port }}{{ end }}:7878"
+{{- end }}
+```
+
+Example (Sonarr):
+
+```yaml
+{{- if .ExposePort }}
+ports:
+    - "{{ if .HostPort }}{{ .HostPort }}{{ else }}{{ .Port }}{{ end }}:8989"
 {{- end }}
 ```
 

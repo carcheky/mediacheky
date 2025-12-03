@@ -72,6 +72,14 @@ NOTE: Global Variables is a section within Settings (only section). There is no 
 
 - Connection testing
 
+##### Sonarr Configuration
+
+- Default port: `8989`
+- Paths: `config`, `series` (TV shows), `downloads`
+- Image options: `linuxserver/sonarr:latest|develop|nightly`
+- Optional port exposure via checkbox per `UI_STANDARDS` rules
+- Follows same pattern as Radarr (PR #37)
+
 ### 2. Components
 
 #### Service Card (`web/templates/components/service_card.html`)
@@ -173,26 +181,29 @@ api.Post("/config/test/:service", h.Settings.TestConnection)
 
 ## File Structure
 
+**Note**: Current workspace shows templates in `web/static/templates/`. The structure below represents the planned organization. Future work should either move files to `web/templates/` or update this documentation to reflect `web/static/templates/` as canonical.
+
 ```text
 web/
 ├── static/
 │   ├── css/
-│   │   └── custom.css                 # NEW - Custom styles
-│   └── js/
-│       └── file-health-components.js  # Existing
-└── templates/
-    ├── components/                     # NEW directory
-    │   ├── form_field.html            # NEW - Form field component
-    │   └── service_card.html          # NEW - Service card component
+│   │   └── custom.css                 # Custom styles
+│   ├── js/
+│   │   └── file-health-components.js  # Existing JS components
+│   └── templates/                     # Current actual location in workspace
+│       └── ...                         # Template files (to be organized)
+└── templates/                         # Planned/standard location
+    ├── components/                     # Reusable UI components
+    │   ├── form_field.html            # Generic form field
+    │   └── service_card.html          # Service display card
     ├── layouts/
-    │   └── main.html                  # UPDATED - Enhanced layout
+    │   └── main.html                  # Base layout template
     └── pages/
-        ├── dashboard.html             # Existing
-        ├── global.html                # NEW - Global variables page
-        ├── logs.html                  # Existing
-        ├── service_config.html        # NEW - Service config page
-        └── settings.html              # Existing
-```text
+        ├── dashboard.html             # Main dashboard
+        ├── settings.html              # Global Variables (only section)
+        ├── services.html              # Services management
+        └── logs.html                  # Logs viewer
+```
 
 ## Design Principles
 
