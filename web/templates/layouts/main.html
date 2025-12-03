@@ -44,17 +44,17 @@
                             <h1 class="text-2xl font-extrabold tracking-tight text-dark-text dark:text-dark-text drop-shadow">MediaCheky</h1>
                         </a>
                     </div>
-                    <div class="hidden sm:flex sm:space-x-8 ml-6" x-data>
+                    <div class="hidden sm:flex sm:space-x-2 ml-6 transition-opacity duration-300" x-data x-bind:class="i18nReady ? 'opacity-100' : 'opacity-0'">
                         <a href="/"
                             :class="currentPath==='/' ? 'border-blue-500 text-dark-text' : 'border-transparent text-dark-muted hover:border-blue-500 hover:text-dark-text dark:text-dark-muted dark:hover:text-dark-text'"
-                            class="inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium transition-colors">
+                            class="inline-flex items-center px-3 pt-1 border-b-2 text-sm font-medium min-w-[100px] transition-all duration-200">
                             <span class="mr-1">📊</span>
                             <span data-i18n-key="nav.dashboard">Dashboard</span>
                         </a>
-                        <div class="relative" x-data="servicesMenu()" @mouseenter="open = true" @mouseleave="open = false" x-init="init()">
+                        <div class="relative min-w-[100px]" x-data="servicesMenu()" @mouseenter="open = true" @mouseleave="open = false" x-init="init()">
                             <a href="/services"
                                 :class="currentPath.startsWith('/services') ? 'border-blue-500 text-dark-text' : 'border-transparent text-dark-muted hover:border-blue-500 hover:text-dark-text dark:text-dark-muted dark:hover:text-dark-text'"
-                                class="inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium transition-colors">
+                                class="inline-flex items-center px-3 pt-1 border-b-2 text-sm font-medium min-w-[100px] transition-all duration-200">
                                 <span class="mr-1">🎬</span>
                                 <span data-i18n-key="nav.services">Services</span>
                                 <svg class="w-4 h-4 ml-1 text-dark-muted" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -74,13 +74,13 @@
                         </div>
                         <a href="/settings"
                             :class="currentPath.startsWith('/settings') ? 'border-blue-500 text-dark-text' : 'border-transparent text-dark-muted hover:border-blue-500 hover:text-dark-text dark:text-dark-muted dark:hover:text-dark-text'"
-                            class="inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium transition-colors">
+                            class="inline-flex items-center px-3 pt-1 border-b-2 text-sm font-medium min-w-[100px] transition-all duration-200">
                             <span class="mr-1">⚙️</span>
                             <span data-i18n-key="nav.settings">Settings</span>
                         </a>
                         <a href="/logs"
                             :class="currentPath.startsWith('/logs') ? 'border-blue-500 text-dark-text' : 'border-transparent text-dark-muted hover:border-blue-500 hover:text-dark-text dark:text-dark-muted dark:hover:text-dark-text'"
-                            class="inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium transition-colors">
+                            class="inline-flex items-center px-3 pt-1 border-b-2 text-sm font-medium min-w-[100px] transition-all duration-200">
                             <span class="mr-1">📜</span>
                             <span data-i18n-key="nav.logs">Logs</span>
                         </a>
