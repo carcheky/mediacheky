@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Work Queue Test</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="/home/user/projects/mediacheky/web/static/js/global-progress.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+</head>
+<body class="bg-gray-900 text-white p-8">
+    <h1 class="text-2xl font-bold mb-4">Work Queue Test</h1>
+    
+    <button onclick="testWorkQueue()" class="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded mb-4">
+        Test Work Queue
+    </button>
+    
+    <div id="status" class="mb-4"></div>
+    
+    <!-- Global Progress Indicator -->
+    <div x-data="globalProgress()" x-show="showProgress" 
+         class="fixed bottom-4 left-4 z-50 min-w-[320px] bg-blue-900 border-2 border-blue-500 rounded-lg p-4">
+        <p class="font-bold" x-text="progressTitle"></p>
+        <p class="text-sm" x-text="progressWarning"></p>
+        <div class="mt-2">
+            <template x-for="(step, index) in progressSteps" :key="index">
+                <div class="flex items-center gap-2">
+                    <div x-show="index === currentProgressStep" class="w-2 h-2 bg-blue-400 rounded-full"></div>
+                    <span x-text="step"></span>
+                </div>
+            </template>
+        </div>
+    </div>
+
+    <script>
+        function testWorkQueue() {
+            console.log('Testing Work Queue...');
+            
+            window.WorkQueue.enqueue({
+                id: 'test-1',
+                title: 'Test Job',
+                steps: ['Step 1', 'Step 2', 'Step 3'],
+                warning: 'Testing in progress...',
+                execute: async (queue) => {
+                    console.log('Executing test job');
+                    await new Promise(resolve => setTimeout(resolve, 1000));
+                    queue.updateStep(1);
+                    await new Promise(resolve => setTimeout(resolve, 1000));
+                    queue.updateStep(2);
+                    await new Promise(resolve => setTimeout(resolve, 1000));
+                    console.log('Test job complete');
+                }
+            });
+            
+            document.getElementById('status').textContent = 'Job enqueued!';
+        }
+    </script>
+</body>
+</html>
