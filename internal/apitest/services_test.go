@@ -2,6 +2,7 @@ package apitest
 
 import (
 	"testing"
+	"time"
 
 	"github.com/carcheky/mediacheky/internal/models"
 	"github.com/gofiber/fiber/v2"
@@ -38,6 +39,9 @@ func TestServiceEndpoints(t *testing.T) {
 		assert.Equal(t, "radarr", data["name"])
 		assert.Equal(t, "Radarr", data["display_name"])
 		assert.Equal(t, true, data["enabled"])
+		
+		// Allow time for async goroutines to complete
+		time.Sleep(50 * time.Millisecond)
 	})
 
 	t.Run("Get specific service - sonarr", func(t *testing.T) {
@@ -50,6 +54,9 @@ func TestServiceEndpoints(t *testing.T) {
 		require.True(t, ok, "data should be an object")
 		assert.Equal(t, "sonarr", data["name"])
 		assert.Equal(t, "Sonarr", data["display_name"])
+		
+		// Allow time for async goroutines to complete
+		time.Sleep(50 * time.Millisecond)
 	})
 
 	t.Run("Get non-existent service returns 404", func(t *testing.T) {
