@@ -1216,11 +1216,27 @@ func (h *ServiceHandler) GetRootFolders(c *fiber.Ctx) error {
 		})
 	}
 
-	// For now, return empty array
-	// Root folder creation happens during EnableService, not here
-	// This endpoint is just a placeholder for future API-based root folder retrieval
+	// Check if service manager is available
+	if h.serviceManager == nil {
+		return c.Status(fiber.StatusServiceUnavailable).JSON(APIResponse{
+			Success: false,
+			Error:   "Service manager is not available",
+		})
+	}
+
+	// Get root folders from service via API
+	ctx := c.Context()
+	rootFolders, err := h.serviceManager.GetRootFolders(ctx, name)
+	if err != nil {
+		h.logger.Error("Failed to get root folders", "service", name, "error", err)
+		return c.Status(fiber.StatusInternalServerError).JSON(APIResponse{
+			Success: false,
+			Error:   fmt.Sprintf("Failed to get root folders: %v", err),
+		})
+	}
+
 	return c.JSON(APIResponse{
 		Success: true,
-		Data:    []interface{}{},
+		Data:    rootFolders,
 	})
 }
