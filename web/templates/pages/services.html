@@ -313,69 +313,98 @@ function servicesPage() {
             // Mark as toggling immediately
             this.toggling[serviceId] = true;
             
-            // Add job to work queue
-            window.WorkQueue.enqueue({
-                id: `toggle-${serviceId}`,
-                title: `${action} ${serviceId}`,
-                steps: enabled ? [
-                    `${serviceId}: stopping docker container`,
-                    `${serviceId}: removing docker compose file`,
-                    `${serviceId}: updating service status in database`
-                ] : [
-                    `${serviceId}: saving user/pass in database`,
-                    `${serviceId}: generating docker compose from template`,
-                    `${serviceId}: starting docker container`,
-                    `${serviceId}: waiting for service initialization`,
-                    `${serviceId}: checking root folders via API`,
-                    `${serviceId}: creating default root folder (if needed)`
-                ],
-                warning: `${action} service...`,
-                execute: async (queue) => {
-                    try {
-                        const url = enabled ? `/api/services/${serviceId}/disable` : `/api/services/${serviceId}/enable`;
-                        const stepDuration = 1000; // Show each step for ~1 second
-                        const totalSteps = enabled ? 3 : 6;
-                        let currentStep = 0;
-                        
-                        // Start progress update loop before fetch
-                        const progressInterval = setInterval(() => {
-                            if (currentStep < totalSteps - 1) {
-                                currentStep++;
-                                queue.updateStep(currentStep);
-                            }
-                        }, stepDuration);
-                        
-                        try {
-                            const resp = await fetch(url, { method: 'POST' });
-                            clearInterval(progressInterval);
-                            
-                            if (!resp.ok) {
-                                throw new Error('toggle failed');
-                            }
-                            
-                            // Update to final step
-                            queue.updateStep(totalSteps - 1);
-                            
-                            // Wait a bit for user to see final step before reloading
-                            await new Promise(resolve => setTimeout(resolve, 500));
-                            
-                            // Reload data
-                            await this.loadServiceStatuses();
-                            await this.checkConfigPaths();
-                            this.showMessage(enabled ? `${serviceId} disabled` : `${serviceId} enabled`, 'success');
-                        } catch (fetchError) {
-                            clearInterval(progressInterval);
-                            throw fetchError;
-                        }
-                    } catch (e) {
-                        console.error('toggleService error', e);
-                        this.showMessage(`Failed to toggle ${serviceId}`, 'error');
-                    } finally {
-                        // Clear toggling state when done
+            try {
+                if (enabled) {
+                    // Disable service
+                    if (!confirm('Disabling will stop and remove the container. Continue?')) {
                         this.toggling[serviceId] = false;
+                        return;
                     }
+                    
+                    // Use a direct approach for disable (simple and fast)
+                    const resp = await fetch(`/api/services/${serviceId}/disable`, { method: 'POST' });
+                    if (!resp.ok) {
+                        throw new Error('Failed to disable service');
+                    }
+                    
+                    this.showMessage(`${serviceId} disabled`, 'success');
+                    await this.loadServiceStatuses();
+                    await this.checkConfigPaths();
+                } else {
+                    // Enable service - follow the same pattern as /services/:name
+                    // Store resolver to control when job completes
+                    let resolveJob;
+                    const jobPromise = new Promise(resolve => {
+                        resolveJob = resolve;
+                    });
+                    
+                    // Store resolver for later use
+                    const progressResolver = resolveJob;
+                    
+                    // Add job to work queue with manual resolution
+                    window.WorkQueue.enqueue({
+                        id: `toggle-${serviceId}`,
+                        title: `Enabling service`,
+                        steps: [
+                            `Saving user/pass in database`,
+                            `Generating docker compose from template`,
+                            `Starting docker container`,
+                            `Waiting for service initialization`,
+                            `Checking root folders via API`,
+                            `Creating default root folder (if needed)`
+                        ],
+                        warning: 'Service startup in progress...',
+                        execute: async (queue) => {
+                            try {
+                                let currentStep = 0;
+                                queue.updateStep(currentStep);
+                                
+                                // Update progress steps while the backend processes
+                                const stepInterval = setInterval(() => {
+                                    if (currentStep < 5) {
+                                        currentStep++;
+                                        queue.updateStep(currentStep);
+                                    }
+                                }, 1500); // Update every 1.5 seconds
+                                
+                                // Fetch enable - this waits for the backend to complete
+                                const resp = await fetch(`/api/services/${serviceId}/enable`, { 
+                                    method: 'POST' 
+                                });
+                                
+                                clearInterval(stepInterval);
+                                
+                                if (!resp.ok) {
+                                    throw new Error('Failed to enable service');
+                                }
+                                
+                                // Set to final step
+                                queue.updateStep(5);
+                                
+                                // Wait a bit for user to see final step
+                                await new Promise(resolve => setTimeout(resolve, 500));
+                                
+                                // Reload data
+                                await this.loadServiceStatuses();
+                                await this.checkConfigPaths();
+                                this.showMessage(`${serviceId} enabled`, 'success');
+                                
+                                // Resolve the promise to complete the job
+                                progressResolver();
+                            } catch (e) {
+                                console.error('toggleService error', e);
+                                this.showMessage(`Failed to toggle ${serviceId}`, 'error');
+                                progressResolver();
+                            }
+                        }
+                    });
+                    
+                    // Wait for the job to complete
+                    await jobPromise;
                 }
-            });
+            } finally {
+                this.toggling[serviceId] = false;
+            }
         },
         async pruneService(serviceId) {
             console.log('pruneService called for:', serviceId);
