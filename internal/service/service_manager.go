@@ -234,14 +234,14 @@ func (sm *ServiceManager) EnableService(ctx context.Context, serviceName string)
 	// For Radarr/Sonarr: Wait until API is ready with root folders
 	if serviceName == "radarr" || serviceName == "sonarr" {
 		sm.logger.Info("Waiting for service API to be ready with root folders", zap.String("service", serviceName))
-		
+
 		// Poll for up to 15 seconds
 		maxAttempts := 60
 		pollInterval := 250 * time.Millisecond
-		
+
 		for attempt := 0; attempt < maxAttempts; attempt++ {
 			time.Sleep(pollInterval)
-			
+
 			// Try to get root folders via API
 			rootFolders, err := sm.GetRootFolders(ctx, serviceName)
 			if err == nil && len(rootFolders) > 0 {
@@ -251,7 +251,7 @@ func (sm *ServiceManager) EnableService(ctx context.Context, serviceName string)
 					zap.Int("attempt", attempt+1))
 				break
 			}
-			
+
 			if attempt == maxAttempts-1 {
 				sm.logger.Warn("Service API not ready after timeout, but will continue",
 					zap.String("service", serviceName),
