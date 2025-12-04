@@ -89,9 +89,12 @@ make check-and-fix
 # 2. Run validation
 make check-and-fix
 
-# 3. Test with MCP Playwright
+# 3. Test with MCP Playwright (when enabled)
 # Navigate to http://localhost (NOT localhost:7369)
-# Test functionality (clicks, forms, dropdowns, etc.)
+# Test functionality:
+#   - Services dropdown (hover over Services menu)
+#   - Service enable/disable toggles
+#   - Forms, buttons, notifications
 ```
 
 ### 3. Commit Workflow
