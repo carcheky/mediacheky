@@ -247,16 +247,17 @@ func (h *ServiceHandler) GetService(c *fiber.Ctx) error {
 			return c.JSON(APIResponse{
 				Success: true,
 				Data: fiber.Map{
-					"id":         svc.ID,
-					"name":       svc.Name,
-					"enabled":    svc.Enabled,
-					"status":     svc.Status,
-					"image":      svc.Image,
-					"port":       svc.Port,
-					"config":     svc.Config,
-					"mounts":     mounts,
-					"created_at": svc.CreatedAt,
-					"updated_at": svc.UpdatedAt,
+					"id":           svc.ID,
+					"name":         svc.Name,
+					"display_name": svc.DisplayName,
+					"enabled":      svc.Enabled,
+					"status":       svc.Status,
+					"image":        svc.Image,
+					"port":         svc.Port,
+					"config":       svc.Config,
+					"mounts":       mounts,
+					"created_at":   svc.CreatedAt,
+					"updated_at":   svc.UpdatedAt,
 				},
 			})
 		}
