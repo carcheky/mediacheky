@@ -1,3 +1,10 @@
+# [1.0.0-dev.21](https://github.com/carcheky/mediacheky/compare/v1.0.0-dev.20...v1.0.0-dev.21) (2025-12-04)
+
+
+### Features
+
+* implement Sonarr service following Radarr pattern ([#37](https://github.com/carcheky/mediacheky/issues/37)) ([d1b41ad](https://github.com/carcheky/mediacheky/commit/d1b41adbba15b9c526a0b3abeea4ce4f6cfca9cd))
+
 # [1.0.0-dev.20](https://github.com/carcheky/mediacheky/compare/v1.0.0-dev.19...v1.0.0-dev.20) (2025-11-15)
 
 
