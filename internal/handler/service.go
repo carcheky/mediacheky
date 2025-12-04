@@ -131,7 +131,7 @@ func (h *ServiceHandler) GetService(c *fiber.Ctx) error {
 
 	// CRITICAL FIX: Update status from REAL container state before returning
 	// This ensures buttons show correct state after start/stop/restart operations
-	if svc.Enabled {
+	if svc.Enabled && h.dockerClient != nil {
 		// Extract container name from config
 		var containerName string
 		if nameVal, ok := svc.Config["ContainerName"]; ok {
@@ -262,7 +262,7 @@ func (h *ServiceHandler) GetService(c *fiber.Ctx) error {
 			})
 		}
 	} else {
-		h.logger.Debug("⏸️ Service not enabled, skipping status check",
+		h.logger.Debug("⏸️ Service not enabled or docker client not available, skipping status check",
 			"service", name)
 	}
 
