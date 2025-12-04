@@ -867,7 +867,8 @@ func (sm *ServiceManager) GetRadarrConfig(ctx context.Context, serviceName strin
 	var config models.RadarrConfig
 
 	// Build path to config.xml inside the container
-	configPath := filepath.Join("/app/data/services-volumes", serviceName, "config.xml")
+	// Use filepath.Base to prevent path traversal
+	configPath := filepath.Join("/app/data/services-volumes", filepath.Base(serviceName), "config.xml")
 
 	// Read the config file
 	data, err := os.ReadFile(configPath)
@@ -1024,7 +1025,8 @@ func (sm *ServiceManager) UpdateRadarrConfig(ctx context.Context, serviceName st
 	}
 
 	// Build path to config.xml inside the container
-	configPath := filepath.Join("/app/data/services-volumes", serviceName, "config.xml")
+	// Use filepath.Base to prevent path traversal
+	configPath := filepath.Join("/app/data/services-volumes", filepath.Base(serviceName), "config.xml")
 
 	// Check if directory exists
 	configDir := filepath.Dir(configPath)
@@ -1166,7 +1168,8 @@ func generateRadarrConfigXML(config models.RadarrConfig) (string, error) {
 // initializeRadarrConfig creates config.xml with default values if it doesn't exist
 // or if it has default/empty values
 func (sm *ServiceManager) initializeRadarrConfig(ctx context.Context, serviceName string) error {
-	configPath := filepath.Join("/app/data/services-volumes", serviceName, "config.xml")
+	// Use filepath.Base to prevent path traversal
+	configPath := filepath.Join("/app/data/services-volumes", filepath.Base(serviceName), "config.xml")
 
 	// Check if config file exists
 	if _, err := os.Stat(configPath); err == nil {
@@ -1175,7 +1178,7 @@ func (sm *ServiceManager) initializeRadarrConfig(ctx context.Context, serviceNam
 		if readErr == nil && len(data) > 0 {
 			// File exists and has content, check if ApiKey is set
 			content := string(data)
-			if strings.Index(content, "<ApiKey>") != -1 && strings.Index(content, "</ApiKey>") != -1 {
+			if strings.Contains(content, "<ApiKey>") && strings.Contains(content, "</ApiKey>") {
 				// Extract ApiKey value
 				start := strings.Index(content, "<ApiKey>") + 8
 				end := strings.Index(content[start:], "</ApiKey>")
@@ -1210,7 +1213,7 @@ func (sm *ServiceManager) initializeRadarrConfig(ctx context.Context, serviceNam
 		LogLevel:               "info",
 		SslCertPath:            "",
 		SslCertPassword:        "",
-		UrlBase:                "",
+		UrlBase:                "/radarr",
 		InstanceName:           "Radarr",
 		UpdateMechanism:        "Docker",
 		UseProxy:               false,
@@ -1243,9 +1246,9 @@ func (sm *ServiceManager) ensureRootFoldersInDB(ctx context.Context, serviceName
 	var desiredPath string
 	switch serviceName {
 	case "radarr":
-		desiredPath = "/MEDIACHEKY_LIBRARY/library/movies/"
+		desiredPath = "/MEDIACHEKY_LIBRARY/movies/"
 	case "sonarr":
-		desiredPath = "/MEDIACHEKY_LIBRARY/library/tv/"
+		desiredPath = "/MEDIACHEKY_LIBRARY/tv/"
 	default:
 		return nil // Not applicable for this service
 	}
@@ -1609,7 +1612,8 @@ func (sm *ServiceManager) GetSonarrConfig(ctx context.Context, serviceName strin
 	var config models.SonarrConfig
 
 	// Build path to config.xml inside the container
-	configPath := filepath.Join("/app/data/services-volumes", serviceName, "config.xml")
+	// Use filepath.Base to prevent path traversal
+	configPath := filepath.Join("/app/data/services-volumes", filepath.Base(serviceName), "config.xml")
 
 	// Read the config file
 	data, err := os.ReadFile(configPath)
@@ -1907,7 +1911,8 @@ func generateSonarrConfigXML(config models.SonarrConfig) (string, error) {
 // initializeSonarrConfig creates config.xml with default values if it doesn't exist
 // This is called during service Enable operation
 func (sm *ServiceManager) initializeSonarrConfig(ctx context.Context, serviceName string) error {
-	configPath := filepath.Join("/app/data/services-volumes", serviceName, "config.xml")
+	// Use filepath.Base to prevent path traversal
+	configPath := filepath.Join("/app/data/services-volumes", filepath.Base(serviceName), "config.xml")
 
 	// Check if config already exists
 	if _, err := os.Stat(configPath); err == nil {
@@ -1942,7 +1947,7 @@ func (sm *ServiceManager) initializeSonarrConfig(ctx context.Context, serviceNam
 		LogLevel:               "debug",
 		SslCertPath:            "",
 		SslCertPassword:        "",
-		UrlBase:                "",
+		UrlBase:                "/sonarr",
 		InstanceName:           "Sonarr",
 		UpdateMechanism:        "Docker",
 		UseProxy:               false,

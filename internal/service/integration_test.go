@@ -87,8 +87,15 @@ networks:
 	// Note: We can't test actual Docker operations in unit tests,
 	// but we can test the configuration and template generation
 
-	// Test 1: Get the Radarr service
-	radarrService, err := repos.Service.GetByName("radarr")
+	// Test 1: Create the Radarr service (since seeding is disabled)
+	radarrService := &models.Service{
+		Name:    "radarr",
+		Enabled: false,
+	}
+	require.NoError(t, repos.Service.Create(radarrService))
+
+	// Verify it was created
+	radarrService, err = repos.Service.GetByName("radarr")
 	require.NoError(t, err)
 	assert.Equal(t, "radarr", radarrService.Name)
 	assert.False(t, radarrService.Enabled)
