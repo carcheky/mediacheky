@@ -132,3 +132,10 @@ type JellyfinConfig struct {
 	PublicUrl        string `json:"PublicUrl"`
 	DeviceProcessing bool   `json:"DeviceProcessing"` // Enable hardware transcoding devices
 }
+
+// RootFolder represents a root folder in Radarr/Sonarr
+type RootFolder struct {
+	ID        int    `json:"id"`
+	Path      string `json:"path"`
+	FreeSpace int64  `json:"freeSpace"`
+}

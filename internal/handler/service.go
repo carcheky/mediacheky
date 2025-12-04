@@ -1197,3 +1197,44 @@ func getServiceConfigPath(svc *models.Service) string {
 
 	return ""
 }
+
+// GetRootFolders handles GET /api/services/:name/rootfolders
+func (h *ServiceHandler) GetRootFolders(c *fiber.Ctx) error {
+	name := c.Params("name")
+	if name == "" {
+		return c.Status(fiber.StatusBadRequest).JSON(APIResponse{
+			Success: false,
+			Error:   "Service name is required",
+		})
+	}
+
+	// Only supported for Radarr and Sonarr
+	if name != "radarr" && name != "sonarr" {
+		return c.Status(fiber.StatusBadRequest).JSON(APIResponse{
+			Success: false,
+			Error:   "This endpoint is only available for Radarr and Sonarr services",
+		})
+	}
+
+	// Check if service manager is available
+	if h.serviceManager == nil {
+		return c.Status(fiber.StatusServiceUnavailable).JSON(APIResponse{
+			Success: false,
+			Error:   "Service manager is not available",
+		})
+	}
+
+	rootFolders, err := h.serviceManager.GetRootFolders(c.Context(), name)
+	if err != nil {
+		h.logger.Error("Failed to get root folders", "name", name, "error", err)
+		return c.Status(fiber.StatusInternalServerError).JSON(APIResponse{
+			Success: false,
+			Error:   fmt.Sprintf("Failed to get root folders: %v", err),
+		})
+	}
+
+	return c.JSON(APIResponse{
+		Success: true,
+		Data:    rootFolders,
+	})
+}

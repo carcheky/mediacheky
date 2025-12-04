@@ -6,7 +6,9 @@ import (
 	"crypto/sha512"
 	"database/sql"
 	"encoding/base64"
+	"encoding/json"
 	"fmt"
+	"net/http"
 	"os"
 	"path/filepath"
 	"strings"
@@ -2226,4 +2228,77 @@ func (sm *ServiceManager) getSonarrPasswordFromDB(dbPath, username string) (stri
 	// Note: We cannot reverse the hash, so we return an empty string
 	// This means we need to keep the password in MediaCheky DB from the start
 	return "", nil
+}
+
+// GetRootFolders retrieves the root folders from the service via API
+func (sm *ServiceManager) GetRootFolders(ctx context.Context, serviceName string) ([]models.RootFolder, error) {
+	var apiKey string
+	var port int
+	var containerName string
+
+	// Get service from DB to get ContainerName
+	svc, err := sm.serviceRepo.GetByName(serviceName)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get service: %w", err)
+	}
+
+	if nameVal, ok := svc.Config["ContainerName"]; ok {
+		if nameStr, ok := nameVal.(string); ok && nameStr != "" {
+			containerName = nameStr
+		}
+	}
+	if containerName == "" {
+		containerName = serviceName
+	}
+
+	// Get Config (API Key, Port)
+	if serviceName == "radarr" {
+		cfg, err := sm.GetRadarrConfig(ctx, serviceName)
+		if err != nil {
+			return nil, err
+		}
+		apiKey = cfg.ApiKey
+		port = cfg.Port
+	} else if serviceName == "sonarr" {
+		cfg, err := sm.GetSonarrConfig(ctx, serviceName)
+		if err != nil {
+			return nil, err
+		}
+		apiKey = cfg.ApiKey
+		port = cfg.Port
+	} else {
+		return nil, fmt.Errorf("unsupported service: %s", serviceName)
+	}
+
+	if apiKey == "" {
+		return nil, fmt.Errorf("API key not found for %s", serviceName)
+	}
+
+	// Call API
+	// Use container name as hostname since we are in the same network
+	url := fmt.Sprintf("http://%s:%d/api/v3/rootfolder?apikey=%s", containerName, port, apiKey)
+
+	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create request: %w", err)
+	}
+
+	client := &http.Client{Timeout: 5 * time.Second}
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("failed to call API: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("API returned status: %s", resp.Status)
+	}
+
+	// Parse Response
+	var rootFolders []models.RootFolder
+	if err := json.NewDecoder(resp.Body).Decode(&rootFolders); err != nil {
+		return nil, fmt.Errorf("failed to decode response: %w", err)
+	}
+
+	return rootFolders, nil
 }
