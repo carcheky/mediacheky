@@ -2007,12 +2007,21 @@ func generateRandomPassword(length int) (string, error) {
 }
 
 // isSonarrContainerInitialized checks if Sonarr container has completed initialization
-// LinuxServer.io images output "[ls.io-init] done." when ready
+// by looking for "[ls.io-init] done." in the container logs
 func (sm *ServiceManager) isSonarrContainerInitialized(ctx context.Context, serviceName string) (bool, error) {
-	// Get service from database
+	// Get service from database to find container name
 	svc, err := sm.serviceRepo.GetByName(serviceName)
 	if err != nil {
-		return false, fmt.Errorf("failed to get service: %w", err)
+		sm.logger.Debug("Service not found in database, assuming not initialized",
+			zap.String("service", serviceName))
+		return false, nil
+	}
+
+	// Check if service is enabled and has a container
+	if !svc.Enabled {
+		sm.logger.Debug("Service not enabled",
+			zap.String("service", serviceName))
+		return false, nil
 	}
 
 	// Extract container name from config
