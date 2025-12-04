@@ -64,11 +64,13 @@ func (h *ServiceHandler) ListServices(c *fiber.Ctx) error {
 		})
 	}
 
-	// Get proxy config for SSL check
-	proxyCfg, _ := h.proxyService.GetProxyConfig()
+	// Get proxy config for SSL check (if proxyService is available)
 	scheme := "http"
-	if proxyCfg != nil && proxyCfg.SSLEnabled {
-		scheme = "https"
+	if h.proxyService != nil {
+		proxyCfg, _ := h.proxyService.GetProxyConfig()
+		if proxyCfg != nil && proxyCfg.SSLEnabled {
+			scheme = "https"
+		}
 	}
 
 	// Create enriched response with calculated URLs
@@ -80,7 +82,10 @@ func (h *ServiceHandler) ListServices(c *fiber.Ctx) error {
 
 	response := make([]ServiceResponse, 0, len(services))
 	for _, svc := range services {
-		endpoint, _ := h.proxyService.GetServiceEndpoint(svc.Name)
+		endpoint := ""
+		if h.proxyService != nil {
+			endpoint, _ = h.proxyService.GetServiceEndpoint(svc.Name)
+		}
 		url := ""
 		if endpoint != "" {
 			url = fmt.Sprintf("%s://%s", scheme, endpoint)

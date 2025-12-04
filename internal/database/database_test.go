@@ -108,8 +108,9 @@ func TestSeedData_Idempotent(t *testing.T) {
 	db.Model(&models.Template{}).Count(&templateCount)
 
 	// Should have exactly the seeded amount, not double
-	assert.Equal(t, int64(8), configCount)   // 8 default configs
-	assert.Equal(t, int64(3), templateCount) // 3 default templates
+	assert.Equal(t, int64(8), configCount) // 8 default configs
+	// Templates are now loaded from filesystem, not seeded in DB
+	assert.Equal(t, int64(0), templateCount) // 0 templates in DB
 }
 
 func TestClose(t *testing.T) {
