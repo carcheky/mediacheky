@@ -40,7 +40,14 @@ func SetupTestApp(t *testing.T) *TestApp {
 		&models.Template{},
 		&models.GlobalConfig{},
 		&models.ServiceLog{},
+		&models.ServiceCredentials{},
+		&models.ProxyConfig{},
+		&models.Domain{},
+		&models.DockerTag{},
 		&models.Media{},
+		&models.Schedule{},
+		&models.History{},
+		&models.Settings{},
 	); err != nil {
 		t.Fatalf("Failed to migrate test database: %v", err)
 	}
