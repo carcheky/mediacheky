@@ -26,9 +26,11 @@
 - Use `run_in_terminal` with `isBackground: true` for server startup
 
 ### ✅ ALWAYS DO:
+- **READ relevant documentation BEFORE making changes** - Check if topic is already documented
 - Run `make check-and-fix` after ANY code changes
 - Test UI changes with MCP Playwright (use `http://localhost`, NOT port 7369)
 - Write commits in ENGLISH using Conventional Commits
+- **Update documentation immediately** when changing behavior/features
 - Ask user if their request contradicts documentation
 
 **WHY**: User is running `make dev` with watch mode. Code changes auto-reload.
@@ -76,10 +78,17 @@
 ### 1. Making Code Changes
 
 ```bash
+# BEFORE editing:
+# 1. Search docs for existing documentation on the topic
+# 2. Check for contradictions with current standards
+
 # Edit code → Changes auto-reload (watch mode active)
 
 # After editing, ALWAYS run:
 make check-and-fix
+
+# If behavior changed:
+# 3. Update relevant documentation immediately
 ```
 
 ### 2. UI Changes Workflow
