@@ -5,7 +5,7 @@ This document describes the REST API endpoints available in MediaCheky v1.0+.
 ## Base URL
 
 ```
-http://localhost:7369/api
+http://localhost
 ```
 
 ## Response Format

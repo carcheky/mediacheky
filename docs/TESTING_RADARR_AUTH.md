@@ -184,7 +184,7 @@ docker compose ps
 
 ```bash
 # Get authentication settings
-curl -X GET http://localhost:7369/api/services/radarr/radarr/auth \
+curl -X GET http://localhost/api/services/radarr/radarr/auth \
   -H "Content-Type: application/json"
 ```
 
@@ -192,7 +192,7 @@ curl -X GET http://localhost:7369/api/services/radarr/radarr/auth \
 
 ```bash
 # Update authentication settings
-curl -X PUT http://localhost:7369/api/services/radarr/radarr/auth \
+curl -X PUT http://localhost/api/services/radarr/radarr/auth \
   -H "Content-Type: application/json" \
   -d '{
     "id": 1,
