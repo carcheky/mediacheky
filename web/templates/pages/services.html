@@ -51,16 +51,18 @@
                                     </svg>
                                 </button>
                             </template>
-                            <button @click="toggleService(service.id)"
-                                    :disabled="toggling[service.id]"
-                                    class="px-3 py-2 rounded-md text-sm transition-opacity"
-                                    :class="{
-                                        'bg-red-600 text-white hover:bg-red-700': serviceStatuses[service.id]?.enabled && !toggling[service.id],
-                                        'bg-green-600 text-white hover:bg-green-700': !serviceStatuses[service.id]?.enabled && !toggling[service.id],
-                                        'opacity-50 cursor-not-allowed': toggling[service.id]
-                                    }">
-                                <span x-text="toggling[service.id] ? 'Processing...' : (serviceStatuses[service.id]?.enabled ? 'Disable' : 'Enable')"></span>
-                            </button>
+                            <label class="flex items-center gap-2 cursor-pointer"
+                                   :class="{'opacity-50 cursor-not-allowed': toggling[service.id]}"
+                                   :title="serviceStatuses[service.id]?.enabled ? window.i18n.t('services.button.disable') : window.i18n.t('services.button.enable')">
+                                <div class="relative flex-shrink-0">
+                                    <input type="checkbox" 
+                                           :checked="serviceStatuses[service.id]?.enabled"
+                                           @change="toggleService(service.id)"
+                                           :disabled="toggling[service.id]"
+                                           class="sr-only peer">
+                                    <div class="w-11 h-6 bg-gray-700 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-800 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                                </div>
+                            </label>
                             <a x-show="serviceStatuses[service.id]?.enabled"
                                :href="'/services/' + service.id"
                                class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 text-sm">
@@ -108,16 +110,18 @@
                                     </svg>
                                 </button>
                             </template>
-                            <button @click="toggleService(service.id)"
-                                    :disabled="toggling[service.id]"
-                                    class="px-3 py-2 rounded-md text-sm transition-opacity"
-                                    :class="{
-                                        'bg-red-600 text-white hover:bg-red-700': serviceStatuses[service.id]?.enabled && !toggling[service.id],
-                                        'bg-green-600 text-white hover:bg-green-700': !serviceStatuses[service.id]?.enabled && !toggling[service.id],
-                                        'opacity-50 cursor-not-allowed': toggling[service.id]
-                                    }">
-                                <span x-text="toggling[service.id] ? 'Processing...' : (serviceStatuses[service.id]?.enabled ? 'Disable' : 'Enable')"></span>
-                            </button>
+                            <label class="flex items-center gap-2 cursor-pointer"
+                                   :class="{'opacity-50 cursor-not-allowed': toggling[service.id]}"
+                                   :title="serviceStatuses[service.id]?.enabled ? window.i18n.t('services.button.disable') : window.i18n.t('services.button.enable')">
+                                <div class="relative flex-shrink-0">
+                                    <input type="checkbox" 
+                                           :checked="serviceStatuses[service.id]?.enabled"
+                                           @change="toggleService(service.id)"
+                                           :disabled="toggling[service.id]"
+                                           class="sr-only peer">
+                                    <div class="w-11 h-6 bg-gray-700 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-800 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                                </div>
+                            </label>
                             <a x-show="serviceStatuses[service.id]?.enabled"
                                :href="'/services/' + service.id"
                                class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 text-sm">
@@ -165,16 +169,18 @@
                                     </svg>
                                 </button>
                             </template>
-                            <button @click="toggleService(service.id)"
-                                    :disabled="toggling[service.id]"
-                                    class="px-3 py-2 rounded-md text-sm transition-opacity"
-                                    :class="{
-                                        'bg-red-600 text-white hover:bg-red-700': serviceStatuses[service.id]?.enabled && !toggling[service.id],
-                                        'bg-green-600 text-white hover:bg-green-700': !serviceStatuses[service.id]?.enabled && !toggling[service.id],
-                                        'opacity-50 cursor-not-allowed': toggling[service.id]
-                                    }">
-                                <span x-text="toggling[service.id] ? 'Processing...' : (serviceStatuses[service.id]?.enabled ? 'Disable' : 'Enable')"></span>
-                            </button>
+                            <label class="flex items-center gap-2 cursor-pointer"
+                                   :class="{'opacity-50 cursor-not-allowed': toggling[service.id]}"
+                                   :title="serviceStatuses[service.id]?.enabled ? window.i18n.t('services.button.disable') : window.i18n.t('services.button.enable')">
+                                <div class="relative flex-shrink-0">
+                                    <input type="checkbox" 
+                                           :checked="serviceStatuses[service.id]?.enabled"
+                                           @change="toggleService(service.id)"
+                                           :disabled="toggling[service.id]"
+                                           class="sr-only peer">
+                                    <div class="w-11 h-6 bg-gray-700 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-800 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                                </div>
+                            </label>
                             <a x-show="serviceStatuses[service.id]?.enabled"
                                :href="'/services/' + service.id"
                                class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 text-sm">
@@ -316,34 +322,51 @@ function servicesPage() {
                     `${serviceId}: removing docker compose file`,
                     `${serviceId}: updating service status in database`
                 ] : [
+                    `${serviceId}: saving user/pass in database`,
                     `${serviceId}: generating docker compose from template`,
-                    `${serviceId}: saving environment variables`,
                     `${serviceId}: starting docker container`,
-                    `${serviceId}: saving service configuration`
+                    `${serviceId}: waiting for service initialization`,
+                    `${serviceId}: checking root folders via API`,
+                    `${serviceId}: creating default root folder (if needed)`
                 ],
                 warning: `${action} service...`,
                 execute: async (queue) => {
                     try {
-                        // Backend handles all the steps internally
-                        // We just simulate progress for user feedback
                         const url = enabled ? `/api/services/${serviceId}/disable` : `/api/services/${serviceId}/enable`;
+                        const stepDuration = 1000; // Show each step for ~1 second
+                        const totalSteps = enabled ? 3 : 6;
+                        let currentStep = 0;
                         
-                        // Simulate steps progressing
-                        for (let i = 1; i < (enabled ? 3 : 4); i++) {
-                            await new Promise(resolve => setTimeout(resolve, 300));
-                            queue.updateStep(i);
+                        // Start progress update loop before fetch
+                        const progressInterval = setInterval(() => {
+                            if (currentStep < totalSteps - 1) {
+                                currentStep++;
+                                queue.updateStep(currentStep);
+                            }
+                        }, stepDuration);
+                        
+                        try {
+                            const resp = await fetch(url, { method: 'POST' });
+                            clearInterval(progressInterval);
+                            
+                            if (!resp.ok) {
+                                throw new Error('toggle failed');
+                            }
+                            
+                            // Update to final step
+                            queue.updateStep(totalSteps - 1);
+                            
+                            // Wait a bit for user to see final step before reloading
+                            await new Promise(resolve => setTimeout(resolve, 500));
+                            
+                            // Reload data
+                            await this.loadServiceStatuses();
+                            await this.checkConfigPaths();
+                            this.showMessage(enabled ? `${serviceId} disabled` : `${serviceId} enabled`, 'success');
+                        } catch (fetchError) {
+                            clearInterval(progressInterval);
+                            throw fetchError;
                         }
-                        
-                        const resp = await fetch(url, { method: 'POST' });
-                        if (!resp.ok) {
-                            throw new Error('toggle failed');
-                        }
-                        
-                        // Final step: reload data
-                        queue.updateStep(enabled ? 2 : 3);
-                        await this.loadServiceStatuses();
-                        await this.checkConfigPaths();
-                        this.showMessage(enabled ? `${serviceId} disabled` : `${serviceId} enabled`, 'success');
                     } catch (e) {
                         console.error('toggleService error', e);
                         this.showMessage(`Failed to toggle ${serviceId}`, 'error');

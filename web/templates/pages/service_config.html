@@ -45,7 +45,8 @@
             <!-- Right: Controls Section -->
             <div class="flex flex-col sm:flex-row gap-2 w-full lg:w-auto">
                 <!-- Enable/Disable Toggle -->
-                <label class="flex items-center gap-2 cursor-pointer px-3 py-2 bg-dark-bg rounded border border-dark-border hover:border-dark-text transition-colors">
+                <label class="flex items-center gap-2 cursor-pointer px-3 py-2 bg-dark-bg rounded border border-dark-border hover:border-dark-text transition-colors"
+                       :title="enabled ? window.i18n.t('config.button.disable') : window.i18n.t('config.button.enable')">
                     <span class="text-sm text-dark-muted whitespace-nowrap" data-i18n-key="config.enable">Enable</span>
                     <div class="relative flex-shrink-0">
                         <input type="checkbox" x-model="enabled" @change="toggleService()" class="sr-only peer">
@@ -167,7 +168,7 @@
                         class="whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors">
                         General
                     </button>
-                    <button @click="radarrTab = 'media'"
+                    <button @click="radarrTab = 'media'; loadRootFolders()"
                         :class="radarrTab === 'media' ? 'border-purple-500 text-purple-400' : 'border-transparent text-dark-muted hover:text-dark-text hover:border-slate-600'"
                         class="whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors">
                         Media Management
@@ -482,7 +483,7 @@
                         class="whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors">
                         General
                     </button>
-                    <button @click="sonarrTab = 'media'"
+                    <button @click="sonarrTab = 'media'; loadRootFolders()"
                         :class="sonarrTab === 'media' ? 'border-purple-500 text-purple-400' : 'border-transparent text-dark-muted hover:text-dark-text hover:border-slate-600'"
                         class="whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors">
                         Media Management
@@ -1400,9 +1401,27 @@
             },
 
             startProgress(title, steps, warning = 'Operation in progress...') {
-                // Store for use in execute function
-                this._currentJobId = `service-${this.serviceName}-${Date.now()}`;
-                this._currentJobData = { title, steps, warning };
+                // Use global WorkQueue system
+                if (window.WorkQueue) {
+                    // Store resolver to control when job completes
+                    let resolveJob;
+                    const jobPromise = new Promise(resolve => {
+                        resolveJob = resolve;
+                    });
+                    
+                    // Store resolver for later use in endProgress
+                    this._progressResolver = resolveJob;
+                    
+                    return window.WorkQueue.enqueue({
+                        title,
+                        steps,
+                        warning,
+                        execute: async (queue) => {
+                            // Wait for manual completion via endProgress()
+                            await jobPromise;
+                        }
+                    });
+                }
             },
 
             updateProgress(stepIndex = null) {
@@ -1413,9 +1432,11 @@
             },
 
             endProgress() {
-                // Job completion is handled by WorkQueue
-                this._currentJobId = null;
-                this._currentJobData = null;
+                // Complete the job by resolving the promise
+                if (this._progressResolver) {
+                    this._progressResolver();
+                    this._progressResolver = null;
+                }
             },
 
             async toggleService() {
@@ -1423,9 +1444,12 @@
                     // Enable service - apply configuration and start
                     try {
                         this.startProgress('Enabling service', [
-                            'Saving configuration',
-                            'Starting container',
-                            'Reloading data'
+                            'Saving user/pass in database',
+                            'Generating docker compose from template',
+                            'Starting docker container',
+                            'Waiting for service initialization',
+                            'Checking root folders via API',
+                            'Creating default root folder (if needed)'
                         ], 'Service startup in progress...');
 
                         // First save config
@@ -1448,7 +1472,7 @@
                             return;
                         }
 
-                        this.updateProgress(1); // Update to step 2: Starting container
+                        this.updateProgress(1); // Update to step 2
 
                         // Then enable service
                         const response = await fetch(`/api/services/${this.serviceName}/enable`, {
@@ -1459,12 +1483,35 @@
                             this.showMessage('Service enabled and started successfully', 'success');
                             this.status = 'running';
                             this.isReady = false;
-                            this.startReadinessPolling();
                             
-                            this.updateProgress(2); // Update to step 3: Reloading data
+                            // Update progress steps while waiting for service
+                            let step = 2;
+                            const maxSteps = 6;
+                            const stepInterval = setInterval(() => {
+                                if (step < maxSteps) {
+                                    this.updateProgress(step);
+                                    step++;
+                                }
+                            }, 1500); // Update every 1.5 seconds
                             
-                            // Wait for service to start, then reload all data
-                            await new Promise(resolve => setTimeout(resolve, 2000));
+                            // Wait for service to initialize (up to 70 seconds)
+                            await new Promise(resolve => {
+                                const timeout = setTimeout(resolve, 70000);
+                                // Also resolve when readiness polling completes
+                                const checkReady = setInterval(() => {
+                                    if (this.isReady) {
+                                        clearTimeout(timeout);
+                                        clearInterval(checkReady);
+                                        resolve();
+                                    }
+                                }, 500);
+                            });
+                            
+                            clearInterval(stepInterval);
+                            
+                            this.updateProgress(5); // Update to final step
+                            
+                            // Reload all data
                             await this.reloadAllData();
                             
                             this.endProgress();

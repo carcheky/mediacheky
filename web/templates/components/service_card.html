@@ -43,7 +43,7 @@
         {{end}}
     </div>
 
-    <div class="flex gap-2">
+    <div class="flex gap-2 items-center">
         {{if .Enabled}}
         <a href="/services/{{.Name}}" 
            class="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-center text-sm font-medium transition-colors">
@@ -65,10 +65,16 @@
         </button>
         {{end}}
         {{else}}
-        <button @click="$dispatch('service-action', {action: 'enable', service: '{{.Name}}'})"
-                class="flex-1 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 text-center text-sm font-medium transition-colors">
-            Enable
-        </button>
+        <!-- Enable Toggle Switch -->
+        <label class="flex-1 flex items-center justify-between gap-3 cursor-pointer px-4 py-2 bg-dark-bg rounded-lg border border-dark-border hover:border-blue-500/50 transition-colors"
+               @click="$dispatch('service-action', {action: 'enable', service: '{{.Name}}'})">
+            <span class="text-sm font-medium text-dark-text">Enable Service</span>
+            <div class="relative flex-shrink-0">
+                <div class="w-11 h-6 bg-gray-700 rounded-full relative">
+                    <div class="absolute top-[2px] left-[2px] bg-white border border-gray-300 rounded-full h-5 w-5 transition-all"></div>
+                </div>
+            </div>
+        </label>
         {{end}}
     </div>
 </div>
