@@ -360,22 +360,6 @@ func (sm *ServiceManager) StartService(ctx context.Context, serviceName string) 
 	sm.logAction(svc.ID, "start", "success", fmt.Sprintf("Service started: %s", result.Output))
 	sm.logger.Info("Service started successfully", zap.String("service", serviceName))
 
-	// After starting *arr services, ensure root folders exist in their databases
-	if serviceName == "radarr" || serviceName == "sonarr" {
-		go func() {
-			// Use a background context with timeout for this async operation
-			bgCtx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
-			defer cancel()
-
-			sm.logger.Info("Ensuring root folder configuration", zap.String("service", serviceName))
-			if err := sm.ensureRootFoldersInDB(bgCtx, serviceName); err != nil {
-				sm.logger.Warn("Failed to ensure root folder in DB",
-					zap.String("service", serviceName),
-					zap.Error(err))
-			}
-		}()
-	}
-
 	return nil
 }
 
@@ -1256,139 +1240,6 @@ func (sm *ServiceManager) initializeRadarrConfig(ctx context.Context, serviceNam
 	return nil
 }
 
-// ensureRootFoldersInDB ensures default root folders exist in Radarr/Sonarr database
-// NOTE: This function directly modifies the database. Prefer using EnsureRootFolderViaAPI
-// which uses the proper Radarr/Sonarr API endpoints.
-func (sm *ServiceManager) ensureRootFoldersInDB(ctx context.Context, serviceName string) error {
-	var desiredPath string
-	switch serviceName {
-	case "radarr":
-		desiredPath = "/MEDIACHEKY_LIBRARY/library/movies"
-	case "sonarr":
-		desiredPath = "/MEDIACHEKY_LIBRARY/library/tv"
-	default:
-		return nil // Not applicable for this service
-	}
-
-	dbPath := filepath.Join(getHostDataPath(), "services-volumes", serviceName, serviceName+".db")
-
-	// Wait for DB file to exist AND for RootFolders table to be created (with extended timeout)
-	maxRetries := 120 // 2 minutes max wait (120 * 1 second)
-	retryInterval := time.Second
-
-	for attempt := 0; attempt < maxRetries; attempt++ {
-		select {
-		case <-ctx.Done():
-			return ctx.Err()
-		default:
-		}
-
-		// Check if DB file exists
-		if _, err := os.Stat(dbPath); err != nil {
-			if os.IsNotExist(err) {
-				if attempt%10 == 0 {
-					sm.logger.Debug("Waiting for database file to be created",
-						zap.String("service", serviceName),
-						zap.Int("attempt", attempt))
-				}
-				time.Sleep(retryInterval)
-				continue
-			}
-			sm.logger.Warn("Error checking DB file for root folder",
-				zap.String("dbPath", dbPath),
-				zap.Error(err))
-			return nil // Non-fatal
-		}
-
-		// DB file exists, try to open and check for RootFolders table
-		db, err := sql.Open("sqlite3", dbPath)
-		if err != nil {
-			if attempt%10 == 0 {
-				sm.logger.Debug("Failed to open service DB, retrying",
-					zap.String("service", serviceName),
-					zap.Int("attempt", attempt),
-					zap.Error(err))
-			}
-			time.Sleep(retryInterval)
-			continue
-		}
-
-		// Check if RootFolders table exists
-		var tableExists int
-		err = db.QueryRow("SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='RootFolders'").Scan(&tableExists)
-		if err != nil {
-			_ = db.Close()
-			sm.logger.Debug("Error checking if RootFolders table exists",
-				zap.String("service", serviceName),
-				zap.Int("attempt", attempt),
-				zap.Error(err))
-			time.Sleep(retryInterval)
-			continue
-		}
-		if tableExists == 0 {
-			_ = db.Close()
-			if attempt%10 == 0 {
-				sm.logger.Debug("Waiting for RootFolders table to be created",
-					zap.String("service", serviceName),
-					zap.Int("attempt", attempt))
-			}
-			time.Sleep(retryInterval)
-			continue
-		}
-
-		sm.logger.Info("✅ RootFolders table found, proceeding with insertion",
-			zap.String("service", serviceName),
-			zap.Int("attempt", attempt))
-
-		// Table exists! Check if our path is already there
-		var count int
-		err = db.QueryRow("SELECT COUNT(*) FROM RootFolders WHERE Path = ?", desiredPath).Scan(&count)
-		if err != nil {
-			_ = db.Close()
-			if strings.Contains(err.Error(), "database is locked") || strings.Contains(err.Error(), "busy") {
-				time.Sleep(500 * time.Millisecond)
-				continue
-			}
-			sm.logger.Warn("Failed to query root folders",
-				zap.String("dbPath", dbPath),
-				zap.Error(err))
-			return nil // Non-fatal
-		}
-
-		if count == 0 {
-			// Insert the default root folder
-			_, err = db.Exec("INSERT OR IGNORE INTO RootFolders (Path) VALUES (?)", desiredPath)
-			if err != nil {
-				_ = db.Close()
-				if strings.Contains(err.Error(), "database is locked") || strings.Contains(err.Error(), "busy") {
-					time.Sleep(500 * time.Millisecond)
-					continue
-				}
-				sm.logger.Warn("Failed to insert root folder",
-					zap.String("dbPath", dbPath),
-					zap.Error(err))
-				return nil // Non-fatal
-			}
-			sm.logger.Info("✅ Successfully inserted default root folder",
-				zap.String("service", serviceName),
-				zap.String("path", desiredPath))
-		} else {
-			sm.logger.Debug("Root folder already exists",
-				zap.String("service", serviceName),
-				zap.String("path", desiredPath))
-		}
-
-		_ = db.Close()
-		return nil
-	}
-
-	sm.logger.Warn("Timeout waiting for database to be ready for root folder insertion",
-		zap.String("service", serviceName),
-		zap.String("dbPath", dbPath),
-		zap.Duration("timeout", time.Duration(maxRetries)*retryInterval))
-	return nil
-}
-
 // Helper functions
 
 // generateRandomCredentials generates random username and password
@@ -1791,11 +1642,6 @@ func (sm *ServiceManager) GetSonarrConfig(ctx context.Context, serviceName strin
 						sm.logger.Warn("Failed to save credentials to MediaCheky database", zap.Error(err))
 					} else {
 						sm.logger.Info("Generated credentials saved to both databases")
-					}
-
-					// Ensure default root folder exists
-					if err := sm.ensureRootFoldersInDB(ctx, serviceName); err != nil {
-						sm.logger.Warn("Failed to ensure root folders in Sonarr DB", zap.String("service", serviceName), zap.Error(err))
 					}
 				}
 			} else {
@@ -2252,6 +2098,14 @@ func (sm *ServiceManager) updateSonarrCredentials(dbPath, username, password str
 			return fmt.Errorf("failed to insert user: %w", err)
 		}
 		sm.logger.Info("Sonarr user created in database", zap.String("username", username))
+
+		// Insert default root folder (same time, same DB)
+		_, err = db.Exec("INSERT OR IGNORE INTO RootFolders (Path) VALUES (?)", "/MEDIACHEKY_LIBRARY/library/tv")
+		if err != nil {
+			sm.logger.Warn("Failed to insert root folder", zap.Error(err))
+		} else {
+			sm.logger.Info("✅ Root folder inserted", zap.String("path", "/MEDIACHEKY_LIBRARY/library/tv"))
+		}
 	} else if err != nil {
 		return fmt.Errorf("failed to check for existing user: %w", err)
 	} else {
