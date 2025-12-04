@@ -29,7 +29,6 @@
     </script>
     <!-- Alpine.js Components - Load before Alpine.js initializes -->
     <script src="/static/js/file-health-components.js"></script>
-    <script src="/static/js/global-progress.js"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
 </head>
 
@@ -702,85 +701,5 @@ function applyI18nTexts() {
 document.addEventListener('DOMContentLoaded', applyI18nTexts);
 document.addEventListener('i18n:changed', applyI18nTexts);
 </script>
-
-<!-- Global Work Queue Indicator (Floating) -->
-<div x-data="globalProgress()" 
-     x-show="showProgress" 
-     x-cloak
-     @click.away="false"
-     x-transition:enter="transition ease-out duration-300"
-     x-transition:enter-start="opacity-0 transform -translate-x-2"
-     x-transition:enter-end="opacity-100 transform translate-x-0"
-     x-transition:leave="transition ease-in duration-200"
-     x-transition:leave-start="opacity-100 transform translate-x-0"
-     x-transition:leave-end="opacity-0 transform -translate-x-2"
-     class="fixed bottom-4 left-4 z-50 w-[480px] max-h-[600px] shadow-2xl rounded-lg border-2 border-amber-500/70 overflow-hidden bg-gradient-to-br from-blue-900/98 to-blue-950/98 backdrop-blur-md flex flex-col"
-     style="display: none;">
-    
-    <!-- Warning Banner -->
-    <div class="bg-gradient-to-r from-amber-600/30 via-amber-500/30 to-amber-600/30 border-b-2 border-amber-500/50 px-4 py-3 flex-shrink-0">
-        <div class="flex items-center gap-3">
-            <div class="flex-shrink-0">
-                <svg class="w-7 h-7 text-amber-400 animate-pulse" fill="currentColor" viewBox="0 0 20 20">
-                    <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
-                </svg>
-            </div>
-            <div class="flex-1">
-                <p class="text-sm font-bold text-amber-200 leading-tight">⚠️ Please wait - Do not close!</p>
-                <p class="text-xs text-amber-300/90 mt-0.5">Operations in progress - MediaCheky is managing services...</p>
-            </div>
-        </div>
-    </div>
-
-    <!-- Queue Header -->
-    <div class="px-4 py-3 border-b border-blue-500/30 flex-shrink-0">
-        <div class="flex items-center gap-2">
-            <svg class="w-5 h-5 animate-spin text-blue-400" fill="none" viewBox="0 0 24 24">
-                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-            </svg>
-            <p class="text-sm font-bold text-blue-100">
-                Work Queue (<span x-text="allJobs.length"></span> <span x-text="allJobs.length === 1 ? 'job' : 'jobs'"></span>)
-            </p>
-        </div>
-    </div>
-
-    <!-- Jobs List (Scrollable) -->
-    <div class="overflow-y-auto flex-1 px-4 py-3 space-y-4" style="max-height: 450px;">
-        <template x-for="(job, jobIndex) in allJobs" :key="job.id">
-            <div class="space-y-2">
-                <!-- Job Header -->
-                <div class="flex items-center gap-2 pb-1 border-b border-blue-500/20">
-                    <span class="text-lg" x-text="getJobIcon(job.status)"></span>
-                    <span class="text-sm font-semibold text-blue-200 uppercase tracking-wide" x-text="job.title"></span>
-                </div>
-                
-                <!-- Job Steps -->
-                <div class="space-y-1.5 pl-2">
-                    <template x-for="(step, stepIndex) in job.steps" :key="stepIndex">
-                        <div class="flex items-center gap-2 text-xs">
-                            <!-- Status Icon -->
-                            <span class="text-base flex-shrink-0" x-text="getStepIcon(job, stepIndex)"></span>
-                            
-                            <!-- Step Text -->
-                            <span class="flex-1 text-blue-100" x-text="step"></span>
-                            
-                            <!-- Status Badge -->
-                            <span 
-                                :class="{
-                                    'bg-green-500/20 text-green-300 border-green-500/40': getStepStatus(job, stepIndex) === 'OK',
-                                    'bg-blue-500/20 text-blue-300 border-blue-500/40 animate-pulse': getStepStatus(job, stepIndex) === 'RUNNING',
-                                    'bg-gray-500/20 text-gray-400 border-gray-500/40': getStepStatus(job, stepIndex) === 'PENDING'
-                                }"
-                                class="px-2 py-0.5 rounded text-[10px] font-bold border flex-shrink-0"
-                                x-text="getStepStatus(job, stepIndex)">
-                            </span>
-                        </div>
-                    </template>
-                </div>
-            </div>
-        </template>
-    </div>
-</div>
 
 </html>

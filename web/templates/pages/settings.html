@@ -168,8 +168,6 @@
         </div>
     </div>
 
-    <!-- Progress indicator removed - now using global WorkQueue in main.html -->
-
     <!-- Floating Toast Messages -->
     <div x-show="message" 
          x-transition:enter="transition ease-out duration-300"
@@ -306,7 +304,6 @@
             saving: false,
             message: '',
             messageType: 'success',
-            // Progress tracking - REMOVED (now using global WorkQueue)
 
             // Service definitions with metadata (deduplicated + categorized)
             services: [
@@ -578,12 +575,6 @@
                 this.saving = true;
                 this.message = '';
 
-                this.startProgress('Guardando toda la configuración', [
-                    'Procesando servicios',
-                    'Guardando configuración',
-                    'Finalizando cambios'
-                ], 'Guardando todos los cambios de configuración...');
-
                 try {
                     // First, handle service enable/disable
                     for (const service of this.services) {
@@ -604,8 +595,6 @@
                             console.error(`Failed to ${serviceConfig.enabled ? 'enable' : 'disable'} ${service.id}:`, data.error);
                         }
                     }
-
-                    this.updateProgress(1);
                     
                     // Then save the rest of the configuration
                     const response = await fetch('/api/config', {
@@ -615,17 +604,13 @@
                     });
 
                     if (response.ok) {
-                        this.updateProgress(2);
                         this.showMessage('¡Configuración guardada exitosamente!', 'success');
-                        this.endProgress();
                     } else {
                         const data = await response.json();
                         this.showMessage(data.error || 'Error al guardar la configuración', 'error');
-                        this.endProgress();
                     }
                 } catch (error) {
                     this.showMessage('Error: ' + error.message, 'error');
-                    this.endProgress();
                 } finally {
                     this.saving = false;
                 }
@@ -665,25 +650,16 @@
                 if (serviceConfig.enabled) {
                     // Enable service - apply configuration and start
                     try {
-                        this.startProgress(`Activando ${serviceId}`, [
-                            'Cargando configuración',
-                            'Guardando configuración',
-                            'Iniciando contenedor',
-                            'Recargando datos'
-                        ], 'Inicio de servicio en progreso...');
-
                         // STEP 1: Load FULL service configuration from backend (Image, Paths, etc.)
                         const loadResponse = await fetch(`/api/services/${serviceId}`);
                         if (!loadResponse.ok) {
                             const data = await loadResponse.json();
                             this.showMessage(data.error || 'Error al cargar la configuración del servicio', 'error');
                             serviceConfig.enabled = false; // Revert toggle
-                            this.endProgress();
                             return;
                         }
                         
                         const fullServiceData = await loadResponse.json();
-                        this.updateProgress(1); // Step 2: Saving configuration
                         
                         // STEP 2: Save FULL config (includes Image, Paths, RestartPolicy, etc.)
                         const configToSave = fullServiceData.config || {};
@@ -701,11 +677,8 @@
                             const data = await saveResponse.json();
                             this.showMessage(data.error || 'Error al guardar la configuración', 'error');
                             serviceConfig.enabled = false; // Revert toggle
-                            this.endProgress();
                             return;
                         }
-
-                        this.updateProgress(2); // Step 3: Starting container
 
                         // STEP 3: Enable service
                         const response = await fetch(`/api/services/${serviceId}/enable`, {
@@ -715,22 +688,16 @@
                         if (response.ok) {
                             this.showMessage(`${serviceId} activado e iniciado exitosamente`, 'success');
                             
-                            this.updateProgress(3); // Step 4: Reloading data
-                            
                             // Wait for service to start
                             await new Promise(resolve => setTimeout(resolve, 2000));
-                            
-                            this.endProgress();
                         } else {
                             const data = await response.json();
                             this.showMessage(data.error || `Error al activar ${serviceId}`, 'error');
                             serviceConfig.enabled = false; // Revert toggle
-                            this.endProgress();
                         }
                     } catch (error) {
                         this.showMessage('Error: ' + error.message, 'error');
                         serviceConfig.enabled = false; // Revert toggle
-                        this.endProgress();
                     }
                 } else {
                     // Disable service (will stop and remove container)
@@ -740,29 +707,20 @@
                     }
                     
                     try {
-                        this.startProgress(`Desactivando ${serviceId}`, [
-                            'Deteniendo contenedor',
-                            'Completado'
-                        ], 'Apagado de servicio en progreso...');
-
                         const response = await fetch(`/api/services/${serviceId}/disable`, {
                             method: 'POST'
                         });
                         
                         if (response.ok) {
-                            this.updateProgress(1); // Update to step 2: Complete
                             this.showMessage(`${serviceId} desactivado exitosamente`, 'success');
-                            this.endProgress();
                         } else {
                             const data = await response.json();
                             this.showMessage(data.error || `Error al desactivar ${serviceId}`, 'error');
                             serviceConfig.enabled = true; // Revert toggle
-                            this.endProgress();
                         }
                     } catch (error) {
                         this.showMessage('Error: ' + error.message, 'error');
                         serviceConfig.enabled = true; // Revert toggle
-                        this.endProgress();
                     }
                 }
             },
@@ -772,20 +730,6 @@
                 if (element) {
                     element.scrollIntoView({ behavior: 'smooth', block: 'start' });
                 }
-            },
-
-            // Progress methods - DEPRECATED, now using global WorkQueue
-            // These methods kept for backward compatibility but do nothing
-            startProgress(title, steps, warning = 'Operation in progress...') {
-                // No-op: WorkQueue handles progress globally
-            },
-
-            updateProgress(stepIndex = null) {
-                // No-op: WorkQueue handles progress globally
-            },
-
-            endProgress() {
-                // No-op: WorkQueue handles progress globally
             },
 
             showMessage(msg, type = 'success') {

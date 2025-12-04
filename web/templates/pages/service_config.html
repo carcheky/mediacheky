@@ -1024,8 +1024,6 @@
             </svg>
         </button>
     </div>
-
-    <!-- Progress is now handled by global progress in main layout -->
 </div>
 
 <script>
@@ -1400,58 +1398,10 @@
                 ]);
             },
 
-            startProgress(title, steps, warning = 'Operation in progress...') {
-                // Use global WorkQueue system
-                if (window.WorkQueue) {
-                    // Store resolver to control when job completes
-                    let resolveJob;
-                    const jobPromise = new Promise(resolve => {
-                        resolveJob = resolve;
-                    });
-                    
-                    // Store resolver for later use in endProgress
-                    this._progressResolver = resolveJob;
-                    
-                    return window.WorkQueue.enqueue({
-                        title,
-                        steps,
-                        warning,
-                        execute: async (queue) => {
-                            // Wait for manual completion via endProgress()
-                            await jobPromise;
-                        }
-                    });
-                }
-            },
-
-            updateProgress(stepIndex = null) {
-                // Update current job step via WorkQueue
-                if (window.WorkQueue) {
-                    window.WorkQueue.updateStep(stepIndex);
-                }
-            },
-
-            endProgress() {
-                // Complete the job by resolving the promise
-                if (this._progressResolver) {
-                    this._progressResolver();
-                    this._progressResolver = null;
-                }
-            },
-
             async toggleService() {
                 if (this.enabled) {
                     // Enable service - apply configuration and start
                     try {
-                        this.startProgress('Enabling service', [
-                            'Saving user/pass in database',
-                            'Generating docker compose from template',
-                            'Starting docker container',
-                            'Waiting for service initialization',
-                            'Checking root folders via API',
-                            'Creating default root folder (if needed)'
-                        ], 'Service startup in progress...');
-
                         // First save config
                         const configToSave = { ...this.config };
                         if (!configToSave.HostPort || configToSave.HostPort === 0) {
@@ -1468,11 +1418,8 @@
                             const data = await saveResponse.json();
                             this.showMessage(data.error || 'Failed to save configuration', 'error');
                             this.enabled = false; // Revert toggle
-                            this.endProgress();
                             return;
                         }
-
-                        this.updateProgress(1); // Update to step 2
 
                         // Then enable service
                         const response = await fetch(`/api/services/${this.serviceName}/enable`, {
@@ -1483,16 +1430,6 @@
                             this.showMessage('Service enabled and started successfully', 'success');
                             this.status = 'running';
                             this.isReady = false;
-                            
-                            // Update progress steps while waiting for service
-                            let step = 2;
-                            const maxSteps = 6;
-                            const stepInterval = setInterval(() => {
-                                if (step < maxSteps) {
-                                    this.updateProgress(step);
-                                    step++;
-                                }
-                            }, 1500); // Update every 1.5 seconds
                             
                             // Wait for service to initialize (up to 70 seconds)
                             await new Promise(resolve => {
@@ -1507,24 +1444,16 @@
                                 }, 500);
                             });
                             
-                            clearInterval(stepInterval);
-                            
-                            this.updateProgress(5); // Update to final step
-                            
                             // Reload all data
                             await this.reloadAllData();
-                            
-                            this.endProgress();
                         } else {
                             const data = await response.json();
                             this.showMessage(data.error || 'Failed to enable service', 'error');
                             this.enabled = false; // Revert toggle
-                            this.endProgress();
                         }
                     } catch (error) {
                         this.showMessage('Error: ' + error.message, 'error');
                         this.enabled = false; // Revert toggle
-                        this.endProgress();
                     }
                 } else {
                     // Disable service (will stop and remove container)
@@ -1534,31 +1463,22 @@
                     }
                     
                     try {
-                        this.startProgress('Disabling service', [
-                            'Stopping container',
-                            'Reloading data'
-                        ], 'Service shutdown in progress...');
-
                         const response = await fetch(`/api/services/${this.serviceName}/disable`, {
                             method: 'POST'
                         });
                         
                         if (response.ok) {
-                            this.updateProgress(1); // Update to step 2: Reloading data
                             this.showMessage('Service disabled successfully', 'success');
                             this.status = 'stopped';
                             await this.reloadAllData();
-                            this.endProgress();
                         } else {
                             const data = await response.json();
                             this.showMessage(data.error || 'Failed to disable service', 'error');
                             this.enabled = true; // Revert toggle
-                            this.endProgress();
                         }
                     } catch (error) {
                         this.showMessage('Error: ' + error.message, 'error');
                         this.enabled = true; // Revert toggle
-                        this.endProgress();
                     }
                 }
             },
@@ -1630,11 +1550,6 @@
                 try {
                     const isRadarr = this.serviceName.toLowerCase() === 'radarr';
                     const isSonarr = this.serviceName.toLowerCase() === 'sonarr';
-                    const steps = (isRadarr || isSonarr)
-                        ? ['Saving Docker configuration', `Saving ${isRadarr ? 'Radarr' : 'Sonarr'} config.xml`, 'Restarting container', 'Reloading data']
-                        : ['Saving configuration', 'Restarting container', 'Reloading data'];
-                    
-                    this.startProgress('Applying configuration', steps, 'Applying changes, container will restart...');
 
                     // First save Docker config
                     const configToSave = { ...this.config };
@@ -1651,11 +1566,8 @@
                     if (!saveResponse.ok) {
                         const data = await saveResponse.json();
                         this.showMessage(data.error || 'Failed to save configuration', 'error');
-                        this.endProgress();
                         return;
                     }
-
-                    this.updateProgress(1); // Next step
 
                     // For Radarr: Also save config.xml which will trigger automatic restart
                     if (isRadarr) {
@@ -1674,17 +1586,13 @@
                         if (!radarrSaveResponse.ok) {
                             const data = await radarrSaveResponse.json();
                             this.showMessage(data.error || 'Failed to save Radarr config.xml', 'error');
-                            this.endProgress();
                             return;
                         }
 
-                        this.updateProgress(2); // Radarr is restarting automatically
                         this.showMessage('Configuration applied! Radarr is restarting...', 'success');
                         
                         // Wait longer for Radarr to restart (it's done automatically by backend)
                         await new Promise(resolve => setTimeout(resolve, 5000));
-                        
-                        this.updateProgress(3); // Reloading data
                     } else if (isSonarr) {
                         // For Sonarr: Also save config.xml which will trigger automatic restart
                         console.log('📤 Sending Sonarr config:', {
@@ -1702,19 +1610,14 @@
                         if (!sonarrSaveResponse.ok) {
                             const data = await sonarrSaveResponse.json();
                             this.showMessage(data.error || 'Failed to save Sonarr config.xml', 'error');
-                            this.endProgress();
                             return;
                         }
 
-                        this.updateProgress(2); // Sonarr is restarting automatically
                         this.showMessage('Configuration applied! Sonarr is restarting...', 'success');
                         
                         // Wait longer for Sonarr to restart (it's done automatically by backend)
                         await new Promise(resolve => setTimeout(resolve, 5000));
-                        
-                        this.updateProgress(3); // Reloading data
                     } else {
-                        this.updateProgress(2); // Restarting container (non-Radarr)
 
                         // For other services: trigger manual restart
                         const restartResponse = await fetch(`/api/services/${this.serviceName}/restart`, {
@@ -1724,13 +1627,11 @@
                         if (!restartResponse.ok) {
                             const data = await restartResponse.json();
                             this.showMessage(data.error || 'Failed to restart service', 'error');
-                            this.endProgress();
                             return;
                         }
 
                         this.showMessage('Configuration applied and container recreated successfully!', 'success');
                         await new Promise(resolve => setTimeout(resolve, 2000));
-                        this.updateProgress(3); // Reloading data
                     }
                     
                     // Reload all data including service status
@@ -1739,11 +1640,8 @@
                     
                     // Re-enable action buttons
                     this.actionInProgress = false;
-                    
-                    this.endProgress();
                 } catch (error) {
                     this.showMessage('Error: ' + error.message, 'error');
-                    this.endProgress();
                 } finally {
                     this.applying = false;
                 }
@@ -1770,13 +1668,6 @@
 
                 this.pruning = true;
                 try {
-                    this.startProgress('Pruning configuration', [
-                        'Stopping service',
-                        'Removing volumes',
-                        'Cleaning configuration',
-                        'Reloading data'
-                    ]);
-
                     // Call reset endpoint which will:
                     // 1. Run docker compose down -v
                     // 2. Delete services/radarr folder
@@ -1786,22 +1677,18 @@
                     });
 
                     if (response.ok) {
-                        this.updateProgress(3); // Update to step 4: Reloading data
                         this.enabled = false; // Update UI state
                         this.configPathExists = false; // Hide prune button
                         this.showMessage('Service pruned successfully! All config and volumes removed.', 'success');
                         // Wait for reset to complete, then reload all data
                         await new Promise(resolve => setTimeout(resolve, 2000));
                         await this.reloadAllData();
-                        this.endProgress();
                     } else {
                         const data = await response.json();
                         this.showMessage(data.error || 'Failed to prune configuration', 'error');
-                        this.endProgress();
                     }
                 } catch (error) {
                     this.showMessage('Error: ' + error.message, 'error');
-                    this.endProgress();
                 } finally {
                     this.pruning = false;
                 }
@@ -1816,12 +1703,6 @@
                 this.testing = true;
                 this.testResult = null;
 
-                this.startProgress('Testing connection', [
-                    'Connecting to service',
-                    'Verifying credentials',
-                    'Checking response'
-                ], 'Testing service connection...');
-
                 try {
                     const response = await fetch(`/api/config/test/${this.serviceName}`, {
                         method: 'POST',
@@ -1832,26 +1713,22 @@
                     const data = await response.json();
 
                     if (response.ok) {
-                        this.updateProgress(2);
                         this.testResult = {
                             success: true,
                             message: data.message || 'Service is reachable and responding correctly'
                         };
                         await new Promise(resolve => setTimeout(resolve, 500));
-                        this.endProgress();
                     } else {
                         this.testResult = {
                             success: false,
                             message: data.error || 'Unable to connect to service'
                         };
-                        this.endProgress();
                     }
                 } catch (error) {
                     this.testResult = {
                         success: false,
                         message: 'Error: ' + error.message
                     };
-                    this.endProgress();
                 } finally {
                     this.testing = false;
                 }
@@ -1865,12 +1742,6 @@
 
                 this.saving = true;
                 this.message = '';
-
-                this.startProgress('Saving configuration', [
-                    'Validating changes',
-                    'Updating configuration',
-                    'Reloading service data'
-                ], 'Saving configuration changes...');
 
                 try {
                     // Prepare config - remove HostPort if empty/0 (use static compose instead)
@@ -1886,19 +1757,14 @@
                     });
 
                     if (response.ok) {
-                        this.updateProgress(1);
                         this.showMessage('Configuration saved successfully!', 'success');
-                        this.updateProgress(2);
                         await this.loadServiceData();
-                        this.endProgress();
                     } else {
                         const data = await response.json();
                         this.showMessage(data.error || 'Failed to save configuration', 'error');
-                        this.endProgress();
                     }
                 } catch (error) {
                     this.showMessage('Error: ' + error.message, 'error');
-                    this.endProgress();
                 } finally {
                     this.saving = false;
                 }
@@ -1925,34 +1791,24 @@
                 this.message = '';
 
                 try {
-                    this.startProgress('Force killing container', [
-                        'Killing process',
-                        'Removing container',
-                        'Reloading data'
-                    ], 'Force stopping container...');
-
                     const response = await fetch(`/api/services/${this.serviceName}/kill-down`, {
                         method: 'POST'
                     });
 
                     if (response.ok) {
-                        this.updateProgress(2);
                         this.showMessage('Container force killed and removed successfully', 'success');
                         this.status = 'stopped';
                         this.isReady = false;
                         
                         await new Promise(resolve => setTimeout(resolve, 1500));
                         await this.reloadAllData();
-                        this.endProgress();
                     } else {
                         const data = await response.json();
                         this.showMessage(data.error || 'Failed to kill container', 'error');
-                        this.endProgress();
                         await this.reloadAllData();
                     }
                 } catch (error) {
                     this.showMessage('Error: ' + error.message, 'error');
-                    this.endProgress();
                     await this.reloadAllData();
                 } finally {
                     this.actionInProgress = false;
@@ -1973,18 +1829,6 @@
                     'stop': ['Stopping container', 'Waiting for shutdown', 'Verifying status'],
                     'restart': ['Stopping container', 'Starting container', 'Waiting for service', 'Verifying status']
                 };
-                const actionWarnings = {
-                    'start': 'Service startup in progress...',
-                    'stop': 'Service shutdown in progress...',
-                    'restart': 'Service restart in progress, please wait...'
-                };
-
-                this.startProgress(
-                    actionTitles[action] || 'Processing action',
-                    actionSteps[action] || ['Processing'],
-                    actionWarnings[action] || 'Operation in progress...'
-                );
-
                 try {
                     // Set timeout based on action
                     const timeout = action === 'restart' ? 120 : 60;
@@ -1999,8 +1843,6 @@
 
                     if (response.ok) {
                         const data = await response.json();
-                        const lastStep = actionSteps[action].length - 1;
-                        this.updateProgress(lastStep - 1);
                         this.showMessage(data.message || `Service ${action}ed successfully`, 'success');
                         
                         // Update status optimistically
@@ -2017,16 +1859,13 @@
                         }
                         
                         // Wait longer and reload full service data to confirm
-                        this.updateProgress(lastStep);
                         await new Promise(resolve => setTimeout(resolve, 2000));
                         await this.reloadAllData();
-                        this.endProgress();
                     } else {
                         const data = await response.json();
                         this.showMessage(data.error || `Failed to ${action} service`, 'error');
                         // Reload to get actual status
                         await this.reloadAllData();
-                        this.endProgress();
                     }
                 } catch (error) {
                     if (error.name === 'AbortError') {
@@ -2036,7 +1875,6 @@
                     }
                     // Reload to get actual status
                     await this.reloadAllData();
-                    this.endProgress();
                 } finally {
                     this.actionInProgress = false;
                 }
@@ -2084,12 +1922,6 @@
                 this.proxyUpdating = true;
                 this.message = '';
 
-                this.startProgress('Updating proxy configuration', [
-                    'Validating domain',
-                    'Updating settings',
-                    'Reloading endpoint'
-                ], 'Updating proxy configuration...');
-
                 try {
                     const response = await fetch(`/api/services/${this.serviceName}/subdomain`, {
                         method: 'PUT',
@@ -2101,19 +1933,14 @@
                     });
 
                     if (response.ok) {
-                        this.updateProgress(1);
                         this.showMessage('Proxy configuration updated successfully!', 'success');
-                        this.updateProgress(2);
                         await this.loadServiceEndpoint();
-                        this.endProgress();
                     } else {
                         const data = await response.json();
                         this.showMessage(data.error || 'Failed to update proxy configuration', 'error');
-                        this.endProgress();
                     }
                 } catch (error) {
                     this.showMessage('Error: ' + error.message, 'error');
-                    this.endProgress();
                 } finally {
                     this.proxyUpdating = false;
                 }

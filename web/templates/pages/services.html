@@ -331,76 +331,22 @@ function servicesPage() {
                     await this.loadServiceStatuses();
                     await this.checkConfigPaths();
                 } else {
-                    // Enable service - follow the same pattern as /services/:name
-                    // Store resolver to control when job completes
-                    let resolveJob;
-                    const jobPromise = new Promise(resolve => {
-                        resolveJob = resolve;
+                    // Enable service
+                    const resp = await fetch(`/api/services/${serviceId}/enable`, { 
+                        method: 'POST' 
                     });
                     
-                    // Store resolver for later use
-                    const progressResolver = resolveJob;
+                    if (!resp.ok) {
+                        throw new Error('Failed to enable service');
+                    }
                     
-                    // Add job to work queue with manual resolution
-                    window.WorkQueue.enqueue({
-                        id: `toggle-${serviceId}`,
-                        title: `Enabling service`,
-                        steps: [
-                            `Saving user/pass in database`,
-                            `Generating docker compose from template`,
-                            `Starting docker container`,
-                            `Waiting for service initialization`,
-                            `Checking root folders via API`,
-                            `Creating default root folder (if needed)`
-                        ],
-                        warning: 'Service startup in progress...',
-                        execute: async (queue) => {
-                            try {
-                                let currentStep = 0;
-                                queue.updateStep(currentStep);
-                                
-                                // Update progress steps while the backend processes
-                                const stepInterval = setInterval(() => {
-                                    if (currentStep < 5) {
-                                        currentStep++;
-                                        queue.updateStep(currentStep);
-                                    }
-                                }, 1500); // Update every 1.5 seconds
-                                
-                                // Fetch enable - this waits for the backend to complete
-                                const resp = await fetch(`/api/services/${serviceId}/enable`, { 
-                                    method: 'POST' 
-                                });
-                                
-                                clearInterval(stepInterval);
-                                
-                                if (!resp.ok) {
-                                    throw new Error('Failed to enable service');
-                                }
-                                
-                                // Set to final step
-                                queue.updateStep(5);
-                                
-                                // Wait a bit for user to see final step
-                                await new Promise(resolve => setTimeout(resolve, 500));
-                                
-                                // Reload data
-                                await this.loadServiceStatuses();
-                                await this.checkConfigPaths();
-                                this.showMessage(`${serviceId} enabled`, 'success');
-                                
-                                // Resolve the promise to complete the job
-                                progressResolver();
-                            } catch (e) {
-                                console.error('toggleService error', e);
-                                this.showMessage(`Failed to toggle ${serviceId}`, 'error');
-                                progressResolver();
-                            }
-                        }
-                    });
+                    // Wait for service to start
+                    await new Promise(resolve => setTimeout(resolve, 2000));
                     
-                    // Wait for the job to complete
-                    await jobPromise;
+                    // Reload data
+                    await this.loadServiceStatuses();
+                    await this.checkConfigPaths();
+                    this.showMessage(`${serviceId} enabled`, 'success');
                 }
             } finally {
                 this.toggling[serviceId] = false;
@@ -413,53 +359,32 @@ function servicesPage() {
                 return;
             }
 
-            // Add job to work queue
-            window.WorkQueue.enqueue({
-                id: `prune-${serviceId}`,
-                title: `Pruning ${serviceId}`,
-                steps: [
-                    `${serviceId}: stopping and removing docker container`,
-                    `${serviceId}: removing docker volumes (-v flag)`,
-                    `${serviceId}: deleting configuration folders`,
-                    `${serviceId}: removing database entries`,
-                    `${serviceId}: reloading service status`
-                ],
-                warning: 'Service cleanup in progress - This cannot be undone!',
-                execute: async (queue) => {
-                    this.pruning[serviceId] = true;
-                    try {
-                        // Simulate step progression (backend does all work in one call)
-                        for (let i = 1; i < 5; i++) {
-                            await new Promise(resolve => setTimeout(resolve, 400));
-                            queue.updateStep(i);
-                        }
-                        
-                        // Call reset endpoint (does all the work)
-                        const response = await fetch(`/api/services/${serviceId}/reset`, {
-                            method: 'POST'
-                        });
+            this.pruning[serviceId] = true;
+            try {
+                // Call reset endpoint (does all the work)
+                const response = await fetch(`/api/services/${serviceId}/reset`, {
+                    method: 'POST'
+                });
 
-                        if (response.ok) {
-                            // Deshabilita y oculta botón
-                            this.serviceStatuses[serviceId].enabled = false;
-                            this.serviceStatuses[serviceId].config_path_exists = false;
-                            this.showMessage(`${serviceId} pruned successfully! All config and volumes removed.`, 'success');
-                            // Espera breve para backend
-                            await new Promise(resolve => setTimeout(resolve, 1000));
-                            // Recarga TODO el estado
-                            await this.loadServiceStatuses();
-                            await this.checkConfigPaths();
-                        } else {
-                            const data = await response.json();
-                            this.showMessage(data.error || `Failed to prune ${serviceId}`, 'error');
-                        }
-                    } catch (error) {
-                        this.showMessage('Error: ' + error.message, 'error');
-                    } finally {
-                        this.pruning[serviceId] = false;
-                    }
+                if (response.ok) {
+                    // Deshabilita y oculta botón
+                    this.serviceStatuses[serviceId].enabled = false;
+                    this.serviceStatuses[serviceId].config_path_exists = false;
+                    this.showMessage(`${serviceId} pruned successfully! All config and volumes removed.`, 'success');
+                    // Espera breve para backend
+                    await new Promise(resolve => setTimeout(resolve, 2000));
+                    // Recarga TODO el estado
+                    await this.loadServiceStatuses();
+                    await this.checkConfigPaths();
+                } else {
+                    const data = await response.json();
+                    this.showMessage(data.error || `Failed to prune ${serviceId}`, 'error');
                 }
-            });
+            } catch (error) {
+                this.showMessage('Error: ' + error.message, 'error');
+            } finally {
+                this.pruning[serviceId] = false;
+            }
         },
         showMessage(msg, type = 'success') {
             this.message = msg; this.messageType = type;
