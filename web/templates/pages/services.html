@@ -17,7 +17,7 @@
     <div class="space-y-10">
         <!-- Media Server Section -->
         <div>
-            <h3 class="text-lg font-semibold text-dark-text mb-3 flex items-center gap-2">📺 Media Server</h3>
+            <h3 class="text-lg font-semibold text-dark-text mb-3 flex items-center gap-2">📺 <span data-i18n-key="services.section.media_server">Media Server</span></h3>
             <div class="space-y-3">
                 <template x-for="service in getServicesByCategory('media-server')" :key="service.id">
                     <div class="flex items-center justify-between p-4 rounded-lg border border-dark-border bg-dark-bg">
@@ -29,7 +29,7 @@
                                     <span x-show="serviceStatuses[service.id]?.enabled" class="px-2 py-0.5 text-xs rounded-full bg-green-900/30 border border-green-600/50 text-green-300" data-i18n-key="services.active">Active</span>
                                     <span x-show="!serviceStatuses[service.id]?.enabled" class="px-2 py-0.5 text-xs rounded-full bg-gray-700 text-gray-400" data-i18n-key="services.inactive">Inactive</span>
                                 </div>
-                                <p class="text-sm text-dark-muted" x-text="service.description || 'No description available'"></p>
+                                <p class="text-sm text-dark-muted" x-text="service.description || window.i18n.t('services.no_description')"></p>
                             </div>
                         </div>
                         <div class="flex items-center gap-3">
@@ -66,7 +66,7 @@
                             <a x-show="serviceStatuses[service.id]?.enabled"
                                :href="'/services/' + service.id"
                                class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 text-sm">
-                                Configure
+                                <span data-i18n-key="services.button.configure">Configure</span>
                             </a>
                         </div>
                     </div>
@@ -76,7 +76,7 @@
 
         <!-- *arr Services Section -->
         <div>
-            <h3 class="text-lg font-semibold text-dark-text mb-3 flex items-center gap-2">📦 *arr Services</h3>
+            <h3 class="text-lg font-semibold text-dark-text mb-3 flex items-center gap-2">📦 <span data-i18n-key="services.section.arr">*arr Services</span></h3>
             <div class="space-y-3">
                 <template x-for="service in getServicesByCategory('arr')" :key="service.id">
                     <div class="flex items-center justify-between p-4 rounded-lg border border-dark-border bg-dark-bg">
@@ -88,7 +88,7 @@
                                     <span x-show="serviceStatuses[service.id]?.enabled" class="px-2 py-0.5 text-xs rounded-full bg-green-900/30 border border-green-600/50 text-green-300" data-i18n-key="services.active">Active</span>
                                     <span x-show="!serviceStatuses[service.id]?.enabled" class="px-2 py-0.5 text-xs rounded-full bg-gray-700 text-gray-400" data-i18n-key="services.inactive">Inactive</span>
                                 </div>
-                                <p class="text-sm text-dark-muted" x-text="service.description || 'No description available'"></p>
+                                <p class="text-sm text-dark-muted" x-text="service.description || window.i18n.t('services.no_description')"></p>
                             </div>
                         </div>
                         <div class="flex items-center gap-3">
@@ -125,7 +125,7 @@
                             <a x-show="serviceStatuses[service.id]?.enabled"
                                :href="'/services/' + service.id"
                                class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 text-sm">
-                                Configure
+                                <span data-i18n-key="services.button.configure">Configure</span>
                             </a>
                         </div>
                     </div>
@@ -135,7 +135,7 @@
 
         <!-- Other Services Section -->
         <div>
-            <h3 class="text-lg font-semibold text-dark-text mb-3 flex items-center gap-2">🔧 Other Services</h3>
+            <h3 class="text-lg font-semibold text-dark-text mb-3 flex items-center gap-2">🔧 <span data-i18n-key="services.section.other">Other Services</span></h3>
             <div class="space-y-3">
                 <template x-for="service in getServicesByCategory('other')" :key="service.id">
                     <div class="flex items-center justify-between p-4 rounded-lg border border-dark-border bg-dark-bg">
@@ -147,7 +147,7 @@
                                     <span x-show="serviceStatuses[service.id]?.enabled" class="px-2 py-0.5 text-xs rounded-full bg-green-900/30 border border-green-600/50 text-green-300" data-i18n-key="services.active">Active</span>
                                     <span x-show="!serviceStatuses[service.id]?.enabled" class="px-2 py-0.5 text-xs rounded-full bg-gray-700 text-gray-400" data-i18n-key="services.inactive">Inactive</span>
                                 </div>
-                                <p class="text-sm text-dark-muted" x-text="service.description || 'No description available'"></p>
+                                <p class="text-sm text-dark-muted" x-text="service.description || window.i18n.t('services.no_description')"></p>
                             </div>
                         </div>
                         <div class="flex items-center gap-3">
@@ -184,7 +184,7 @@
                             <a x-show="serviceStatuses[service.id]?.enabled"
                                :href="'/services/' + service.id"
                                class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 text-sm">
-                                Configure
+                                <span data-i18n-key="services.button.configure">Configure</span>
                             </a>
                         </div>
                     </div>
