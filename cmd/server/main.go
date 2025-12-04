@@ -34,10 +34,11 @@ func main() {
 
 	// Initialize logger with file output
 	logFilePath := "./logs/mediacheky-dev.log"
+	errorLogFilePath := "./logs/mediacheky-error.log"
 	if cfg.App.Environment == "production" {
 		logFilePath = "./logs/mediacheky.log"
 	}
-	appLogger := logger.NewWithFile(cfg.App.LogLevel, logFilePath)
+	appLogger := logger.NewWithErrorFile(cfg.App.LogLevel, logFilePath, errorLogFilePath)
 	defer appLogger.Sync()
 
 	appLogger.Info("Starting MediaCheky",
@@ -174,8 +175,8 @@ func setupRoutes(app *fiber.App, h *handler.Handlers) {
 
 	// Web UI routes
 	app.Get("/", h.Dashboard.Index)
+	app.Get("/services", h.Service.Index)
 	app.Get("/settings", h.Settings.Index)
-	app.Get("/global", h.Config.Index)
 	app.Get("/services/:name", h.Service.ConfigPage)
 	app.Get("/logs", h.Logs.Index)
 
@@ -185,6 +186,7 @@ func setupRoutes(app *fiber.App, h *handler.Handlers) {
 		// Dashboard endpoints
 		api.Get("/dashboard/stats", h.Dashboard.GetDashboardStats)
 		api.Get("/dashboard/health", h.Dashboard.HealthCheck)
+		api.Get("/dashboard/system-info", h.Dashboard.SystemInfo)
 
 		// Stats (legacy endpoint)
 		api.Get("/stats", h.Dashboard.Stats)
@@ -208,7 +210,10 @@ func setupRoutes(app *fiber.App, h *handler.Handlers) {
 		services.Post("/:name/reset", middleware.ValidateServiceName(), h.Service.ResetService)
 		services.Get("/:name/radarr-config", middleware.ValidateServiceName(), h.Service.GetRadarrConfig)
 		services.Put("/:name/radarr-config", middleware.ValidateServiceName(), h.Service.UpdateRadarrConfig)
+		services.Get("/:name/sonarr-config", middleware.ValidateServiceName(), h.Service.GetSonarrConfig)
+		services.Put("/:name/sonarr-config", middleware.ValidateServiceName(), h.Service.UpdateSonarrConfig)
 		services.Get("/:name/ready", middleware.ValidateServiceName(), h.Service.CheckServiceReady)
+		services.Get("/:name/rootfolders", middleware.ValidateServiceName(), h.Service.GetRootFolders)
 
 		// Global configuration endpoints with validation
 		globalConfig := api.Group("/config/global")
@@ -246,17 +251,11 @@ func setupRoutes(app *fiber.App, h *handler.Handlers) {
 		api.Get("/radarr/queue", h.Settings.GetRadarrQueue)
 		api.Get("/sonarr/queue", h.Settings.GetSonarrQueue)
 
-		// Jellyseerr endpoints (for dashboard stats)
-		api.Get("/jellyseerr/stats", h.Dashboard.GetJellyseerrStats)
-		api.Get("/jellyseerr/requests", h.Dashboard.GetJellyseerrRequests)
-
 		// Jellystat endpoints (for dashboard stats)
 		api.Get("/jellystat/stats", h.Settings.GetJellystatStats)
 		api.Get("/jellystat/views-by-type", h.Settings.GetJellystatViewsByType)
 		api.Get("/jellystat/user-activity", h.Settings.GetJellystatUserActivity)
 		api.Get("/jellystat/library-stats", h.Settings.GetJellystatLibraryStats)
-		api.Get("/jellystat/dashboard/stats", h.Dashboard.GetJellystatStats)
-		api.Get("/jellystat/dashboard/views-by-type", h.Dashboard.GetJellystatViewsByType)
 	}
 }
 

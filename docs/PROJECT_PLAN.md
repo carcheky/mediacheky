@@ -2,8 +2,8 @@
 
 > Panel de control centralizado para servicios multimedia *arr
 
-**Última actualización**: 3 de noviembre, 2025  
-**Estado**: Redefinición completa del proyecto
+**Última actualización**: 4 de diciembre, 2025  
+**Estado**: Desarrollo activo - Radarr y Sonarr implementados
 
 ---
 
@@ -93,16 +93,14 @@ MediaCheky centraliza todo en una interfaz web donde puedes:
 
 ### Estructura de Pestañas
 
-```
 ┌────────────────────────────────────────────────┐
-│  MediaCheky                    [User] [Logout] │
 ├────────────────────────────────────────────────┤
-│  [Dashboard] [Settings] [Services] [Global]    │
+│  [Dashboard] [Settings] [Services] [Logs]       │
 ├────────────────────────────────────────────────┤
 │                                                 │
 │  [Contenido de la pestaña activa]             │
 │                                                 │
-└────────────────────────────────────────────────┘
+└─────────────────────────────────────────────────┘
 ```
 
 ### 1. 📊 Dashboard (Vista Principal)
@@ -138,31 +136,40 @@ MediaCheky centraliza todo en una interfaz web donde puedes:
 
 ### 2. ⚙️ Settings (Configuración Global)
 
-**Objetivo**: Habilitar/deshabilitar servicios y configuración general
+**Objetivo**: Configuración de variables globales compartidas
 
 **Contenido**:
 ```
 ┌─────────────────────────────────────────────┐
-│  Enable/Disable Services                    │
+│  Global Configuration                       │
 │                                             │
-│  [x] Jellyfin     [Start] [Stop] [Config]  │
-│  [x] Radarr       [Start] [Stop] [Config]  │
-│  [x] Sonarr       [Start] [Stop] [Config]  │
-│  [ ] Prowlarr     [Enable]                  │
-│  [ ] Bazarr       [Enable]                  │
-│  [x] qBittorrent  [Start] [Stop] [Config]  │
-│  [x] Jellyseerr   [Start] [Stop] [Config]  │
-│  [x] Jellystat    [Start] [Stop] [Config]  │
+│  User/Group:                                │
+│  PUID:    [1000]                            │
+│  PGID:    [1000]                            │
 │                                             │
-│  [+ Add Custom Service]                     │
+│  System:                                    │
+│  Timezone: [Europe/Madrid ▼]                │
+│  Language: [es-ES ▼]                        │
+│                                             │
+│  Base Paths:                                │
+│  Media:     [/media]                        │
+│  Downloads: [/downloads]                    │
+│  Config:    [/config]                       │
+│                                             │
+│  Network:                                   │
+│  Network name: [mediacheky-net]             │
+│                                             │
+│  [Save Global Settings]                     │
 └─────────────────────────────────────────────┘
 ```
 
 **Funcionalidades**:
-- Toggle enable/disable
-- Quick start/stop
-- Link a configuración específica
-- Badge de estado (running/stopped/error)
+- Configuración de variables globales (PUID, PGID, TZ)
+- Paths compartidos entre servicios
+- Configuración de red
+- Validación de rutas y permisos
+
+NOTA: La gestión de servicios (enable/disable, start/stop) se encuentra en la página `/services`
 
 ### 3. 🔧 Services (Configuración Individual)
 
@@ -211,40 +218,34 @@ MediaCheky centraliza todo en una interfaz web donde puedes:
 | Bazarr | Port, subtitle providers |
 | Jellystat | Port, database config |
 
-### 4. 🌐 Global Variables
+### 4. 🔧 Services (Gestión de Servicios)
 
-**Objetivo**: Variables compartidas entre todos los servicios
+**Objetivo**: Habilitar/deshabilitar servicios y acceso rápido a configuración
 
-**Contenido**:
 ```
-┌─────────────────────────────────────────────┐
-│  Global Configuration                       │
+│  Services Management                        │
 │                                             │
-│  User/Group:                                │
-│  PUID:    [1000]                            │
-│  PGID:    [1000]                            │
+│  Media Servers:                             │
+│  [Jellyfin]  ✅ Active  [Disable] [Config] │
 │                                             │
-│  System:                                    │
-│  Timezone: [Europe/Madrid ▼]                │
-│  Language: [es-ES ▼]                        │
+│  *arr Services:                             │
+│  [Radarr]    ✅ Active  [Disable] [Config] │
+│  [Sonarr]    ✅ Active  [Disable] [Config] │
+│  [Prowlarr]  ⚫ Inactive [Enable]          │
+│  [Bazarr]    ⚫ Inactive [Enable]          │
 │                                             │
-│  Base Paths:                                │
-│  Media:     [/media]                        │
-│  Downloads: [/downloads]                    │
-│  Config:    [/config]                       │
-│                                             │
-│  Network:                                   │
-│  Network name: [mediacheky-net]             │
-│  Subnet:       [172.20.0.0/16]              │
-│                                             │
-│  [Save Global Settings]                     │
+│  Other Services:                            │
+│  [qBittorrent] ✅ Active [Disable] [Config]│
+│  [Jellyseerr]  ✅ Active [Disable] [Config]│
+│  [Jellystat]   ✅ Active [Disable] [Config]│
 └─────────────────────────────────────────────┘
 ```
 
 **Funcionalidades**:
-- Valores heredados por todos los servicios
-- Override individual si es necesario
-- Validación de rutas y permisos
+- Toggle enable/disable por servicio
+- Estado visual (Active/Inactive)
+- Botón Configure solo visible cuando está habilitado
+- Categorización por tipo de servicio
 
 ---
 
@@ -339,6 +340,32 @@ services:
       - {{ .Global.NetworkName }}
     restart: {{ .RestartPolicy }}
 
+  
+#### Template de Docker Compose (Ejemplo: Sonarr)
+
+```yaml
+version: '3.8'
+services:
+  sonarr:
+    image: {{ .Image }}
+    container_name: {{ .ContainerName }}
+    environment:
+      - PUID={{ .Global.PUID }}
+      - PGID={{ .Global.PGID }}
+      - TZ={{ .Global.Timezone }}
+      {{- if .Config.UMASK }}
+      - UMASK={{ .Config.UMASK }}
+      {{- end }}
+    volumes:
+      - {{ .Paths.Config }}:/config
+      - {{ .Paths.Movies }}:/movies
+      - {{ .Paths.Downloads }}:/downloads
+    ports:
+      - "{{ .Port }}:8989"
+    networks:
+      - {{ .Global.NetworkName }}
+    restart: {{ .RestartPolicy }}
+
 networks:
   {{ .Global.NetworkName }}:
     external: true
@@ -385,6 +412,46 @@ networks:
 }
 ```
 
+#### Sonarr Schema (JSON Schema)
+
+```json
+{
+  "title": "Sonarr Configuration",
+  "type": "object",
+  "properties": {
+    "port": {
+      "type": "integer",
+      "minimum": 1024,
+      "maximum": 65535,
+      "default": 8989
+    },
+    "image": {
+      "type": "string",
+      "enum": [
+        "linuxserver/sonarr:latest",
+        "linuxserver/sonarr:develop",
+        "linuxserver/sonarr:nightly"
+      ],
+      "default": "linuxserver/sonarr:latest"
+    },
+    "paths": {
+      "type": "object",
+      "properties": {
+        "config": { "type": "string" },
+        "series": { "type": "string" },
+        "downloads": { "type": "string" }
+      },
+      "required": ["config", "series", "downloads"]
+    },
+    "umask": {
+      "type": "string",
+      "pattern": "^[0-7]{3,4}$",
+      "default": "022"
+    }
+  },
+  "required": ["port", "image", "paths"]
+}
+```
 ---
 
 ## 🔌 API REST
@@ -449,20 +516,24 @@ GET    /api/docker/containers     # Listar contenedores
 
 **Objetivo**: Soportar los 8 servicios principales
 
-- [ ] Implementar templates y formularios para:
-  - [ ] Sonarr
+- [x] Implementar templates y formularios para:
+  - [x] Radarr (completado con autenticación y root folders)
+  - [x] Sonarr (completado siguiendo patrón Radarr)
   - [ ] Jellyfin
   - [ ] Prowlarr
   - [ ] qBittorrent
   - [ ] Jellyseerr
   - [ ] Bazarr
   - [ ] Jellystat
-- [ ] Dashboard mejorado con métricas
-- [ ] Sistema de logs por servicio
-- [ ] Validación de configuración (JSON Schema)
-- [ ] Variables globales funcionales (PUID, PGID, TZ, paths)
+- [x] Dashboard mejorado con métricas
+- [x] Sistema de logs por servicio
+- [x] Validación de configuración (JSON Schema)
+- [x] Variables globales funcionales (PUID, PGID, TZ, paths)
+- [x] UI compacta y optimizada para formularios
 
 **Criterio de éxito**: Puedo gestionar los 8 servicios desde MediaCheky
+
+**Progreso actual**: 2/8 servicios completados (Radarr, Sonarr)
 
 ### Fase 3: Features Avanzadas - 2 semanas
 
@@ -497,7 +568,7 @@ GET    /api/docker/containers     # Listar contenedores
 
 ### Estructura de Directorios
 
-```
+```text
 mediacheky/
 ├── cmd/
 │   └── server/

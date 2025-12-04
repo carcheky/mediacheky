@@ -18,6 +18,10 @@ func New(level string) *Logger {
 }
 
 func NewWithFile(level string, logFilePath string) *Logger {
+	return NewWithErrorFile(level, logFilePath, "")
+}
+
+func NewWithErrorFile(level string, logFilePath string, errorLogFilePath string) *Logger {
 	// Parse log level
 	var zapLevel zapcore.Level
 	switch level {
@@ -77,7 +81,7 @@ func NewWithFile(level string, logFilePath string) *Logger {
 	)
 	cores = append(cores, consoleCore)
 
-	// File core (if path provided)
+	// File core (if path provided) - all logs
 	if logFilePath != "" {
 		// Create directory if it doesn't exist
 		logDir := filepath.Dir(logFilePath)
@@ -97,6 +101,30 @@ func NewWithFile(level string, logFilePath string) *Logger {
 				zapLevel,
 			)
 			cores = append(cores, fileCore)
+		}
+	}
+
+	// Error file core (if path provided) - only WARN, ERROR, FATAL
+	if errorLogFilePath != "" {
+		// Create directory if it doesn't exist
+		logDir := filepath.Dir(errorLogFilePath)
+		if err := os.MkdirAll(logDir, 0755); err == nil {
+			// Lumberjack for error log rotation
+			errorFileWriter := zapcore.AddSync(&lumberjack.Logger{
+				Filename:   errorLogFilePath,
+				MaxSize:    10, // MB
+				MaxBackups: 5,
+				MaxAge:     30, // days - keep errors longer
+				Compress:   true,
+			})
+
+			// Only log WARN and above to error file
+			errorFileCore := zapcore.NewCore(
+				zapcore.NewJSONEncoder(fileEncoderConfig),
+				errorFileWriter,
+				zapcore.WarnLevel, // Only WARN, ERROR, FATAL
+			)
+			cores = append(cores, errorFileCore)
 		}
 	}
 

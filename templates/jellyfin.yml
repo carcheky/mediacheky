@@ -1,0 +1,28 @@
+services:
+  jellyfin:
+    image: {{ .Image }}
+    container_name: {{ .ContainerName }}
+    labels:
+      - "mediacheky.managed=true"
+    environment:
+      - PUID={{ .Global.PUID }}
+      - PGID={{ .Global.PGID }}
+      - TZ={{ .Global.Timezone }}
+      - JELLYFIN_PublishedServerUrl={{ .Global.PublicUrl }}
+    volumes:
+      - {{ .Paths.Config }}:/config
+      - {{ .Global.MediaPath }}:/media
+    {{- if and .HostPort (gt .HostPort 0) }}
+    ports:
+      - "{{ .HostPort }}:8096"
+    {{- end }}
+    devices:
+      # Intel QuickSync
+      - /dev/dri:/dev/dri
+    networks:
+      - {{ .Network }}
+    restart: {{ .RestartPolicy }}
+
+networks:
+  {{ .Network }}:
+    external: true

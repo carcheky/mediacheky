@@ -34,56 +34,192 @@
 
 <body class="bg-dark-bg dark:bg-dark-bg min-h-screen flex flex-col">
     <!-- Top Navigation Bar -->
-    <nav class="bg-dark-surface dark:bg-dark-surface shadow-lg border-b border-dark-border sticky top-0 z-50" x-data="{ mobileMenuOpen: false }">
+    <nav class="bg-dark-surface shadow-lg sticky top-0 z-50 border-b border-dark-border" x-data="{ mobileMenuOpen: false, currentPath: window.location.pathname, i18nReady: false }" @i18n:changed.window="i18nReady = true" x-init="setTimeout(() => i18nReady = true, 100)">
         <div class="max-w-7xl mx-auto px-4">
-            <div class="flex justify-between h-16">
-                <div class="flex">
-                    <div class="flex-shrink-0 flex items-center">
-                        <a href="/" class="flex items-center gap-2">
-                            <span class="text-2xl">🦊</span>
-                            <h1 class="text-xl font-bold text-dark-text dark:text-dark-text">MediaCheky</h1>
+            <div class="flex items-stretch justify-between h-16">
+                <!-- Logo -->
+                <div class="flex items-center flex-shrink-0">
+                    <a href="/" class="flex items-center gap-2">
+                        <span class="text-2xl">🦊</span>
+                        <h1 class="text-xl font-bold text-dark-text">MediaCheky</h1>
+                    </a>
+                </div>
+
+                <!-- Desktop Menu -->
+                <div class="hidden md:flex items-stretch ml-8 space-x-1" x-show="i18nReady" x-transition:opacity>
+                    <a href="/"
+                        :class="currentPath === '/' ? 'border-blue-500 text-dark-text' : 'border-transparent text-dark-muted hover:border-blue-400 hover:text-dark-text'"
+                        class="inline-flex items-center px-4 border-b-2 text-sm font-medium transition-all duration-150">
+                        <span class="mr-2">📊</span>
+                        <span data-i18n-key="nav.dashboard">Dashboard</span>
+                    </a>
+
+                    <div class="relative flex items-stretch" x-data="servicesMenu()" @mouseenter="open = true" @mouseleave="open = false" x-init="init()">
+                        <a href="/services"
+                            :class="currentPath.startsWith('/services') ? 'border-blue-500 text-dark-text' : 'border-transparent text-dark-muted hover:border-blue-400 hover:text-dark-text'"
+                            class="inline-flex items-center px-4 border-b-2 text-sm font-medium transition-all duration-150">
+                            <span class="mr-2">🎬</span>
+                            <span data-i18n-key="nav.services">Services</span>
+                            <svg class="w-4 h-4 ml-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                            </svg>
                         </a>
+                        <!-- Services Dropdown -->
+                        <div x-show="open" 
+                             x-transition:enter="transition ease-out duration-100"
+                             x-transition:enter-start="transform opacity-0 scale-95"
+                             x-transition:enter-end="transform opacity-100 scale-100"
+                             class="absolute left-0 top-full mt-0 w-72 bg-dark-surface border border-dark-border rounded-lg shadow-2xl z-50 max-h-96 overflow-y-auto">
+                            
+                            <!-- Enabled Services -->
+                            <div class="p-2">
+                                <div class="px-2 py-1 text-xs font-semibold text-green-400 uppercase tracking-wider">
+                                    ✅ <span data-i18n-key="nav.services.enabled">Enabled Services</span>
+                                </div>
+                                <template x-for="service in allServices.filter(s => serviceStatuses[s.id]?.enabled)" :key="service.id">
+                                    <a :href="'/services/' + service.id"
+                                       class="flex items-center gap-3 px-3 py-2 rounded hover:bg-dark-bg transition-colors cursor-pointer group">
+                                        <div class="text-2xl" x-text="service.icon"></div>
+                                        <div class="flex-1 min-w-0">
+                                            <div class="text-sm font-medium text-dark-text group-hover:text-blue-400 transition-colors" x-text="service.label"></div>
+                                            <div class="text-xs text-dark-muted truncate" x-text="service.description"></div>
+                                        </div>
+                                        <div class="flex-shrink-0">
+                                            <div class="w-2 h-2 rounded-full bg-green-500"></div>
+                                        </div>
+                                    </a>
+                                </template>
+                                <template x-if="allServices.filter(s => serviceStatuses[s.id]?.enabled).length === 0">
+                                    <div class="px-3 py-2 text-sm text-dark-muted italic" data-i18n-key="nav.services.no_enabled">No enabled services</div>
+                                </template>
+                            </div>
+                            
+                            <!-- Divider -->
+                            <div class="border-t border-dark-border"></div>
+                            
+                            <!-- Disabled Services -->
+                            <div class="p-2">
+                                <div class="px-2 py-1 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                                    ⚫ <span data-i18n-key="nav.services.disabled">Disabled Services</span>
+                                </div>
+                                <template x-for="service in allServices.filter(s => !serviceStatuses[s.id]?.enabled)" :key="service.id">
+                                    <a :href="'/services/' + service.id"
+                                       class="flex items-center gap-3 px-3 py-2 rounded hover:bg-dark-bg transition-colors cursor-pointer group opacity-60 hover:opacity-100">
+                                        <div class="text-2xl grayscale" x-text="service.icon"></div>
+                                        <div class="flex-1 min-w-0">
+                                            <div class="text-sm font-medium text-dark-muted group-hover:text-dark-text transition-colors" x-text="service.label"></div>
+                                            <div class="text-xs text-dark-muted truncate" x-text="service.description"></div>
+                                        </div>
+                                        <div class="flex-shrink-0">
+                                            <div class="w-2 h-2 rounded-full bg-gray-600"></div>
+                                        </div>
+                                    </a>
+                                </template>
+                            </div>
+                        </div>
                     </div>
-                    <div class="hidden sm:ml-6 sm:flex sm:space-x-8">
-                        <a href="/"
-                            class="border-transparent text-dark-muted hover:border-blue-500 hover:text-dark-text dark:text-dark-muted dark:hover:text-dark-text inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium transition-colors">
-                            📊 Dashboard
-                        </a>
-                        <a href="/settings"
-                            class="border-transparent text-dark-muted hover:border-blue-500 hover:text-dark-text dark:text-dark-muted dark:hover:text-dark-text inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium transition-colors">
-                            ⚙️ Settings
-                        </a>
-                        <a href="/logs"
-                            class="border-transparent text-dark-muted hover:border-blue-500 hover:text-dark-text dark:text-dark-muted dark:hover:text-dark-text inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium transition-colors">
-                            📝 Logs
-                        </a>
+
+                    <a href="/settings"
+                        :class="currentPath.startsWith('/settings') ? 'border-blue-500 text-dark-text' : 'border-transparent text-dark-muted hover:border-blue-400 hover:text-dark-text'"
+                        class="inline-flex items-center px-4 border-b-2 text-sm font-medium transition-all duration-150">
+                        <span class="mr-2">⚙️</span>
+                        <span data-i18n-key="nav.settings">Settings</span>
+                    </a>
+
+                    <a href="/logs"
+                        :class="currentPath.startsWith('/logs') ? 'border-blue-500 text-dark-text' : 'border-transparent text-dark-muted hover:border-blue-400 hover:text-dark-text'"
+                        class="inline-flex items-center px-4 border-b-2 text-sm font-medium transition-all duration-150">
+                        <span class="mr-2">📜</span>
+                        <span data-i18n-key="nav.logs">Logs</span>
+                    </a>
+                </div>
+
+                <!-- Language Selector (Desktop) -->
+                <div class="hidden md:flex items-center ml-auto">
+                    <div x-data="{ lang: 'en', updateLanguage() { window.i18n.setLang(this.lang); }, init() { this.lang = window.i18n.lang; document.addEventListener('i18n:changed', (e) => { this.lang = e.detail.lang; }); } }" x-init="init()">
+                        <label class="sr-only" for="language-selector">Language</label>
+                        <select id="language-selector" 
+                                x-model="lang" 
+                                @change="updateLanguage()"
+                                class="px-3 py-1.5 border border-dark-border rounded-md bg-dark-bg text-dark-text text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-shadow">
+                            <option value="en">🇬🇧 English</option>
+                            <option value="es">🇪🇸 Español</option>
+                        </select>
                     </div>
                 </div>
-                <!-- Mobile menu button -->
-                <div class="flex items-center sm:hidden">
-                    <button @click="mobileMenuOpen = !mobileMenuOpen" type="button" 
-                        aria-label="Toggle mobile menu"
-                        class="inline-flex items-center justify-center p-2 rounded-md text-dark-muted hover:text-dark-text hover:bg-dark-bg focus:outline-none">
+
+                <!-- Mobile Menu Button -->
+                <div class="flex items-center md:hidden ml-auto">
+                    <button @click="mobileMenuOpen = !mobileMenuOpen" 
+                            type="button" 
+                            aria-label="Toggle menu"
+                            class="p-2 rounded-md text-dark-muted hover:text-dark-text hover:bg-dark-bg transition-colors">
                         <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+                            <path x-show="!mobileMenuOpen" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+                            <path x-show="mobileMenuOpen" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
                         </svg>
                     </button>
                 </div>
             </div>
         </div>
-        
-        <!-- Mobile menu -->
-        <div x-show="mobileMenuOpen" x-transition class="sm:hidden border-t border-dark-border">
-            <div class="pt-2 pb-3 space-y-1">
-                <a href="/" class="block pl-3 pr-4 py-2 border-l-4 border-transparent text-dark-muted hover:bg-dark-bg hover:border-blue-500 hover:text-dark-text">
-                    📊 Dashboard
+
+        <!-- Mobile Menu -->
+        <div x-show="mobileMenuOpen" 
+             x-transition:enter="transition ease-out duration-200"
+             x-transition:enter-start="opacity-0 -translate-y-1"
+             x-transition:enter-end="opacity-100 translate-y-0"
+             x-transition:leave="transition ease-in duration-150"
+             x-transition:leave-start="opacity-100 translate-y-0"
+             x-transition:leave-end="opacity-0 -translate-y-1"
+             class="md:hidden border-t border-dark-border bg-dark-surface">
+            <div class="px-2 pt-2 pb-3 space-y-1">
+                <a href="/" 
+                   @click="mobileMenuOpen = false"
+                   :class="currentPath === '/' ? 'bg-dark-bg border-blue-500 text-dark-text' : 'border-transparent text-dark-muted hover:bg-dark-bg hover:text-dark-text'"
+                   class="flex items-center px-3 py-2 rounded-md text-sm font-medium border-l-4 transition-colors">
+                    <span class="mr-2">📊</span>
+                    <span data-i18n-key="nav.dashboard">Dashboard</span>
                 </a>
-                <a href="/settings" class="block pl-3 pr-4 py-2 border-l-4 border-transparent text-dark-muted hover:bg-dark-bg hover:border-blue-500 hover:text-dark-text">
-                    ⚙️ Settings
+
+                <a href="/services" 
+                   @click="mobileMenuOpen = false"
+                   :class="currentPath.startsWith('/services') ? 'bg-dark-bg border-blue-500 text-dark-text' : 'border-transparent text-dark-muted hover:bg-dark-bg hover:text-dark-text'"
+                   class="flex items-center px-3 py-2 rounded-md text-sm font-medium border-l-4 transition-colors">
+                    <span class="mr-2">🎬</span>
+                    <span data-i18n-key="nav.services">Services</span>
                 </a>
-                <a href="/logs" class="block pl-3 pr-4 py-2 border-l-4 border-transparent text-dark-muted hover:bg-dark-bg hover:border-blue-500 hover:text-dark-text">
-                    📝 Logs
+
+                <a href="/settings" 
+                   @click="mobileMenuOpen = false"
+                   :class="currentPath.startsWith('/settings') ? 'bg-dark-bg border-blue-500 text-dark-text' : 'border-transparent text-dark-muted hover:bg-dark-bg hover:text-dark-text'"
+                   class="flex items-center px-3 py-2 rounded-md text-sm font-medium border-l-4 transition-colors">
+                    <span class="mr-2">⚙️</span>
+                    <span data-i18n-key="nav.settings">Settings</span>
                 </a>
+
+                <a href="/logs" 
+                   @click="mobileMenuOpen = false"
+                   :class="currentPath.startsWith('/logs') ? 'bg-dark-bg border-blue-500 text-dark-text' : 'border-transparent text-dark-muted hover:bg-dark-bg hover:text-dark-text'"
+                   class="flex items-center px-3 py-2 rounded-md text-sm font-medium border-l-4 transition-colors">
+                    <span class="mr-2">📜</span>
+                    <span data-i18n-key="nav.logs">Logs</span>
+                </a>
+            </div>
+
+            <!-- Mobile Language Selector -->
+            <div class="border-t border-dark-border px-4 py-3">
+                <div x-data="{ lang: 'en', updateLanguage() { window.i18n.setLang(this.lang); }, init() { this.lang = window.i18n.lang; document.addEventListener('i18n:changed', (e) => { this.lang = e.detail.lang; }); } }" x-init="init()">
+                    <label class="block text-xs font-medium text-dark-muted mb-1.5" for="language-selector-mobile">
+                        Language / Idioma
+                    </label>
+                    <select id="language-selector-mobile" 
+                            x-model="lang" 
+                            @change="updateLanguage()"
+                            class="w-full px-3 py-2 border border-dark-border rounded-md bg-dark-bg text-dark-text text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <option value="en">🇬🇧 English</option>
+                        <option value="es">🇪🇸 Español</option>
+                    </select>
+                </div>
             </div>
         </div>
     </nav>
@@ -92,6 +228,131 @@
     <main class="flex-1 max-w-7xl mx-auto w-full py-6 px-4 sm:px-6 lg:px-8">
         {{embed}}
     </main>
+
+    <!-- Global Toast Notifications Manager -->
+    <div x-data="toastManager()" 
+         x-init="init()"
+         x-ref="globalToast"
+         class="fixed top-4 right-4 z-50 max-w-md space-y-2">
+        <template x-for="(toast, index) in toasts" :key="toast.id">
+            <div x-show="toast.visible"
+                 x-transition:enter="transition ease-out duration-300"
+                 x-transition:enter-start="opacity-0 translate-x-8"
+                 x-transition:enter-end="opacity-100 translate-x-0"
+                 x-transition:leave="transition ease-in duration-200"
+                 x-transition:leave-start="opacity-100 translate-x-0"
+                 x-transition:leave-end="opacity-0 translate-x-8"
+                 :class="{
+                    'bg-green-900/95 border-green-700': toast.type === 'success',
+                    'bg-red-900/95 border-red-700': toast.type === 'error',
+                    'bg-blue-900/95 border-blue-700': toast.type === 'info'
+                 }" 
+                 class="backdrop-blur-sm border rounded-lg shadow-2xl p-4 flex items-start gap-3">
+                <!-- Icon -->
+                <div class="flex-shrink-0">
+                    <svg x-show="toast.type === 'success'" class="w-6 h-6 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                    <svg x-show="toast.type === 'error'" class="w-6 h-6 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                    <svg x-show="toast.type === 'info'" class="w-6 h-6 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M12 18a6 6 0 100-12 6 6 0 000 12z"></path>
+                    </svg>
+                </div>
+                <!-- Message -->
+                <div class="flex-1">
+                    <p :class="{
+                            'text-green-100': toast.type === 'success',
+                            'text-red-100': toast.type === 'error',
+                            'text-blue-100': toast.type === 'info'
+                        }" 
+                        class="text-sm font-medium" 
+                        x-text="toast.message"></p>
+                </div>
+                <!-- Close Button -->
+                <button @click="removeToast(toast.id)" 
+                        class="flex-shrink-0 text-gray-400 hover:text-gray-200 transition-colors">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </button>
+            </div>
+        </template>
+    </div>
+
+    <script>
+    // Global Toast Manager with localStorage persistence
+    function toastManager() {
+        return {
+            toasts: [],
+            nextId: 1,
+            
+            init() {
+                // Check for pending toasts in localStorage
+                this.checkPendingToasts();
+                
+                // Set up global showToast function
+                window.showToast = (message, type = 'success') => {
+                    this.addToast(message, type);
+                };
+            },
+            
+            checkPendingToasts() {
+                try {
+                    const pending = localStorage.getItem('pendingToasts');
+                    if (pending) {
+                        const toasts = JSON.parse(pending);
+                        toasts.forEach(t => this.addToast(t.message, t.type));
+                        localStorage.removeItem('pendingToasts');
+                    }
+                } catch (e) {
+                    console.error('Failed to load pending toasts:', e);
+                }
+            },
+            
+            addToast(message, type = 'success') {
+                const id = this.nextId++;
+                const toast = {
+                    id,
+                    message,
+                    type,
+                    visible: true
+                };
+                
+                this.toasts.push(toast);
+                
+                // Auto-dismiss
+                const delay = type === 'success' ? 5000 : 8000;
+                setTimeout(() => {
+                    this.removeToast(id);
+                }, delay);
+            },
+            
+            removeToast(id) {
+                const index = this.toasts.findIndex(t => t.id === id);
+                if (index !== -1) {
+                    this.toasts[index].visible = false;
+                    // Remove from array after animation
+                    setTimeout(() => {
+                        this.toasts = this.toasts.filter(t => t.id !== id);
+                    }, 300);
+                }
+            }
+        };
+    }
+    
+    // Helper to queue toast for next page load
+    window.queueToast = function(message, type = 'success') {
+        try {
+            const pending = JSON.parse(localStorage.getItem('pendingToasts') || '[]');
+            pending.push({ message, type });
+            localStorage.setItem('pendingToasts', JSON.stringify(pending));
+        } catch (e) {
+            console.error('Failed to queue toast:', e);
+        }
+    };
+    </script>
 
     <!-- Footer -->
     <footer class="bg-dark-surface dark:bg-dark-surface border-t border-dark-border mt-auto">
@@ -111,5 +372,464 @@
         </div>
     </footer>
 </body>
+<script>
+// Services dropdown component: show all services grouped by enabled/disabled
+function servicesMenu() {
+    return {
+        open: false,
+        allServices: [
+            { id: 'jellyfin',   label: 'Jellyfin',   icon: '🍿', description: 'Media server for streaming movies, TV shows, and music' },
+            { id: 'radarr',     label: 'Radarr',     icon: '🎬', description: 'Movie collection manager for Usenet and BitTorrent' },
+            { id: 'sonarr',     label: 'Sonarr',     icon: '📺', description: 'TV series collection manager for Usenet and BitTorrent' },
+            { id: 'prowlarr',   label: 'Prowlarr',   icon: '🔍', description: 'Indexer manager/proxy for Radarr, Sonarr, and other services' },
+            { id: 'bazarr',     label: 'Bazarr',     icon: '🗣️', description: 'Subtitle management companion for Radarr and Sonarr' },
+            { id: 'jellyseerr', label: 'Jellyseerr', icon: '🎫', description: 'Media request management for Jellyfin' },
+            { id: 'jellystat',  label: 'Jellystat',  icon: '📊', description: 'Statistics and analytics for Jellyfin' },
+            { id: 'qbittorrent',label: 'qBittorrent',icon: '⬇️', description: 'BitTorrent client for downloading media' }
+        ],
+        serviceStatuses: {},
+        async init() {
+            try {
+                const resp = await fetch('/api/services');
+                if (resp.ok) {
+                    const data = await resp.json();
+                    const services = data.data || data;
+                    const statuses = {};
+                    (services || []).forEach(svc => {
+                        statuses[svc.name] = { 
+                            enabled: svc.enabled, 
+                            status: svc.status 
+                        };
+                    });
+                    this.serviceStatuses = statuses;
+                }
+            } catch (e) { /* ignore */ }
+        }
+    }
+}
+
+// Minimal i18n
+window.i18n = (function() {
+    const dict = {
+        en: {
+            'nav.dashboard': 'Dashboard',
+            'nav.services': 'Services',
+            'nav.services.enabled': 'Enabled Services',
+            'nav.services.disabled': 'Disabled Services',
+            'nav.services.no_enabled': 'No enabled services',
+            'nav.settings': 'Settings',
+            'nav.logs': 'Logs',
+            'settings.title': 'Settings',
+
+            // Common
+            'common.refresh': 'Refresh',
+            'common.loading': 'Loading...',
+            'common.syncing': 'Syncing...',
+
+            // Dashboard
+            'dashboard.title': 'Dashboard',
+            'dashboard.sync': 'Sync Now',
+            'dashboard.services': 'Services',
+            'dashboard.empty.noEnabled': 'No enabled services yet.',
+            'dashboard.empty.enable': 'Enable Services →',
+            'dashboard.empty.noServicesMenu': 'No services enabled',
+
+            // Queues / Sections
+            'radarr.queue.title': 'Radarr Download Queue',
+            'sonarr.queue.title': 'Sonarr Download Queue',
+            'jellyfin.sessions.title': 'Jellyfin - Active Sessions',
+            'jellyfin.recent.title': 'Jellyfin - Recently Added',
+            'jellyfin.playing': 'Playing',
+            'jellyfin.paused': 'Paused',
+            'jellyfin.transcoding': 'Transcoding',
+            'jellyfin.directplay': 'Direct Play',
+            'jellyfin.directstream': 'Direct Stream',
+            'qb.title': 'qBittorrent',
+            'qb.download_speed': 'Download Speed',
+            'qb.upload_speed': 'Upload Speed',
+            'qb.dht_nodes': 'DHT Nodes',
+            'qb.status': 'Status',
+            'qb.unknown': 'Unknown',
+            'qb.active_torrents': 'Active Torrents',
+            'qb.showing_of': 'Showing {count} of {total} active torrents',
+            'qb.no_active': 'No active torrents',
+            'qb.client': 'Client',
+            'qb.protocol': 'Protocol',
+            'qb.indexer': 'Indexer',
+            'jellyseerr.title': 'Jellyseerr - Requests',
+            'jellyseerr.stats.total': 'Total',
+            'jellyseerr.stats.pending': 'Pending',
+            'jellyseerr.stats.approved': 'Approved',
+            'jellyseerr.stats.available': 'Available',
+            'jellyseerr.recent_requests': 'Recent Requests',
+            'jellyseerr.by': 'By:',
+            'jellyseerr.movie': 'Movie',
+            'jellyseerr.series': 'Series',
+            'jellyseerr.showing_of_req': 'Showing {count} of {total} requests',
+            'jellyseerr.no_stats': 'No statistics available',
+            'jellystat.title': 'Jellystat - Usage Statistics',
+            'jellystat.total_plays': 'Total Plays',
+            'jellystat.last_days': 'Last 7 days',
+            'jellystat.movies': 'Movies',
+            'jellystat.episodes': 'Episodes',
+            'jellystat.songs': 'Songs',
+            'jellystat.views_by_type': 'Views by Type',
+            'jellystat.music': 'Music',
+            'jellystat.no_stats': 'No statistics available',
+            'dashboard.system.title': 'System Storage Info',
+            'dashboard.system.total': 'Total Space',
+            'dashboard.system.available': 'Available Space',
+            'dashboard.system.used': 'Used Space',
+            'dashboard.system.used_percent': '% used',
+            'dashboard.system.error': 'Unable to retrieve disk information',
+            'dashboard.stats.media': 'media',
+            'dashboard.stats.to_delete': 'to delete',
+            'dashboard.stats.leaving': 'leaving',
+            'dashboard.button.open': 'Open',
+            'dashboard.button.configure': 'Configure',
+            'common.today': 'Today',
+            'common.yesterday': 'Yesterday',
+            'common.days_ago': '{count} days ago',
+            'common.weeks_ago': '{count} weeks ago',
+
+            // Quick Actions
+            'dashboard.quick.title': 'Quick Actions',
+            'dashboard.quick.viewmedia': 'View Media',
+            'dashboard.quick.viewmedia.help': 'Browse and manage your media library',
+            'dashboard.quick.configure': 'Configure Services',
+            'dashboard.quick.configure.help': 'Set up Radarr, Sonarr, Jellyfin, etc.',
+            'dashboard.quick.schedules': 'Manage Schedules',
+            'dashboard.quick.schedules.help': 'Configure cleanup schedules',
+
+            // Services Page
+            'services.title': 'Services',
+            'services.reload': 'Reload',
+            'services.active': 'Active',
+            'services.inactive': 'Inactive',
+            'services.prune.title': 'Remove unused files and optimize storage',
+
+            // Logs Page
+            'logs.title': 'Logs',
+            'logs.placeholder': 'Application logs will appear here...',
+            'logs.coming_soon': 'Coming soon: Live log streaming and history',
+
+            // Service Config Page
+            'config.title': 'Configuration',
+            'config.breadcrumb.services': 'Services',
+            'config.description': 'Configure service settings and paths',
+            'config.status.disabled': 'Disabled',
+            'config.status.stopped': 'Stopped',
+            'config.status.error': 'Error',
+            'config.status.running': 'Running',
+            'config.status.unknown': 'Unknown',
+            'config.enable': 'Enable',
+            'config.button.start': 'Start service',
+            'config.button.stop': 'Stop service',
+            'config.button.restart': 'Restart service',
+            'config.button.apply': 'Apply',
+            'config.button.applying': 'Applying...',
+            'config.button.prune': 'Remove unused files and optimize storage',
+            'config.button.apply_changes': 'Apply configuration changes',
+            'config.button.open_service': 'Open service',
+            'config.radarr.app_settings.title': 'Radarr Application Settings',
+            'config.radarr.app_settings.description': 'Configure Radarr\'s config.xml settings',
+            'config.sonarr.app_settings.title': 'Sonarr Application Settings',
+            'config.sonarr.app_settings.description': 'Configure Sonarr\'s config.xml settings',
+
+            // Settings Page
+            'settings.save': 'Save',
+            'settings.saving': 'Saving...',
+            'settings.global_vars.title': 'Global Variables',
+            'settings.global_vars.puid': 'PUID (User ID)',
+            'settings.global_vars.pgid': 'PGID (Group ID)',
+            'settings.global_vars.timezone': 'Timezone (TZ)',
+            'settings.proxy.title': 'Proxy and Domains',
+            'settings.proxy.enabled': 'Enabled',
+            'settings.proxy.disabled': 'Disabled',
+            'settings.proxy.domains_configured': 'Configured Domains',
+            'settings.proxy.no_domains': 'No domains configured. Add a domain to enable proxy routing.',
+            'settings.proxy.primary': 'Primary',
+            'settings.proxy.add_domain': 'Add Domain',
+
+            // Services Page - Additional
+            'services.section.media_server': 'Media Server',
+            'services.section.arr': '*arr Services',
+            'services.section.other': 'Other Services',
+            'services.button.configure': 'Configure',
+            'services.button.enable': 'Enable',
+            'services.button.disable': 'Disable',
+            'services.no_description': 'No description available',
+
+            // Service Config - Additional
+            'config.button.disable': 'Disable service',
+            'config.button.kill_down': 'Force kill and remove container',
+            'config.proxy.description': 'Configure subdomain and domain for this service',
+            'config.proxy.no_primary': 'Configure a primary domain in Global Variables to see the service URL',
+            'config.auth.disabled_local': 'Disabled for Local Addresses',
+            'config.proxy.title': 'Proxy & Domain Access',
+            'config.proxy.subdomain': 'Subdomain',
+            'config.proxy.subdomain.help': 'Leave empty to auto-generate from service name',
+            'config.proxy.domain': 'Domain (optional)',
+            'config.proxy.domain.help': 'Leave empty to use primary domain',
+            'config.proxy.service_url': 'Service URL',
+            'config.proxy.external_port': 'External Port (optional)',
+            'config.proxy.external_port.help': 'Optional: expose service on host (e.g., 7878). Leave empty to use only internal network access via proxy.',
+            'config.proxy.external_port.placeholder': 'Leave empty for internal-only access',
+            
+            // Global Variables Page
+            'global.title': 'Global Variables',
+            'global.subtitle': 'Configuration shared across all services',
+            'global.save': 'Save Changes',
+            'global.saving': 'Saving...',
+            'global.user_group.title': 'User & Group',
+            'global.user_group.subtitle': 'Linux user and group IDs for containers',
+            'global.user_group.puid.help': 'Default: 1000',
+            'global.user_group.pgid.help': 'Default: 1000',
+            'global.system.title': 'System',
+            'global.system.subtitle': 'General system settings',
+            'global.system.timezone.help': 'Example: America/New_York, Europe/London',
+            'global.system.language': 'Language',
+            'global.paths.title': 'Base Paths',
+            'global.paths.subtitle': 'Default paths for media storage',
+            'global.paths.media': 'Media Directory',
+            'global.paths.media.help': 'Root path for movies, TV shows, music, etc.',
+            'global.paths.downloads': 'Downloads Directory',
+            'global.paths.downloads.help': 'Path for incomplete downloads',
+            'global.proxy.activated': 'Proxy activated',
+            'global.proxy.activated.message': 'Services can now be accessed via subdomains. Configure individual service subdomains in their respective service configuration pages.'
+        },
+        es: {
+            'nav.dashboard': 'Panel',
+            'nav.services': 'Servicios',
+            'nav.services.enabled': 'Servicios Habilitados',
+            'nav.services.disabled': 'Servicios Deshabilitados',
+            'nav.services.no_enabled': 'No hay servicios habilitados',
+            'nav.settings': 'Ajustes',
+            'nav.logs': 'Logs',
+            'settings.title': 'Ajustes',
+
+            // Common
+            'common.refresh': 'Actualizar',
+            'common.loading': 'Cargando...',
+            'common.syncing': 'Sincronizando...',
+
+            // Dashboard
+            'dashboard.title': 'Panel',
+            'dashboard.sync': 'Sincronizar ahora',
+            'dashboard.services': 'Servicios',
+            'dashboard.empty.noEnabled': 'Aún no hay servicios habilitados.',
+            'dashboard.empty.enable': 'Habilitar servicios →',
+            'dashboard.empty.noServicesMenu': 'No hay servicios habilitados',
+
+            // Queues / Sections
+            'radarr.queue.title': 'Cola de descargas de Radarr',
+            'sonarr.queue.title': 'Cola de descargas de Sonarr',
+            'jellyfin.sessions.title': 'Jellyfin - Sesiones activas',
+            'jellyfin.recent.title': 'Jellyfin - Agregados recientemente',
+            'jellyfin.playing': 'Reproduciendo',
+            'jellyfin.paused': 'Pausado',
+            'jellyfin.transcoding': 'Transcodificando',
+            'jellyfin.directplay': 'Direct Play',
+            'jellyfin.directstream': 'Direct Stream',
+            'qb.title': 'qBittorrent',
+            'qb.download_speed': 'Velocidad Descarga',
+            'qb.upload_speed': 'Velocidad Subida',
+            'qb.dht_nodes': 'Nodos DHT',
+            'qb.status': 'Estado',
+            'qb.unknown': 'Desconocido',
+            'qb.active_torrents': 'Torrents Activos',
+            'qb.showing_of': 'Mostrando {count} de {total} torrents activos',
+            'qb.no_active': 'No hay torrents activos',
+            'qb.client': 'Cliente',
+            'qb.protocol': 'Protocolo',
+            'qb.indexer': 'Indexador',
+            'jellyseerr.title': 'Jellyseerr - Solicitudes',
+            'jellyseerr.stats.total': 'Total',
+            'jellyseerr.stats.pending': 'Pendientes',
+            'jellyseerr.stats.approved': 'Aprobadas',
+            'jellyseerr.stats.available': 'Disponibles',
+            'jellyseerr.recent_requests': 'Solicitudes Recientes',
+            'jellyseerr.by': 'Por:',
+            'jellyseerr.movie': 'Película',
+            'jellyseerr.series': 'Serie',
+            'jellyseerr.showing_of_req': 'Mostrando {count} de {total} solicitudes',
+            'jellyseerr.no_stats': 'No hay estadísticas disponibles',
+            'jellystat.title': 'Jellystat - Estadísticas de Uso',
+            'jellystat.total_plays': 'Total Reproducciones',
+            'jellystat.last_days': 'Últimos 7 días',
+            'jellystat.movies': 'Películas',
+            'jellystat.episodes': 'Episodios',
+            'jellystat.songs': 'Canciones',
+            'jellystat.views_by_type': 'Visualizaciones por Tipo',
+            'jellystat.music': 'Música',
+            'jellystat.no_stats': 'No hay estadísticas disponibles',
+            'dashboard.system.title': 'Información de Almacenamiento del Sistema',
+            'dashboard.system.total': 'Espacio Total',
+            'dashboard.system.available': 'Espacio Disponible',
+            'dashboard.system.used': 'Espacio Usado',
+            'dashboard.system.used_percent': '% usado',
+            'dashboard.system.error': 'No se pudo obtener información del disco',
+            'dashboard.stats.media': 'media',
+            'dashboard.stats.to_delete': 'por borrar',
+            'dashboard.stats.leaving': 'próximos a salir',
+            'dashboard.button.open': 'Abrir',
+            'dashboard.button.configure': 'Configurar',
+            'common.today': 'Hoy',
+            'common.yesterday': 'Ayer',
+            'common.days_ago': 'Hace {count} días',
+            'common.weeks_ago': 'Hace {count} semanas',
+
+            // Quick Actions
+            'dashboard.quick.title': 'Acciones rápidas',
+            'dashboard.quick.viewmedia': 'Ver biblioteca',
+            'dashboard.quick.viewmedia.help': 'Explora y gestiona tu biblioteca multimedia',
+            'dashboard.quick.configure': 'Configurar servicios',
+            'dashboard.quick.configure.help': 'Configura Radarr, Sonarr, Jellyfin, etc.',
+            'dashboard.quick.schedules': 'Gestionar horarios',
+            'dashboard.quick.schedules.help': 'Configura tareas de limpieza',
+
+            // Services Page
+            'services.title': 'Servicios',
+            'services.reload': 'Recargar',
+            'services.active': 'Activo',
+            'services.inactive': 'Inactivo',
+            'services.prune.title': 'Eliminar archivos no utilizados y optimizar almacenamiento',
+
+            // Logs Page
+            'logs.title': 'Registros',
+            'logs.placeholder': 'Los registros de la aplicación aparecerán aquí...',
+            'logs.coming_soon': 'Próximamente: Transmisión de registros en vivo e historial',
+
+            // Service Config Page
+            'config.title': 'Configuración',
+            'config.breadcrumb.services': 'Servicios',
+            'config.description': 'Configurar ajustes y rutas del servicio',
+            'config.status.disabled': 'Deshabilitado',
+            'config.status.stopped': 'Detenido',
+            'config.status.error': 'Error',
+            'config.status.running': 'Ejecutándose',
+            'config.status.unknown': 'Desconocido',
+            'config.enable': 'Habilitar',
+            'config.button.start': 'Iniciar servicio',
+            'config.button.stop': 'Detener servicio',
+            'config.button.restart': 'Reiniciar servicio',
+            'config.button.apply': 'Aplicar',
+            'config.button.applying': 'Aplicando...',
+            'config.button.prune': 'Eliminar archivos no utilizados y optimizar almacenamiento',
+            'config.button.apply_changes': 'Aplicar cambios de configuración',
+            'config.button.open_service': 'Abrir servicio',
+            'config.radarr.app_settings.title': 'Configuración de Aplicación Radarr',
+            'config.radarr.app_settings.description': 'Configurar ajustes de config.xml de Radarr',
+            'config.sonarr.app_settings.title': 'Configuración de Aplicación Sonarr',
+            'config.sonarr.app_settings.description': 'Configurar ajustes de config.xml de Sonarr',
+
+            // Settings Page
+            'settings.save': 'Guardar',
+            'settings.saving': 'Guardando...',
+            'settings.global_vars.title': 'Variables Globales',
+            'settings.global_vars.puid': 'PUID (ID de Usuario)',
+            'settings.global_vars.pgid': 'PGID (ID de Grupo)',
+            'settings.global_vars.timezone': 'Zona Horaria (TZ)',
+            'settings.proxy.title': 'Proxy y Dominios',
+            'settings.proxy.enabled': 'Activado',
+            'settings.proxy.disabled': 'Desactivado',
+            'settings.proxy.domains_configured': 'Dominios Configurados',
+            'settings.proxy.no_domains': 'No hay dominios configurados. Agrega un dominio para habilitar el enrutamiento por proxy.',
+            'settings.proxy.primary': 'Principal',
+            'settings.proxy.add_domain': 'Agregar Dominio',
+
+            // Services Page - Additional
+            'services.section.media_server': 'Servidor Multimedia',
+            'services.section.arr': 'Servicios *arr',
+            'services.section.other': 'Otros Servicios',
+            'services.button.configure': 'Configurar',
+            'services.button.enable': 'Habilitar',
+            'services.button.disable': 'Deshabilitar',
+            'services.no_description': 'Sin descripción disponible',
+
+            // Service Config - Additional
+            'config.button.disable': 'Deshabilitar servicio',
+            'config.button.kill_down': 'Forzar eliminación del contenedor',
+            'config.proxy.description': 'Configurar subdominio y dominio para este servicio',
+            'config.proxy.no_primary': 'Configura un dominio principal en Variables Globales para ver la URL del servicio',
+            'config.auth.disabled_local': 'Deshabilitado para Direcciones Locales',
+            'config.proxy.title': 'Proxy y Acceso por Dominio',
+            'config.proxy.subdomain': 'Subdominio',
+            'config.proxy.subdomain.help': 'Dejar vacío para generar automáticamente desde el nombre del servicio',
+            'config.proxy.domain': 'Dominio (opcional)',
+            'config.proxy.domain.help': 'Dejar vacío para usar el dominio principal',
+            'config.proxy.service_url': 'URL del Servicio',
+            'config.proxy.external_port': 'Puerto Externo (opcional)',
+            'config.proxy.external_port.help': 'Opcional: exponer servicio en el host (ej., 7878). Dejar vacío para usar solo acceso de red interna vía proxy.',
+            'config.proxy.external_port.placeholder': 'Dejar vacío para acceso solo interno',
+            
+            // Global Variables Page
+            'global.title': 'Variables Globales',
+            'global.subtitle': 'Configuración compartida entre todos los servicios',
+            'global.save': 'Guardar Cambios',
+            'global.saving': 'Guardando...',
+            'global.user_group.title': 'Usuario y Grupo',
+            'global.user_group.subtitle': 'IDs de usuario y grupo de Linux para contenedores',
+            'global.user_group.puid.help': 'Por defecto: 1000',
+            'global.user_group.pgid.help': 'Por defecto: 1000',
+            'global.system.title': 'Sistema',
+            'global.system.subtitle': 'Configuración general del sistema',
+            'global.system.timezone.help': 'Ejemplo: America/New_York, Europe/London',
+            'global.system.language': 'Idioma',
+            'global.paths.title': 'Rutas Base',
+            'global.paths.subtitle': 'Rutas predeterminadas para almacenamiento multimedia',
+            'global.paths.media': 'Directorio de Medios',
+            'global.paths.media.help': 'Ruta raíz para películas, series, música, etc.',
+            'global.paths.downloads': 'Directorio de Descargas',
+            'global.paths.downloads.help': 'Ruta para descargas incompletas',
+            'global.proxy.activated': 'Proxy activado',
+            'global.proxy.activated.message': 'Los servicios ahora se pueden acceder mediante subdominios. Configura los subdominios individuales de cada servicio en sus respectivas páginas de configuración.'
+        },
+        
+    };
+    let lang = 'en';
+    function t(key) { return (dict[lang] && dict[lang][key]) || key; }
+    async function setLang(l) { lang = l || 'en';
+        try {
+            await fetch('/api/config', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ global: { language: lang } }) });
+            // Show toast on success
+            const toastRoot = document.querySelector('[x-ref="globalToast"]');
+            if (toastRoot && toastRoot.__x) {
+                toastRoot.__x.$data.showToast(
+                    t('settings.title') + ' - ' + (lang === 'es' ? 'Idioma actualizado' : 'Language updated'),
+                    'success'
+                );
+            }
+        } catch (e) {
+            console.error('language save failed', e);
+        }
+        document.dispatchEvent(new CustomEvent('i18n:changed', { detail: { lang } }));
+    }
+    // Initialize from backend config
+    (async function initLang() {
+        try {
+            const resp = await fetch('/api/config');
+            if (resp.ok) {
+                const data = await resp.json();
+                if (data && data.global && data.global.language) {
+                    lang = data.global.language;
+                    document.dispatchEvent(new CustomEvent('i18n:changed', { detail: { lang } }));
+                }
+            }
+        } catch (e) { /* ignore */ }
+    })();
+    return { t, setLang, get lang() { return lang; } };
+})();
+
+// Global i18n updater: fill all elements with data-i18n-key
+function applyI18nTexts() {
+    document.querySelectorAll('[data-i18n-key]').forEach(el => {
+        const key = el.getAttribute('data-i18n-key');
+        el.textContent = window.i18n.t(key);
+    });
+}
+document.addEventListener('DOMContentLoaded', applyI18nTexts);
+document.addEventListener('i18n:changed', applyI18nTexts);
+</script>
 
 </html>

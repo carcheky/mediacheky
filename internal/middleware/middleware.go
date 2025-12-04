@@ -2,6 +2,7 @@ package middleware
 
 import (
 	"regexp"
+	"strings"
 	"time"
 
 	"github.com/carcheky/mediacheky/pkg/logger"
@@ -24,12 +25,37 @@ func Logger(log *logger.Logger) fiber.Handler {
 		// Process request
 		err := c.Next()
 
-		// Log request
+		// Determine log level based on path and status
+		// Reduce noise for frequently polled endpoints
+		path := c.Path()
+		status := c.Response().StatusCode()
+		duration := time.Since(start).Milliseconds()
+
+		// Use DEBUG level for:
+		// - Successful requests to /api/services (polled frequently by multiple components)
+		// - Successful requests to /api/services/:name GET (individual service status polling)
+		// - Successful requests to /api/stats (polled every 30s)
+		// - Successful requests to /status (health checks)
+		if status >= 200 && status < 300 {
+			if path == "/api/services" || strings.HasPrefix(path, "/api/services/") && c.Method() == "GET" || path == "/api/stats" || path == "/status" {
+				log.Debug("HTTP request",
+					"method", c.Method(),
+					"path", path,
+					"status", status,
+					"duration_ms", duration,
+					"ip", c.IP(),
+					"request_id", c.Locals("requestid"),
+				)
+				return err
+			}
+		}
+
+		// Log everything else as INFO
 		log.Info("HTTP request",
 			"method", c.Method(),
-			"path", c.Path(),
-			"status", c.Response().StatusCode(),
-			"duration_ms", time.Since(start).Milliseconds(),
+			"path", path,
+			"status", status,
+			"duration_ms", duration,
 			"ip", c.IP(),
 			"request_id", c.Locals("requestid"),
 		)
@@ -66,13 +92,23 @@ func ErrorHandler(log *logger.Logger) fiber.ErrorHandler {
 			code = e.Code
 		}
 
-		log.Error("Request error",
-			"error", err,
-			"path", c.Path(),
-			"method", c.Method(),
-			"status", code,
-			"request_id", c.Locals("requestid"),
-		)
+		// Only log 404s as debug, not errors (endpoints may not exist yet during setup)
+		if code == fiber.StatusNotFound {
+			log.Debug("Route not found",
+				"path", c.Path(),
+				"method", c.Method(),
+				"status", code,
+				"request_id", c.Locals("requestid"),
+			)
+		} else {
+			log.Error("Request error",
+				"error", err,
+				"path", c.Path(),
+				"method", c.Method(),
+				"status", code,
+				"request_id", c.Locals("requestid"),
+			)
+		}
 
 		return c.Status(code).JSON(fiber.Map{
 			"error":      err.Error(),

@@ -1,5 +1,22 @@
 # UI Standards and Guidelines
 
+**Last Updated**: December 4, 2025
+
+## Design Philosophy
+
+### Compact Form Design
+
+Form fields should be **visually compact** to prevent information overload:
+
+- **Labels**: Include source indicator inline as small italic text: `Username <span class="text-xs text-dark-muted italic">(database)</span>`
+- **Inputs**: Use smaller padding: `px-2 py-1.5 text-sm`
+- **Spacing**: Reduce margins between sections: `mt-4 pt-4 gap-3` (not `mt-6 pt-6 gap-4`)
+- **No decorative elements**: Avoid large colored boxes, icons, or lengthy descriptions below each field
+- **No status messages**: Don't show "Auto-generated" or similar inline messages unless critical
+- **Inline source tags**: Use `(config.xml)` or `(database)` inline, not as separate colored badges
+
+**Goal**: Each form field should occupy ~3-4cm vertical space, not 15-20cm.
+
 ## Toast Notifications
 
 **All feedback messages MUST use floating toast notifications, NOT inline messages.**
@@ -83,6 +100,7 @@ showToast(message, type = 'success') {
 ### DO NOT Use
 
 ❌ **Inline messages:**
+
 ```html
 <!-- WRONG -->
 <div x-show="message" class="p-4 rounded-lg border">
@@ -98,37 +116,46 @@ showToast(message, type = 'success') {
 
 ### Navigation
 
-All pages must include in Settings:
-- **Services Tab**: Enable/disable services with Configure button
-- **Global Variables Tab**: PUID, PGID, TZ, paths, network config
+#### Main Menu Services Dropdown
 
-**DO NOT create separate `/global` route** - Global Variables is a tab within Settings.
+The main navigation menu includes a **Services dropdown** with quick access:
 
-### Tabs Structure
+- **Enabled Services section**: Shows all enabled services with green indicators (✅)
+- **Disabled Services section**: Shows all disabled services with gray indicators (⚫)
+- Each service is clickable and navigates to its configuration page (`/services/:name`)
+- Dropdown appears on hover (desktop) with smooth transitions
+- Provides quick access without leaving the current page
 
-```html
-<!-- Main Tabs -->
-<div class="border-b border-dark-border">
-    <nav class="-mb-px flex space-x-8">
-        <button @click="activeTab = 'services'"
-            :class="activeTab === 'services' ? 'border-blue-500 text-blue-400' : 'border-transparent text-dark-muted hover:text-dark-text hover:border-slate-600'"
-            class="whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors">
-            Services
-        </button>
-        <button @click="activeTab = 'global'"
-            :class="activeTab === 'global' ? 'border-blue-500 text-blue-400' : 'border-transparent text-dark-muted hover:text-dark-text hover:border-slate-600'"
-            class="whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors">
-            Global Variables
-        </button>
-    </nav>
-</div>
-```
+#### Services Page (`/services`)
+
+The dedicated Services page provides full service management:
+
+- Overview of all services grouped by category (Media Server, *arr Services, Download Clients, Other Services)
+- Enable/disable toggles for each service
+- Configure buttons (only visible when service is enabled)
+- Prune buttons (only visible when service has config files)
+
+#### Settings Page (`/settings`)
+
+Settings includes only **Global Variables** section: PUID, PGID, TZ, paths, network config.
+
+**Important**: Settings page does NOT use tabs - it displays Global Variables content directly.
+
+**DO NOT create separate `/global` route** - Global Variables is the Settings page itself.
+
+### Do/Don't (Services vs Settings)
+
+- Do: Keep services management exclusively under `/services` (overview, enable/disable, Configure links).
+- Do: Keep Global Variables as the only content in `/settings`.
+- Don't: Add service toggles or configuration forms inside `/settings`.
+- Don't: Use `/services/:name/config` URLs; use `/services/:name`.
+- Don't: Add tabs to Settings page - it should show Global Variables content directly.
 
 ## Service Configuration
 
 ### Configure Button
 
-Only show when service is enabled:
+Only show when service is enabled (on `/services` page):
 
 ```html
 <a x-show="config.services[service.id]?.enabled" 
@@ -138,9 +165,46 @@ Only show when service is enabled:
 </a>
 ```
 
+### Application Settings Form Design
+
+**Radarr/Sonarr Configuration Tabs**:
+
+- **General Tab**: API Key, Username, Password, Authentication settings, Instance Name, Log Level
+- **Media Management Tab**: Root folders (read-only display)
+- **TODO Tab**: Placeholder for future features
+
+**Form Field Guidelines**:
+
+- Use compact spacing: `mb-4`, `pt-4`, `gap-3`
+- Input padding: `px-2 py-1.5 text-sm`
+- Labels include inline source indicators: `(config.xml)` or `(database)`
+- No decorative colored boxes or large icons
+- No "Auto-generated" or status messages unless critical
+- Copy buttons are minimal text-only: "Copy"
+
+**Example**:
+
+```html
+<label class="block text-sm font-medium text-dark-text mb-1">
+    Api Key <span class="text-xs text-dark-muted italic">(config.xml)</span>
+</label>
+<input type="text" class="w-full px-2 py-1.5 text-sm border rounded">
+```
+ 
+### Quick Checklist (Service Pages)
+
+- Toasts: Floating top-right notifications per `UI_STANDARDS`.
+- URL: Use `/services/:name` (no `/config` suffix).
+- Configure button: Hidden when service is disabled.
+- Network: Ensure `mediacheky-net` connection in templates.
+- Ports: Not exposed by default; optional exposure via checkbox.
+- Form fields: Compact design with inline source tags.
+- Root folders: Auto-reload after applying configuration changes.
+
 ### URL Pattern
 
-Service configuration pages use: `/services/:name`
+- Services overview and toggles: `/services`
+- Service configuration pages: `/services/:name`
 
 **NOT**: `/services/:name/config` ❌
 
@@ -156,6 +220,7 @@ Service configuration pages use: `/services/:name`
 Prefix: `MEDIACHEKY_` (NOT `KEEPERCHEKY_`)
 
 Examples:
+
 ```bash
 MEDIACHEKY_CLIENTS_RADARR_ENABLED=true
 MEDIACHEKY_CLIENTS_RADARR_URL=http://radarr:7878
@@ -167,17 +232,27 @@ MEDIACHEKY_CLIENTS_RADARR_URL=http://radarr:7878
 
 All services MUST use: `mediacheky-net` network
 
-**ALWAYS connected, not conditional**
+ALWAYS connected, not conditional
 
 ### Port Exposure
 
 Ports are **NOT exposed by default**
 
 Optional exposure via checkbox:
+
 ```yaml
 {{- if .ExposePort }}
 ports:
   - "{{ if .HostPort }}{{ .HostPort }}{{ else }}{{ .Port }}{{ end }}:7878"
+{{- end }}
+```
+
+Example (Sonarr):
+
+```yaml
+{{- if .ExposePort }}
+ports:
+    - "{{ if .HostPort }}{{ .HostPort }}{{ else }}{{ .Port }}{{ end }}:8989"
 {{- end }}
 ```
 
@@ -190,6 +265,7 @@ ALL documentation must be in `/docs` folder.
 ### Root Files
 
 Only keep in root:
+
 - `README.md` - Project overview
 - `QUICKSTART.md` - Quick start guide
 - `DEVELOPMENT.md` - Development setup
@@ -200,6 +276,7 @@ Only keep in root:
 ### Deprecated Files
 
 Remove from root if found:
+
 - Architecture diagrams
 - Detailed implementation guides
 - API documentation
@@ -212,23 +289,11 @@ Move to `/docs` instead.
 ### ✅ Correct Implementation
 
 **settings.html:**
+
 ```html
 <div x-data="settings()">
-    <!-- Tab Navigation -->
-    <div class="border-b border-dark-border">
-        <nav class="-mb-px flex space-x-8">
-            <button @click="activeTab = 'services'">Services</button>
-            <button @click="activeTab = 'global'">Global Variables</button>
-        </nav>
-    </div>
-    
-    <!-- Services Tab -->
-    <div x-show="activeTab === 'services'">
-        <!-- Enable/disable with Configure button -->
-    </div>
-    
-    <!-- Global Tab -->
-    <div x-show="activeTab === 'global'">
+    <!-- Global Variables Content (No tabs) -->
+    <div class="space-y-6">
         <!-- PUID, PGID, TZ, paths, network -->
     </div>
     
@@ -242,6 +307,7 @@ Move to `/docs` instead.
 ### ❌ Incorrect Implementation
 
 **Wrong:**
+
 ```html
 <!-- Separate /global page -->
 <nav>
@@ -263,7 +329,8 @@ Move to `/docs` instead.
 - [ ] Correct database path (`mediacheky.db`)
 - [ ] Correct environment variable prefix (`MEDIACHEKY_`)
 - [ ] Service URLs without `/config` suffix
-- [ ] Global Variables in Settings tab (not separate page)
+- [ ] Settings page shows Global Variables directly (no tabs)
+- [ ] Services dropdown in main menu navigation
 - [ ] Documentation in `/docs` folder
 
 ## Related Documents

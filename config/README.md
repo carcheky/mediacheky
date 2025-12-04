@@ -40,7 +40,8 @@ The container automatically:
 MediaCheky uses [Viper](https://github.com/spf13/viper) for configuration management.
 
 **Order of precedence** (highest to lowest):
-1. Environment variables (e.g., `KEEPERCHEKY_CLIENTS_RADARR_API_KEY`)
+
+1. Environment variables (e.g., `MEDIACHEKY_CLIENTS_RADARR_API_KEY`)
 2. Configuration file (`config.yaml`)
 3. Default values (defined in code)
 
@@ -48,16 +49,16 @@ MediaCheky uses [Viper](https://github.com/spf13/viper) for configuration manage
 
 Environment variables follow this pattern:
 ```
-KEEPERCHEKY_<SECTION>_<SUBSECTION>_<KEY>
+MEDIACHEKY_<SECTION>_<SUBSECTION>_<KEY>
 ```
 
 Examples:
 ```bash
-KEEPERCHEKY_APP_ENVIRONMENT=production
-KEEPERCHEKY_APP_LOG_LEVEL=info
-KEEPERCHEKY_CLIENTS_RADARR_ENABLED=true
-KEEPERCHEKY_CLIENTS_RADARR_URL=http://radarr:7878
-KEEPERCHEKY_CLIENTS_RADARR_API_KEY=your_api_key_here
+MEDIACHEKY_APP_ENVIRONMENT=production
+MEDIACHEKY_APP_LOG_LEVEL=info
+MEDIACHEKY_CLIENTS_RADARR_ENABLED=true
+MEDIACHEKY_CLIENTS_RADARR_URL=http://radarr:7878
+MEDIACHEKY_CLIENTS_RADARR_API_KEY=your_api_key_here
 ```
 
 ## Getting API Keys

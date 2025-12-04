@@ -32,7 +32,7 @@ func NewSettingsHandler(repos *repository.Repositories, logger *logger.Logger, c
 
 func (h *SettingsHandler) Index(c *fiber.Ctx) error {
 	return c.Render("pages/settings", fiber.Map{
-		"Title": "Settings - KeeperCheky",
+		"Title": "Settings - MediaCheky",
 	}, "layouts/main")
 }
 
@@ -56,11 +56,8 @@ func (h *SettingsHandler) Get(c *fiber.Ctx) error {
 	globalConfig["pgid"] = 1000
 	globalConfig["timezone"] = "UTC"
 	globalConfig["language"] = "en"
-	globalConfig["media_path"] = "/data/media"
-	globalConfig["downloads_path"] = "/data/downloads"
-	globalConfig["config_path"] = "/data/config"
-	globalConfig["network_name"] = "mediacheky-net"
-	globalConfig["subnet"] = ""
+	globalConfig["media_path"] = "./volumes/library"
+	globalConfig["config_path"] = "./volumes/mediacheky-data/services-volumes"
 
 	// Override with database values if they exist
 	for _, cfg := range configs {
@@ -232,10 +229,8 @@ func (h *SettingsHandler) Update(c *fiber.Ctx) error {
 				category = "user"
 			case "timezone", "language":
 				category = "system"
-			case "media_path", "downloads_path", "config_path":
+			case "media_path", "config_path":
 				category = "paths"
-			case "network_name", "subnet":
-				category = "network"
 			}
 
 			// Save to database (upsert: create or update)

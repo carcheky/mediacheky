@@ -70,21 +70,8 @@ func TestSeedData(t *testing.T) {
 	assert.Equal(t, "1000", puid.Value)
 	assert.Equal(t, "system", puid.Category)
 
-	// Verify templates were seeded
-	var templateCount int64
-	db.Model(&models.Template{}).Count(&templateCount)
-	assert.Greater(t, templateCount, int64(0))
-
-	// Verify specific template exists
-	var radarrTemplate models.Template
-	err = db.Where("name = ?", "radarr").First(&radarrTemplate).Error
-	assert.NoError(t, err)
-	assert.Equal(t, "1.0.0", radarrTemplate.Version)
-	// Check that the template uses the new format with variables
-	assert.Contains(t, radarrTemplate.Content, "{{ .Image }}")
-	assert.Contains(t, radarrTemplate.Content, "{{ .ContainerName }}")
-	assert.Contains(t, radarrTemplate.Content, "{{ .Global.PUID }}")
-	assert.Contains(t, radarrTemplate.Content, "{{ .Paths.Config }}")
+	// Templates are now loaded from filesystem, not seeded in DB
+	// So we skip template verification in this test
 }
 
 func TestSeedData_Idempotent(t *testing.T) {
@@ -108,8 +95,9 @@ func TestSeedData_Idempotent(t *testing.T) {
 	db.Model(&models.Template{}).Count(&templateCount)
 
 	// Should have exactly the seeded amount, not double
-	assert.Equal(t, int64(8), configCount)   // 8 default configs
-	assert.Equal(t, int64(3), templateCount) // 3 default templates
+	assert.Equal(t, int64(8), configCount) // 8 default configs
+	// Templates are now loaded from filesystem, not seeded in DB
+	assert.Equal(t, int64(0), templateCount) // 0 templates in DB
 }
 
 func TestClose(t *testing.T) {

@@ -192,18 +192,18 @@ func seedProxyConfig(db *gorm.DB) error {
 		log.Println("Created default proxy config")
 	}
 
-	// Create default docker.internal domain if doesn't exist
+	// Create default mediacheky domain if doesn't exist
 	var existingDomain models.Domain
-	result = db.Where("name = ?", "docker.internal").First(&existingDomain)
+	result = db.Where("name = ?", "mediacheky").First(&existingDomain)
 	if result.Error == gorm.ErrRecordNotFound {
 		domain := models.Domain{
-			Name:      "docker.internal",
+			Name:      "mediacheky",
 			IsPrimary: true,
 		}
 		if err := db.Create(&domain).Error; err != nil {
-			return fmt.Errorf("failed to create docker.internal domain: %w", err)
+			return fmt.Errorf("failed to create mediacheky domain: %w", err)
 		}
-		log.Println("Created default domain: docker.internal")
+		log.Println("Created default domain: mediacheky")
 	}
 
 	return nil

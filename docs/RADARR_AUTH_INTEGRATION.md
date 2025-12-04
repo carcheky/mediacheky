@@ -240,7 +240,7 @@ go test ./internal/handler -run TestExtractRadarrAPIKey
 
 ### Settings not loading
 1. Check browser console for JavaScript errors
-2. Verify API endpoint is accessible: `curl http://localhost:7369/api/services/radarr/radarr/auth`
+2. Verify API endpoint is accessible: `curl http://localhost/api/services/radarr/radarr/auth`
 3. Check backend logs: `docker compose logs mediacheky`
 
 ### Updates not saving

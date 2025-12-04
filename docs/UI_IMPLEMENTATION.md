@@ -15,6 +15,8 @@ November 9, 2025
 #### Base Layout (`web/templates/layouts/main.html`)
 
 - **Enhanced Navigation**: Top navigation bar with links to all main pages
+  - **Services Dropdown**: Hover-activated menu showing enabled/disabled services with quick access to configuration pages
+  - Dashboard, Settings, and Logs links
 
 - **Mobile Responsive**: Collapsible mobile menu for small screens
 
@@ -36,15 +38,15 @@ November 9, 2025
 
 - Already implemented
 
-- Service configuration management
+- Global Variables management only (PUID, PGID, TZ, paths, network)
 
-- Connection testing
+- Connection testing for global configuration
 
-- Two tabs: Services and Configuration
+- Single section: Global Variables (services management moved to `/services`)
 
-#### Global Variables (Settings Tab) - **UPDATED**
+#### Global Variables (Settings) - **UPDATED**
 
-**NOTE: Global Variables is now a tab within Settings page, NOT a separate route**
+NOTE: Global Variables is a section within Settings (only section). There is no separate `/global` route.
 
 - User & Group configuration (PUID, PGID)
 
@@ -56,7 +58,7 @@ November 9, 2025
 
 - **Floating toast notifications** for all feedback
 
-#### Service Config (`/services/:name`) - **NEW**
+#### Service Config (`/services/:name`)
 
 - Service-specific configuration page
 
@@ -71,6 +73,14 @@ November 9, 2025
 - Real-time field validation
 
 - Connection testing
+
+##### Sonarr Configuration
+
+- Default port: `8989`
+- Paths: `config`, `series` (TV shows), `downloads`
+- Image options: `linuxserver/sonarr:latest|develop|nightly`
+- Optional port exposure via checkbox per `UI_STANDARDS` rules
+- Follows same pattern as Radarr (PR #37)
 
 ### 2. Components
 
@@ -128,20 +138,24 @@ November 9, 2025
 
 ```go
 app.Get("/", h.Dashboard.Index)
-app.Get("/settings", h.Settings.Index)          // Includes Global Variables tab
-app.Get("/services/:name", h.Service.ConfigPage) // NEW
+app.Get("/settings", h.Settings.Index)          // Global Variables only
+app.Get("/services", h.Service.ListPage)        // Services overview + enable/disable + Configure
+app.Get("/services/:name", h.Service.ConfigPage)
 app.Get("/logs", h.Logs.Index)
-```text
+```
 
 #### API Routes (existing)
 
 ```go
 api.Get("/config/global", h.Config.GetGlobalConfig)
 api.Put("/config/global", h.Config.UpdateGlobalConfig)
+api.Get("/services", h.Service.List)
 api.Get("/services/:name", h.Service.GetService)
 api.Put("/services/:name/config", h.Service.UpdateServiceConfig)
+api.Post("/services/:name/enable", h.Service.Enable)
+api.Post("/services/:name/disable", h.Service.Disable)
 api.Post("/config/test/:service", h.Settings.TestConnection)
-```text
+```
 
 ### 5. Alpine.js Components
 
@@ -169,26 +183,29 @@ api.Post("/config/test/:service", h.Settings.TestConnection)
 
 ## File Structure
 
+**Note**: Current workspace shows templates in `web/static/templates/`. The structure below represents the planned organization. Future work should either move files to `web/templates/` or update this documentation to reflect `web/static/templates/` as canonical.
+
 ```text
 web/
 ├── static/
 │   ├── css/
-│   │   └── custom.css                 # NEW - Custom styles
-│   └── js/
-│       └── file-health-components.js  # Existing
-└── templates/
-    ├── components/                     # NEW directory
-    │   ├── form_field.html            # NEW - Form field component
-    │   └── service_card.html          # NEW - Service card component
+│   │   └── custom.css                 # Custom styles
+│   ├── js/
+│   │   └── file-health-components.js  # Existing JS components
+│   └── templates/                     # Current actual location in workspace
+│       └── ...                         # Template files (to be organized)
+└── templates/                         # Planned/standard location
+    ├── components/                     # Reusable UI components
+    │   ├── form_field.html            # Generic form field
+    │   └── service_card.html          # Service display card
     ├── layouts/
-    │   └── main.html                  # UPDATED - Enhanced layout
+    │   └── main.html                  # Base layout template
     └── pages/
-        ├── dashboard.html             # Existing
-        ├── global.html                # NEW - Global variables page
-        ├── logs.html                  # Existing
-        ├── service_config.html        # NEW - Service config page
-        └── settings.html              # Existing
-```text
+        ├── dashboard.html             # Main dashboard
+        ├── settings.html              # Global Variables (only section)
+        ├── services.html              # Services management
+        └── logs.html                  # Logs viewer
+```
 
 ## Design Principles
 
@@ -234,9 +251,9 @@ web/
 
 ### Creating a New Service Configuration
 
-1. Navigate to `/settings`
+1. Navigate to `/services`
 
-2. Enable the service
+2. Enable the service (toggle)
 
 3. Click "Configure" or navigate to `/services/servicename`
 
@@ -250,7 +267,7 @@ web/
 
 1. Navigate to `/settings`
 
-2. Click on "Global Variables" tab
+2. Global Variables is the only section
 
 3. Update desired values
 

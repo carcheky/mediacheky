@@ -2,386 +2,184 @@
 
 > **MediaCheky** - Centralized control panel for *arr services
 
-**Last Updated**: November 3, 2025  
-**Project Phase**: Complete Redefinition
+**Last Updated**: December 4, 2025  
+**Project Phase**: Active Development
 
 ---
 
-## ⛔️ CRITICAL RULE - NEVER VIOLATE ⛔️
+## 📋 Table of Contents
 
-**YOU MUST NEVER EVER UNDER ANY CIRCUMSTANCES:**
+- [Critical Rules](#-critical-rules---never-violate-)
+- [Quick Reference](#-quick-reference)
+- [Documentation Index](#-documentation-index)
+- [Workflow](#-workflow)
+- [When User Contradicts Documentation](#-when-user-contradicts-documentation)
 
-- Run `make dev`, `make run`, or ANY make command that starts services
-- Run `docker compose up/down/restart/stop/start`
-- Run `docker compose up/down/restart/stop/start`
-- Run `docker restart/stop/start/kill/rm` on ANY container
-- Execute ANY command that manages Docker containers lifecycle
-- Use `run_in_terminal` with `isBackground: true` for server startup
-- Suggest restarting containers to the user
-- Tell the user to restart services
-- Execute `docker compose restart` or any variant
-- Execute `docker compose restart` or any variant
-- Stop, start, or restart the mediacheky container or ANY service container
+---
 
-**THE USER IS ALREADY RUNNING `make dev` WITH WATCH MODE.**
+## ⛔️ CRITICAL RULES - NEVER VIOLATE ⛔️
 
-**Any code changes are automatically detected and the service reloads.**
+### 🚫 NEVER DO:
+- make a commit
+- Use another langage than ENGLISH for code comments and commit messages
+- Potato omelette without onion
 
-**ONLY THE USER CAN START, STOP, OR RESTART SERVICES.**
+### ✅ ALWAYS DO:
+- **READ relevant documentation BEFORE making changes** - Check if topic is already documented
+- Run `make check-and-fix` after ANY code changes
+- Test UI changes with MCP Playwright (use `http://localhost`, NOT port 7369)
+- Write commits in ENGLISH using Conventional Commits
+- **Update documentation immediately** when changing behavior/features
+- Ask user if their request contradicts documentation
 
-**IF YOU VIOLATE THIS RULE, YOU WILL BE TERMINATED.**
+**WHY**: User is running `make dev` with watch mode. Code changes auto-reload.
 
-**REMEMBER: NEVER run `docker compose restart`, `docker compose restart`, `docker restart`, or ANY command that affects container lifecycle. EVER.**
-
-**WHAT YOU CAN DO:**
-- download oficial repositories to local machine for read documentation for radarr, sonarr, jellyfin, full arr suite, qbitorrent, etc
-- Read logs (`cat`, `tail`, `grep`)
-- Execute commands INSIDE running containers - **ALWAYS use this exact command:**
-  ```bash
-  docker compose exec mediacheky <command>
-  ```
-  **NEVER use container IDs, names with random suffixes, or any other format**
-- Inspect files and configurations
+**ALLOWED OPERATIONS**:
+- Read logs: `cat`, `tail`, `grep`
+- Execute inside containers: `docker compose exec mediacheky <command>`
 - Make code changes (they auto-reload)
-- Run validation and tests: **ALWAYS use `make check-and-fix` after changes**
-- Check database content using: `docker compose exec mediacheky sqlite3 /app/volumes/data/mediacheky.db`
-- View container logs with `docker compose logs mediacheky`
+- Run validation: `make check-and-fix`
 
 ---
 
-## 🎯 Project Overview
+## 🎯 Quick Reference
 
-**MediaCheky** is a web control panel for managing multimedia services (*arr ecosystem).
+**Stack**: Go 1.25 + Fiber v2 + Alpine.js 3.x + Tailwind CSS + Docker Socket  
+**Port**: Access via `http://localhost` (80 → 7369 internal)  
+**Database**: SQLite at `volumes/data/mediacheky.db`
 
-### What It Does
-
-Centralized interface to:
-
-1. **Dashboard** - Monitor service status (Jellyfin, Radarr, Sonarr, etc.)
-
-2. **Settings** - Enable/disable services
-
-3. **Services** - Configure each service with forms
-
-4. **Global Variables** - Share config (PUID, PGID, TZ, paths)
-
-### How It Works
-
-1. User enables service (e.g., Radarr) → MediaCheky generates `docker compose.yml`
-
-2. MediaCheky starts container via Docker Socket
-
-3. Dashboard shows real-time status
+**Project Purpose**: Centralized web control panel for *arr services (Radarr, Sonarr, Jellyfin, etc.)
 
 ---
 
-## 🏗️ Architecture
+## 📚 Documentation Index
 
-### Technology Stack
+**Read these documents BEFORE making changes:**
 
-- **Backend**: Go 1.25 + Fiber v2
+### UI & Frontend
+- **[UI Standards](../docs/UI_STANDARDS.md)** - Toast notifications, page structure, data persistence
+- **[UI Implementation](../docs/UI_IMPLEMENTATION.md)** - Alpine.js components, routes, styling
 
-- **Frontend**: Alpine.js 3.x + Tailwind CSS
+### Architecture & Planning
+- **[Project Plan](../docs/PROJECT_PLAN.md)** - Complete development roadmap, architecture, interfaces
+- **[API Documentation](../docs/API.md)** - REST API endpoints and specifications
 
-- **Database**: GORM v2 + SQLite
+### Code Quality
+- **[Codacy Rules](instructions/codacy.instructions.md)** - Automatic code analysis rules
 
-- **Docker**: Docker Socket API + Compose Templates
-
-- **Target**: <25MB image, ~30-50MB RAM
-
-### Hybrid Approach
-
-**Docker Socket + Docker Compose Templates**
-
-```text
-User Action → Template Generation → docker compose up -d → Status Monitoring
-```text
-
-### Key Components
-
-- **Service Manager** - Lifecycle management
-
-- **Template Engine** - Generate docker compose from templates
-
-- **Docker Client** - Interact with Docker Socket
-
-- **Config Repository** - Store in SQLite
+### General Guidelines
+- **[AGENTS.md](../AGENTS.md)** - Additional guidelines for AI agents
 
 ---
 
-## 📂 Project Structure
+## 🔄 Workflow
 
-```text
-mediacheky/
-├── cmd/server/main.go          # Entry point
-├── internal/
-│   ├── config/                 # App configuration
-│   ├── models/                 # Service, Template, GlobalConfig
-│   ├── repository/             # Data access
-│   ├── service/                # Business logic
-│   │   ├── service_manager.go  # Service lifecycle
-│   │   ├── docker_client.go    # Docker API wrapper
-│   │   └── template_engine.go  # Compose generator
-│   ├── handler/                # HTTP handlers
-│   └── middleware/             # Middleware
-├── web/
-│   ├── templates/              # HTML templates
-│   └── static/                 # CSS, JS
-├── templates/                  # Docker Compose templates
-│   ├── radarr.yml
-│   └── sonarr.yml
-├── volumes/
-│   ├── services/               # Generated compose files
-│   ├── config/                 # MediaCheky config
-│   └── data/                   # SQLite DB
-└── docs/
-    └── PROJECT_PLAN.md         # Complete roadmap
-```text
-
----
-
-## 🔑 Development Principles
-
-### 1. Error Handling
-
-**ALWAYS** handle errors explicitly:
-
-```go
-// ❌ BAD
-result, _ := someFunction()
-
-// ✅ GOOD
-result, err := someFunction()
-if err != nil {
-    return fmt.Errorf("failed: %w", err)
-}
-```text
-
-### 2. Logging
-
-Use structured logging:
-
-```go
-logger.Info("Starting service",
-    "name", serviceName,
-    "port", port,
-)
-```text
-
-### 3. Security
-
-MediaCheky requires Docker socket → **root equivalent access**
-
-**Security measures:**
-
-- ✅ Validate all inputs
-
-- ✅ Whitelist allowed images
-
-- ✅ Sanitize paths (prevent `../`)
-
-- ✅ Log all actions
-
-```go
-var allowedImages = map[string]bool{
-    "linuxserver/radarr": true,
-    "linuxserver/sonarr": true,
-}
-```text
-
-### 4. Frontend (Alpine.js)
-
-Create reactive components:
-
-```html
-<div x-data="serviceCard('radarr')">
-    <button @click="toggle()" 
-            x-text="enabled ? 'Disable' : 'Enable'">
-    </button>
-</div>
-```text
-
----
-
-## ✅ Testing & Validation
-
-**CRITICAL: ALWAYS run validation after making ANY code changes**
-
-### After EVERY code modification, you MUST:
+### 1. Making Code Changes
 
 ```bash
+# BEFORE editing:
+# 1. Search docs for existing documentation on the topic
+# 2. Check for contradictions with current standards
+
+# Edit code → Changes auto-reload (watch mode active)
+
+# After editing, ALWAYS run:
 make check-and-fix
-```text
 
-This command will:
+# If behavior changed:
+# 3. Update relevant documentation immediately
+```
 
-1. 🔧 Auto-fix code formatting (`gofmt`)
-
-2. 📦 Clean dependencies (`go mod tidy`)
-
-3. 📝 Check format compliance
-
-4. 🔍 Run `go vet` static analysis
-
-5. 🧪 Execute all tests
-
-**NEVER skip this step.** If it fails:
-
-- Fix the reported issues
-
-- Run `make check-and-fix` again
-
-- Repeat until it passes
-
-### Available validation commands:
+### 2. UI Changes Workflow
 
 ```bash
-make validate        # Full validation (includes linting)
-make validate-quick  # Fast check (format + vet + test)
-make check-and-fix   # 🔧 AUTO-FIX + validate (USE THIS)
-make lint-fix        # Only fix formatting
-make test            # Run tests only
-```text
+# 1. Make UI changes
+# 2. Run validation
+make check-and-fix
 
-### When to use each:
+# 3. Test with MCP Playwright (when enabled)
+# Navigate to http://localhost (NOT localhost:7369)
+# Test functionality:
+#   - Services dropdown (hover over Services menu)
+#   - Service enable/disable toggles
+#   - Forms, buttons, notifications
+```
 
-- **After editing code**: `make check-and-fix` ✅
-
-- **Before committing**: `make validate` (full)
-
-- **Quick check**: `make validate-quick`
-
----
-
-## 🔄 Git Commit Conventions
-
-**⚠️ CRITICAL: ALL COMMITS MUST BE IN ENGLISH - NO EXCEPTIONS ⚠️**
-
-**Format**: `<type>(<scope>): <description>`
-
-**Use Conventional Commits specification (https://www.conventionalcommits.org/)**
-
-### Commit Message Rules
-
-1. **ALWAYS write commit messages in ENGLISH** 🇬🇧
-2. **NEVER use Spanish or any other language** ❌
-3. Use present tense: "add feature" not "added feature"
-4. Use imperative mood: "fix bug" not "fixes bug"
-5. Keep subject line under 72 characters
-6. Capitalize first letter after type
-7. No period at the end of subject line
-
-### Types that TRIGGER releases
-
-- `feat`: New feature
-- `fix`: Bug fix
-- `perf`: Performance improvement
-
-### Types that DO NOT trigger releases
-
-- `docs`: Documentation only changes
-- `chore`: Maintenance tasks
-- `refactor`: Code restructuring without feature/fix
-- `test`: Adding or updating tests
-- `style`: Code formatting, whitespace
-- `ci`: CI/CD pipeline changes
-- `build`: Build system or dependencies
-
-### Examples (ALL IN ENGLISH)
+### 3. Commit Workflow
 
 ```bash
-# ✅ CORRECT - Triggers release
-feat(services): add Radarr configuration panel
-fix(docker): correct container status check
-perf(db): optimize query performance
+# Write commits in ENGLISH (Conventional Commits)
+# Format: <type>(<scope>): <description>
 
-# ✅ CORRECT - Does not trigger release
+# Examples:
+feat(services): add Services dropdown to main menu
+fix(ui): correct toast notification positioning
 docs(readme): update installation guide
-chore(deps): update Go dependencies to latest
-refactor(handler): simplify error handling logic
-test(service): add unit tests for template engine
-style(format): fix code formatting issues
-ci(github): update workflow to use Go 1.25
-
-# ❌ WRONG - Spanish (NEVER DO THIS)
-feat(servicios): agregar panel de configuración
-fix(docker): corregir verificación de estado
-docs(readme): actualizar guía de instalación
-
-# ❌ WRONG - Past tense
-feat(services): added Radarr configuration panel
-fix(docker): corrected container status
-
-# ❌ WRONG - Missing type
-add Radarr configuration panel
-update installation guide
 ```
 
 ---
 
-## 🗣️ Communication & Language Rules
+## ⚠️ When User Contradicts Documentation
 
-### Commit Messages & Code
-- � **Git commits**: **ALWAYS ENGLISH** (Conventional Commits) - NO EXCEPTIONS
-- 📝 **Code & comments**: English
-- � **Documentation files**: English
-- 🏷️ **Variable/function names**: English
+**IF user requests something that contradicts the documentation:**
 
-### User Interaction
-- � **User responses**: Spanish (when talking to user)
-- 🐛 **Issue/PR titles**: Spanish
-- 💬 **PR descriptions**: Spanish
-- � **Code review comments**: Spanish
+1. **STOP** and ask the user:
+   ```
+   "This request contradicts the documentation in [document name].
+   The documentation states: [brief summary].
+   Your request: [user request].
+   
+   How would you like me to proceed:
+   A) Follow the documentation
+   B) Proceed with your request (override documentation)
+   C) Update the documentation to reflect the new approach"
+   ```
 
-### Summary
-- **Write code in English** ✅
-- **Write commits in English** ✅
-- **Talk to user in Spanish** ✅
-- **NEVER mix languages in commits** ❌
+2. **WAIT** for user response before proceeding
 
----
+3. **DO NOT** make assumptions or proceed without clarification
 
-## 🎨 UI Standards (CRITICAL)
-
-**ALL user feedback MUST use floating toast notifications**
-
-### Toast Notifications Rules
-
-- **Position**: Fixed top-right (`fixed top-4 right-4 z-50`)
-- **Success**: Auto-dismiss after 5 seconds
-- **Error**: Auto-dismiss after 8 seconds
-- **Structure**: Icon + Message + Close button
-- **Animations**: Fade + slide transitions
-
-**NEVER use inline messages or static positioned feedback**
-
-### Page Structure
-
-- **Settings page has TWO tabs**: Services + Global Variables
-- **NO separate `/global` route** - it's a tab in Settings
-- **Service config URLs**: `/services/:name` (NOT `/services/:name/config`)
-
-### Data Standards
-
-- **Database**: `mediacheky.db` (NOT `keepercheky.db`)
-- **Env Prefix**: `MEDIACHEKY_` (NOT `KEEPERCHEKY_`)
-- **Network**: `mediacheky-net` (ALWAYS connected, NOT conditional)
-- **Ports**: NOT exposed by default (optional via checkbox)
-
-See [docs/UI_STANDARDS.md](../docs/UI_STANDARDS.md) for complete guidelines.
+**Examples of contradictions:**
+- User asks to use inline messages instead of toast notifications
+- User asks to create `/global` route (should be in Settings tab)
+- User asks to expose ports by default (should be optional)
+- User asks to use Spanish in commit messages (must be English)
 
 ---
 
-## 📚 Resources
+## 📝 Commit Convention Reference
 
-- [UI Standards](../docs/UI_STANDARDS.md) - **READ THIS FIRST** for UI changes
-- [Development Plan](../docs/PROJECT_PLAN.md) - Complete roadmap
-- [UI Implementation](../docs/UI_IMPLEMENTATION.md) - Technical details
-- [Docker API](https://docs.docker.com/engine/api/)
-- [Fiber Framework](https://docs.gofiber.io/)
-- [Alpine.js](https://alpinejs.dev/)
+**Format**: `<type>(<scope>): <description>` (ENGLISH ONLY)
+
+**Common types**:
+- `feat`: New feature (triggers release)
+- `fix`: Bug fix (triggers release)
+- `docs`: Documentation changes
+- `chore`: Maintenance tasks
+- `refactor`: Code restructuring
+
+**See**: [Conventional Commits](https://www.conventionalcommits.org/)
 
 ---
 
-**Stack**: Go 1.25 + Fiber v2 + Alpine.js + Docker Socket  
-**Port**: 7369 🦊
+## 🗣️ Language Rules
+
+- **Code & Commits**: English
+- **User responses**: Spanish
+- **Documentation**: English
+
+---
+
+## 📌 Key Standards (See Full Docs)
+
+- **Toast notifications**: Floating top-right, auto-dismiss (5s success, 8s error)
+- **URLs**: `/services/:name` (NOT `/services/:name/config`)
+- **Database**: `mediacheky.db`, prefix `MEDIACHEKY_`
+- **Network**: `mediacheky-net` (always connected)
+- **Ports**: Not exposed by default (optional checkbox)
+
+**Full details**: [UI_STANDARDS.md](../docs/UI_STANDARDS.md)
+
+---
+
+**Remember**: When in doubt, consult the documentation index above. Always ask user if their request contradicts documented standards.

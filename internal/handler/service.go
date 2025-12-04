@@ -30,18 +30,29 @@ type ServiceHandler struct {
 	logger         *logger.Logger
 	dockerClient   *service.DockerClient
 	serviceManager *service.ServiceManager
+	proxyService   *service.ProxyService
 }
 
 // NewServiceHandler creates a new ServiceHandler instance
-func NewServiceHandler(repos *repository.Repositories, logger *logger.Logger, dockerClient *service.DockerClient, serviceManager *service.ServiceManager) *ServiceHandler {
+// NewServiceHandler creates a new ServiceHandler instance
+func NewServiceHandler(repos *repository.Repositories, logger *logger.Logger, dockerClient *service.DockerClient, serviceManager *service.ServiceManager, proxyService *service.ProxyService) *ServiceHandler {
 	return &ServiceHandler{
 		repos:          repos,
 		logger:         logger,
 		dockerClient:   dockerClient,
 		serviceManager: serviceManager,
+		proxyService:   proxyService,
 	}
 }
 
+// Index renders the top-level Services page
+func (h *ServiceHandler) Index(c *fiber.Ctx) error {
+	return c.Render("pages/services", fiber.Map{
+		"Title": "Services - MediaCheky",
+	}, "layouts/main")
+}
+
+// ListServices handles GET /api/services
 // ListServices handles GET /api/services
 func (h *ServiceHandler) ListServices(c *fiber.Ctx) error {
 	services, err := h.repos.Service.GetAll()
@@ -53,9 +64,43 @@ func (h *ServiceHandler) ListServices(c *fiber.Ctx) error {
 		})
 	}
 
+	// Get proxy config for SSL check (if proxyService is available)
+	scheme := "http"
+	if h.proxyService != nil {
+		proxyCfg, _ := h.proxyService.GetProxyConfig()
+		if proxyCfg != nil && proxyCfg.SSLEnabled {
+			scheme = "https"
+		}
+	}
+
+	// Create enriched response with calculated URLs
+	type ServiceResponse struct {
+		models.Service
+		Endpoint string `json:"endpoint"`
+		URL      string `json:"url"`
+	}
+
+	response := make([]ServiceResponse, 0, len(services))
+	for _, svc := range services {
+		endpoint := ""
+		if h.proxyService != nil {
+			endpoint, _ = h.proxyService.GetServiceEndpoint(svc.Name)
+		}
+		url := ""
+		if endpoint != "" {
+			url = fmt.Sprintf("%s://%s", scheme, endpoint)
+		}
+
+		response = append(response, ServiceResponse{
+			Service:  svc,
+			Endpoint: endpoint,
+			URL:      url,
+		})
+	}
+
 	return c.JSON(APIResponse{
 		Success: true,
-		Data:    services,
+		Data:    response,
 	})
 }
 
@@ -86,7 +131,7 @@ func (h *ServiceHandler) GetService(c *fiber.Ctx) error {
 
 	// CRITICAL FIX: Update status from REAL container state before returning
 	// This ensures buttons show correct state after start/stop/restart operations
-	if svc.Enabled {
+	if svc.Enabled && h.dockerClient != nil {
 		// Extract container name from config
 		var containerName string
 		if nameVal, ok := svc.Config["ContainerName"]; ok {
@@ -124,13 +169,13 @@ func (h *ServiceHandler) GetService(c *fiber.Ctx) error {
 				"status", realStatus)
 		} else {
 			// Fallback: list all containers and search
-			h.logger.Info("🔍 Container not found by name, searching all containers",
+			h.logger.Debug("🔍 Container not found by name, searching all containers",
 				"service", name,
 				"container_name", containerName)
 
 			containers, listErr := h.dockerClient.ListContainers(ctx)
 			if listErr == nil {
-				h.logger.Info("🐳 Docker containers listed",
+				h.logger.Debug("🐳 Docker containers listed",
 					"service", name,
 					"total_containers", len(containers))
 
@@ -187,7 +232,7 @@ func (h *ServiceHandler) GetService(c *fiber.Ctx) error {
 				}
 			}(svc.ID, realStatus)
 		} else {
-			h.logger.Info("ℹ️ Status unchanged",
+			h.logger.Debug("ℹ️ Status unchanged",
 				"service", name,
 				"status", svc.Status)
 		}
@@ -202,21 +247,22 @@ func (h *ServiceHandler) GetService(c *fiber.Ctx) error {
 			return c.JSON(APIResponse{
 				Success: true,
 				Data: fiber.Map{
-					"id":         svc.ID,
-					"name":       svc.Name,
-					"enabled":    svc.Enabled,
-					"status":     svc.Status,
-					"image":      svc.Image,
-					"port":       svc.Port,
-					"config":     svc.Config,
-					"mounts":     mounts,
-					"created_at": svc.CreatedAt,
-					"updated_at": svc.UpdatedAt,
+					"id":           svc.ID,
+					"name":         svc.Name,
+					"display_name": svc.DisplayName,
+					"enabled":      svc.Enabled,
+					"status":       svc.Status,
+					"image":        svc.Image,
+					"port":         svc.Port,
+					"config":       svc.Config,
+					"mounts":       mounts,
+					"created_at":   svc.CreatedAt,
+					"updated_at":   svc.UpdatedAt,
 				},
 			})
 		}
 	} else {
-		h.logger.Info("⏸️ Service not enabled, skipping status check",
+		h.logger.Debug("⏸️ Service not enabled or docker client not available, skipping status check",
 			"service", name)
 	}
 
@@ -802,6 +848,71 @@ func (h *ServiceHandler) UpdateRadarrConfig(c *fiber.Ctx) error {
 	})
 }
 
+// GetSonarrConfig handles GET /api/services/:name/sonarr-config
+func (h *ServiceHandler) GetSonarrConfig(c *fiber.Ctx) error {
+	name := c.Params("name")
+
+	if name != "sonarr" {
+		return c.Status(fiber.StatusBadRequest).JSON(APIResponse{
+			Success: false,
+			Error:   "This endpoint is only available for Sonarr service",
+		})
+	}
+
+	config, err := h.serviceManager.GetSonarrConfig(c.Context(), name)
+	if err != nil {
+		h.logger.Error("Failed to get Sonarr config", "error", err)
+		return c.Status(fiber.StatusInternalServerError).JSON(APIResponse{
+			Success: false,
+			Error:   fmt.Sprintf("Failed to get Sonarr config: %v", err),
+		})
+	}
+
+	return c.JSON(APIResponse{
+		Success: true,
+		Data:    fiber.Map{"config": config},
+	})
+}
+
+// UpdateSonarrConfig handles PUT /api/services/:name/sonarr-config
+func (h *ServiceHandler) UpdateSonarrConfig(c *fiber.Ctx) error {
+	name := c.Params("name")
+
+	if name != "sonarr" {
+		return c.Status(fiber.StatusBadRequest).JSON(APIResponse{
+			Success: false,
+			Error:   "This endpoint is only available for Sonarr service",
+		})
+	}
+
+	var config models.SonarrConfig
+	if err := c.BodyParser(&config); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(APIResponse{
+			Success: false,
+			Error:   "Invalid request body",
+		})
+	}
+
+	h.logger.Info("Received Sonarr config update",
+		"name", name,
+		"username", config.Username,
+		"has_password", config.Password != "")
+
+	if err := h.serviceManager.UpdateSonarrConfig(c.Context(), name, config); err != nil {
+		h.logger.Error("Failed to update Sonarr config", "error", err)
+		return c.Status(fiber.StatusInternalServerError).JSON(APIResponse{
+			Success: false,
+			Error:   fmt.Sprintf("Failed to update Sonarr config: %v", err),
+		})
+	}
+
+	h.logger.Info("Sonarr config updated successfully", "name", name)
+	return c.JSON(APIResponse{
+		Success: true,
+		Data:    fiber.Map{"message": "Configuration saved successfully. Sonarr is restarting to apply changes..."},
+	})
+}
+
 // CheckServiceReady handles GET /api/services/:name/ready
 // Performs a lightweight readiness check for a service. Strategy:
 // 1) For radarr: Try Radarr API health endpoint (fastest, most reliable)
@@ -814,6 +925,19 @@ func (h *ServiceHandler) CheckServiceReady(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusBadRequest).JSON(APIResponse{
 			Success: false,
 			Error:   "Service name is required",
+		})
+	}
+
+	// Check if service exists in database first to avoid unnecessary queries
+	_, err := h.repos.Service.GetByName(name)
+	if err != nil {
+		if err == gorm.ErrRecordNotFound {
+			// Service not configured yet - just check container availability directly
+			return h.checkServiceReadyDirect(c, name)
+		}
+		return c.Status(fiber.StatusInternalServerError).JSON(APIResponse{
+			Success: false,
+			Error:   "Failed to check service",
 		})
 	}
 
@@ -895,6 +1019,57 @@ func (h *ServiceHandler) CheckServiceReady(c *fiber.Ctx) error {
 		}
 	}
 
+	// For Sonarr: Try API health endpoint with API key from config
+	if name == "sonarr" {
+		// Get API key from Sonarr config
+		var apiKey string
+		if h.serviceManager != nil {
+			if cfg, err := h.serviceManager.GetSonarrConfig(c.Context(), name); err == nil && cfg.ApiKey != "" {
+				apiKey = cfg.ApiKey
+			}
+		}
+
+		// Only try API endpoint if we have the API key
+		if apiKey != "" {
+			apiURL := fmt.Sprintf("http://%s:8989/api/v3/health", name)
+			req, err := http.NewRequest(http.MethodGet, apiURL, nil)
+			if err == nil {
+				req.Header.Set("X-Api-Key", apiKey)
+				resp, err := client.Do(req)
+				if err == nil {
+					defer resp.Body.Close()
+					if resp.StatusCode >= 200 && resp.StatusCode < 400 {
+						return c.JSON(APIResponse{
+							Success: true,
+							Data: fiber.Map{
+								"ready":       true,
+								"via":         "api",
+								"status_code": resp.StatusCode,
+								"url":         apiURL,
+							},
+						})
+					}
+				}
+			}
+		}
+
+		// If API check didn't work, just check if port is responding (TCP check only)
+		// This avoids authentication challenges
+		conn, err := net.DialTimeout("tcp", fmt.Sprintf("%s:8989", name), 1*time.Second)
+		if err == nil {
+			conn.Close()
+			return c.JSON(APIResponse{
+				Success: true,
+				Data: fiber.Map{
+					"ready":       true,
+					"via":         "tcp",
+					"status_code": 0,
+					"url":         fmt.Sprintf("http://%s:8989", name),
+				},
+			})
+		}
+	}
+
 	// Then, attempt via proxy endpoint if available
 	proxySvc := service.NewProxyService(h.repos, h.logger)
 	endpoint, err := proxySvc.GetServiceEndpoint(name)
@@ -946,6 +1121,59 @@ func (h *ServiceHandler) CheckServiceReady(c *fiber.Ctx) error {
 	})
 }
 
+// checkServiceReadyDirect checks if a service container is ready without database config
+// Used when service is not yet configured in the database
+func (h *ServiceHandler) checkServiceReadyDirect(c *fiber.Ctx, name string) error {
+	// Check if container port is responding (TCP check only)
+	var port int
+	switch name {
+	case "radarr":
+		port = 7878
+	case "sonarr":
+		port = 8989
+	case "jellyfin":
+		port = 8096
+	case "prowlarr":
+		port = 9696
+	case "bazarr":
+		port = 6767
+	case "qbittorrent":
+		port = 8080
+	default:
+		// Unknown service, assume not ready
+		return c.JSON(APIResponse{
+			Success: true,
+			Data: fiber.Map{
+				"ready": false,
+				"via":   "unknown",
+			},
+		})
+	}
+
+	conn, err := net.DialTimeout("tcp", fmt.Sprintf("%s:%d", name, port), 1*time.Second)
+	if err == nil {
+		conn.Close()
+		return c.JSON(APIResponse{
+			Success: true,
+			Data: fiber.Map{
+				"ready":       true,
+				"via":         "tcp",
+				"status_code": 0,
+				"url":         fmt.Sprintf("http://%s:%d", name, port),
+			},
+		})
+	}
+
+	// Not ready
+	return c.JSON(APIResponse{
+		Success: true,
+		Data: fiber.Map{
+			"ready": false,
+			"via":   "tcp-failed",
+		},
+	})
+}
+
 // getServiceConfigPath attempts to extract the config path from the stored service configuration
 func getServiceConfigPath(svc *models.Service) string {
 	if svc == nil || svc.Config == nil {
@@ -974,4 +1202,47 @@ func getServiceConfigPath(svc *models.Service) string {
 	}
 
 	return ""
+}
+
+// GetRootFolders handles GET /api/services/:name/rootfolders
+func (h *ServiceHandler) GetRootFolders(c *fiber.Ctx) error {
+	name := c.Params("name")
+	if name == "" {
+		return c.Status(fiber.StatusBadRequest).JSON(APIResponse{
+			Success: false,
+			Error:   "Service name is required",
+		})
+	}
+
+	// Only supported for Radarr and Sonarr
+	if name != "radarr" && name != "sonarr" {
+		return c.Status(fiber.StatusBadRequest).JSON(APIResponse{
+			Success: false,
+			Error:   "This endpoint is only available for Radarr and Sonarr services",
+		})
+	}
+
+	// Check if service manager is available
+	if h.serviceManager == nil {
+		return c.Status(fiber.StatusServiceUnavailable).JSON(APIResponse{
+			Success: false,
+			Error:   "Service manager is not available",
+		})
+	}
+
+	// Get root folders from service via API
+	ctx := c.Context()
+	rootFolders, err := h.serviceManager.GetRootFolders(ctx, name)
+	if err != nil {
+		h.logger.Error("Failed to get root folders", "service", name, "error", err)
+		return c.Status(fiber.StatusInternalServerError).JSON(APIResponse{
+			Success: false,
+			Error:   fmt.Sprintf("Failed to get root folders: %v", err),
+		})
+	}
+
+	return c.JSON(APIResponse{
+		Success: true,
+		Data:    rootFolders,
+	})
 }

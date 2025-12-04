@@ -2,6 +2,8 @@ services:
   radarr:
     image: {{ .Image }}
     container_name: {{ .ContainerName }}
+    labels:
+      - "mediacheky.managed=true"
     environment:
       - PUID={{ .Global.PUID }}
       - PGID={{ .Global.PGID }}

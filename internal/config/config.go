@@ -54,40 +54,40 @@ func GetEnvSourceMap() *EnvSourceMap {
 	envMap := &EnvSourceMap{}
 
 	// Check Radarr
-	envMap.Radarr.Enabled = os.Getenv("KEEPERCHEKY_CLIENTS_RADARR_ENABLED") != ""
-	envMap.Radarr.URL = os.Getenv("KEEPERCHEKY_CLIENTS_RADARR_URL") != ""
-	envMap.Radarr.APIKey = os.Getenv("KEEPERCHEKY_CLIENTS_RADARR_API_KEY") != ""
+	envMap.Radarr.Enabled = os.Getenv("MEDIACHEKY_CLIENTS_RADARR_ENABLED") != ""
+	envMap.Radarr.URL = os.Getenv("MEDIACHEKY_CLIENTS_RADARR_URL") != ""
+	envMap.Radarr.APIKey = os.Getenv("MEDIACHEKY_CLIENTS_RADARR_API_KEY") != ""
 
 	// Check Sonarr
-	envMap.Sonarr.Enabled = os.Getenv("KEEPERCHEKY_CLIENTS_SONARR_ENABLED") != ""
-	envMap.Sonarr.URL = os.Getenv("KEEPERCHEKY_CLIENTS_SONARR_URL") != ""
-	envMap.Sonarr.APIKey = os.Getenv("KEEPERCHEKY_CLIENTS_SONARR_API_KEY") != ""
+	envMap.Sonarr.Enabled = os.Getenv("MEDIACHEKY_CLIENTS_SONARR_ENABLED") != ""
+	envMap.Sonarr.URL = os.Getenv("MEDIACHEKY_CLIENTS_SONARR_URL") != ""
+	envMap.Sonarr.APIKey = os.Getenv("MEDIACHEKY_CLIENTS_SONARR_API_KEY") != ""
 
 	// Check Jellyfin
-	envMap.Jellyfin.Enabled = os.Getenv("KEEPERCHEKY_CLIENTS_JELLYFIN_ENABLED") != ""
-	envMap.Jellyfin.URL = os.Getenv("KEEPERCHEKY_CLIENTS_JELLYFIN_URL") != ""
-	envMap.Jellyfin.APIKey = os.Getenv("KEEPERCHEKY_CLIENTS_JELLYFIN_API_KEY") != ""
+	envMap.Jellyfin.Enabled = os.Getenv("MEDIACHEKY_CLIENTS_JELLYFIN_ENABLED") != ""
+	envMap.Jellyfin.URL = os.Getenv("MEDIACHEKY_CLIENTS_JELLYFIN_URL") != ""
+	envMap.Jellyfin.APIKey = os.Getenv("MEDIACHEKY_CLIENTS_JELLYFIN_API_KEY") != ""
 
 	// Check Jellyseerr
-	envMap.Jellyseerr.Enabled = os.Getenv("KEEPERCHEKY_CLIENTS_JELLYSEERR_ENABLED") != ""
-	envMap.Jellyseerr.URL = os.Getenv("KEEPERCHEKY_CLIENTS_JELLYSEERR_URL") != ""
-	envMap.Jellyseerr.APIKey = os.Getenv("KEEPERCHEKY_CLIENTS_JELLYSEERR_API_KEY") != ""
+	envMap.Jellyseerr.Enabled = os.Getenv("MEDIACHEKY_CLIENTS_JELLYSEERR_ENABLED") != ""
+	envMap.Jellyseerr.URL = os.Getenv("MEDIACHEKY_CLIENTS_JELLYSEERR_URL") != ""
+	envMap.Jellyseerr.APIKey = os.Getenv("MEDIACHEKY_CLIENTS_JELLYSEERR_API_KEY") != ""
 
 	// Check Jellystat
-	envMap.Jellystat.Enabled = os.Getenv("KEEPERCHEKY_CLIENTS_JELLYSTAT_ENABLED") != ""
-	envMap.Jellystat.URL = os.Getenv("KEEPERCHEKY_CLIENTS_JELLYSTAT_URL") != ""
-	envMap.Jellystat.APIKey = os.Getenv("KEEPERCHEKY_CLIENTS_JELLYSTAT_API_KEY") != ""
+	envMap.Jellystat.Enabled = os.Getenv("MEDIACHEKY_CLIENTS_JELLYSTAT_ENABLED") != ""
+	envMap.Jellystat.URL = os.Getenv("MEDIACHEKY_CLIENTS_JELLYSTAT_URL") != ""
+	envMap.Jellystat.APIKey = os.Getenv("MEDIACHEKY_CLIENTS_JELLYSTAT_API_KEY") != ""
 
 	// Check qBittorrent
-	envMap.QBittorrent.Enabled = os.Getenv("KEEPERCHEKY_CLIENTS_QBITTORRENT_ENABLED") != ""
-	envMap.QBittorrent.URL = os.Getenv("KEEPERCHEKY_CLIENTS_QBITTORRENT_URL") != ""
-	envMap.QBittorrent.Username = os.Getenv("KEEPERCHEKY_CLIENTS_QBITTORRENT_USERNAME") != ""
-	envMap.QBittorrent.Password = os.Getenv("KEEPERCHEKY_CLIENTS_QBITTORRENT_PASSWORD") != ""
+	envMap.QBittorrent.Enabled = os.Getenv("MEDIACHEKY_CLIENTS_QBITTORRENT_ENABLED") != ""
+	envMap.QBittorrent.URL = os.Getenv("MEDIACHEKY_CLIENTS_QBITTORRENT_URL") != ""
+	envMap.QBittorrent.Username = os.Getenv("MEDIACHEKY_CLIENTS_QBITTORRENT_USERNAME") != ""
+	envMap.QBittorrent.Password = os.Getenv("MEDIACHEKY_CLIENTS_QBITTORRENT_PASSWORD") != ""
 
 	// Check Bazarr
-	envMap.Bazarr.Enabled = os.Getenv("KEEPERCHEKY_CLIENTS_BAZARR_ENABLED") != ""
-	envMap.Bazarr.URL = os.Getenv("KEEPERCHEKY_CLIENTS_BAZARR_URL") != ""
-	envMap.Bazarr.APIKey = os.Getenv("KEEPERCHEKY_CLIENTS_BAZARR_API_KEY") != ""
+	envMap.Bazarr.Enabled = os.Getenv("MEDIACHEKY_CLIENTS_BAZARR_ENABLED") != ""
+	envMap.Bazarr.URL = os.Getenv("MEDIACHEKY_CLIENTS_BAZARR_URL") != ""
+	envMap.Bazarr.APIKey = os.Getenv("MEDIACHEKY_CLIENTS_BAZARR_API_KEY") != ""
 
 	return envMap
 }
@@ -174,8 +174,8 @@ func Load() (*Config, error) {
 	setDefaults()
 
 	// 2. Configure environment variable handling
-	// CRITICAL: SetEnvKeyReplacer allows KEEPERCHEKY_CLIENTS_RADARR_URL to map to clients.radarr.url
-	viper.SetEnvPrefix("KEEPERCHEKY")
+	// CRITICAL: SetEnvKeyReplacer allows MEDIACHEKY_CLIENTS_RADARR_URL to map to clients.radarr.url
+	viper.SetEnvPrefix("MEDIACHEKY")
 	viper.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
 	viper.AutomaticEnv()
 
@@ -379,55 +379,55 @@ func hasAnyEnvVars(envMap *EnvSourceMap) bool {
 // logEnvOverrides prints which config values come from environment variables
 func logEnvOverrides(envMap *EnvSourceMap) {
 	if envMap.Radarr.Enabled {
-		fmt.Println("  - clients.radarr.enabled (from KEEPERCHEKY_CLIENTS_RADARR_ENABLED)")
+		fmt.Println("  - clients.radarr.enabled (from MEDIACHEKY_CLIENTS_RADARR_ENABLED)")
 	}
 	if envMap.Radarr.URL {
-		fmt.Println("  - clients.radarr.url (from KEEPERCHEKY_CLIENTS_RADARR_URL)")
+		fmt.Println("  - clients.radarr.url (from MEDIACHEKY_CLIENTS_RADARR_URL)")
 	}
 	if envMap.Radarr.APIKey {
 		fmt.Println("  - clients.radarr.api_key (from RADARR_API_KEY)")
 	}
 	if envMap.Sonarr.Enabled {
-		fmt.Println("  - clients.sonarr.enabled (from KEEPERCHEKY_CLIENTS_SONARR_ENABLED)")
+		fmt.Println("  - clients.sonarr.enabled (from MEDIACHEKY_CLIENTS_SONARR_ENABLED)")
 	}
 	if envMap.Sonarr.URL {
-		fmt.Println("  - clients.sonarr.url (from KEEPERCHEKY_CLIENTS_SONARR_URL)")
+		fmt.Println("  - clients.sonarr.url (from MEDIACHEKY_CLIENTS_SONARR_URL)")
 	}
 	if envMap.Sonarr.APIKey {
 		fmt.Println("  - clients.sonarr.api_key (from SONARR_API_KEY)")
 	}
 	if envMap.Jellyfin.Enabled {
-		fmt.Println("  - clients.jellyfin.enabled (from KEEPERCHEKY_CLIENTS_JELLYFIN_ENABLED)")
+		fmt.Println("  - clients.jellyfin.enabled (from MEDIACHEKY_CLIENTS_JELLYFIN_ENABLED)")
 	}
 	if envMap.Jellyfin.URL {
-		fmt.Println("  - clients.jellyfin.url (from KEEPERCHEKY_CLIENTS_JELLYFIN_URL)")
+		fmt.Println("  - clients.jellyfin.url (from MEDIACHEKY_CLIENTS_JELLYFIN_URL)")
 	}
 	if envMap.Jellyfin.APIKey {
 		fmt.Println("  - clients.jellyfin.api_key (from JELLYFIN_API_KEY)")
 	}
 	if envMap.Jellyseerr.Enabled {
-		fmt.Println("  - clients.jellyseerr.enabled (from KEEPERCHEKY_CLIENTS_JELLYSEERR_ENABLED)")
+		fmt.Println("  - clients.jellyseerr.enabled (from MEDIACHEKY_CLIENTS_JELLYSEERR_ENABLED)")
 	}
 	if envMap.Jellyseerr.URL {
-		fmt.Println("  - clients.jellyseerr.url (from KEEPERCHEKY_CLIENTS_JELLYSEERR_URL)")
+		fmt.Println("  - clients.jellyseerr.url (from MEDIACHEKY_CLIENTS_JELLYSEERR_URL)")
 	}
 	if envMap.Jellyseerr.APIKey {
 		fmt.Println("  - clients.jellyseerr.api_key (from JELLYSEERR_API_KEY)")
 	}
 	if envMap.Jellystat.Enabled {
-		fmt.Println("  - clients.jellystat.enabled (from KEEPERCHEKY_CLIENTS_JELLYSTAT_ENABLED)")
+		fmt.Println("  - clients.jellystat.enabled (from MEDIACHEKY_CLIENTS_JELLYSTAT_ENABLED)")
 	}
 	if envMap.Jellystat.URL {
-		fmt.Println("  - clients.jellystat.url (from KEEPERCHEKY_CLIENTS_JELLYSTAT_URL)")
+		fmt.Println("  - clients.jellystat.url (from MEDIACHEKY_CLIENTS_JELLYSTAT_URL)")
 	}
 	if envMap.Jellystat.APIKey {
 		fmt.Println("  - clients.jellystat.api_key (from JELLYSTAT_API_KEY)")
 	}
 	if envMap.QBittorrent.Enabled {
-		fmt.Println("  - clients.qbittorrent.enabled (from KEEPERCHEKY_CLIENTS_QBITTORRENT_ENABLED)")
+		fmt.Println("  - clients.qbittorrent.enabled (from MEDIACHEKY_CLIENTS_QBITTORRENT_ENABLED)")
 	}
 	if envMap.QBittorrent.URL {
-		fmt.Println("  - clients.qbittorrent.url (from KEEPERCHEKY_CLIENTS_QBITTORRENT_URL)")
+		fmt.Println("  - clients.qbittorrent.url (from MEDIACHEKY_CLIENTS_QBITTORRENT_URL)")
 	}
 	if envMap.QBittorrent.Username {
 		fmt.Println("  - clients.qbittorrent.username (from QBITTORRENT_USERNAME)")
@@ -436,10 +436,10 @@ func logEnvOverrides(envMap *EnvSourceMap) {
 		fmt.Println("  - clients.qbittorrent.password (from QBITTORRENT_PASSWORD)")
 	}
 	if envMap.Bazarr.Enabled {
-		fmt.Println("  - clients.bazarr.enabled (from KEEPERCHEKY_CLIENTS_BAZARR_ENABLED)")
+		fmt.Println("  - clients.bazarr.enabled (from MEDIACHEKY_CLIENTS_BAZARR_ENABLED)")
 	}
 	if envMap.Bazarr.URL {
-		fmt.Println("  - clients.bazarr.url (from KEEPERCHEKY_CLIENTS_BAZARR_URL)")
+		fmt.Println("  - clients.bazarr.url (from MEDIACHEKY_CLIENTS_BAZARR_URL)")
 	}
 	if envMap.Bazarr.APIKey {
 		fmt.Println("  - clients.bazarr.api_key (from BAZARR_API_KEY)")

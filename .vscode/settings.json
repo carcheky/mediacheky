@@ -41,7 +41,7 @@
         "titleBar.activeForeground": "#F9FCF8"
     },
     "chat.mcp.serverSampling": {
-        "keepercheky/.vscode/mcp.json: shell": {
+        "mediacheky/.vscode/mcp.json: shell": {
             "allowedDuringChat": true
         }
     },

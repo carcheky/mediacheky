@@ -2,9 +2,9 @@
     <!-- Header with Breadcrumb -->
     <div>
         <nav class="text-sm text-dark-muted mb-2">
-            <a href="/" class="hover:text-dark-text">Dashboard</a>
+            <a href="/" class="hover:text-dark-text" data-i18n-key="nav.dashboard">Dashboard</a>
             <span class="mx-2">/</span>
-            <a href="/settings" class="hover:text-dark-text">Settings</a>
+            <a href="/services" class="hover:text-dark-text" data-i18n-key="config.breadcrumb.services">Services</a>
             <span class="mx-2">/</span>
             <span class="text-dark-text" x-text="serviceName"></span>
         </nav>
@@ -15,28 +15,28 @@
                 <div class="flex-shrink-0" x-html="getServiceIcon()"></div>
                 <div class="flex-1 min-w-0">
                     <div class="flex items-center gap-2">
-                        <h1 class="text-3xl font-bold text-dark-text" x-text="serviceName + ' Configuration'"></h1>
+                        <h1 class="text-3xl font-bold text-dark-text" x-text="serviceName + ' ' + window.i18n.t('config.title')"></h1>
                         <!-- Link Icon to service (only when running) -->
                         <button x-show="enabled && status === 'running'" 
                                 @click="window.open((proxyConfig.sslEnabled ? 'https://' : 'http://') + serviceEndpoint, '_blank')"
                                 class="text-blue-400 hover:text-blue-300 transition-colors flex-shrink-0 cursor-pointer bg-transparent border-0 p-0" 
-                                title="Open service">
+                                :title="window.i18n.t('config.button.open_service')">
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4m-4-6l6-6m0 0V4m0-4h4" />
                             </svg>
                         </button>
                     </div>
                     <div class="flex flex-wrap items-center gap-2 mt-2">
-                        <p class="text-sm text-dark-muted">Configure service settings and paths</p>
+                        <p class="text-sm text-dark-muted" data-i18n-key="config.description">Configure service settings and paths</p>
                         <!-- Status Badge -->
                         <span x-show="!enabled" class="px-2 py-0.5 bg-gray-900/30 border border-gray-600/50 text-gray-400 rounded text-xs flex-shrink-0">
-                            ⚪ Disabled
+                            ⚪ <span data-i18n-key="config.status.disabled">Disabled</span>
                         </span>
                         <span x-show="enabled && status === 'stopped'" class="px-2 py-0.5 bg-gray-900/30 border border-gray-600/50 text-gray-300 rounded text-xs flex-shrink-0">
-                            📴 Stopped
+                            📴 <span data-i18n-key="config.status.stopped">Stopped</span>
                         </span>
                         <span x-show="enabled && status === 'error'" class="px-2 py-0.5 bg-red-900/30 border border-red-600/50 text-red-300 rounded text-xs flex-shrink-0">
-                            ⚠️ Error
+                            ⚠️ <span data-i18n-key="config.status.error">Error</span>
                         </span>
                     </div>
                 </div>
@@ -45,8 +45,9 @@
             <!-- Right: Controls Section -->
             <div class="flex flex-col sm:flex-row gap-2 w-full lg:w-auto">
                 <!-- Enable/Disable Toggle -->
-                <label class="flex items-center gap-2 cursor-pointer px-3 py-2 bg-dark-bg rounded border border-dark-border hover:border-dark-text transition-colors">
-                    <span class="text-sm text-dark-muted whitespace-nowrap">Enable</span>
+                <label class="flex items-center gap-2 cursor-pointer px-3 py-2 bg-dark-bg rounded border border-dark-border hover:border-dark-text transition-colors"
+                       :title="enabled ? window.i18n.t('config.button.disable') : window.i18n.t('config.button.enable')">
+                    <span class="text-sm text-dark-muted whitespace-nowrap" data-i18n-key="config.enable">Enable</span>
                     <div class="relative flex-shrink-0">
                         <input type="checkbox" x-model="enabled" @change="toggleService()" class="sr-only peer">
                         <div class="w-11 h-6 bg-gray-700 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-800 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
@@ -56,28 +57,28 @@
                 <!-- Service Control Buttons (only when enabled) - Icon only with tooltip -->
                 <div x-show="enabled" class="flex gap-1">
                     <button @click="startService()" :disabled="status === 'running' || actionInProgress"
-                        title="Start service"
+                        :title="window.i18n.t('config.button.start')"
                         class="p-2 bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
                         <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
                             <path d="M6.3 2.841A1.5 1.5 0 004 4.11V15.89a1.5 1.5 0 002.3 1.269l9.344-5.89a1.5 1.5 0 000-2.538L6.3 2.84z"/>
                         </svg>
                     </button>
                     <button @click="stopService()" :disabled="status !== 'running' || actionInProgress"
-                        title="Stop service"
+                        :title="window.i18n.t('config.button.stop')"
                         class="p-2 bg-red-600 text-white rounded hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 focus:ring-offset-dark-bg">
                         <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
                             <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8 7a1 1 0 00-1 1v4a1 1 0 001 1h4a1 1 0 001-1V8a1 1 0 00-1-1H8z" clip-rule="evenodd"/>
                         </svg>
                     </button>
                     <button @click="restartService()" :disabled="status !== 'running' || actionInProgress"
-                        title="Restart service"
+                        :title="window.i18n.t('config.button.restart')"
                         class="p-2 bg-yellow-600 text-white rounded hover:bg-yellow-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:ring-offset-2 focus:ring-offset-dark-bg">
                         <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
                             <path fill-rule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z" clip-rule="evenodd"/>
                         </svg>
                     </button>
                     <button @click="killAndDownService()" :disabled="status !== 'running' || actionInProgress"
-                        title="Force kill and remove container"
+                        :title="window.i18n.t('config.button.kill_down')"
                         class="p-2 bg-red-900 text-white rounded hover:bg-red-950 disabled:opacity-50 disabled:cursor-not-allowed transition-colors focus:outline-none focus:ring-2 focus:ring-red-700 focus:ring-offset-2 focus:ring-offset-dark-bg">
                         <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
                             <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/>
@@ -88,7 +89,7 @@
                 <!-- Config Actions (only when enabled) - Prune icon only, Apply with text at end -->
                 <div class="flex gap-1 items-center">
                     <button x-show="configPathExists" @click="pruneConfig()" :disabled="pruning"
-                        title="Remove unused files and optimize storage"
+                        :title="window.i18n.t('config.button.prune')"
                         class="p-2 bg-orange-600 text-white rounded hover:bg-orange-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 focus:ring-offset-dark-bg">
                         <svg x-show="!pruning" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -104,7 +105,7 @@
                     </button>
                     <template x-if="enabled">
                         <button @click="applyConfig()" :disabled="applying"
-                            title="Apply configuration changes"
+                            :title="window.i18n.t('config.button.apply_changes')"
                             class="ml-auto px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-2 whitespace-nowrap focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-dark-bg">
                             <svg x-show="!applying" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -117,7 +118,7 @@
                                     d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
                                 </path>
                             </svg>
-                            <span x-text="applying ? 'Applying...' : 'Apply'"></span>
+                            <span x-text="applying ? window.i18n.t('config.button.applying') : window.i18n.t('config.button.apply')"></span>
                         </button>
                     </template>
                 </div>
@@ -127,7 +128,8 @@
 
     <!-- Radarr Application Settings -->
     <div class="bg-dark-surface dark:bg-dark-surface rounded-lg shadow-lg border border-dark-border"
-         :class="!enabled && 'opacity-50 pointer-events-none'">
+         :class="!enabled && 'opacity-50 pointer-events-none'"
+         x-show="serviceName.toLowerCase() === 'radarr'">
         <!-- Header (always visible) -->
         <button @click="collapsed.appSettings = !collapsed.appSettings" 
                 class="w-full px-6 py-4 flex items-center justify-between hover:bg-dark-bg/30 transition-colors">
@@ -137,8 +139,8 @@
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
                 </svg>
                 <div class="text-left">
-                    <h2 class="text-xl font-semibold text-dark-text">Radarr Application Settings</h2>
-                    <p class="text-sm text-dark-muted">Configure Radarr's config.xml settings</p>
+                    <h2 class="text-xl font-semibold text-dark-text" data-i18n-key="config.radarr.app_settings.title">Radarr Application Settings</h2>
+                    <p class="text-sm text-dark-muted" data-i18n-key="config.radarr.app_settings.description">Configure Radarr's config.xml settings</p>
                 </div>
             </div>
             <svg class="w-5 h-5 text-dark-muted transition-transform duration-200" 
@@ -166,6 +168,12 @@
                         class="whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors">
                         General
                     </button>
+                    <button @click="radarrTab = 'media'; loadRootFolders()"
+                        :class="radarrTab === 'media' ? 'border-purple-500 text-purple-400' : 'border-transparent text-dark-muted hover:text-dark-text hover:border-slate-600'"
+                        class="whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors">
+                        Media Management
+                    </button>
+
                     <button @click="radarrTab = 'todo'"
                         :class="radarrTab === 'todo' ? 'border-purple-500 text-purple-400' : 'border-transparent text-dark-muted hover:text-dark-text hover:border-slate-600'"
                         class="whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors">
@@ -179,7 +187,6 @@
                 <div class="flex items-center justify-between mb-4">
                     <div>
                         <h3 class="text-sm font-semibold text-purple-400 uppercase tracking-wide">Config.xml values</h3>
-                        <p class="text-xs text-dark-muted">MediaCheky reads/writes Radarr's config.xml directly.</p>
                     </div>
                     <button x-show="enabled && status === 'running' && serviceEndpoint" 
                             @click="window.open((proxyConfig.sslEnabled ? 'https://' : 'http://') + serviceEndpoint + '/settings/general', '_blank')"
@@ -192,179 +199,109 @@
                     </button>
                 </div>
 
-                <!-- 1. API Key (lo más importante) -->
-                <div class="mb-6">
-                    <label class="block text-sm font-medium text-dark-text mb-1">Api Key
-                        <span class="ml-2 inline-block px-2 py-0.5 bg-blue-900/40 border border-blue-700/50 text-blue-300 rounded text-xs font-normal italic">config.xml</span>
-                    </label>
+                <!-- API Key -->
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-dark-text mb-1">Api Key <span class="text-xs text-dark-muted italic">(config.xml)</span></label>
                     <div class="flex gap-2">
-                        <input type="text" x-model="radarrConfig.ApiKey" readonly
-                            class="flex-1 px-3 py-2 border border-dark-border rounded-md bg-dark-surface text-dark-muted cursor-not-allowed">
-                        <button @click="copyToClipboard(radarrConfig.ApiKey)"
-                            class="px-3 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 flex items-center gap-2">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
-                            </svg>
-                            Copy
-                        </button>
+                        <input type="text" x-model="radarrConfig.ApiKey" readonly class="flex-1 px-2 py-1.5 text-sm border border-dark-border rounded bg-dark-surface text-dark-muted cursor-not-allowed">
+                        <button @click="copyToClipboard(radarrConfig.ApiKey)" class="px-2 py-1.5 bg-purple-600 text-white rounded hover:bg-purple-700 text-xs">Copy</button>
                     </div>
-                    <p class="text-xs text-dark-muted mt-1">Radarr-generated value for API integrations.</p>
                 </div>
 
-                <!-- 2. Login Credentials (Username + Password) -->
-                <div class="mt-6 pt-6 border-t border-dark-border">
-                    <div class="flex items-center gap-3 mb-2">
-                        <svg class="w-5 h-5 text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
-                        </svg>
+                <!-- Login Credentials -->
+                <div class="mt-4 pt-4 border-t border-dark-border">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
                         <div>
-                            <h3 class="text-sm font-semibold text-yellow-400 uppercase tracking-wide">Login Credentials</h3>
-                            <p class="text-xs text-dark-muted">Stored securely in Radarr's database with PBKDF2 encryption.</p>
+                            <label for="radarr-username" class="block text-sm font-medium text-dark-text mb-1">Username <span class="text-xs text-dark-muted italic">(database)</span></label>
+                            <input type="text" id="radarr-username" x-model="radarrConfig.Username" class="w-full px-2 py-1.5 text-sm border border-dark-border rounded focus:outline-none focus:ring-1 focus:ring-purple-500 bg-dark-bg text-dark-text" placeholder="Enter username">
                         </div>
-                    </div>
-
-                    <!-- Info message for auto-generated credentials -->
-                        <div x-show="radarrConfig.Password !== '********'" class="mb-4 p-3 bg-blue-900/20 border border-blue-700/30 rounded-md">
-                            <div class="flex items-start gap-2">
-                                <svg class="w-5 h-5 text-blue-400 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                                </svg>
-                                <div class="text-sm">
-                                    <p class="text-blue-300 font-medium">Auto-generated credentials</p>
-                                    <p class="text-blue-200/80 text-xs mt-1">Random credentials have been generated. Save them or change them before applying.</p>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Existing credentials message -->
-                        <div x-show="radarrConfig.Password === '********'" class="mb-4 p-3 bg-green-900/20 border border-green-700/30 rounded-md">
-                            <div class="flex items-start gap-2">
-                                <svg class="w-5 h-5 text-green-400 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                                </svg>
-                                <div class="text-sm">
-                                    <p class="text-green-300 font-medium">Existing credentials loaded</p>
-                                    <p class="text-green-200/80 text-xs mt-1">Current username is shown. Password is hidden for security. Change only if needed.</p>
-                                </div>
-                            </div>
-                    </div>
-
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
-                            <label for="radarr-username" class="block text-sm font-medium text-dark-text mb-1">
-                                Username
-                                <span class="ml-2 inline-block px-2 py-0.5 bg-yellow-900/40 border border-yellow-700/50 text-yellow-300 rounded text-xs font-normal italic">database</span>
-                            </label>
-                            <div class="flex gap-2">
-                                <input type="text" id="radarr-username" x-model="radarrConfig.Username"
-                                    class="flex-1 px-3 py-2 border border-dark-border rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 bg-dark-bg text-dark-text"
-                                    placeholder="Enter username">
-                                <button @click="copyToClipboard(radarrConfig.Username)"
-                                    class="px-3 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 flex items-center gap-2">
-                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
-                                    </svg>
-                                </button>
-                            </div>
-                            <p class="text-xs text-dark-muted mt-1">Username for Radarr web UI login.</p>
-                        </div>
-
-                        <div>
-                            <label for="radarr-password" class="block text-sm font-medium text-dark-text mb-1">
-                                Password
-                                <span class="ml-2 inline-block px-2 py-0.5 bg-yellow-900/40 border border-yellow-700/50 text-yellow-300 rounded text-xs font-normal italic">database</span>
-                            </label>
-                            <div class="flex gap-2">
-                                <input type="password" id="radarr-password" x-model="radarrConfig.Password"
-                                    x-ref="passwordField"
-                                    class="flex-1 px-3 py-2 border border-dark-border rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 bg-dark-bg text-dark-text"
-                                    placeholder="Enter password">
-                                <button @click="copyToClipboard(radarrConfig.Password)"
-                                    class="px-3 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 flex items-center gap-2">
-                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
-                                    </svg>
-                                </button>
-                                <button @click="$refs.passwordField.type = $refs.passwordField.type === 'password' ? 'text' : 'password'"
-                                    aria-label="Toggle password visibility"
-                                    class="px-3 py-2 bg-slate-700 text-white rounded-md hover:bg-slate-600">
-                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
-                                    </svg>
-                                </button>
-                            </div>
-                            <p class="text-xs text-dark-muted mt-1">Password will be hashed with PBKDF2-HMAC-SHA512.</p>
+                            <label for="radarr-password" class="block text-sm font-medium text-dark-text mb-1">Password <span class="text-xs text-dark-muted italic">(database)</span></label>
+                            <input type="password" id="radarr-password" x-model="radarrConfig.Password" x-ref="passwordField" class="w-full px-2 py-1.5 text-sm border border-dark-border rounded focus:outline-none focus:ring-1 focus:ring-purple-500 bg-dark-bg text-dark-text" placeholder="Enter password">
                         </div>
                     </div>
                 </div>
 
-                <!-- 3. Authentication Settings -->
-                <div class="mt-6 pt-6 border-t border-dark-border">
-                    <h3 class="text-sm font-semibold text-purple-400 uppercase tracking-wide mb-4">Authentication Settings</h3>
-                    
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <!-- Authentication Settings -->
+                <div class="mt-4 pt-4 border-t border-dark-border">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
                         <div>
-                            <label class="block text-sm font-medium text-dark-text mb-1">
-                                Authentication Method
-                                <span class="ml-2 inline-block px-2 py-0.5 bg-blue-900/40 border border-blue-700/50 text-blue-300 rounded text-xs font-normal italic">config.xml</span>
-                            </label>
-                            <select x-model="radarrConfig.AuthenticationMethod"
-                                class="w-full px-3 py-2 border border-dark-border rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 bg-dark-bg text-dark-text">
+                            <label class="block text-sm font-medium text-dark-text mb-1">Authentication Method <span class="text-xs text-dark-muted italic">(config.xml)</span></label>
+                            <select x-model="radarrConfig.AuthenticationMethod" class="w-full px-2 py-1.5 text-sm border border-dark-border rounded focus:outline-none focus:ring-1 focus:ring-purple-500 bg-dark-bg text-dark-text">
                                 <option value="None">None</option>
                                 <option value="Basic">Basic (Browser popup)</option>
                                 <option value="Forms">Forms (Login page)</option>
                                 <option value="External">External</option>
                             </select>
-                            <p class="text-xs text-dark-muted mt-1">Choose the native authentication mechanism.</p>
                         </div>
-
                         <div>
-                            <label class="block text-sm font-medium text-dark-text mb-1">
-                                Authentication Required
-                                <span class="ml-2 inline-block px-2 py-0.5 bg-blue-900/40 border border-blue-700/50 text-blue-300 rounded text-xs font-normal italic">config.xml</span>
-                            </label>
-                            <select x-model="radarrConfig.AuthenticationRequired"
-                                class="w-full px-3 py-2 border border-dark-border rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 bg-dark-bg text-dark-text">
+                            <label class="block text-sm font-medium text-dark-text mb-1">Authentication Required <span class="text-xs text-dark-muted italic">(config.xml)</span></label>
+                            <select x-model="radarrConfig.AuthenticationRequired" class="w-full px-2 py-1.5 text-sm border border-dark-border rounded focus:outline-none focus:ring-1 focus:ring-purple-500 bg-dark-bg text-dark-text">
                                 <option value="Enabled">Enabled (Always require auth)</option>
                                 <option value="DisabledForLocalAddresses">Disabled for Local Addresses</option>
                             </select>
-                            <p class="text-xs text-dark-muted mt-1">Controls when Radarr enforces authentication.</p>
                         </div>
                     </div>
                 </div>
 
-                <!-- 4. General Settings -->
-                <div class="mt-6 pt-6 border-t border-dark-border">
-                    <h3 class="text-sm font-semibold text-purple-400 uppercase tracking-wide mb-4">General Settings</h3>
-                    
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <!-- General Settings -->
+                <div class="mt-4 pt-4 border-t border-dark-border">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
                         <div>
-                            <label class="block text-sm font-medium text-dark-text mb-1">
-                                Instance Name
-                                <span class="ml-2 inline-block px-2 py-0.5 bg-blue-900/40 border border-blue-700/50 text-blue-300 rounded text-xs font-normal italic">config.xml</span>
-                            </label>
-                            <input type="text" x-model="radarrConfig.InstanceName"
-                                class="w-full px-3 py-2 border border-dark-border rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 bg-dark-bg text-dark-text">
-                            <p class="text-xs text-dark-muted mt-1">Friendly name displayed across Radarr UI.</p>
+                            <label class="block text-sm font-medium text-dark-text mb-1">Instance Name <span class="text-xs text-dark-muted italic">(config.xml)</span></label>
+                            <input type="text" x-model="radarrConfig.InstanceName" class="w-full px-2 py-1.5 text-sm border border-dark-border rounded focus:outline-none focus:ring-1 focus:ring-purple-500 bg-dark-bg text-dark-text">
                         </div>
-
                         <div>
-                            <label class="block text-sm font-medium text-dark-text mb-1">
-                                Log Level
-                                <span class="ml-2 inline-block px-2 py-0.5 bg-blue-900/40 border border-blue-700/50 text-blue-300 rounded text-xs font-normal italic">config.xml</span>
-                            </label>
-                            <select x-model="radarrConfig.LogLevel"
-                                class="w-full px-3 py-2 border border-dark-border rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 bg-dark-bg text-dark-text">
+                            <label class="block text-sm font-medium text-dark-text mb-1">Log Level <span class="text-xs text-dark-muted italic">(config.xml)</span></label>
+                            <select x-model="radarrConfig.LogLevel" class="w-full px-2 py-1.5 text-sm border border-dark-border rounded focus:outline-none focus:ring-1 focus:ring-purple-500 bg-dark-bg text-dark-text">
                                 <option value="trace">Trace</option>
                                 <option value="debug">Debug</option>
                                 <option value="info">Info</option>
                                 <option value="warn">Warning</option>
                                 <option value="error">Error</option>
                             </select>
-                            <p class="text-xs text-dark-muted mt-1">Logging verbosity level.</p>
                         </div>
                     </div>
+                </div>
+            </div>
+
+            <!-- Media Management Tab -->
+            <div x-show="radarrTab === 'media'" class="space-y-6">
+                <div class="mb-4 flex items-center justify-between">
+                    <div>
+                        <h3 class="text-sm font-semibold text-purple-400 uppercase tracking-wide">Media Management</h3>
+                        <p class="text-xs text-dark-muted">Root folders registered in Radarr (read-only view).</p>
+                    </div>
+                    <button x-show="enabled && status === 'running' && serviceEndpoint"
+                            @click="window.open((proxyConfig.sslEnabled ? 'https://' : 'http://') + serviceEndpoint + '/settings/mediamanagement', '_blank')"
+                            class="text-blue-400 hover:text-blue-300 transition-colors flex items-center gap-1 text-xs"
+                            title="Open Radarr Media Management page">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path>
+                        </svg>
+                        Open Media Management
+                    </button>
+                </div>
+
+                <div class="grid grid-cols-1 gap-3">
+                    <template x-if="radarrRootFolders && radarrRootFolders.length">
+                        <div class="text-sm text-dark-muted">
+                            <div class="flex items-center justify-between">
+                                <div class="font-semibold">Current Root Folders</div>
+                                <div class="text-xs text-dark-muted">Managed by Radarr</div>
+                            </div>
+                            <ul class="mt-2 list-disc list-inside text-sm">
+                                <template x-for="f in radarrRootFolders" :key="f.id">
+                                    <li x-text="f.path"></li>
+                                </template>
+                            </ul>
+                        </div>
+                    </template>
+                    <template x-if="!radarrRootFolders || radarrRootFolders.length === 0">
+                        <div class="text-sm text-dark-muted">
+                            <p>No root folders configured. The default root folder will be created automatically when Radarr is enabled.</p>
+                        </div>
+                    </template>
                 </div>
             </div>
 
@@ -393,6 +330,210 @@
         </div>
     </div>
 
+    <!-- Sonarr Application Settings -->
+    <div class="bg-dark-surface dark:bg-dark-surface rounded-lg shadow-lg border border-dark-border"
+         :class="!enabled && 'opacity-50 pointer-events-none'"
+         x-show="serviceName.toLowerCase() === 'sonarr'">
+        <!-- Header (always visible) -->
+        <button @click="collapsed.appSettings = !collapsed.appSettings" 
+                class="w-full px-6 py-4 flex items-center justify-between hover:bg-dark-bg/30 transition-colors">
+            <div class="flex items-center gap-3">
+                <svg class="w-6 h-6 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                </svg>
+                <div class="text-left">
+                    <h2 class="text-xl font-semibold text-dark-text" data-i18n-key="config.sonarr.app_settings.title">Sonarr Application Settings</h2>
+                    <p class="text-sm text-dark-muted" data-i18n-key="config.sonarr.app_settings.description">Configure Sonarr's config.xml settings</p>
+                </div>
+            </div>
+            <svg class="w-5 h-5 text-dark-muted transition-transform duration-200" 
+                 :class="collapsed.appSettings && 'transform rotate-180'"
+                 fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"></path>
+            </svg>
+        </button>
+        
+        <!-- Content (collapsible) -->
+        <div x-show="!collapsed.appSettings" 
+             x-transition:enter="transition ease-out duration-200"
+             x-transition:enter-start="opacity-0 transform -translate-y-2"
+             x-transition:enter-end="opacity-100 transform translate-y-0"
+             x-transition:leave="transition ease-in duration-150"
+             x-transition:leave-start="opacity-100 transform translate-y-0"
+             x-transition:leave-end="opacity-0 transform -translate-y-2"
+             class="px-6 pb-6">
+            
+            <!-- Tabs Navigation -->
+            <div class="border-b border-dark-border mb-6">
+                <nav class="-mb-px flex space-x-8">
+                    <button @click="sonarrTab = 'general'"
+                        :class="sonarrTab === 'general' ? 'border-purple-500 text-purple-400' : 'border-transparent text-dark-muted hover:text-dark-text hover:border-slate-600'"
+                        class="whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors">
+                        General
+                    </button>
+                    <button @click="sonarrTab = 'media'; loadRootFolders()"
+                        :class="sonarrTab === 'media' ? 'border-purple-500 text-purple-400' : 'border-transparent text-dark-muted hover:text-dark-text hover:border-slate-600'"
+                        class="whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors">
+                        Media Management
+                    </button>
+
+                    <button @click="sonarrTab = 'todo'"
+                        :class="sonarrTab === 'todo' ? 'border-purple-500 text-purple-400' : 'border-transparent text-dark-muted hover:text-dark-text hover:border-slate-600'"
+                        class="whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors">
+                        TODO
+                    </button>
+                </nav>
+            </div>
+
+            <!-- Media Management Tab -->
+            <div x-show="sonarrTab === 'media'" class="space-y-6">
+                <div class="mb-4 flex items-center justify-between">
+                    <div>
+                        <h3 class="text-sm font-semibold text-purple-400 uppercase tracking-wide">Media Management</h3>
+                        <p class="text-xs text-dark-muted">Root folders registered in Sonarr (read-only view).</p>
+                    </div>
+                    <button x-show="enabled && status === 'running' && serviceEndpoint"
+                            @click="window.open((proxyConfig.sslEnabled ? 'https://' : 'http://') + serviceEndpoint + '/settings/mediamanagement', '_blank')"
+                            class="text-blue-400 hover:text-blue-300 transition-colors flex items-center gap-1 text-xs"
+                            title="Open Sonarr Media Management page">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path>
+                        </svg>
+                        Open Media Management
+                    </button>
+                </div>
+
+                <div class="grid grid-cols-1 gap-3">
+                    <template x-if="sonarrRootFolders && sonarrRootFolders.length">
+                        <div class="text-sm text-dark-muted">
+                            <div class="flex items-center justify-between">
+                                <div class="font-semibold">Current Root Folders</div>
+                                <div class="text-xs text-dark-muted">Managed by Sonarr</div>
+                            </div>
+                            <ul class="mt-2 list-disc list-inside text-sm">
+                                <template x-for="f in sonarrRootFolders" :key="f.id">
+                                    <li x-text="f.path"></li>
+                                </template>
+                            </ul>
+                        </div>
+                    </template>
+                    <template x-if="!sonarrRootFolders || sonarrRootFolders.length === 0">
+                        <div class="text-sm text-dark-muted">
+                            <p>No root folders configured. The default root folder will be created automatically when Sonarr is enabled.</p>
+                        </div>
+                    </template>
+                </div>
+            </div>
+
+            <!-- General Tab -->
+            <div x-show="sonarrTab === 'general'" class="space-y-6">
+                <div class="flex items-center justify-between mb-4">
+                    <div>
+                        <h3 class="text-sm font-semibold text-purple-400 uppercase tracking-wide">Config.xml values</h3>
+                    </div>
+                    <button x-show="enabled && status === 'running' && serviceEndpoint" 
+                            @click="window.open((proxyConfig.sslEnabled ? 'https://' : 'http://') + serviceEndpoint + '/settings/general', '_blank')"
+                            class="text-blue-400 hover:text-blue-300 transition-colors flex items-center gap-1 text-xs"
+                            title="Open Sonarr Settings (manual login required)">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path>
+                        </svg>
+                        Open Sonarr Settings
+                    </button>
+                </div>
+
+                <!-- API Key -->
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-dark-text mb-1">Api Key <span class="text-xs text-dark-muted italic">(config.xml)</span></label>
+                    <div class="flex gap-2">
+                        <input type="text" x-model="sonarrConfig.ApiKey" readonly class="flex-1 px-2 py-1.5 text-sm border border-dark-border rounded bg-dark-surface text-dark-muted cursor-not-allowed">
+                        <button @click="copyToClipboard(sonarrConfig.ApiKey)" class="px-2 py-1.5 bg-purple-600 text-white rounded hover:bg-purple-700 text-xs">Copy</button>
+                    </div>
+                </div>
+
+                <!-- Login Credentials -->
+                <div class="mt-4 pt-4 border-t border-dark-border">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <div>
+                            <label for="sonarr-username" class="block text-sm font-medium text-dark-text mb-1">Username <span class="text-xs text-dark-muted italic">(database)</span></label>
+                            <input type="text" id="sonarr-username" x-model="sonarrConfig.Username" class="w-full px-2 py-1.5 text-sm border border-dark-border rounded focus:outline-none focus:ring-1 focus:ring-purple-500 bg-dark-bg text-dark-text" placeholder="Enter username">
+                        </div>
+                        <div>
+                            <label for="sonarr-password" class="block text-sm font-medium text-dark-text mb-1">Password <span class="text-xs text-dark-muted italic">(database)</span></label>
+                            <input type="password" id="sonarr-password" x-model="sonarrConfig.Password" x-ref="sonarrPasswordField" class="w-full px-2 py-1.5 text-sm border border-dark-border rounded focus:outline-none focus:ring-1 focus:ring-purple-500 bg-dark-bg text-dark-text" placeholder="Enter password">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Authentication Settings -->
+                <div class="mt-4 pt-4 border-t border-dark-border">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-sm font-medium text-dark-text mb-1">Authentication Method <span class="text-xs text-dark-muted italic">(config.xml)</span></label>
+                            <select x-model="sonarrConfig.AuthenticationMethod" class="w-full px-2 py-1.5 text-sm border border-dark-border rounded focus:outline-none focus:ring-1 focus:ring-purple-500 bg-dark-bg text-dark-text">
+                                <option value="None">None</option>
+                                <option value="Basic">Basic (Browser popup)</option>
+                                <option value="Forms">Forms (Login page)</option>
+                                <option value="External">External</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-dark-text mb-1">Authentication Required <span class="text-xs text-dark-muted italic">(config.xml)</span></label>
+                            <select x-model="sonarrConfig.AuthenticationRequired" class="w-full px-2 py-1.5 text-sm border border-dark-border rounded focus:outline-none focus:ring-1 focus:ring-purple-500 bg-dark-bg text-dark-text">
+                                <option value="Enabled">Enabled (Always require auth)</option>
+                                <option value="DisabledForLocalAddresses">Disabled for Local Addresses</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- General Settings -->
+                <div class="mt-4 pt-4 border-t border-dark-border">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-sm font-medium text-dark-text mb-1">Instance Name <span class="text-xs text-dark-muted italic">(config.xml)</span></label>
+                            <input type="text" x-model="sonarrConfig.InstanceName" class="w-full px-2 py-1.5 text-sm border border-dark-border rounded focus:outline-none focus:ring-1 focus:ring-purple-500 bg-dark-bg text-dark-text">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-dark-text mb-1">Log Level <span class="text-xs text-dark-muted italic">(config.xml)</span></label>
+                            <select x-model="sonarrConfig.LogLevel" class="w-full px-2 py-1.5 text-sm border border-dark-border rounded focus:outline-none focus:ring-1 focus:ring-purple-500 bg-dark-bg text-dark-text">
+                                <option value="trace">Trace</option>
+                                <option value="debug">Debug</option>
+                                <option value="info">Info</option>
+                                <option value="warn">Warning</option>
+                                <option value="error">Error</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TODO Tab -->
+            <div x-show="sonarrTab === 'todo'" class="space-y-6">
+                <div class="mb-4">
+                    <h3 class="text-sm font-semibold text-slate-400 uppercase tracking-wide">TODO</h3>
+                    <p class="text-xs text-dark-muted">Future settings will appear here</p>
+                </div>
+
+                <div class="p-8 text-center border-2 border-dashed border-dark-border rounded-lg">
+                    <svg class="w-12 h-12 mx-auto text-dark-muted mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                    </svg>
+                    <p class="text-dark-muted text-sm">No additional settings configured yet</p>
+                    <p class="text-dark-muted text-xs mt-2">This section is reserved for future functionality</p>
+                </div>
+            </div>
+
+            <!-- Apply Changes Section -->
+            <div x-show="serviceName.toLowerCase() === 'sonarr'" class="mt-6 pt-6 border-t border-dark-border">
+                <div class="flex justify-between items-center">
+                    <p class="text-sm text-dark-muted">Changes to Sonarr configuration are saved via the Apply button</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Proxy & Domain Configuration -->
     <div class="bg-dark-surface dark:bg-dark-surface rounded-lg shadow-lg border border-dark-border"
          :class="!enabled && 'opacity-50 pointer-events-none'">
@@ -404,8 +545,8 @@
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"></path>
                 </svg>
                 <div class="text-left">
-                    <h2 class="text-xl font-semibold text-dark-text">Proxy & Domain Access</h2>
-                    <p class="text-sm text-dark-muted">Configure subdomain and domain for this service</p>
+                    <h2 class="text-xl font-semibold text-dark-text"><span data-i18n-key="config.proxy.title">Proxy & Domain Access</span></h2>
+                    <p class="text-sm text-dark-muted" data-i18n-key="config.proxy.description">Configure subdomain and domain for this service</p>
                 </div>
             </div>
             <svg class="w-5 h-5 text-dark-muted transition-transform duration-200" 
@@ -433,23 +574,23 @@
                 <input type="text" x-model="proxyConfig.subdomain" 
                     :placeholder="serviceName"
                     class="w-full px-3 py-2 border border-dark-border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-dark-bg text-dark-text">
-                <p class="text-xs text-dark-muted mt-1">Leave empty to auto-generate from service name</p>
+                <p class="text-xs text-dark-muted mt-1"><span data-i18n-key="config.proxy.subdomain.help">Leave empty to auto-generate from service name</span></p>
             </div>
             
             <div>
                 <label class="block text-sm font-medium text-dark-text mb-1">
-                    Domain (optional)
+                    <span data-i18n-key="config.proxy.domain">Domain (optional)</span>
                 </label>
                 <input type="text" x-model="proxyConfig.domain" 
                     placeholder="Use primary domain"
                     class="w-full px-3 py-2 border border-dark-border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-dark-bg text-dark-text">
-                <p class="text-xs text-dark-muted mt-1">Leave empty to use primary domain</p>
+                <p class="text-xs text-dark-muted mt-1"><span data-i18n-key="config.proxy.domain.help">Leave empty to use primary domain</span></p>
             </div>
         </div>
 
         <div class="flex items-center justify-between">
             <div x-show="serviceEndpoint" class="flex items-center gap-2">
-                <span class="text-sm text-dark-muted">Service URL:</span>
+                <span class="text-sm text-dark-muted"><span data-i18n-key="config.proxy.service_url">Service URL</span>:</span>
                 <code class="px-3 py-1 bg-dark-bg rounded text-blue-400 text-sm" x-text="(proxyConfig.sslEnabled ? 'https://' : 'http://') + serviceEndpoint"></code>
                 <button @click="copyEndpoint()" class="text-blue-400 hover:text-blue-300">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -458,7 +599,7 @@
                 </button>
             </div>
             <div x-show="!serviceEndpoint" class="text-sm text-dark-muted italic">
-                Configure a primary domain in Global Variables to see the service URL
+                <span data-i18n-key="config.proxy.no_primary">Configure a primary domain in Global Variables to see the service URL</span>
             </div>
             <button @click="updateProxyConfig()" :disabled="proxyUpdating"
                 class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2">
@@ -661,63 +802,6 @@
             </svg>
         </button>
     </div>
-
-    <!-- Progress Indicator Floating Popup -->
-    <div x-show="showProgress" 
-         x-transition:enter="transition ease-out duration-300"
-         x-transition:enter-start="opacity-0 transform -translate-x-2"
-         x-transition:enter-end="opacity-100 transform translate-x-0"
-         x-transition:leave="transition ease-in duration-200"
-         x-transition:leave-start="opacity-100 transform translate-x-0"
-         x-transition:leave-end="opacity-0 transform -translate-x-2"
-         class="fixed bottom-4 left-4 z-40 min-w-[320px] max-w-sm shadow-2xl rounded-lg border-2 border-amber-500/70 overflow-hidden bg-gradient-to-br from-blue-900/98 to-blue-950/98 backdrop-blur-md">
-        
-        <!-- Warning Banner -->
-        <div class="bg-gradient-to-r from-amber-600/30 via-amber-500/30 to-amber-600/30 border-b-2 border-amber-500/50 px-4 py-3">
-            <div class="flex items-center gap-3">
-                <div class="flex-shrink-0">
-                    <svg class="w-7 h-7 text-amber-400 animate-pulse" fill="currentColor" viewBox="0 0 20 20">
-                        <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
-                    </svg>
-                </div>
-                <div class="flex-1">
-                    <p class="text-sm font-bold text-amber-200 leading-tight">Please wait - Do not close!</p>
-                    <p class="text-xs text-amber-300/90 mt-0.5" x-text="progressWarning"></p>
-                </div>
-            </div>
-        </div>
-
-        <!-- Progress Content -->
-        <div class="p-4">
-            <!-- Header -->
-            <div class="flex items-center gap-3 mb-4">
-                <svg class="w-6 h-6 animate-spin text-blue-400" fill="none" viewBox="0 0 24 24">
-                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                </svg>
-                <div class="flex-1">
-                    <p class="text-base font-semibold text-blue-100" x-text="progressTitle"></p>
-                </div>
-            </div>
-            <!-- Steps -->
-            <div class="space-y-2.5">
-                <template x-for="(step, index) in progressSteps" :key="index">
-                    <div class="flex items-center gap-3 text-sm">
-                        <div x-show="index < currentProgressStep" class="w-5 h-5 rounded-full bg-green-500 flex items-center justify-center flex-shrink-0 shadow-lg shadow-green-500/50">
-                            <svg class="w-3.5 h-3.5 text-white" fill="currentColor" viewBox="0 0 20 20">
-                                <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
-                            </svg>
-                        </div>
-                        <div x-show="index === currentProgressStep" class="w-5 h-5 rounded-full bg-blue-400 flex items-center justify-center flex-shrink-0 shadow-lg shadow-blue-400/50">
-                            <div class="w-2.5 h-2.5 bg-blue-900 rounded-full animate-pulse"></div>
-                        </div>
-                        <div x-show="index > currentProgressStep" class="w-5 h-5 rounded-full border-2 border-blue-500/40 flex-shrink-0"></div>
-                        <span class="text-blue-100 font-medium" x-text="step"></span>
-                    </div>
-                </template>
-            </div>
-        </div>
-    </div>
 </div>
 
 <script>
@@ -754,7 +838,8 @@
                 advanced: true
             },
             // Radarr tabs state
-            radarrTab: 'general',  // Active tab: 'general', 'authentication', 'todo'
+            radarrTab: 'general',  // Active tab: 'general', 'media', 'authentication', 'todo'
+            radarrRootFolders: [],
             // Radarr Application Settings
             radarrConfig: {
                 BindAddress: '*',
@@ -778,6 +863,32 @@
                 UseProxy: false,
                 SendAnonymousUsageData: true
             },
+            // Sonarr tabs state
+            sonarrTab: 'general',  // Active tab: 'general', 'media', 'authentication', 'todo'
+            sonarrRootFolders: [],
+            // Sonarr Application Settings
+            sonarrConfig: {
+                BindAddress: '*',
+                Port: 8989,
+                SslPort: 9898,
+                EnableSsl: false,
+                LaunchBrowser: true,
+                ApiKey: '',
+                AuthenticationMethod: 'Forms',
+                AuthenticationRequired: 'DisabledForLocalAddresses',
+                Username: '',
+                Password: '',
+                PasswordConfirmation: '',
+                Branch: 'master',
+                LogLevel: 'debug',
+                SslCertPath: '',
+                SslCertPassword: '',
+                UrlBase: '',
+                InstanceName: 'Sonarr',
+                UpdateMechanism: 'Docker',
+                UseProxy: false,
+                SendAnonymousUsageData: true
+            },
             savingAppConfig: false,
             applying: false,
             pruning: false,
@@ -796,12 +907,6 @@
             },
             serviceEndpoint: '',
             proxyUpdating: false,
-            
-            // Progress indicator
-            showProgress: false,
-            progressTitle: '',
-            currentProgressStep: 0,
-            progressSteps: [],
 
             async init() {
                 // Load critical data in parallel
@@ -814,6 +919,8 @@
                 this.loadProxySettings().catch(e => console.error('Failed to load proxy settings:', e));
                 this.loadServiceEndpoint().catch(e => console.error('Failed to load service endpoint:', e));
                 this.loadRadarrConfig().catch(e => console.error('Failed to load Radarr config:', e));
+                this.loadSonarrConfig().catch(e => console.error('Failed to load Sonarr config:', e));
+                this.loadRootFolders().catch(e => console.error('Failed to load root folders:', e));
                 this.loadSavedDockerTags().catch(e => console.error('Failed to load saved Docker tags:', e));
                 // Don't load auth settings on init - they require API key which may not be ready yet
                 
@@ -1064,47 +1171,16 @@
                     this.checkConfigPathExists(),
                     this.loadProxySettings().catch(() => {}),
                     this.loadServiceEndpoint().catch(() => {}),
-                    this.loadRadarrConfig().catch(() => {})
+                    this.loadRadarrConfig().catch(() => {}),
+                    this.loadSonarrConfig().catch(() => {}),
+                    this.loadRootFolders().catch(() => {})
                 ]);
-            },
-
-            startProgress(title, steps, warning = 'Operation in progress...') {
-                this.progressTitle = title;
-                this.progressSteps = steps;
-                this.progressWarning = warning;
-                this.currentProgressStep = 0;
-                this.showProgress = true;
-            },
-
-            updateProgress(stepIndex = null) {
-                if (stepIndex !== null) {
-                    this.currentProgressStep = stepIndex;
-                } else {
-                    this.currentProgressStep++;
-                }
-                if (this.currentProgressStep >= this.progressSteps.length) {
-                    this.currentProgressStep = this.progressSteps.length - 1;
-                }
-            },
-
-            endProgress() {
-                this.showProgress = false;
-                this.progressTitle = '';
-                this.progressWarning = 'Operation in progress...';
-                this.progressSteps = [];
-                this.currentProgressStep = 0;
             },
 
             async toggleService() {
                 if (this.enabled) {
                     // Enable service - apply configuration and start
                     try {
-                        this.startProgress('Enabling service', [
-                            'Saving configuration',
-                            'Starting container',
-                            'Reloading data'
-                        ], 'Service startup in progress...');
-
                         // First save config
                         const configToSave = { ...this.config };
                         if (!configToSave.HostPort || configToSave.HostPort === 0) {
@@ -1121,11 +1197,8 @@
                             const data = await saveResponse.json();
                             this.showMessage(data.error || 'Failed to save configuration', 'error');
                             this.enabled = false; // Revert toggle
-                            this.endProgress();
                             return;
                         }
-
-                        this.updateProgress(1); // Update to step 2: Starting container
 
                         // Then enable service
                         const response = await fetch(`/api/services/${this.serviceName}/enable`, {
@@ -1136,25 +1209,30 @@
                             this.showMessage('Service enabled and started successfully', 'success');
                             this.status = 'running';
                             this.isReady = false;
-                            this.startReadinessPolling();
                             
-                            this.updateProgress(2); // Update to step 3: Reloading data
+                            // Wait for service to initialize (up to 70 seconds)
+                            await new Promise(resolve => {
+                                const timeout = setTimeout(resolve, 70000);
+                                // Also resolve when readiness polling completes
+                                const checkReady = setInterval(() => {
+                                    if (this.isReady) {
+                                        clearTimeout(timeout);
+                                        clearInterval(checkReady);
+                                        resolve();
+                                    }
+                                }, 500);
+                            });
                             
-                            // Wait for service to start, then reload all data
-                            await new Promise(resolve => setTimeout(resolve, 2000));
+                            // Reload all data
                             await this.reloadAllData();
-                            
-                            this.endProgress();
                         } else {
                             const data = await response.json();
                             this.showMessage(data.error || 'Failed to enable service', 'error');
                             this.enabled = false; // Revert toggle
-                            this.endProgress();
                         }
                     } catch (error) {
                         this.showMessage('Error: ' + error.message, 'error');
                         this.enabled = false; // Revert toggle
-                        this.endProgress();
                     }
                 } else {
                     // Disable service (will stop and remove container)
@@ -1164,31 +1242,22 @@
                     }
                     
                     try {
-                        this.startProgress('Disabling service', [
-                            'Stopping container',
-                            'Reloading data'
-                        ], 'Service shutdown in progress...');
-
                         const response = await fetch(`/api/services/${this.serviceName}/disable`, {
                             method: 'POST'
                         });
                         
                         if (response.ok) {
-                            this.updateProgress(1); // Update to step 2: Reloading data
                             this.showMessage('Service disabled successfully', 'success');
                             this.status = 'stopped';
                             await this.reloadAllData();
-                            this.endProgress();
                         } else {
                             const data = await response.json();
                             this.showMessage(data.error || 'Failed to disable service', 'error');
                             this.enabled = true; // Revert toggle
-                            this.endProgress();
                         }
                     } catch (error) {
                         this.showMessage('Error: ' + error.message, 'error');
                         this.enabled = true; // Revert toggle
-                        this.endProgress();
                     }
                 }
             },
@@ -1259,11 +1328,7 @@
 
                 try {
                     const isRadarr = this.serviceName.toLowerCase() === 'radarr';
-                    const steps = isRadarr 
-                        ? ['Saving Docker configuration', 'Saving Radarr config.xml', 'Restarting container', 'Reloading data']
-                        : ['Saving configuration', 'Restarting container', 'Reloading data'];
-                    
-                    this.startProgress('Applying configuration', steps, 'Applying changes, container will restart...');
+                    const isSonarr = this.serviceName.toLowerCase() === 'sonarr';
 
                     // First save Docker config
                     const configToSave = { ...this.config };
@@ -1280,11 +1345,8 @@
                     if (!saveResponse.ok) {
                         const data = await saveResponse.json();
                         this.showMessage(data.error || 'Failed to save configuration', 'error');
-                        this.endProgress();
                         return;
                     }
-
-                    this.updateProgress(1); // Next step
 
                     // For Radarr: Also save config.xml which will trigger automatic restart
                     if (isRadarr) {
@@ -1303,19 +1365,38 @@
                         if (!radarrSaveResponse.ok) {
                             const data = await radarrSaveResponse.json();
                             this.showMessage(data.error || 'Failed to save Radarr config.xml', 'error');
-                            this.endProgress();
                             return;
                         }
 
-                        this.updateProgress(2); // Radarr is restarting automatically
                         this.showMessage('Configuration applied! Radarr is restarting...', 'success');
                         
                         // Wait longer for Radarr to restart (it's done automatically by backend)
                         await new Promise(resolve => setTimeout(resolve, 5000));
+                    } else if (isSonarr) {
+                        // For Sonarr: Also save config.xml which will trigger automatic restart
+                        console.log('📤 Sending Sonarr config:', {
+                            Username: this.sonarrConfig.Username,
+                            Password: this.sonarrConfig.Password ? '***' : '(empty)',
+                            ApiKey: this.sonarrConfig.ApiKey ? '***' : '(empty)',
+                            AuthenticationMethod: this.sonarrConfig.AuthenticationMethod
+                        });
+                        const sonarrSaveResponse = await fetch(`/api/services/${this.serviceName}/sonarr-config`, {
+                            method: 'PUT',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(this.sonarrConfig)
+                        });
+
+                        if (!sonarrSaveResponse.ok) {
+                            const data = await sonarrSaveResponse.json();
+                            this.showMessage(data.error || 'Failed to save Sonarr config.xml', 'error');
+                            return;
+                        }
+
+                        this.showMessage('Configuration applied! Sonarr is restarting...', 'success');
                         
-                        this.updateProgress(3); // Reloading data
+                        // Wait longer for Sonarr to restart (it's done automatically by backend)
+                        await new Promise(resolve => setTimeout(resolve, 5000));
                     } else {
-                        this.updateProgress(2); // Restarting container (non-Radarr)
 
                         // For other services: trigger manual restart
                         const restartResponse = await fetch(`/api/services/${this.serviceName}/restart`, {
@@ -1325,13 +1406,11 @@
                         if (!restartResponse.ok) {
                             const data = await restartResponse.json();
                             this.showMessage(data.error || 'Failed to restart service', 'error');
-                            this.endProgress();
                             return;
                         }
 
                         this.showMessage('Configuration applied and container recreated successfully!', 'success');
                         await new Promise(resolve => setTimeout(resolve, 2000));
-                        this.updateProgress(3); // Reloading data
                     }
                     
                     // Reload all data including service status
@@ -1340,11 +1419,8 @@
                     
                     // Re-enable action buttons
                     this.actionInProgress = false;
-                    
-                    this.endProgress();
                 } catch (error) {
                     this.showMessage('Error: ' + error.message, 'error');
-                    this.endProgress();
                 } finally {
                     this.applying = false;
                 }
@@ -1371,13 +1447,6 @@
 
                 this.pruning = true;
                 try {
-                    this.startProgress('Pruning configuration', [
-                        'Stopping service',
-                        'Removing volumes',
-                        'Cleaning configuration',
-                        'Reloading data'
-                    ]);
-
                     // Call reset endpoint which will:
                     // 1. Run docker compose down -v
                     // 2. Delete services/radarr folder
@@ -1387,22 +1456,18 @@
                     });
 
                     if (response.ok) {
-                        this.updateProgress(3); // Update to step 4: Reloading data
                         this.enabled = false; // Update UI state
                         this.configPathExists = false; // Hide prune button
                         this.showMessage('Service pruned successfully! All config and volumes removed.', 'success');
                         // Wait for reset to complete, then reload all data
                         await new Promise(resolve => setTimeout(resolve, 2000));
                         await this.reloadAllData();
-                        this.endProgress();
                     } else {
                         const data = await response.json();
                         this.showMessage(data.error || 'Failed to prune configuration', 'error');
-                        this.endProgress();
                     }
                 } catch (error) {
                     this.showMessage('Error: ' + error.message, 'error');
-                    this.endProgress();
                 } finally {
                     this.pruning = false;
                 }
@@ -1417,12 +1482,6 @@
                 this.testing = true;
                 this.testResult = null;
 
-                this.startProgress('Testing connection', [
-                    'Connecting to service',
-                    'Verifying credentials',
-                    'Checking response'
-                ], 'Testing service connection...');
-
                 try {
                     const response = await fetch(`/api/config/test/${this.serviceName}`, {
                         method: 'POST',
@@ -1433,26 +1492,22 @@
                     const data = await response.json();
 
                     if (response.ok) {
-                        this.updateProgress(2);
                         this.testResult = {
                             success: true,
                             message: data.message || 'Service is reachable and responding correctly'
                         };
                         await new Promise(resolve => setTimeout(resolve, 500));
-                        this.endProgress();
                     } else {
                         this.testResult = {
                             success: false,
                             message: data.error || 'Unable to connect to service'
                         };
-                        this.endProgress();
                     }
                 } catch (error) {
                     this.testResult = {
                         success: false,
                         message: 'Error: ' + error.message
                     };
-                    this.endProgress();
                 } finally {
                     this.testing = false;
                 }
@@ -1466,12 +1521,6 @@
 
                 this.saving = true;
                 this.message = '';
-
-                this.startProgress('Saving configuration', [
-                    'Validating changes',
-                    'Updating configuration',
-                    'Reloading service data'
-                ], 'Saving configuration changes...');
 
                 try {
                     // Prepare config - remove HostPort if empty/0 (use static compose instead)
@@ -1487,19 +1536,14 @@
                     });
 
                     if (response.ok) {
-                        this.updateProgress(1);
                         this.showMessage('Configuration saved successfully!', 'success');
-                        this.updateProgress(2);
                         await this.loadServiceData();
-                        this.endProgress();
                     } else {
                         const data = await response.json();
                         this.showMessage(data.error || 'Failed to save configuration', 'error');
-                        this.endProgress();
                     }
                 } catch (error) {
                     this.showMessage('Error: ' + error.message, 'error');
-                    this.endProgress();
                 } finally {
                     this.saving = false;
                 }
@@ -1526,34 +1570,24 @@
                 this.message = '';
 
                 try {
-                    this.startProgress('Force killing container', [
-                        'Killing process',
-                        'Removing container',
-                        'Reloading data'
-                    ], 'Force stopping container...');
-
                     const response = await fetch(`/api/services/${this.serviceName}/kill-down`, {
                         method: 'POST'
                     });
 
                     if (response.ok) {
-                        this.updateProgress(2);
                         this.showMessage('Container force killed and removed successfully', 'success');
                         this.status = 'stopped';
                         this.isReady = false;
                         
                         await new Promise(resolve => setTimeout(resolve, 1500));
                         await this.reloadAllData();
-                        this.endProgress();
                     } else {
                         const data = await response.json();
                         this.showMessage(data.error || 'Failed to kill container', 'error');
-                        this.endProgress();
                         await this.reloadAllData();
                     }
                 } catch (error) {
                     this.showMessage('Error: ' + error.message, 'error');
-                    this.endProgress();
                     await this.reloadAllData();
                 } finally {
                     this.actionInProgress = false;
@@ -1574,18 +1608,6 @@
                     'stop': ['Stopping container', 'Waiting for shutdown', 'Verifying status'],
                     'restart': ['Stopping container', 'Starting container', 'Waiting for service', 'Verifying status']
                 };
-                const actionWarnings = {
-                    'start': 'Service startup in progress...',
-                    'stop': 'Service shutdown in progress...',
-                    'restart': 'Service restart in progress, please wait...'
-                };
-
-                this.startProgress(
-                    actionTitles[action] || 'Processing action',
-                    actionSteps[action] || ['Processing'],
-                    actionWarnings[action] || 'Operation in progress...'
-                );
-
                 try {
                     // Set timeout based on action
                     const timeout = action === 'restart' ? 120 : 60;
@@ -1600,8 +1622,6 @@
 
                     if (response.ok) {
                         const data = await response.json();
-                        const lastStep = actionSteps[action].length - 1;
-                        this.updateProgress(lastStep - 1);
                         this.showMessage(data.message || `Service ${action}ed successfully`, 'success');
                         
                         // Update status optimistically
@@ -1618,16 +1638,13 @@
                         }
                         
                         // Wait longer and reload full service data to confirm
-                        this.updateProgress(lastStep);
                         await new Promise(resolve => setTimeout(resolve, 2000));
                         await this.reloadAllData();
-                        this.endProgress();
                     } else {
                         const data = await response.json();
                         this.showMessage(data.error || `Failed to ${action} service`, 'error');
                         // Reload to get actual status
                         await this.reloadAllData();
-                        this.endProgress();
                     }
                 } catch (error) {
                     if (error.name === 'AbortError') {
@@ -1637,7 +1654,6 @@
                     }
                     // Reload to get actual status
                     await this.reloadAllData();
-                    this.endProgress();
                 } finally {
                     this.actionInProgress = false;
                 }
@@ -1685,12 +1701,6 @@
                 this.proxyUpdating = true;
                 this.message = '';
 
-                this.startProgress('Updating proxy configuration', [
-                    'Validating domain',
-                    'Updating settings',
-                    'Reloading endpoint'
-                ], 'Updating proxy configuration...');
-
                 try {
                     const response = await fetch(`/api/services/${this.serviceName}/subdomain`, {
                         method: 'PUT',
@@ -1702,19 +1712,14 @@
                     });
 
                     if (response.ok) {
-                        this.updateProgress(1);
                         this.showMessage('Proxy configuration updated successfully!', 'success');
-                        this.updateProgress(2);
                         await this.loadServiceEndpoint();
-                        this.endProgress();
                     } else {
                         const data = await response.json();
                         this.showMessage(data.error || 'Failed to update proxy configuration', 'error');
-                        this.endProgress();
                     }
                 } catch (error) {
                     this.showMessage('Error: ' + error.message, 'error');
-                    this.endProgress();
                 } finally {
                     this.proxyUpdating = false;
                 }
@@ -1753,6 +1758,52 @@
                 }
             },
 
+            async loadRootFolders() {
+                // Load root folders for both radarr and sonarr when applicable
+                try {
+                    if (this.serviceName.toLowerCase() === 'radarr' || this.serviceName === undefined) {
+                        const resp = await fetch(`/api/services/radarr/rootfolders`);
+                        if (resp.ok) {
+                            const data = await resp.json();
+                            // Expect array or object
+                            this.radarrRootFolders = data.data || data || [];
+                        }
+                    }
+                } catch (e) {
+                    console.error('Failed to load radarr root folders:', e);
+                }
+
+                try {
+                    if (this.serviceName.toLowerCase() === 'sonarr' || this.serviceName === undefined) {
+                        const resp = await fetch(`/api/services/sonarr/rootfolders`);
+                        if (resp.ok) {
+                            const data = await resp.json();
+                            this.sonarrRootFolders = data.data || data || [];
+                        }
+                    }
+                } catch (e) {
+                    console.error('Failed to load sonarr root folders:', e);
+                }
+            },
+
+            async loadSonarrConfig() {
+                if (this.serviceName.toLowerCase() !== 'sonarr') return;
+                
+                try {
+                    const response = await fetch(`/api/services/${this.serviceName}/sonarr-config`);
+                    if (response.ok) {
+                        const result = await response.json();
+                        const data = result.data || result;
+                        
+                        // Update sonarrConfig with loaded values
+                        if (data.config) {
+                            Object.assign(this.sonarrConfig, data.config);
+                        }
+                    }
+                } catch (error) {
+                    console.error('Error loading Sonarr config:', error);
+                }
+            },
 
             async copyToClipboard(text) {
                 try {

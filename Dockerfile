@@ -47,6 +47,9 @@ FROM base AS development
 RUN --mount=type=cache,target=/go/pkg/mod \
     go install github.com/air-verse/air@latest
 
+# Install su-exec for runtime user switching (lightweight alternative to gosu)
+RUN apk add --no-cache su-exec
+
 # Docker CLI already installed in base stage
 
 # Don't copy source code here - it's mounted as volumes in docker compose.yml
@@ -54,6 +57,10 @@ RUN --mount=type=cache,target=/go/pkg/mod \
 
 # Create required directories
 RUN mkdir -p /app/data /app/config /app/logs /app/tmp
+
+# Copy entrypoint script
+COPY entrypoint.sh /usr/local/bin/entrypoint.sh
+RUN chmod +x /usr/local/bin/entrypoint.sh
 
 # Expose port
 EXPOSE 7369
@@ -66,6 +73,9 @@ ENV MEDIACHEKY_APP_ENVIRONMENT=development \
     MEDIACHEKY_SERVER_HOST=0.0.0.0 \
     MEDIACHEKY_DATABASE_TYPE=sqlite \
     MEDIACHEKY_DATABASE_PATH=/app/data/mediacheky.db
+
+# Use entrypoint to handle PUID/PGID at runtime
+ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
 
 # Run with Air for hot-reload
 CMD ["air", "-c", ".air.toml"]
@@ -117,11 +127,16 @@ FROM alpine:3.19 AS production
 RUN apk add --no-cache \
     ca-certificates \
     tzdata \
-    wget
+    wget \
+    su-exec
 
 # Copy Docker CLI and Compose plugin from base stage (already built there)
 COPY --from=base /usr/local/bin/docker /usr/local/bin/docker
 COPY --from=base /usr/local/lib/docker/cli-plugins/docker-compose /usr/local/lib/docker/cli-plugins/docker-compose
+
+# Copy entrypoint script
+COPY entrypoint.sh /usr/local/bin/entrypoint.sh
+RUN chmod +x /usr/local/bin/entrypoint.sh
 
 # Set working directory
 WORKDIR /app
@@ -136,6 +151,9 @@ COPY --from=builder /app/web /app/web
 COPY --from=builder /app/templates /app/templates
 COPY --from=builder /app/services /app/services
 
+# Create required directories
+RUN mkdir -p /app/data /app/config /app/logs /app/tmp
+
 # Expose port
 EXPOSE 7369
 
@@ -148,5 +166,8 @@ ENV MEDIACHEKY_APP_ENVIRONMENT=production \
     MEDIACHEKY_DATABASE_TYPE=sqlite \
     MEDIACHEKY_DATABASE_PATH=/app/data/mediacheky.db
 
+# Use entrypoint to handle PUID/PGID at runtime
+ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
+
 # Run
-ENTRYPOINT ["/app/mediacheky"]
+CMD ["/app/mediacheky"]

@@ -20,6 +20,6 @@ func NewLogsHandler(repos *repository.Repositories, logger *logger.Logger) *Logs
 
 func (h *LogsHandler) Index(c *fiber.Ctx) error {
 	return c.Render("pages/logs", fiber.Map{
-		"Title": "Logs - KeeperCheky",
+		"Title": "Logs - MediaCheky",
 	}, "layouts/main")
 }

@@ -1,5 +1,10 @@
 /* MediaCheky Custom Styles */
 
+/* Alpine.js x-cloak - hide elements until Alpine initializes */
+[x-cloak] {
+    display: none !important;
+}
+
 /* Smooth scrolling */
 html {
     scroll-behavior: smooth;

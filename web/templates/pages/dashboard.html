@@ -1,172 +1,69 @@
 <div x-data="dashboard()" x-init="init()" class="space-y-6">
     <!-- Header with Sync Button -->
     <div class="flex justify-between items-center">
-        <h1 class="text-3xl font-bold text-dark-text dark:text-dark-text">Dashboard</h1>
-        <button @click="syncNow()" :disabled="syncing"
-            class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2">
-            <svg x-show="!syncing" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                    d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15">
-                </path>
-            </svg>
-            <svg x-show="syncing" class="animate-spin w-5 h-5" fill="none" viewBox="0 0 24 24">
-                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4">
-                </circle>
-                <path class="opacity-75" fill="currentColor"
-                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
-                </path>
-            </svg>
-            <span x-text="syncing ? 'Syncing...' : 'Sync Now'"></span>
-        </button>
+        <h1 class="text-3xl font-bold text-dark-text dark:text-dark-text"><span data-i18n-key="dashboard.title">Dashboard</span></h1>
     </div>
 
-    <!-- Stats Mini-Badges (Compact for Mobile) -->
-    <div class="flex flex-wrap gap-2 items-center">
-        <!-- Total Media -->
-        <div class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-900/30 border border-blue-700/50 rounded-full">
-            <svg class="w-4 h-4 text-blue-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                    d="M7 4v16M17 4v16M3 8h4m10 0h4M3 12h18M3 16h4m10 0h4M4 20h16a1 1 0 001-1V5a1 1 0 00-1-1H4a1 1 0 00-1 1v14a1 1 0 001 1z">
-                </path>
-            </svg>
-            <span class="text-xs font-medium text-blue-300">
-                <span x-text="stats.total_media || 0" class="font-bold"></span>
-                <span class="hidden sm:inline"> media</span>
-            </span>
-            <span class="hidden md:inline text-xs text-blue-400/70">
-                (<span x-text="stats.total_movies || 0"></span>m,
-                <span x-text="stats.total_series || 0"></span>s)
-            </span>
-        </div>
-
-        <!-- Total Size -->
-        <div class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-green-900/30 border border-green-700/50 rounded-full">
-            <svg class="w-4 h-4 text-green-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                    d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4">
-                </path>
-            </svg>
-            <span class="text-xs font-bold text-green-300" x-text="formatBytes(stats.total_size || 0)"></span>
-        </div>
-
-        <!-- To Delete -->
-        <div class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-red-900/30 border border-red-700/50 rounded-full"
-             x-show="(stats.to_delete || 0) > 0">
-            <svg class="w-4 h-4 text-red-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                    d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16">
-                </path>
-            </svg>
-            <span class="text-xs font-medium text-red-300">
-                <span x-text="stats.to_delete || 0" class="font-bold"></span>
-                <span class="hidden sm:inline"> to delete</span>
-            </span>
-        </div>
-
-        <!-- Leaving Soon -->
-        <div class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-yellow-900/30 border border-yellow-700/50 rounded-full"
-             x-show="(stats.leaving_soon || 0) > 0">
-            <svg class="w-4 h-4 text-yellow-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                    d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-            </svg>
-            <span class="text-xs font-medium text-yellow-300">
-                <span x-text="stats.leaving_soon || 0" class="font-bold"></span>
-                <span class="hidden sm:inline"> leaving</span>
-            </span>
-        </div>
-    </div>
+    <!-- Stats Mini-Badges removed -->
 
     <!-- Services Section -->
     <div x-data="servicesStatus()" x-init="init()" class="bg-dark-surface dark:bg-dark-surface rounded-lg shadow-lg border border-dark-border p-6">
         <div class="flex justify-between items-center mb-6">
-            <h2 class="text-xl font-semibold text-dark-text">Services</h2>
+            <h2 class="text-xl font-semibold text-dark-text"><span data-i18n-key="dashboard.services">Services</span></h2>
             <button @click="refresh()" :disabled="loading" 
                     class="px-3 py-1 text-sm bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50">
-                <span x-show="!loading">Refresh</span>
-                <span x-show="loading">Loading...</span>
+                <span x-show="!loading" data-i18n-key="common.refresh">Refresh</span>
+                <span x-show="loading" data-i18n-key="common.loading">Loading...</span>
             </button>
         </div>
 
         <!-- Services Grid - Only show enabled services -->
-        <div x-show="enabledServices.length > 0" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div x-show="enabledServices.length > 0" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-3">
             <template x-for="service in enabledServices" :key="service.id">
-                <div class="bg-dark-bg rounded-lg p-4 border border-dark-border hover:border-blue-500/50 transition-all">
-                    <div class="flex items-start justify-between mb-3">
-                        <div class="flex items-center gap-3">
+                <div class="bg-dark-bg rounded-lg p-2 border border-dark-border hover:border-blue-500/50 transition-all flex items-center justify-between gap-2 group h-14">
+                    <!-- Left: Main Link (Icon + Name) -->
+                    <a :href="service.url" target="_blank" class="flex items-center gap-2 flex-1 min-w-0 hover:opacity-80 transition-opacity h-full">
+                        <template x-if="getServiceIcon(service.name)">
+                            <img :src="getServiceIcon(service.name)" :alt="service.name" class="w-8 h-8 object-contain">
+                        </template>
+                        <template x-if="!getServiceIcon(service.name)">
                             <div class="text-2xl" x-text="service.icon || '📦'"></div>
-                            <div>
-                                <h3 class="text-sm font-semibold text-dark-text" x-text="service.display_name"></h3>
-                                <p class="text-xs text-dark-muted" x-text="'Port: ' + (service.port || 'N/A')"></p>
-                                <!-- Docker image version -->
-                                <p x-show="service.image_version" class="text-xs text-blue-400 mt-1" 
-                                   x-text="'v' + service.image_version"></p>
-                            </div>
+                        </template>
+                        <div class="flex items-center gap-2 min-w-0">
+                            <h3 class="text-sm font-bold text-dark-text group-hover:text-blue-400 transition-colors" x-text="service.display_name || service.name"></h3>
+                            <!-- Status Dot -->
+                            <span x-show="service.status === 'running'" class="w-2 h-2 rounded-full bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.6)] flex-shrink-0" :title="window.i18n.t('config.status.running')"></span>
+                            <span x-show="service.status === 'stopped'" class="w-2 h-2 rounded-full bg-gray-500 flex-shrink-0" :title="window.i18n.t('config.status.stopped')"></span>
+                            <span x-show="service.status !== 'running' && service.status !== 'stopped'" class="w-2 h-2 rounded-full bg-yellow-500 flex-shrink-0" :title="window.i18n.t('config.status.unknown')"></span>
                         </div>
-                        <div>
-                            <span x-show="service.status === 'running'" class="px-2 py-1 bg-green-900/30 border border-green-600/50 text-green-300 rounded text-xs">
-                                ✅ Running
-                            </span>
-                            <span x-show="service.status === 'stopped'" class="px-2 py-1 bg-gray-900/30 border border-gray-600/50 text-gray-300 rounded text-xs">
-                                📴 Stopped
-                            </span>
-                            <span x-show="service.status !== 'running' && service.status !== 'stopped'" class="px-2 py-1 bg-yellow-900/30 border border-yellow-600/50 text-yellow-300 rounded text-xs">
-                                ⚠️ <span x-text="service.status"></span>
-                            </span>
-                        </div>
-                    </div>
+                    </a>
 
-                    <!-- Service Actions -->
-                    <div class="flex gap-2 mt-3">
-                        <template x-if="service.status === 'running'">
-                            <div class="flex gap-2 flex-1">
-                                <button @click="actionService(service.name, 'update')" :disabled="actionInProgress"
-                                        title="Update to latest version"
-                                        class="px-3 py-1.5 bg-cyan-600 text-white rounded hover:bg-cyan-700 text-xs font-medium transition-colors disabled:opacity-50">
-                                    🔄 Update
-                                </button>
-                                <button @click="actionService(service.name, 'restart')" :disabled="actionInProgress"
-                                        class="px-3 py-1.5 bg-yellow-600 text-white rounded hover:bg-yellow-700 text-xs font-medium transition-colors disabled:opacity-50">
-                                    Restart
-                                </button>
-                                <button @click="actionService(service.name, 'stop')" :disabled="actionInProgress"
-                                        class="px-3 py-1.5 bg-red-600 text-white rounded hover:bg-red-700 text-xs font-medium transition-colors disabled:opacity-50">
-                                    Stop
-                                </button>
-                            </div>
-                        </template>
-                        <template x-if="service.status !== 'running'">
-                            <button @click="actionService(service.name, 'start')" :disabled="actionInProgress"
-                                    class="flex-1 px-3 py-1.5 bg-green-600 text-white rounded hover:bg-green-700 text-xs font-medium transition-colors disabled:opacity-50">
-                                Start
-                            </button>
-                        </template>
+                    <!-- Right: Actions -->
+                    <div class="flex items-center gap-1.5 flex-shrink-0">
+                        <a :href="service.url" target="_blank"
+                           class="p-1.5 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors shadow-sm"
+                           :title="window.i18n.t('dashboard.button.open')">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>
+                        </a>
                         <a :href="'/services/' + service.name" 
-                           class="px-3 py-1.5 bg-purple-600 text-white rounded hover:bg-purple-700 text-xs font-medium transition-colors text-center">
-                            Configure
+                           class="p-1.5 bg-slate-700 text-white rounded hover:bg-slate-600 transition-colors shadow-sm"
+                           :title="window.i18n.t('dashboard.button.configure')">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
                         </a>
                     </div>
-
-                    <!-- Quick link if running -->
-                    <template x-if="service.status === 'running' && service.port">
-                        <a :href="'http://' + window.location.hostname + ':' + service.port" target="_blank"
-                           class="block mt-2 text-xs text-blue-400 hover:text-blue-300 text-center">
-                            Open UI →
-                        </a>
-                    </template>
                 </div>
             </template>
         </div>
 
         <!-- Empty State -->
         <div x-show="enabledServices.length === 0 && !loading" class="text-center py-8 text-dark-muted">
-            <p>No enabled services yet.</p>
-            <a href="/settings" class="text-blue-400 hover:text-blue-300 mt-2 inline-block">Enable Services →</a>
+            <p data-i18n-key="dashboard.empty.noEnabled">No enabled services yet.</p>
+            <a href="/services" class="text-blue-400 hover:text-blue-300 mt-2 inline-block" data-i18n-key="dashboard.empty.enable">Enable Services →</a>
         </div>
 
         <!-- Loading State -->
         <div x-show="loading" class="text-center py-8 text-dark-muted">
-            <p>Loading services...</p>
+            <p data-i18n-key="common.loading">Loading...</p>
         </div>
     </div>
 
@@ -174,11 +71,11 @@
     <div x-data="radarrQueue()" x-init="init()" x-show="queueItems && queueItems.length > 0" 
          class="bg-dark-surface dark:bg-dark-surface rounded-lg shadow-lg border border-dark-border p-6">
         <div class="flex justify-between items-center mb-4">
-            <h2 class="text-xl font-semibold text-dark-text">📥 Radarr Download Queue</h2>
+            <h2 class="text-xl font-semibold text-dark-text">📥 <span data-i18n-key="radarr.queue.title">Radarr Download Queue</span></h2>
             <button @click="loadQueue()" :disabled="loading" 
                     class="px-3 py-1 text-sm bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50">
-                <span x-show="!loading">Refresh</span>
-                <span x-show="loading">Loading...</span>
+                <span x-show="!loading" data-i18n-key="common.refresh">Refresh</span>
+                <span x-show="loading" data-i18n-key="common.loading">Loading...</span>
             </button>
         </div>
         
@@ -207,13 +104,13 @@
                     <!-- Details -->
                     <div class="flex flex-wrap gap-3 text-xs text-dark-muted">
                         <span x-show="item.download_client">
-                            <strong>Client:</strong> <span x-text="item.download_client"></span>
+                            <strong data-i18n-key="qb.client">Client:</strong> <span x-text="item.download_client"></span>
                         </span>
                         <span x-show="item.protocol">
-                            <strong>Protocol:</strong> <span x-text="item.protocol"></span>
+                            <strong data-i18n-key="qb.protocol">Protocol:</strong> <span x-text="item.protocol"></span>
                         </span>
                         <span x-show="item.indexer">
-                            <strong>Indexer:</strong> <span x-text="item.indexer"></span>
+                            <strong data-i18n-key="qb.indexer">Indexer:</strong> <span x-text="item.indexer"></span>
                         </span>
                     </div>
                 </div>
@@ -225,11 +122,11 @@
     <div x-data="sonarrQueue()" x-init="init()" x-show="queueItems && queueItems.length > 0" 
          class="bg-dark-surface dark:bg-dark-surface rounded-lg shadow-lg border border-dark-border p-6">
         <div class="flex justify-between items-center mb-4">
-            <h2 class="text-xl font-semibold text-dark-text">📺 Sonarr Download Queue</h2>
+            <h2 class="text-xl font-semibold text-dark-text">📺 <span data-i18n-key="sonarr.queue.title">Sonarr Download Queue</span></h2>
             <button @click="loadQueue()" :disabled="loading" 
                     class="px-3 py-1 text-sm bg-purple-600 text-white rounded hover:bg-purple-700 disabled:opacity-50">
-                <span x-show="!loading">Refresh</span>
-                <span x-show="loading">Loading...</span>
+                <span x-show="!loading" data-i18n-key="common.refresh">Refresh</span>
+                <span x-show="loading" data-i18n-key="common.loading">Loading...</span>
             </button>
         </div>
         
@@ -258,13 +155,13 @@
                     <!-- Details -->
                     <div class="flex flex-wrap gap-3 text-xs text-dark-muted">
                         <span x-show="item.download_client">
-                            <strong>Client:</strong> <span x-text="item.download_client"></span>
+                            <strong data-i18n-key="qb.client">Client:</strong> <span x-text="item.download_client"></span>
                         </span>
                         <span x-show="item.protocol">
-                            <strong>Protocol:</strong> <span x-text="item.protocol"></span>
+                            <strong data-i18n-key="qb.protocol">Protocol:</strong> <span x-text="item.protocol"></span>
                         </span>
                         <span x-show="item.indexer">
-                            <strong>Indexer:</strong> <span x-text="item.indexer"></span>
+                            <strong data-i18n-key="qb.indexer">Indexer:</strong> <span x-text="item.indexer"></span>
                         </span>
                     </div>
                 </div>
@@ -276,11 +173,11 @@
     <div x-data="jellyfinSessions()" x-init="init()" x-show="sessions && sessions.length > 0" 
          class="bg-dark-surface dark:bg-dark-surface rounded-lg shadow-lg border border-dark-border p-6">
         <div class="flex justify-between items-center mb-4">
-            <h2 class="text-xl font-semibold text-dark-text">🎬 Jellyfin - Sesiones Activas</h2>
+            <h2 class="text-xl font-semibold text-dark-text">🎬 <span data-i18n-key="jellyfin.sessions.title">Jellyfin - Active Sessions</span></h2>
             <button @click="loadSessions()" :disabled="loading" 
                     class="px-3 py-1 text-sm bg-purple-600 text-white rounded hover:bg-purple-700 disabled:opacity-50">
-                <span x-show="!loading">Actualizar</span>
-                <span x-show="loading">Cargando...</span>
+                <span x-show="!loading" data-i18n-key="common.refresh">Refresh</span>
+                <span x-show="loading" data-i18n-key="common.loading">Loading...</span>
             </button>
         </div>
         
@@ -294,7 +191,7 @@
                                 <span x-text="session.Client"></span> - <span x-text="session.DeviceName"></span>
                             </p>
                         </div>
-                        <span x-show="session.NowPlayingItem" class="text-xs px-2 py-1 rounded bg-green-600 text-white">
+                        <span x-show="session.NowPlayingItem" class="text-xs px-2 py-1 rounded bg-green-600 text-white" data-i18n-key="jellyfin.playing">
                             En reproducción
                         </span>
                     </div>
@@ -308,21 +205,21 @@
                         <div x-show="session.PlayState" class="mt-2">
                             <div class="flex justify-between text-xs text-dark-muted mb-1">
                                 <span x-text="formatTicks(session.PlayState?.PositionTicks)"></span>
-                                <span x-show="session.PlayState?.IsPaused" class="text-yellow-400">⏸ Pausado</span>
-                                <span x-show="!session.PlayState?.IsPaused" class="text-green-400">▶ Reproduciendo</span>
+                                <span x-show="session.PlayState?.IsPaused" class="text-yellow-400">⏸ <span data-i18n-key="jellyfin.paused">Pausado</span></span>
+                                <span x-show="!session.PlayState?.IsPaused" class="text-green-400">▶ <span data-i18n-key="jellyfin.playing">Reproduciendo</span></span>
                             </div>
                         </div>
                         
                         <!-- Transcoding info -->
                         <div x-show="session.TranscodingInfo" class="mt-2 text-xs">
                             <span x-show="session.PlayState?.PlayMethod === 'Transcode'" class="px-2 py-1 bg-orange-600 rounded text-white">
-                                🔄 Transcodificando
+                                🔄 <span data-i18n-key="jellyfin.transcoding">Transcodificando</span>
                             </span>
                             <span x-show="session.PlayState?.PlayMethod === 'DirectPlay'" class="px-2 py-1 bg-blue-600 rounded text-white">
-                                ⚡ Direct Play
+                                ⚡ <span data-i18n-key="jellyfin.directplay">Direct Play</span>
                             </span>
                             <span x-show="session.PlayState?.PlayMethod === 'DirectStream'" class="px-2 py-1 bg-cyan-600 rounded text-white">
-                                🌊 Direct Stream
+                                🌊 <span data-i18n-key="jellyfin.directstream">Direct Stream</span>
                             </span>
                         </div>
                     </div>
@@ -335,11 +232,11 @@
     <div x-data="jellyfinRecentlyAdded()" x-init="init()" x-show="items && items.length > 0" 
          class="bg-dark-surface dark:bg-dark-surface rounded-lg shadow-lg border border-dark-border p-6">
         <div class="flex justify-between items-center mb-4">
-            <h2 class="text-xl font-semibold text-dark-text">📺 Jellyfin - Agregados Recientemente</h2>
+            <h2 class="text-xl font-semibold text-dark-text">📺 <span data-i18n-key="jellyfin.recent.title">Jellyfin - Recently Added</span></h2>
             <button @click="loadItems()" :disabled="loading" 
                     class="px-3 py-1 text-sm bg-purple-600 text-white rounded hover:bg-purple-700 disabled:opacity-50">
-                <span x-show="!loading">Actualizar</span>
-                <span x-show="loading">Cargando...</span>
+                <span x-show="!loading" data-i18n-key="common.refresh">Refresh</span>
+                <span x-show="loading" data-i18n-key="common.loading">Loading...</span>
             </button>
         </div>
         
@@ -366,11 +263,11 @@
     <div x-data="qbittorrentDashboard()" x-init="init()" x-show="enabled" 
          class="bg-dark-surface dark:bg-dark-surface rounded-lg shadow-lg border border-dark-border p-6">
         <div class="flex justify-between items-center mb-4">
-            <h2 class="text-xl font-semibold text-dark-text">📡 qBittorrent</h2>
+            <h2 class="text-xl font-semibold text-dark-text">📡 <span data-i18n-key="qb.title">qBittorrent</span></h2>
             <button @click="refresh()" :disabled="loading" 
                     class="px-3 py-1 text-sm bg-teal-600 text-white rounded hover:bg-teal-700 disabled:opacity-50">
-                <span x-show="!loading">Actualizar</span>
-                <span x-show="loading">Cargando...</span>
+                <span x-show="!loading" data-i18n-key="common.refresh">Refresh</span>
+                <span x-show="loading" data-i18n-key="common.loading">Loading...</span>
             </button>
         </div>
 
@@ -380,7 +277,7 @@
                 <div class="flex items-center gap-2 mb-2">
                     <span class="text-2xl">⬇️</span>
                     <div>
-                        <p class="text-xs text-dark-muted">Velocidad Descarga</p>
+                        <p class="text-xs text-dark-muted" data-i18n-key="qb.download_speed">Velocidad Descarga</p>
                         <p class="text-lg font-bold text-blue-400" x-text="formatSpeed(state?.dl_info_speed || 0)"></p>
                     </div>
                 </div>
@@ -390,7 +287,7 @@
                 <div class="flex items-center gap-2 mb-2">
                     <span class="text-2xl">⬆️</span>
                     <div>
-                        <p class="text-xs text-dark-muted">Velocidad Subida</p>
+                        <p class="text-xs text-dark-muted" data-i18n-key="qb.upload_speed">Velocidad Subida</p>
                         <p class="text-lg font-bold text-green-400" x-text="formatSpeed(state?.up_info_speed || 0)"></p>
                     </div>
                 </div>
@@ -400,7 +297,7 @@
                 <div class="flex items-center gap-2 mb-2">
                     <span class="text-2xl">🌐</span>
                     <div>
-                        <p class="text-xs text-dark-muted">Nodos DHT</p>
+                        <p class="text-xs text-dark-muted" data-i18n-key="qb.dht_nodes">Nodos DHT</p>
                         <p class="text-lg font-bold text-purple-400" x-text="state?.dht_nodes || 0"></p>
                     </div>
                 </div>
@@ -410,10 +307,10 @@
                 <div class="flex items-center gap-2 mb-2">
                     <span class="text-2xl" x-text="state?.connection_status === 'connected' ? '✅' : '❌'"></span>
                     <div>
-                        <p class="text-xs text-dark-muted">Estado</p>
+                        <p class="text-xs text-dark-muted" data-i18n-key="qb.status">Estado</p>
                         <p class="text-sm font-semibold" 
                            :class="state?.connection_status === 'connected' ? 'text-green-400' : 'text-red-400'"
-                           x-text="state?.connection_status || 'Desconocido'"></p>
+                           x-text="state?.connection_status || window.i18n.t('qb.unknown')"></p>
                     </div>
                 </div>
             </div>
@@ -421,7 +318,7 @@
 
         <!-- Active Torrents -->
         <div x-show="activeTorrents.length > 0" class="mt-4">
-            <h3 class="text-lg font-semibold text-dark-text mb-3">Torrents Activos</h3>
+            <h3 class="text-lg font-semibold text-dark-text mb-3" data-i18n-key="qb.active_torrents">Torrents Activos</h3>
             <div class="space-y-3">
                 <template x-for="torrent in activeTorrents.slice(0, 5)" :key="torrent.hash">
                     <div class="bg-dark-bg rounded-lg p-4 border border-dark-border">
@@ -474,14 +371,12 @@
                 </template>
             </div>
             <div x-show="activeTorrents.length > 5" class="mt-3 text-center">
-                <p class="text-xs text-dark-muted">
-                    Mostrando 5 de <span x-text="activeTorrents.length"></span> torrents activos
-                </p>
+                <p class="text-xs text-dark-muted" x-text="window.i18n.t('qb.showing_of').replace('{count}', '5').replace('{total}', activeTorrents.length)"></p>
             </div>
         </div>
 
         <div x-show="activeTorrents.length === 0 && !loading" class="text-center py-4">
-            <p class="text-dark-muted">No hay torrents activos</p>
+            <p class="text-dark-muted" data-i18n-key="qb.no_active">No hay torrents activos</p>
         </div>
     </div>
 
@@ -489,37 +384,37 @@
     <div x-data="jellyseerrRequests()" x-init="init()" x-show="enabled" 
          class="bg-dark-surface dark:bg-dark-surface rounded-lg shadow-lg border border-dark-border p-6">
         <div class="flex justify-between items-center mb-4">
-            <h2 class="text-xl font-semibold text-dark-text">📋 Jellyseerr - Solicitudes</h2>
+            <h2 class="text-xl font-semibold text-dark-text">📋 <span data-i18n-key="jellyseerr.title">Jellyseerr - Solicitudes</span></h2>
             <button @click="refresh()" :disabled="loading" 
                     class="px-3 py-1 text-sm bg-indigo-600 text-white rounded hover:bg-indigo-700 disabled:opacity-50">
-                <span x-show="!loading">Actualizar</span>
-                <span x-show="loading">Cargando...</span>
+                <span x-show="!loading" data-i18n-key="common.refresh">Actualizar</span>
+                <span x-show="loading" data-i18n-key="common.loading">Cargando...</span>
             </button>
         </div>
 
         <!-- Stats Cards -->
         <div x-show="stats" class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
             <div class="bg-dark-bg rounded-lg p-3 border border-dark-border">
-                <p class="text-xs text-dark-muted">Total</p>
+                <p class="text-xs text-dark-muted" data-i18n-key="jellyseerr.stats.total">Total</p>
                 <p class="text-2xl font-bold text-dark-text" x-text="stats?.total_requests || 0"></p>
             </div>
             <div class="bg-dark-bg rounded-lg p-3 border border-yellow-700/50">
-                <p class="text-xs text-yellow-400">Pendientes</p>
+                <p class="text-xs text-yellow-400" data-i18n-key="jellyseerr.stats.pending">Pendientes</p>
                 <p class="text-2xl font-bold text-yellow-400" x-text="stats?.pending_requests || 0"></p>
             </div>
             <div class="bg-dark-bg rounded-lg p-3 border border-green-700/50">
-                <p class="text-xs text-green-400">Aprobadas</p>
+                <p class="text-xs text-green-400" data-i18n-key="jellyseerr.stats.approved">Aprobadas</p>
                 <p class="text-2xl font-bold text-green-400" x-text="stats?.approved_requests || 0"></p>
             </div>
             <div class="bg-dark-bg rounded-lg p-3 border border-blue-700/50">
-                <p class="text-xs text-blue-400">Disponibles</p>
+                <p class="text-xs text-blue-400" data-i18n-key="jellyseerr.stats.available">Disponibles</p>
                 <p class="text-2xl font-bold text-blue-400" x-text="stats?.available_requests || 0"></p>
             </div>
         </div>
 
         <!-- Recent Requests -->
         <div x-show="requests && requests.length > 0" class="space-y-2">
-            <h3 class="text-sm font-semibold text-dark-muted mb-2">Solicitudes Recientes</h3>
+            <h3 class="text-sm font-semibold text-dark-muted mb-2" data-i18n-key="jellyseerr.recent_requests">Solicitudes Recientes</h3>
             <template x-for="request in requests.slice(0, 5)" :key="request.id">
                 <div class="bg-dark-bg rounded-lg p-3 border border-dark-border flex items-center justify-between">
                     <div class="flex-1">
@@ -533,22 +428,20 @@
                                       'bg-red-600 text-white': request.status === 'denied'
                                   }"
                                   x-text="request.status"></span>
-                            <span class="text-xs text-dark-muted" x-text="request.media_type === 'movie' ? '🎬 Película' : '📺 Serie'"></span>
-                            <span class="text-xs text-dark-muted" x-text="'Por: ' + request.requested_by"></span>
+                            <span class="text-xs text-dark-muted" x-text="request.media_type === 'movie' ? '🎬 ' + window.i18n.t('jellyseerr.movie') : '📺 ' + window.i18n.t('jellyseerr.series')"></span>
+                            <span class="text-xs text-dark-muted" x-text="window.i18n.t('jellyseerr.by') + ' ' + request.requested_by"></span>
                         </div>
                     </div>
                     <span class="text-xs text-dark-muted" x-text="formatDate(request.requested_at)"></span>
                 </div>
             </template>
             <div x-show="requests.length > 5" class="text-center mt-2">
-                <p class="text-xs text-dark-muted">
-                    Mostrando 5 de <span x-text="requests.length"></span> solicitudes
-                </p>
+                <p class="text-xs text-dark-muted" x-text="window.i18n.t('jellyseerr.showing_of_req').replace('{count}', '5').replace('{total}', requests.length)"></p>
             </div>
         </div>
 
         <div x-show="!stats && !loading" class="text-center py-4">
-            <p class="text-dark-muted">No hay estadísticas disponibles</p>
+            <p class="text-dark-muted" data-i18n-key="jellyseerr.no_stats">No hay estadísticas disponibles</p>
         </div>
     </div>
 
@@ -556,54 +449,54 @@
     <div x-data="jellystatStats()" x-init="init()" x-show="enabled" 
          class="bg-dark-surface dark:bg-dark-surface rounded-lg shadow-lg border border-dark-border p-6">
         <div class="flex justify-between items-center mb-4">
-            <h2 class="text-xl font-semibold text-dark-text">📊 Jellystat - Estadísticas de Uso</h2>
+            <h2 class="text-xl font-semibold text-dark-text">📊 <span data-i18n-key="jellystat.title">Jellystat - Estadísticas de Uso</span></h2>
             <button @click="refresh()" :disabled="loading" 
                     class="px-3 py-1 text-sm bg-cyan-600 text-white rounded hover:bg-cyan-700 disabled:opacity-50">
-                <span x-show="!loading">Actualizar</span>
-                <span x-show="loading">Cargando...</span>
+                <span x-show="!loading" data-i18n-key="common.refresh">Actualizar</span>
+                <span x-show="loading" data-i18n-key="common.loading">Cargando...</span>
             </button>
         </div>
 
         <!-- Stats Cards -->
         <div x-show="stats" class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
             <div class="bg-dark-bg rounded-lg p-3 border border-dark-border">
-                <p class="text-xs text-dark-muted">Total Reproducciones</p>
+                <p class="text-xs text-dark-muted" data-i18n-key="jellystat.total_plays">Total Reproducciones</p>
                 <p class="text-2xl font-bold text-dark-text" x-text="stats?.total ?? 0"></p>
-                <p class="text-xs text-dark-muted mt-1">Últimos 7 días</p>
+                <p class="text-xs text-dark-muted mt-1" data-i18n-key="jellystat.last_days">Últimos 7 días</p>
             </div>
             <div class="bg-dark-bg rounded-lg p-3 border border-purple-700/50">
-                <p class="text-xs text-purple-400">🎬 Películas</p>
+                <p class="text-xs text-purple-400">🎬 <span data-i18n-key="jellystat.movies">Películas</span></p>
                 <p class="text-2xl font-bold text-purple-400" x-text="stats?.movies || 0"></p>
             </div>
             <div class="bg-dark-bg rounded-lg p-3 border border-cyan-700/50">
-                <p class="text-xs text-cyan-400">📺 Episodios</p>
+                <p class="text-xs text-cyan-400">📺 <span data-i18n-key="jellystat.episodes">Episodios</span></p>
                 <p class="text-2xl font-bold text-cyan-400" x-text="stats?.episodes || 0"></p>
             </div>
             <div class="bg-dark-bg rounded-lg p-3 border border-orange-700/50">
-                <p class="text-xs text-orange-400">🎵 Canciones</p>
+                <p class="text-xs text-orange-400">🎵 <span data-i18n-key="jellystat.songs">Canciones</span></p>
                 <p class="text-2xl font-bold text-orange-400" x-text="stats?.songs || 0"></p>
             </div>
         </div>
 
         <!-- Views by Type Chart -->
         <div x-show="viewsByType" class="space-y-3 mt-4">
-            <h3 class="text-sm font-semibold text-dark-muted mb-2">Visualizaciones por Tipo</h3>
+            <h3 class="text-sm font-semibold text-dark-muted mb-2" data-i18n-key="jellystat.views_by_type">Visualizaciones por Tipo</h3>
             <div class="space-y-2">
                 <div class="bg-dark-bg rounded-lg p-3 border border-purple-700/50">
                     <div class="flex justify-between items-center">
-                        <span class="text-sm text-purple-300">🎬 Películas</span>
+                        <span class="text-sm text-purple-300">🎬 <span data-i18n-key="jellystat.movies">Películas</span></span>
                         <span class="text-lg font-bold text-purple-300" x-text="viewsByType?.movie || 0"></span>
                     </div>
                 </div>
                 <div class="bg-dark-bg rounded-lg p-3 border border-cyan-700/50">
                     <div class="flex justify-between items-center">
-                        <span class="text-sm text-cyan-300">📺 Episodios</span>
+                        <span class="text-sm text-cyan-300">📺 <span data-i18n-key="jellystat.episodes">Episodios</span></span>
                         <span class="text-lg font-bold text-cyan-300" x-text="viewsByType?.episode || 0"></span>
                     </div>
                 </div>
                 <div class="bg-dark-bg rounded-lg p-3 border border-orange-700/50">
                     <div class="flex justify-between items-center">
-                        <span class="text-sm text-orange-300">🎵 Música</span>
+                        <span class="text-sm text-orange-300">🎵 <span data-i18n-key="jellystat.music">Música</span></span>
                         <span class="text-lg font-bold text-orange-300" x-text="viewsByType?.music || 0"></span>
                     </div>
                 </div>
@@ -611,26 +504,71 @@
         </div>
 
         <div x-show="!stats && !loading" class="text-center py-4">
-            <p class="text-dark-muted">No hay estadísticas disponibles</p>
+            <p class="text-dark-muted" data-i18n-key="jellystat.no_stats">No hay estadísticas disponibles</p>
         </div>
     </div>
 
-    <!-- Quick Actions -->
-    <div class="bg-dark-surface dark:bg-dark-surface rounded-lg shadow-lg border border-dark-border p-6">
-        <h2 class="text-xl font-semibold text-dark-text mb-4">Quick Actions</h2>
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <a href="/media" class="block p-4 border-2 border-dark-border rounded-lg hover:border-blue-500 transition bg-dark-bg hover:bg-slate-700/30">
-                <h3 class="font-semibold text-dark-text">View Media</h3>
-                <p class="text-sm text-dark-muted mt-1">Browse and manage your media library</p>
-            </a>
-            <a href="/settings" class="block p-4 border-2 border-dark-border rounded-lg hover:border-blue-500 transition bg-dark-bg hover:bg-slate-700/30">
-                <h3 class="font-semibold text-dark-text">Configure Services</h3>
-                <p class="text-sm text-dark-muted mt-1">Set up Radarr, Sonarr, Jellyfin, etc.</p>
-            </a>
-            <a href="/schedules" class="block p-4 border-2 border-dark-border rounded-lg hover:border-blue-500 transition bg-dark-bg hover:bg-slate-700/30">
-                <h3 class="font-semibold text-dark-text">Manage Schedules</h3>
-                <p class="text-sm text-dark-muted mt-1">Configure cleanup schedules</p>
-            </a>
+    <!-- System Storage Info -->
+    <div x-data="systemInfo()" x-init="init()" class="bg-dark-surface dark:bg-dark-surface rounded-lg shadow-lg border border-dark-border p-6">
+        <div class="flex justify-between items-center mb-4">
+            <h2 class="text-xl font-semibold text-dark-text">💾 <span data-i18n-key="dashboard.system.title">System Storage Info</span></h2>
+            <button @click="refresh()" :disabled="loading" 
+                    class="px-3 py-1 text-sm bg-slate-600 text-white rounded hover:bg-slate-700 disabled:opacity-50">
+                <span x-show="!loading" data-i18n-key="common.refresh">Refresh</span>
+                <span x-show="loading" data-i18n-key="common.loading">Loading...</span>
+            </button>
+        </div>
+
+        <!-- Disk Space Stats -->
+        <div x-show="diskInfo" class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <!-- Total Space -->
+            <div class="bg-dark-bg rounded-lg p-4 border border-dark-border">
+                <div class="flex items-center gap-2 mb-2">
+                    <span class="text-2xl">💾</span>
+                    <div>
+                        <p class="text-xs text-dark-muted" data-i18n-key="dashboard.system.total">Total Space</p>
+                        <p class="text-lg font-bold text-blue-400" x-text="formatBytes(diskInfo?.total_bytes || 0)"></p>
+                    </div>
+                </div>
+                <p class="text-xs text-dark-muted mt-2" x-text="diskInfo?.path || ''"></p>
+            </div>
+
+            <!-- Available Space -->
+            <div class="bg-dark-bg rounded-lg p-4 border border-green-700/50">
+                <div class="flex items-center gap-2 mb-2">
+                    <span class="text-2xl">✅</span>
+                    <div>
+                        <p class="text-xs text-green-400" data-i18n-key="dashboard.system.available">Available Space</p>
+                        <p class="text-lg font-bold text-green-400" x-text="formatBytes(diskInfo?.available_bytes || 0)"></p>
+                    </div>
+                </div>
+                <div class="w-full bg-gray-700 rounded-full h-2 mt-2">
+                    <div class="bg-green-600 h-2 rounded-full transition-all" 
+                         :style="'width: ' + (diskInfo ? (diskInfo.available_bytes / diskInfo.total_bytes * 100) : 0) + '%'"></div>
+                </div>
+            </div>
+
+            <!-- Used Space -->
+            <div class="bg-dark-bg rounded-lg p-4 border border-orange-700/50">
+                <div class="flex items-center gap-2 mb-2">
+                    <span class="text-2xl">📊</span>
+                    <div>
+                        <p class="text-xs text-orange-400" data-i18n-key="dashboard.system.used">Used Space</p>
+                        <p class="text-lg font-bold text-orange-400" x-text="formatBytes(diskInfo?.used_bytes || 0)"></p>
+                    </div>
+                </div>
+                <div class="w-full bg-gray-700 rounded-full h-2 mt-2">
+                    <div class="h-2 rounded-full transition-all"
+                         :class="diskInfo?.used_percent > 90 ? 'bg-red-600' : diskInfo?.used_percent > 75 ? 'bg-orange-600' : 'bg-blue-600'"
+                         :style="'width: ' + (diskInfo?.used_percent || 0) + '%'"></div>
+                </div>
+                <p class="text-xs text-dark-muted mt-1" x-text="(diskInfo?.used_percent || 0).toFixed(1) + window.i18n.t('dashboard.system.used_percent')"></p>
+            </div>
+        </div>
+
+        <!-- Loading/Error State -->
+        <div x-show="!diskInfo && !loading" class="text-center py-4">
+            <p class="text-dark-muted" data-i18n-key="dashboard.system.error">Unable to retrieve disk information</p>
         </div>
     </div>
 
@@ -645,6 +583,25 @@
 
 <script>
     // Shared utility functions
+    function getServiceIcon(serviceName) {
+        if (!serviceName) return null;
+        const icons = {
+            'radarr': 'https://raw.githubusercontent.com/Radarr/Radarr/develop/Logo/128.png',
+            'sonarr': 'https://raw.githubusercontent.com/Sonarr/Sonarr/develop/Logo/128.png',
+            'lidarr': 'https://raw.githubusercontent.com/Lidarr/Lidarr/develop/Logo/128.png',
+            'readarr': 'https://raw.githubusercontent.com/Readarr/Readarr/develop/Logo/128.png',
+            'prowlarr': 'https://raw.githubusercontent.com/Prowlarr/Prowlarr/develop/Logo/128.png',
+            'bazarr': 'https://raw.githubusercontent.com/morpheus65535/bazarr/master/frontend/public/images/logo128.png',
+            'jellyfin': 'https://raw.githubusercontent.com/jellyfin/jellyfin-ux/master/branding/SVG/icon-transparent.svg',
+            'jellyseerr': 'https://raw.githubusercontent.com/Fallenbagel/jellyseerr/main/public/logo.svg',
+            'jellystat': 'https://raw.githubusercontent.com/CyferShepard/Jellystat/main/public/logo.png',
+            'qbittorrent': 'https://upload.wikimedia.org/wikipedia/commons/6/66/QBittorrent_Logo.svg',
+            'jackett': 'https://raw.githubusercontent.com/Jackett/Jackett/master/src/Jackett.Server/Content/logos/jackett_medium.png',
+            'transmission': 'https://upload.wikimedia.org/wikipedia/commons/f/f6/Transmission_logo.svg',
+            'deluge': 'https://upload.wikimedia.org/wikipedia/commons/2/29/Deluge-Logo.svg'
+        };
+        return icons[serviceName.toLowerCase()] || null;
+    }
     function formatBytes(bytes) {
         if (bytes === 0) return '0 B';
         const k = 1024;
@@ -660,11 +617,11 @@
         const diffTime = Math.abs(now - date);
         const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
         
-        if (diffDays === 0) return 'Hoy';
-        if (diffDays === 1) return 'Ayer';
-        if (diffDays < 7) return `Hace ${diffDays} días`;
-        if (diffDays < 30) return `Hace ${Math.floor(diffDays / 7)} semanas`;
-        return date.toLocaleDateString('es-ES', { month: 'short', day: 'numeric' });
+        if (diffDays === 0) return window.i18n.t('common.today');
+        if (diffDays === 1) return window.i18n.t('common.yesterday');
+        if (diffDays < 7) return window.i18n.t('common.days_ago').replace('{count}', diffDays);
+        if (diffDays < 30) return window.i18n.t('common.weeks_ago').replace('{count}', Math.floor(diffDays / 7));
+        return date.toLocaleDateString(window.i18n.lang === 'es' ? 'es-ES' : 'en-US', { month: 'short', day: 'numeric' });
     }
 
     function servicesStatus() {
@@ -808,9 +765,6 @@
     function dashboard() {
         return {
             stats: {},
-            syncing: false,
-            message: '',
-            messageType: 'success',
 
             async init() {
                 await this.loadStats();
@@ -828,29 +782,6 @@
                 }
             },
 
-            async syncNow() {
-                this.syncing = true;
-                this.message = '';
-
-                try {
-                    const response = await fetch('/api/sync', {
-                        method: 'POST',
-                    });
-
-                    const data = await response.json();
-
-                    if (response.ok) {
-                        this.showMessage('Sync completed successfully!', 'success');
-                        await this.loadStats();
-                    } else {
-                        this.showMessage(data.message || 'Sync failed', 'error');
-                    }
-                } catch (error) {
-                    this.showMessage('Error: ' + error.message, 'error');
-                } finally {
-                    this.syncing = false;
-                }
-            },
 
             showMessage(msg, type = 'success') {
                 this.message = msg;
@@ -869,8 +800,16 @@
             queueItems: [],
             loading: false,
             intervalId: null,
+            serviceEnabled: false,
 
             async init() {
+                // Check if Radarr service is enabled first
+                await this.checkServiceEnabled();
+                
+                if (!this.serviceEnabled) {
+                    return; // Don't start polling if service is not enabled
+                }
+                
                 await this.loadQueue();
                 // Setup interval with proper cleanup using Alpine's effect
                 this.$watch('queueItems', () => {
@@ -892,7 +831,23 @@
                 });
             },
 
+            async checkServiceEnabled() {
+                try {
+                    const response = await fetch('/api/services');
+                    if (response.ok) {
+                        const data = await response.json();
+                        const radarr = data.data?.find(s => s.name === 'radarr');
+                        this.serviceEnabled = radarr?.enabled || false;
+                    }
+                } catch (error) {
+                    console.error('Error checking Radarr service status:', error);
+                    this.serviceEnabled = false;
+                }
+            },
+
             async loadQueue() {
+                if (!this.serviceEnabled) return; // Skip if not enabled
+                
                 this.loading = true;
                 try {
                     const response = await fetch('/api/radarr/queue');
@@ -923,8 +878,16 @@
             queueItems: [],
             loading: false,
             intervalId: null,
+            serviceEnabled: false,
 
             async init() {
+                // Check if Sonarr service is enabled first
+                await this.checkServiceEnabled();
+                
+                if (!this.serviceEnabled) {
+                    return; // Don't start polling if service is not enabled
+                }
+                
                 await this.loadQueue();
                 // Setup interval with proper cleanup using Alpine's effect
                 this.$watch('queueItems', () => {
@@ -946,7 +909,23 @@
                 });
             },
 
+            async checkServiceEnabled() {
+                try {
+                    const response = await fetch('/api/services');
+                    if (response.ok) {
+                        const data = await response.json();
+                        const sonarr = data.data?.find(s => s.name === 'sonarr');
+                        this.serviceEnabled = sonarr?.enabled || false;
+                    }
+                } catch (error) {
+                    console.error('Error checking Sonarr service status:', error);
+                    this.serviceEnabled = false;
+                }
+            },
+
             async loadQueue() {
+                if (!this.serviceEnabled) return; // Skip if not enabled
+                
                 this.loading = true;
                 try {
                     const response = await fetch('/api/sonarr/queue');
@@ -977,10 +956,18 @@
             sessions: [],
             loading: false,
             intervalId: null,
+            serviceEnabled: false,
             REFRESH_INTERVAL_MS: 15000, // 15 seconds
             JELLYFIN_TICKS_PER_SECOND: 10000000, // Jellyfin uses 100-nanosecond intervals
 
             async init() {
+                // Check if Jellyfin service is enabled first
+                await this.checkServiceEnabled();
+                
+                if (!this.serviceEnabled) {
+                    return; // Don't start polling if service is not enabled
+                }
+                
                 await this.loadSessions();
                 
                 // Refresh every REFRESH_INTERVAL_MS milliseconds
@@ -995,7 +982,23 @@
                 });
             },
 
+            async checkServiceEnabled() {
+                try {
+                    const response = await fetch('/api/services');
+                    if (response.ok) {
+                        const data = await response.json();
+                        const jellyfin = data.data?.find(s => s.name === 'jellyfin');
+                        this.serviceEnabled = jellyfin?.enabled || false;
+                    }
+                } catch (error) {
+                    console.error('Error checking Jellyfin service status:', error);
+                    this.serviceEnabled = false;
+                }
+            },
+
             async loadSessions() {
+                if (!this.serviceEnabled) return; // Skip if not enabled
+                
                 this.loading = true;
                 try {
                     const response = await fetch('/api/jellyfin/sessions');
@@ -1037,12 +1040,36 @@
         return {
             items: [],
             loading: false,
+            serviceEnabled: false,
 
             async init() {
+                // Check if Jellyfin service is enabled first
+                await this.checkServiceEnabled();
+                
+                if (!this.serviceEnabled) {
+                    return; // Don't load items if service is not enabled
+                }
+                
                 await this.loadItems();
             },
 
+            async checkServiceEnabled() {
+                try {
+                    const response = await fetch('/api/services');
+                    if (response.ok) {
+                        const data = await response.json();
+                        const jellyfin = data.data?.find(s => s.name === 'jellyfin');
+                        this.serviceEnabled = jellyfin?.enabled || false;
+                    }
+                } catch (error) {
+                    console.error('Error checking Jellyfin service status:', error);
+                    this.serviceEnabled = false;
+                }
+            },
+
             async loadItems() {
+                if (!this.serviceEnabled) return; // Skip if not enabled
+                
                 this.loading = true;
                 try {
                     const response = await fetch('/api/jellyfin/recently-added?limit=12');
@@ -1072,12 +1099,36 @@
             stats: null,
             requests: [],
             loading: false,
+            serviceEnabled: false,
 
             async init() {
+                // Check if Jellyseerr service is enabled first
+                await this.checkServiceEnabled();
+                
+                if (!this.serviceEnabled) {
+                    return; // Don't load if service is not enabled
+                }
+                
                 await this.refresh();
             },
 
+            async checkServiceEnabled() {
+                try {
+                    const response = await fetch('/api/services');
+                    if (response.ok) {
+                        const data = await response.json();
+                        const jellyseerr = data.data?.find(s => s.name === 'jellyseerr');
+                        this.serviceEnabled = jellyseerr?.enabled || false;
+                    }
+                } catch (error) {
+                    console.error('Error checking Jellyseerr service status:', error);
+                    this.serviceEnabled = false;
+                }
+            },
+
             async refresh() {
+                if (!this.serviceEnabled) return; // Skip if not enabled
+                
                 this.loading = true;
                 try {
                     // Load stats
@@ -1114,12 +1165,36 @@
             stats: null,
             viewsByType: null,
             loading: false,
+            serviceEnabled: false,
 
             async init() {
+                // Check if Jellystat service is enabled first
+                await this.checkServiceEnabled();
+                
+                if (!this.serviceEnabled) {
+                    return; // Don't load if service is not enabled
+                }
+                
                 await this.refresh();
             },
 
+            async checkServiceEnabled() {
+                try {
+                    const response = await fetch('/api/services');
+                    if (response.ok) {
+                        const data = await response.json();
+                        const jellystat = data.data?.find(s => s.name === 'jellystat');
+                        this.serviceEnabled = jellystat?.enabled || false;
+                    }
+                } catch (error) {
+                    console.error('Error checking Jellystat service status:', error);
+                    this.serviceEnabled = false;
+                }
+            },
+
             async refresh() {
+                if (!this.serviceEnabled) return; // Skip if not enabled
+                
                 this.loading = true;
                 try {
                     // Load general stats (last 7 days for dashboard)
@@ -1159,8 +1234,16 @@
             activeTorrents: [],
             loading: false,
             intervalId: null,
+            serviceEnabled: false,
 
             async init() {
+                // Check if qBittorrent service is enabled first
+                await this.checkServiceEnabled();
+                
+                if (!this.serviceEnabled) {
+                    return; // Don't start if service is not enabled
+                }
+                
                 await this.refresh();
                 
                 // Only enable auto-refresh if qBittorrent is configured
@@ -1177,7 +1260,23 @@
                 }
             },
 
+            async checkServiceEnabled() {
+                try {
+                    const response = await fetch('/api/services');
+                    if (response.ok) {
+                        const data = await response.json();
+                        const qbittorrent = data.data?.find(s => s.name === 'qbittorrent');
+                        this.serviceEnabled = qbittorrent?.enabled || false;
+                    }
+                } catch (error) {
+                    console.error('Error checking qBittorrent service status:', error);
+                    this.serviceEnabled = false;
+                }
+            },
+
             async refresh() {
+                if (!this.serviceEnabled) return; // Skip if not enabled
+                
                 this.loading = true;
                 try {
                     // Try to fetch server state first to check if qBittorrent is enabled
@@ -1228,6 +1327,33 @@
                     return `${hours}h ${minutes}m`;
                 }
                 return `${minutes}m`;
+            }
+        }
+    }
+
+    function systemInfo() {
+        return {
+            diskInfo: null,
+            loading: false,
+
+            async init() {
+                await this.refresh();
+            },
+
+            async refresh() {
+                this.loading = true;
+                try {
+                    const response = await fetch('/api/dashboard/system-info');
+                    if (!response.ok) {
+                        throw new Error('Failed to load system info');
+                    }
+                    this.diskInfo = await response.json();
+                } catch (error) {
+                    console.error('Error loading system info:', error);
+                    this.diskInfo = null;
+                } finally {
+                    this.loading = false;
+                }
             }
         }
     }

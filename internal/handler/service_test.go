@@ -32,7 +32,7 @@ func setupTestApp(db *gorm.DB) (*fiber.App, *ServiceHandler) {
 	app := fiber.New()
 	repos := repository.NewRepositories(db)
 	log := logger.New("debug")
-	handler := NewServiceHandler(repos, log, nil, nil) // nil Docker client and service manager for tests
+	handler := NewServiceHandler(repos, log, nil, nil, nil) // nil Docker client, service manager, and proxy service for tests
 	return app, handler
 }
 

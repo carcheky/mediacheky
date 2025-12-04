@@ -1,0 +1,412 @@
+<div x-data="servicesPage()" x-init="init()" class="space-y-6">
+    <!-- Header -->
+    <div class="flex justify-between items-center">
+        <h1 class="text-3xl font-bold text-dark-text dark:text-dark-text"><span data-i18n-key="services.title">Services</span></h1>
+        <div class="flex gap-3">
+            <button @click="reload()"
+                class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center gap-2">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v6h6M20 20v-6h-6M20 8a8 8 0 10-7.906 7"/>
+                </svg>
+                <span data-i18n-key="services.reload">Reload</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Services Content -->
+    <div class="space-y-10">
+        <!-- Media Server Section -->
+        <div>
+            <h3 class="text-lg font-semibold text-dark-text mb-3 flex items-center gap-2">📺 <span data-i18n-key="services.section.media_server">Media Server</span></h3>
+            <div class="space-y-3">
+                <template x-for="service in getServicesByCategory('media-server')" :key="service.id">
+                    <div class="flex items-center justify-between p-4 rounded-lg border border-dark-border bg-dark-bg">
+                        <div class="flex items-center gap-4">
+                            <div class="text-3xl" x-text="service.icon || '⚙️'"></div>
+                            <div>
+                                <div class="flex items-center gap-2 mb-1">
+                                    <h3 class="font-semibold text-dark-text" x-text="service.label"></h3>
+                                    <span x-show="serviceStatuses[service.id]?.enabled" class="px-2 py-0.5 text-xs rounded-full bg-green-900/30 border border-green-600/50 text-green-300" data-i18n-key="services.active">Active</span>
+                                    <span x-show="!serviceStatuses[service.id]?.enabled" class="px-2 py-0.5 text-xs rounded-full bg-gray-700 text-gray-400" data-i18n-key="services.inactive">Inactive</span>
+                                </div>
+                                <p class="text-sm text-dark-muted" x-text="service.description || window.i18n.t('services.no_description')"></p>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <template x-if="serviceStatuses[service.id]?.config_path_exists">
+                                <button @click="pruneService(service.id)" 
+                                        :disabled="pruning[service.id]"
+                                        :title="window.i18n.t('services.prune.title')"
+                                        class="p-2 bg-orange-600 text-white rounded hover:bg-orange-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 focus:ring-offset-dark-bg">
+                                    <svg x-show="!pruning[service.id]" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16">
+                                        </path>
+                                    </svg>
+                                    <svg x-show="pruning[service.id]" class="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
+                                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                        <path class="opacity-75" fill="currentColor"
+                                            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
+                                        </path>
+                                    </svg>
+                                </button>
+                            </template>
+                            <label class="flex items-center gap-2 cursor-pointer"
+                                   :class="{'opacity-50 cursor-not-allowed': toggling[service.id]}"
+                                   :title="serviceStatuses[service.id]?.enabled ? window.i18n.t('services.button.disable') : window.i18n.t('services.button.enable')">
+                                <div class="relative flex-shrink-0">
+                                    <input type="checkbox" 
+                                           :checked="serviceStatuses[service.id]?.enabled"
+                                           @change="toggleService(service.id)"
+                                           :disabled="toggling[service.id]"
+                                           class="sr-only peer">
+                                    <div class="w-11 h-6 bg-gray-700 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-800 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                                </div>
+                            </label>
+                            <a :href="'/services/' + service.id"
+                               class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 text-sm">
+                                <span data-i18n-key="services.button.configure">Configure</span>
+                            </a>
+                        </div>
+                    </div>
+                </template>
+            </div>
+        </div>
+
+        <!-- *arr Services Section -->
+        <div>
+            <h3 class="text-lg font-semibold text-dark-text mb-3 flex items-center gap-2">📦 <span data-i18n-key="services.section.arr">*arr Services</span></h3>
+            <div class="space-y-3">
+                <template x-for="service in getServicesByCategory('arr')" :key="service.id">
+                    <div class="flex items-center justify-between p-4 rounded-lg border border-dark-border bg-dark-bg">
+                        <div class="flex items-center gap-4">
+                            <div class="text-3xl" x-text="service.icon || '⚙️'"></div>
+                            <div>
+                                <div class="flex items-center gap-2 mb-1">
+                                    <h3 class="font-semibold text-dark-text" x-text="service.label"></h3>
+                                    <span x-show="serviceStatuses[service.id]?.enabled" class="px-2 py-0.5 text-xs rounded-full bg-green-900/30 border border-green-600/50 text-green-300" data-i18n-key="services.active">Active</span>
+                                    <span x-show="!serviceStatuses[service.id]?.enabled" class="px-2 py-0.5 text-xs rounded-full bg-gray-700 text-gray-400" data-i18n-key="services.inactive">Inactive</span>
+                                </div>
+                                <p class="text-sm text-dark-muted" x-text="service.description || window.i18n.t('services.no_description')"></p>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <template x-if="serviceStatuses[service.id]?.config_path_exists">
+                                <button @click="pruneService(service.id)" 
+                                        :disabled="pruning[service.id]"
+                                        :title="window.i18n.t('services.prune.title')"
+                                        class="p-2 bg-orange-600 text-white rounded hover:bg-orange-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 focus:ring-offset-dark-bg">
+                                    <svg x-show="!pruning[service.id]" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16">
+                                        </path>
+                                    </svg>
+                                    <svg x-show="pruning[service.id]" class="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
+                                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                        <path class="opacity-75" fill="currentColor"
+                                            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
+                                        </path>
+                                    </svg>
+                                </button>
+                            </template>
+                            <label class="flex items-center gap-2 cursor-pointer"
+                                   :class="{'opacity-50 cursor-not-allowed': toggling[service.id]}"
+                                   :title="serviceStatuses[service.id]?.enabled ? window.i18n.t('services.button.disable') : window.i18n.t('services.button.enable')">
+                                <div class="relative flex-shrink-0">
+                                    <input type="checkbox" 
+                                           :checked="serviceStatuses[service.id]?.enabled"
+                                           @change="toggleService(service.id)"
+                                           :disabled="toggling[service.id]"
+                                           class="sr-only peer">
+                                    <div class="w-11 h-6 bg-gray-700 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-800 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                                </div>
+                            </label>
+                            <a :href="'/services/' + service.id"
+                               class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 text-sm">
+                                <span data-i18n-key="services.button.configure">Configure</span>
+                            </a>
+                        </div>
+                    </div>
+                </template>
+            </div>
+        </div>
+
+        <!-- Other Services Section -->
+        <div>
+            <h3 class="text-lg font-semibold text-dark-text mb-3 flex items-center gap-2">🔧 <span data-i18n-key="services.section.other">Other Services</span></h3>
+            <div class="space-y-3">
+                <template x-for="service in getServicesByCategory('other')" :key="service.id">
+                    <div class="flex items-center justify-between p-4 rounded-lg border border-dark-border bg-dark-bg">
+                        <div class="flex items-center gap-4">
+                            <div class="text-3xl" x-text="service.icon || '⚙️'"></div>
+                            <div>
+                                <div class="flex items-center gap-2 mb-1">
+                                    <h3 class="font-semibold text-dark-text" x-text="service.label"></h3>
+                                    <span x-show="serviceStatuses[service.id]?.enabled" class="px-2 py-0.5 text-xs rounded-full bg-green-900/30 border border-green-600/50 text-green-300" data-i18n-key="services.active">Active</span>
+                                    <span x-show="!serviceStatuses[service.id]?.enabled" class="px-2 py-0.5 text-xs rounded-full bg-gray-700 text-gray-400" data-i18n-key="services.inactive">Inactive</span>
+                                </div>
+                                <p class="text-sm text-dark-muted" x-text="service.description || window.i18n.t('services.no_description')"></p>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <template x-if="serviceStatuses[service.id]?.config_path_exists">
+                                <button @click="pruneService(service.id)" 
+                                        :disabled="pruning[service.id]"
+                                        :title="window.i18n.t('services.prune.title')"
+                                        class="p-2 bg-orange-600 text-white rounded hover:bg-orange-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 focus:ring-offset-dark-bg">
+                                    <svg x-show="!pruning[service.id]" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16">
+                                        </path>
+                                    </svg>
+                                    <svg x-show="pruning[service.id]" class="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
+                                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                        <path class="opacity-75" fill="currentColor"
+                                            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
+                                        </path>
+                                    </svg>
+                                </button>
+                            </template>
+                            <label class="flex items-center gap-2 cursor-pointer"
+                                   :class="{'opacity-50 cursor-not-allowed': toggling[service.id]}"
+                                   :title="serviceStatuses[service.id]?.enabled ? window.i18n.t('services.button.disable') : window.i18n.t('services.button.enable')">
+                                <div class="relative flex-shrink-0">
+                                    <input type="checkbox" 
+                                           :checked="serviceStatuses[service.id]?.enabled"
+                                           @change="toggleService(service.id)"
+                                           :disabled="toggling[service.id]"
+                                           class="sr-only peer">
+                                    <div class="w-11 h-6 bg-gray-700 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-800 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                                </div>
+                            </label>
+                            <a :href="'/services/' + service.id"
+                               class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 text-sm">
+                                <span data-i18n-key="services.button.configure">Configure</span>
+                            </a>
+                        </div>
+                    </div>
+                </template>
+            </div>
+        </div>
+    </div>
+
+    <!-- Floating Toast Messages -->
+    <div x-show="message"
+         x-transition:enter="transition ease-out duration-300"
+         x-transition:enter-start="opacity-0 translate-y-2"
+         x-transition:enter-end="opacity-100 translate-y-0"
+         x-transition:leave="transition ease-in duration-200"
+         x-transition:leave-start="opacity-100 translate-y-0"
+         x-transition:leave-end="opacity-0 translate-y-2"
+         class="fixed top-4 right-4 z-50 min-w-[300px] max-w-md shadow-2xl rounded-lg border p-4 flex items-start gap-3"
+         :class="{
+            'bg-green-900/95 border-green-600/50': messageType === 'success',
+            'bg-red-900/95 border-red-600/50': messageType === 'error',
+            'bg-blue-900/95 border-blue-600/50': messageType === 'info'
+         }">
+        <div class="flex-shrink-0">
+            <svg x-show="messageType === 'success'" class="w-6 h-6 text-green-300" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
+            <svg x-show="messageType === 'error'" class="w-6 h-6 text-red-300" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/></svg>
+            <svg x-show="messageType === 'info'" class="w-6 h-6 text-blue-300" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/></svg>
+        </div>
+        <div class="flex-1">
+            <p class="text-sm font-medium"
+               :class="{
+                  'text-green-200': messageType === 'success',
+                  'text-red-200': messageType === 'error',
+                  'text-blue-200': messageType === 'info'
+               }"
+               x-text="message"></p>
+        </div>
+        <button @click="message = ''" class="flex-shrink-0 text-white/60 hover:text-white/90 transition-colors">
+            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"/>
+            </svg>
+        </button>
+    </div>
+</div>
+
+<script>
+function servicesPage() {
+    return {
+        message: '',
+        messageType: 'success',
+        serviceStatuses: {},
+        pruning: {},
+        toggling: {},
+        services: [
+            { id: 'jellyfin',   label: 'Jellyfin',   icon: '🍿', category: 'media-server', description: 'Media server for streaming movies, TV shows, and music' },
+            { id: 'radarr',     label: 'Radarr',     icon: '🎬', category: 'arr',          description: 'Movie collection manager for Usenet and BitTorrent' },
+            { id: 'sonarr',     label: 'Sonarr',     icon: '📺', category: 'arr',          description: 'TV series collection manager for Usenet and BitTorrent' },
+            { id: 'prowlarr',   label: 'Prowlarr',   icon: '🔍', category: 'arr',          description: 'Indexer manager/proxy for Radarr, Sonarr, and other services' },
+            { id: 'bazarr',     label: 'Bazarr',     icon: '🗣️', category: 'arr',          description: 'Subtitle management companion for Radarr and Sonarr' },
+            { id: 'jellyseerr', label: 'Jellyseerr', icon: '🎫', category: 'other',        description: 'Media request management for Jellyfin' },
+            { id: 'jellystat',  label: 'Jellystat',  icon: '📊', category: 'other',        description: 'Statistics and analytics for Jellyfin' },
+            { id: 'qbittorrent',label: 'qBittorrent',icon: '⬇️', category: 'other',        description: 'BitTorrent client for downloading media' }
+        ],
+        getServicesByCategory(category) { return this.services.filter(s => s.category === category); },
+        getAllServicesSorted() {
+            // Returns all services sorted: enabled first, then disabled
+            return [...this.services].sort((a, b) => {
+                const aEnabled = this.serviceStatuses[a.id]?.enabled ? 1 : 0;
+                const bEnabled = this.serviceStatuses[b.id]?.enabled ? 1 : 0;
+                if (aEnabled !== bEnabled) return bEnabled - aEnabled; // Enabled first
+                return a.label.localeCompare(b.label); // Then alphabetically
+            });
+        },
+        getEnabledByCategory(category) {
+            const list = this.getServicesByCategory(category);
+            return list.filter(s => this.serviceStatuses[s.id]?.enabled);
+        },
+        async init() { 
+            // Initialize pruning and toggling state for all services
+            this.services.forEach(s => { 
+                this.pruning[s.id] = false;
+                this.toggling[s.id] = false;
+            });
+            await this.loadServiceStatuses(); 
+            await this.checkConfigPaths();
+        },
+        async reload() { 
+            await this.loadServiceStatuses(); 
+            await this.checkConfigPaths();
+            this.showMessage('Services reloaded', 'success'); 
+        },
+        async loadServiceStatuses() {
+            try {
+                const response = await fetch('/api/services');
+                if (response.ok) {
+                    const data = await response.json();
+                    const list = data.data || [];
+                    // Initialize with Alpine.js reactivity
+                    const newStatuses = {};
+                    list.forEach(svc => { 
+                        newStatuses[svc.name] = { 
+                            enabled: svc.enabled, 
+                            status: svc.status,
+                            config_path_exists: false
+                        }; 
+                    });
+                    this.serviceStatuses = newStatuses;
+                }
+            } catch (err) { console.error('Failed to load services', err); }
+        },
+        async checkConfigPaths() {
+            for (const service of this.services) {
+                if (!this.serviceStatuses[service.id]) continue;
+                
+                try {
+                    const response = await fetch(`/api/services/${service.id}/config-exists`);
+                    if (response.ok) {
+                        const data = await response.json();
+                        const exists = data.data?.exists || false;
+                        console.log(`Config exists for ${service.id}:`, exists);
+                        // Force reactivity by creating new object
+                        this.serviceStatuses[service.id] = {
+                            ...this.serviceStatuses[service.id],
+                            config_path_exists: exists
+                        };
+                    }
+                } catch (err) {
+                    console.error(`Failed to check config path for ${service.id}`, err);
+                }
+            }
+        },
+        async toggleService(serviceId) {
+            const enabled = !!this.serviceStatuses[serviceId]?.enabled;
+            const action = enabled ? 'Disabling' : 'Enabling';
+            
+            // Mark as toggling immediately
+            this.toggling[serviceId] = true;
+            
+            try {
+                if (enabled) {
+                    // Disable service
+                    if (!confirm('Disabling will stop and remove the container. Continue?')) {
+                        this.toggling[serviceId] = false;
+                        return;
+                    }
+                    
+                    // Use a direct approach for disable (simple and fast)
+                    const resp = await fetch(`/api/services/${serviceId}/disable`, { method: 'POST' });
+                    if (!resp.ok) {
+                        throw new Error('Failed to disable service');
+                    }
+                    
+                    // Complete ALL operations first
+                    await this.loadServiceStatuses();
+                    await this.checkConfigPaths();
+                    
+                    // THEN show success message
+                    this.showMessage(`${serviceId} disabled successfully`, 'success');
+                } else {
+                    // Enable service (backend waits until fully ready for Radarr/Sonarr)
+                    const resp = await fetch(`/api/services/${serviceId}/enable`, { 
+                        method: 'POST' 
+                    });
+                    
+                    if (!resp.ok) {
+                        throw new Error('Failed to enable service');
+                    }
+                    
+                    // Backend has waited for service to be fully ready
+                    // Now update UI state
+                    await this.loadServiceStatuses();
+                    await this.checkConfigPaths();
+                    
+                    // Show success message (service is guaranteed to be ready)
+                    this.showMessage(`${serviceId} enabled successfully`, 'success');
+                }
+            } catch (error) {
+                this.showMessage(`Failed to ${action.toLowerCase()} ${serviceId}: ${error.message}`, 'error');
+            } finally {
+                this.toggling[serviceId] = false;
+            }
+        },
+        async pruneService(serviceId) {
+            console.log('pruneService called for:', serviceId);
+            // REQUIRES confirmation before executing
+            if (!confirm(`⚠️ WARNING: This will:\n\n1. Stop the ${serviceId} service (docker compose down -v)\n2. Remove all volumes\n3. Delete service configuration folders\n4. Disable the service\n\nThis action CANNOT be undone.\n\nAre you sure you want to continue?`)) {
+                return;
+            }
+
+            this.pruning[serviceId] = true;
+            try {
+                // Call reset endpoint (does all the work)
+                const response = await fetch(`/api/services/${serviceId}/reset`, {
+                    method: 'POST'
+                });
+
+                if (response.ok) {
+                    // Deshabilita y oculta botón
+                    this.serviceStatuses[serviceId].enabled = false;
+                    this.serviceStatuses[serviceId].config_path_exists = false;
+                    this.showMessage(`${serviceId} pruned successfully! All config and volumes removed.`, 'success');
+                    // Espera breve para backend
+                    await new Promise(resolve => setTimeout(resolve, 2000));
+                    // Recarga TODO el estado
+                    await this.loadServiceStatuses();
+                    await this.checkConfigPaths();
+                } else {
+                    const data = await response.json();
+                    this.showMessage(data.error || `Failed to prune ${serviceId}`, 'error');
+                }
+            } catch (error) {
+                this.showMessage('Error: ' + error.message, 'error');
+            } finally {
+                this.pruning[serviceId] = false;
+            }
+        },
+        showMessage(msg, type = 'success') {
+            // Use global toast system
+            if (window.showToast) {
+                window.showToast(msg, type);
+            } else {
+                // Fallback if toast manager not ready yet
+                console.warn('Toast manager not ready, queueing message');
+                window.queueToast(msg, type);
+            }
+        }
+    }
+}
+</script>
