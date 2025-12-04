@@ -1224,6 +1224,12 @@ func (h *ServiceHandler) GetRootFolders(c *fiber.Ctx) error {
 		})
 	}
 
+	// First ensure the default root folder exists via API
+	if err := h.serviceManager.EnsureRootFolderViaAPI(c.Context(), name); err != nil {
+		h.logger.Warn("Failed to ensure default root folder via API", "name", name, "error", err)
+		// Don't fail the request, just log the warning and continue
+	}
+
 	rootFolders, err := h.serviceManager.GetRootFolders(c.Context(), name)
 	if err != nil {
 		h.logger.Error("Failed to get root folders", "name", name, "error", err)

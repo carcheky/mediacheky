@@ -1,6 +1,7 @@
 package service
 
 import (
+	"bytes"
 	"context"
 	"crypto/rand"
 	"crypto/sha512"
@@ -8,6 +9,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -1244,13 +1246,15 @@ func (sm *ServiceManager) initializeRadarrConfig(ctx context.Context, serviceNam
 }
 
 // ensureRootFoldersInDB ensures default root folders exist in Radarr/Sonarr database
+// NOTE: This function directly modifies the database. Prefer using EnsureRootFolderViaAPI
+// which uses the proper Radarr/Sonarr API endpoints.
 func (sm *ServiceManager) ensureRootFoldersInDB(ctx context.Context, serviceName string) error {
 	var desiredPath string
 	switch serviceName {
 	case "radarr":
-		desiredPath = "/MEDIACHEKY_LIBRARY/movies/"
+		desiredPath = "/MEDIACHEKY_LIBRARY/library/movies"
 	case "sonarr":
-		desiredPath = "/MEDIACHEKY_LIBRARY/tv/"
+		desiredPath = "/MEDIACHEKY_LIBRARY/library/tv"
 	default:
 		return nil // Not applicable for this service
 	}
@@ -2301,4 +2305,126 @@ func (sm *ServiceManager) GetRootFolders(ctx context.Context, serviceName string
 	}
 
 	return rootFolders, nil
+}
+
+// CreateRootFolder creates a new root folder in Radarr/Sonarr via API
+func (sm *ServiceManager) CreateRootFolder(ctx context.Context, serviceName, path string) error {
+	var apiKey string
+	var port int
+	var containerName string
+
+	// Get service from DB to get ContainerName
+	svc, err := sm.serviceRepo.GetByName(serviceName)
+	if err != nil {
+		return fmt.Errorf("failed to get service: %w", err)
+	}
+
+	if nameVal, ok := svc.Config["ContainerName"]; ok {
+		if nameStr, ok := nameVal.(string); ok && nameStr != "" {
+			containerName = nameStr
+		}
+	}
+	if containerName == "" {
+		containerName = serviceName
+	}
+
+	// Get Config (API Key, Port)
+	if serviceName == "radarr" {
+		cfg, err := sm.GetRadarrConfig(ctx, serviceName)
+		if err != nil {
+			return err
+		}
+		apiKey = cfg.ApiKey
+		port = cfg.Port
+	} else if serviceName == "sonarr" {
+		cfg, err := sm.GetSonarrConfig(ctx, serviceName)
+		if err != nil {
+			return err
+		}
+		apiKey = cfg.ApiKey
+		port = cfg.Port
+	} else {
+		return fmt.Errorf("unsupported service: %s", serviceName)
+	}
+
+	if apiKey == "" {
+		return fmt.Errorf("API key not found for %s", serviceName)
+	}
+
+	// Prepare request body
+	requestBody := map[string]interface{}{
+		"path": path,
+	}
+
+	bodyBytes, err := json.Marshal(requestBody)
+	if err != nil {
+		return fmt.Errorf("failed to marshal request: %w", err)
+	}
+
+	// Call API
+	url := fmt.Sprintf("http://%s:%d/api/v3/rootfolder?apikey=%s", containerName, port, apiKey)
+
+	req, err := http.NewRequestWithContext(ctx, "POST", url, bytes.NewReader(bodyBytes))
+	if err != nil {
+		return fmt.Errorf("failed to create request: %w", err)
+	}
+	req.Header.Set("Content-Type", "application/json")
+
+	client := &http.Client{Timeout: 10 * time.Second}
+	resp, err := client.Do(req)
+	if err != nil {
+		return fmt.Errorf("failed to call API: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusCreated && resp.StatusCode != http.StatusOK {
+		bodyBytes, _ := io.ReadAll(resp.Body)
+		return fmt.Errorf("API returned status %s: %s", resp.Status, string(bodyBytes))
+	}
+
+	sm.logger.Info("Root folder created successfully via API",
+		zap.String("service", serviceName),
+		zap.String("path", path))
+
+	return nil
+}
+
+// EnsureRootFolderViaAPI ensures default root folder exists via API call to Radarr/Sonarr
+func (sm *ServiceManager) EnsureRootFolderViaAPI(ctx context.Context, serviceName string) error {
+	var desiredPath string
+	switch serviceName {
+	case "radarr":
+		desiredPath = "/MEDIACHEKY_LIBRARY/library/movies"
+	case "sonarr":
+		desiredPath = "/MEDIACHEKY_LIBRARY/library/tv"
+	default:
+		return nil // Not applicable for this service
+	}
+
+	// Get existing root folders
+	rootFolders, err := sm.GetRootFolders(ctx, serviceName)
+	if err != nil {
+		return fmt.Errorf("failed to get root folders: %w", err)
+	}
+
+	// Check if desired path already exists
+	for _, rf := range rootFolders {
+		if rf.Path == desiredPath {
+			sm.logger.Debug("Root folder already exists via API",
+				zap.String("service", serviceName),
+				zap.String("path", desiredPath))
+			return nil
+		}
+	}
+
+	// Path doesn't exist, create it
+	sm.logger.Info("Root folder not found, creating via API",
+		zap.String("service", serviceName),
+		zap.String("path", desiredPath))
+
+	if err := sm.CreateRootFolder(ctx, serviceName, desiredPath); err != nil {
+		return fmt.Errorf("failed to create root folder: %w", err)
+	}
+
+	return nil
 }
