@@ -340,7 +340,7 @@ function servicesPage() {
                     // THEN show success message
                     this.showMessage(`${serviceId} disabled successfully`, 'success');
                 } else {
-                    // Enable service
+                    // Enable service (backend waits until fully ready for Radarr/Sonarr)
                     const resp = await fetch(`/api/services/${serviceId}/enable`, { 
                         method: 'POST' 
                     });
@@ -349,14 +349,12 @@ function servicesPage() {
                         throw new Error('Failed to enable service');
                     }
                     
-                    // Wait for service to start
-                    await new Promise(resolve => setTimeout(resolve, 2000));
-                    
-                    // Complete ALL operations first
+                    // Backend has waited for service to be fully ready
+                    // Now update UI state
                     await this.loadServiceStatuses();
                     await this.checkConfigPaths();
                     
-                    // THEN show success message
+                    // Show success message (service is guaranteed to be ready)
                     this.showMessage(`${serviceId} enabled successfully`, 'success');
                 }
             } catch (error) {
