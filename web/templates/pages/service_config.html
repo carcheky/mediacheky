@@ -46,10 +46,11 @@
             <div class="flex flex-col sm:flex-row gap-2 w-full lg:w-auto">
                 <!-- Enable/Disable Toggle -->
                 <label class="flex items-center gap-2 cursor-pointer px-3 py-2 bg-dark-bg rounded border border-dark-border hover:border-dark-text transition-colors"
+                       :class="{'opacity-50 cursor-not-allowed': toggling}"
                        :title="enabled ? window.i18n.t('config.button.disable') : window.i18n.t('config.button.enable')">
                     <span class="text-sm text-dark-muted whitespace-nowrap" data-i18n-key="config.enable">Enable</span>
                     <div class="relative flex-shrink-0">
-                        <input type="checkbox" x-model="enabled" @change="toggleService()" class="sr-only peer">
+                        <input type="checkbox" x-model="enabled" @change="toggleService()" :disabled="toggling" class="sr-only peer">
                         <div class="w-11 h-6 bg-gray-700 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-800 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
                     </div>
                 </label>
@@ -892,6 +893,7 @@
             savingAppConfig: false,
             applying: false,
             pruning: false,
+            toggling: false,
             configPathExists: false,
             actionInProgress: false,
             isReady: false,
@@ -1178,6 +1180,9 @@
             },
 
             async toggleService() {
+                // Mark as toggling to disable checkbox
+                this.toggling = true;
+                
                 if (this.enabled) {
                     // Enable service - apply configuration and start
                     try {
@@ -1233,11 +1238,14 @@
                     } catch (error) {
                         this.showMessage('Error: ' + error.message, 'error');
                         this.enabled = false; // Revert toggle
+                    } finally {
+                        this.toggling = false;
                     }
                 } else {
                     // Disable service (will stop and remove container)
                     if (!confirm('Disabling will stop and remove the container. Continue?')) {
                         this.enabled = true; // Revert toggle
+                        this.toggling = false;
                         return;
                     }
                     
@@ -1258,6 +1266,8 @@
                     } catch (error) {
                         this.showMessage('Error: ' + error.message, 'error');
                         this.enabled = true; // Revert toggle
+                    } finally {
+                        this.toggling = false;
                     }
                 }
             },
