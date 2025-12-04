@@ -2,8 +2,8 @@
 
 > Panel de control centralizado para servicios multimedia *arr
 
-**Última actualización**: 3 de noviembre, 2025  
-**Estado**: Redefinición completa del proyecto
+**Última actualización**: 4 de diciembre, 2025  
+**Estado**: Desarrollo activo - Radarr y Sonarr implementados
 
 ---
 
@@ -516,20 +516,24 @@ GET    /api/docker/containers     # Listar contenedores
 
 **Objetivo**: Soportar los 8 servicios principales
 
-- [ ] Implementar templates y formularios para:
-  - [ ] Sonarr
+- [x] Implementar templates y formularios para:
+  - [x] Radarr (completado con autenticación y root folders)
+  - [x] Sonarr (completado siguiendo patrón Radarr)
   - [ ] Jellyfin
   - [ ] Prowlarr
   - [ ] qBittorrent
   - [ ] Jellyseerr
   - [ ] Bazarr
   - [ ] Jellystat
-- [ ] Dashboard mejorado con métricas
-- [ ] Sistema de logs por servicio
-- [ ] Validación de configuración (JSON Schema)
-- [ ] Variables globales funcionales (PUID, PGID, TZ, paths)
+- [x] Dashboard mejorado con métricas
+- [x] Sistema de logs por servicio
+- [x] Validación de configuración (JSON Schema)
+- [x] Variables globales funcionales (PUID, PGID, TZ, paths)
+- [x] UI compacta y optimizada para formularios
 
 **Criterio de éxito**: Puedo gestionar los 8 servicios desde MediaCheky
+
+**Progreso actual**: 2/8 servicios completados (Radarr, Sonarr)
 
 ### Fase 3: Features Avanzadas - 2 semanas
 
@@ -564,7 +568,7 @@ GET    /api/docker/containers     # Listar contenedores
 
 ### Estructura de Directorios
 
-```
+```text
 mediacheky/
 ├── cmd/
 │   └── server/

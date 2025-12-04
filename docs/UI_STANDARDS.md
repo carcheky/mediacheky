@@ -1,5 +1,22 @@
 # UI Standards and Guidelines
 
+**Last Updated**: December 4, 2025
+
+## Design Philosophy
+
+### Compact Form Design
+
+Form fields should be **visually compact** to prevent information overload:
+
+- **Labels**: Include source indicator inline as small italic text: `Username <span class="text-xs text-dark-muted italic">(database)</span>`
+- **Inputs**: Use smaller padding: `px-2 py-1.5 text-sm`
+- **Spacing**: Reduce margins between sections: `mt-4 pt-4 gap-3` (not `mt-6 pt-6 gap-4`)
+- **No decorative elements**: Avoid large colored boxes, icons, or lengthy descriptions below each field
+- **No status messages**: Don't show "Auto-generated" or similar inline messages unless critical
+- **Inline source tags**: Use `(config.xml)` or `(database)` inline, not as separate colored badges
+
+**Goal**: Each form field should occupy ~3-4cm vertical space, not 15-20cm.
+
 ## Toast Notifications
 
 **All feedback messages MUST use floating toast notifications, NOT inline messages.**
@@ -140,14 +157,39 @@ Settings includes only **Global Variables** section: PUID, PGID, TZ, paths, netw
 
 Only show when service is enabled (on `/services` page):
 
-
 ```html
 <a x-show="config.services[service.id]?.enabled" 
    :href="'/services/' + service.id"
    class="px-3 py-1 bg-blue-600 text-white rounded-md hover:bg-blue-700 text-sm">
     Configure
 </a>
+```
 
+### Application Settings Form Design
+
+**Radarr/Sonarr Configuration Tabs**:
+
+- **General Tab**: API Key, Username, Password, Authentication settings, Instance Name, Log Level
+- **Media Management Tab**: Root folders (read-only display)
+- **TODO Tab**: Placeholder for future features
+
+**Form Field Guidelines**:
+
+- Use compact spacing: `mb-4`, `pt-4`, `gap-3`
+- Input padding: `px-2 py-1.5 text-sm`
+- Labels include inline source indicators: `(config.xml)` or `(database)`
+- No decorative colored boxes or large icons
+- No "Auto-generated" or status messages unless critical
+- Copy buttons are minimal text-only: "Copy"
+
+**Example**:
+
+```html
+<label class="block text-sm font-medium text-dark-text mb-1">
+    Api Key <span class="text-xs text-dark-muted italic">(config.xml)</span>
+</label>
+<input type="text" class="w-full px-2 py-1.5 text-sm border rounded">
+```
  
 ### Quick Checklist (Service Pages)
 
@@ -156,7 +198,8 @@ Only show when service is enabled (on `/services` page):
 - Configure button: Hidden when service is disabled.
 - Network: Ensure `mediacheky-net` connection in templates.
 - Ports: Not exposed by default; optional exposure via checkbox.
-```
+- Form fields: Compact design with inline source tags.
+- Root folders: Auto-reload after applying configuration changes.
 
 ### URL Pattern
 
