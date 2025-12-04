@@ -69,16 +69,52 @@
                              x-transition:enter="transition ease-out duration-100"
                              x-transition:enter-start="transform opacity-0 scale-95"
                              x-transition:enter-end="transform opacity-100 scale-100"
-                             class="absolute left-0 top-full mt-0 w-56 bg-dark-surface border border-dark-border rounded-md shadow-xl py-1 z-50">
-                            <template x-for="svc in enabledServices" :key="svc.name">
-                                <a :href="'/services/' + svc.name" 
-                                   class="block px-4 py-2 text-sm text-dark-text hover:bg-dark-bg transition-colors">
-                                    <span x-text="iconFor(svc.name)"></span>
-                                    <span class="ml-2" x-text="labelFor(svc.name)"></span>
-                                </a>
-                            </template>
-                            <div x-show="enabledServices.length === 0" class="px-4 py-2 text-sm text-dark-muted italic" data-i18n-key="dashboard.empty.noServicesMenu">
-                                No services enabled
+                             class="absolute left-0 top-full mt-0 w-72 bg-dark-surface border border-dark-border rounded-lg shadow-2xl z-50 max-h-96 overflow-y-auto">
+                            
+                            <!-- Enabled Services -->
+                            <div class="p-2">
+                                <div class="px-2 py-1 text-xs font-semibold text-green-400 uppercase tracking-wider">
+                                    ✅ <span data-i18n-key="nav.services.enabled">Enabled Services</span>
+                                </div>
+                                <template x-for="service in allServices.filter(s => serviceStatuses[s.id]?.enabled)" :key="service.id">
+                                    <a :href="'/services/' + service.id"
+                                       class="flex items-center gap-3 px-3 py-2 rounded hover:bg-dark-bg transition-colors cursor-pointer group">
+                                        <div class="text-2xl" x-text="service.icon"></div>
+                                        <div class="flex-1 min-w-0">
+                                            <div class="text-sm font-medium text-dark-text group-hover:text-blue-400 transition-colors" x-text="service.label"></div>
+                                            <div class="text-xs text-dark-muted truncate" x-text="service.description"></div>
+                                        </div>
+                                        <div class="flex-shrink-0">
+                                            <div class="w-2 h-2 rounded-full bg-green-500"></div>
+                                        </div>
+                                    </a>
+                                </template>
+                                <template x-if="allServices.filter(s => serviceStatuses[s.id]?.enabled).length === 0">
+                                    <div class="px-3 py-2 text-sm text-dark-muted italic" data-i18n-key="nav.services.no_enabled">No enabled services</div>
+                                </template>
+                            </div>
+                            
+                            <!-- Divider -->
+                            <div class="border-t border-dark-border"></div>
+                            
+                            <!-- Disabled Services -->
+                            <div class="p-2">
+                                <div class="px-2 py-1 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                                    ⚫ <span data-i18n-key="nav.services.disabled">Disabled Services</span>
+                                </div>
+                                <template x-for="service in allServices.filter(s => !serviceStatuses[s.id]?.enabled)" :key="service.id">
+                                    <a :href="'/services/' + service.id"
+                                       class="flex items-center gap-3 px-3 py-2 rounded hover:bg-dark-bg transition-colors cursor-pointer group opacity-60 hover:opacity-100">
+                                        <div class="text-2xl grayscale" x-text="service.icon"></div>
+                                        <div class="flex-1 min-w-0">
+                                            <div class="text-sm font-medium text-dark-muted group-hover:text-dark-text transition-colors" x-text="service.label"></div>
+                                            <div class="text-xs text-dark-muted truncate" x-text="service.description"></div>
+                                        </div>
+                                        <div class="flex-shrink-0">
+                                            <div class="w-2 h-2 rounded-full bg-gray-600"></div>
+                                        </div>
+                                    </a>
+                                </template>
                             </div>
                         </div>
                     </div>
@@ -258,28 +294,37 @@
     </footer>
 </body>
 <script>
-// Services dropdown component: show only enabled services
+// Services dropdown component: show all services grouped by enabled/disabled
 function servicesMenu() {
     return {
         open: false,
-        enabledServices: [],
+        allServices: [
+            { id: 'jellyfin',   label: 'Jellyfin',   icon: '🍿', description: 'Media server for streaming movies, TV shows, and music' },
+            { id: 'radarr',     label: 'Radarr',     icon: '🎬', description: 'Movie collection manager for Usenet and BitTorrent' },
+            { id: 'sonarr',     label: 'Sonarr',     icon: '📺', description: 'TV series collection manager for Usenet and BitTorrent' },
+            { id: 'prowlarr',   label: 'Prowlarr',   icon: '🔍', description: 'Indexer manager/proxy for Radarr, Sonarr, and other services' },
+            { id: 'bazarr',     label: 'Bazarr',     icon: '🗣️', description: 'Subtitle management companion for Radarr and Sonarr' },
+            { id: 'jellyseerr', label: 'Jellyseerr', icon: '🎫', description: 'Media request management for Jellyfin' },
+            { id: 'jellystat',  label: 'Jellystat',  icon: '📊', description: 'Statistics and analytics for Jellyfin' },
+            { id: 'qbittorrent',label: 'qBittorrent',icon: '⬇️', description: 'BitTorrent client for downloading media' }
+        ],
+        serviceStatuses: {},
         async init() {
             try {
                 const resp = await fetch('/api/services');
                 if (resp.ok) {
                     const data = await resp.json();
                     const services = data.data || data;
-                    this.enabledServices = (services || []).filter(s => s.enabled);
+                    const statuses = {};
+                    (services || []).forEach(svc => {
+                        statuses[svc.name] = { 
+                            enabled: svc.enabled, 
+                            status: svc.status 
+                        };
+                    });
+                    this.serviceStatuses = statuses;
                 }
             } catch (e) { /* ignore */ }
-        },
-        iconFor(name) {
-            const icons = { radarr: '🎬', sonarr: '📺', jellyfin: '🍿', qbittorrent: '⬇️', prowlarr: '🔍', bazarr: '🗣️', jellyseerr: '🎫', jellystat: '📊' };
-            return icons[name] || '🛠️';
-        },
-        labelFor(name) {
-            const labels = { radarr: 'Radarr', sonarr: 'Sonarr', jellyfin: 'Jellyfin', qbittorrent: 'qBittorrent', prowlarr: 'Prowlarr', bazarr: 'Bazarr', jellyseerr: 'Jellyseerr', jellystat: 'Jellystat' };
-            return labels[name] || name;
         }
     }
 }
@@ -290,6 +335,9 @@ window.i18n = (function() {
         en: {
             'nav.dashboard': 'Dashboard',
             'nav.services': 'Services',
+            'nav.services.enabled': 'Enabled Services',
+            'nav.services.disabled': 'Disabled Services',
+            'nav.services.no_enabled': 'No enabled services',
             'nav.settings': 'Settings',
             'nav.logs': 'Logs',
             'settings.title': 'Settings',
@@ -474,6 +522,9 @@ window.i18n = (function() {
         es: {
             'nav.dashboard': 'Panel',
             'nav.services': 'Servicios',
+            'nav.services.enabled': 'Servicios Habilitados',
+            'nav.services.disabled': 'Servicios Deshabilitados',
+            'nav.services.no_enabled': 'No hay servicios habilitados',
             'nav.settings': 'Ajustes',
             'nav.logs': 'Logs',
             'settings.title': 'Ajustes',
