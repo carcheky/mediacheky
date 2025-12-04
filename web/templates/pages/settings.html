@@ -16,7 +16,7 @@
                         d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
                     </path>
                 </svg>
-                <span class="text-sm" x-text="saving ? 'Guardando...' : 'Guardar'"></span>
+                <span class="text-sm" x-text="saving ? window.i18n.t('settings.saving') : window.i18n.t('settings.save')"></span>
             </button>
         </div>
     </div>
@@ -30,11 +30,11 @@
     <div class="space-y-6">
         <!-- User & Group Configuration -->
         <div class="bg-dark-surface dark:bg-dark-surface rounded-lg border border-dark-border p-4">
-            <h2 class="text-lg font-semibold text-dark-text mb-3">Variables Globales</h2>
+            <h2 class="text-lg font-semibold text-dark-text mb-3"><span data-i18n-key="settings.global_vars.title">Variables Globales</span></h2>
             <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
                 <div>
                     <label class="block text-sm font-medium text-dark-text mb-1">
-                        PUID (ID de Usuario)
+                        <span data-i18n-key="settings.global_vars.puid">PUID (ID de Usuario)</span>
                     </label>
                     <input type="number" x-model.number="config.global.puid" placeholder="1000"
                         class="w-full px-3 py-2 border border-dark-border rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 bg-dark-bg text-dark-text">
@@ -42,14 +42,14 @@
                 
                 <div>
                     <label class="block text-sm font-medium text-dark-text mb-1">
-                        PGID (ID de Grupo)
+                        <span data-i18n-key="settings.global_vars.pgid">PGID (ID de Grupo)</span>
                     </label>
                     <input type="number" x-model.number="config.global.pgid" placeholder="1000"
                         class="w-full px-3 py-2 border border-dark-border rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 bg-dark-bg text-dark-text">
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-dark-text mb-1">
-                        Zona Horaria (TZ)
+                        <span data-i18n-key="settings.global_vars.timezone">Zona Horaria (TZ)</span>
                     </label>
                     <input type="text" x-model="config.global.timezone" placeholder="Europe/Madrid"
                         class="w-full px-3 py-2 border border-dark-border rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 bg-dark-bg text-dark-text">
@@ -65,7 +65,7 @@
         <div class="bg-dark-surface dark:bg-dark-surface rounded-lg border border-dark-border p-4">
             <div class="flex justify-between items-start mb-4">
                 <div>
-                    <h2 class="text-lg font-semibold text-dark-text">Proxy y Dominios</h2>
+                    <h2 class="text-lg font-semibold text-dark-text"><span data-i18n-key="settings.proxy.title">Proxy y Dominios</span></h2>
                 </div>
                 <button @click="proxyEnabled = !proxyEnabled; updateProxyConfig()" 
                     :class="proxyEnabled ? 'bg-green-600 hover:bg-green-700' : 'bg-gray-600 hover:bg-gray-700'"
@@ -73,17 +73,17 @@
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
                     </svg>
-                    <span x-text="proxyEnabled ? 'Activado' : 'Desactivado'"></span>
+                    <span x-text="proxyEnabled ? window.i18n.t('settings.proxy.enabled') : window.i18n.t('settings.proxy.disabled')"></span>
                 </button>
             </div>
 
             <!-- Domain List -->
             <div class="space-y-2 mb-3">
                 <label class="block text-sm font-medium text-dark-text mb-2">
-                    Dominios Configurados
+                    <span data-i18n-key="settings.proxy.domains_configured">Dominios Configurados</span>
                 </label>
                 <div x-show="domains.length === 0" class="text-sm text-dark-muted italic">
-                    No hay dominios configurados. Agrega un dominio para habilitar el enrutamiento por proxy.
+                    <span data-i18n-key="settings.proxy.no_domains">No hay dominios configurados. Agrega un dominio para habilitar el enrutamiento por proxy.</span>
                 </div>
                 <template x-for="domain in domains" :key="domain.id">
                     <div class="flex items-center justify-between p-2 bg-dark-bg rounded-md border border-dark-border">
@@ -91,7 +91,7 @@
                             <span class="text-dark-text font-medium" x-text="domain.name"></span>
                             <span x-show="domain.is_primary" 
                                 class="px-2 py-0.5 bg-blue-600/20 text-blue-400 text-xs rounded">
-                                Principal
+                                <span data-i18n-key="settings.proxy.primary">Principal</span>
                             </span>
                         </div>
                         <button @click="deleteDomain(domain.name)" 

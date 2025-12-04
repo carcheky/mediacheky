@@ -2,9 +2,9 @@
     <!-- Header with Breadcrumb -->
     <div>
         <nav class="text-sm text-dark-muted mb-2">
-            <a href="/" class="hover:text-dark-text">Dashboard</a>
+            <a href="/" class="hover:text-dark-text" data-i18n-key="nav.dashboard">Dashboard</a>
             <span class="mx-2">/</span>
-            <a href="/services" class="hover:text-dark-text">Services</a>
+            <a href="/services" class="hover:text-dark-text" data-i18n-key="config.breadcrumb.services">Services</a>
             <span class="mx-2">/</span>
             <span class="text-dark-text" x-text="serviceName"></span>
         </nav>
@@ -15,28 +15,28 @@
                 <div class="flex-shrink-0" x-html="getServiceIcon()"></div>
                 <div class="flex-1 min-w-0">
                     <div class="flex items-center gap-2">
-                        <h1 class="text-3xl font-bold text-dark-text" x-text="serviceName + ' Configuration'"></h1>
+                        <h1 class="text-3xl font-bold text-dark-text" x-text="serviceName + ' ' + window.i18n.t('config.title')"></h1>
                         <!-- Link Icon to service (only when running) -->
                         <button x-show="enabled && status === 'running'" 
                                 @click="window.open((proxyConfig.sslEnabled ? 'https://' : 'http://') + serviceEndpoint, '_blank')"
                                 class="text-blue-400 hover:text-blue-300 transition-colors flex-shrink-0 cursor-pointer bg-transparent border-0 p-0" 
-                                title="Open service">
+                                :title="window.i18n.t('config.button.open_service')">
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4m-4-6l6-6m0 0V4m0-4h4" />
                             </svg>
                         </button>
                     </div>
                     <div class="flex flex-wrap items-center gap-2 mt-2">
-                        <p class="text-sm text-dark-muted">Configure service settings and paths</p>
+                        <p class="text-sm text-dark-muted" data-i18n-key="config.description">Configure service settings and paths</p>
                         <!-- Status Badge -->
                         <span x-show="!enabled" class="px-2 py-0.5 bg-gray-900/30 border border-gray-600/50 text-gray-400 rounded text-xs flex-shrink-0">
-                            ⚪ Disabled
+                            ⚪ <span data-i18n-key="config.status.disabled">Disabled</span>
                         </span>
                         <span x-show="enabled && status === 'stopped'" class="px-2 py-0.5 bg-gray-900/30 border border-gray-600/50 text-gray-300 rounded text-xs flex-shrink-0">
-                            📴 Stopped
+                            📴 <span data-i18n-key="config.status.stopped">Stopped</span>
                         </span>
                         <span x-show="enabled && status === 'error'" class="px-2 py-0.5 bg-red-900/30 border border-red-600/50 text-red-300 rounded text-xs flex-shrink-0">
-                            ⚠️ Error
+                            ⚠️ <span data-i18n-key="config.status.error">Error</span>
                         </span>
                     </div>
                 </div>
@@ -46,7 +46,7 @@
             <div class="flex flex-col sm:flex-row gap-2 w-full lg:w-auto">
                 <!-- Enable/Disable Toggle -->
                 <label class="flex items-center gap-2 cursor-pointer px-3 py-2 bg-dark-bg rounded border border-dark-border hover:border-dark-text transition-colors">
-                    <span class="text-sm text-dark-muted whitespace-nowrap">Enable</span>
+                    <span class="text-sm text-dark-muted whitespace-nowrap" data-i18n-key="config.enable">Enable</span>
                     <div class="relative flex-shrink-0">
                         <input type="checkbox" x-model="enabled" @change="toggleService()" class="sr-only peer">
                         <div class="w-11 h-6 bg-gray-700 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-800 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
@@ -56,21 +56,21 @@
                 <!-- Service Control Buttons (only when enabled) - Icon only with tooltip -->
                 <div x-show="enabled" class="flex gap-1">
                     <button @click="startService()" :disabled="status === 'running' || actionInProgress"
-                        title="Start service"
+                        :title="window.i18n.t('config.button.start')"
                         class="p-2 bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
                         <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
                             <path d="M6.3 2.841A1.5 1.5 0 004 4.11V15.89a1.5 1.5 0 002.3 1.269l9.344-5.89a1.5 1.5 0 000-2.538L6.3 2.84z"/>
                         </svg>
                     </button>
                     <button @click="stopService()" :disabled="status !== 'running' || actionInProgress"
-                        title="Stop service"
+                        :title="window.i18n.t('config.button.stop')"
                         class="p-2 bg-red-600 text-white rounded hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 focus:ring-offset-dark-bg">
                         <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
                             <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8 7a1 1 0 00-1 1v4a1 1 0 001 1h4a1 1 0 001-1V8a1 1 0 00-1-1H8z" clip-rule="evenodd"/>
                         </svg>
                     </button>
                     <button @click="restartService()" :disabled="status !== 'running' || actionInProgress"
-                        title="Restart service"
+                        :title="window.i18n.t('config.button.restart')"
                         class="p-2 bg-yellow-600 text-white rounded hover:bg-yellow-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:ring-offset-2 focus:ring-offset-dark-bg">
                         <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
                             <path fill-rule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z" clip-rule="evenodd"/>
@@ -88,7 +88,7 @@
                 <!-- Config Actions (only when enabled) - Prune icon only, Apply with text at end -->
                 <div class="flex gap-1 items-center">
                     <button x-show="configPathExists" @click="pruneConfig()" :disabled="pruning"
-                        title="Remove unused files and optimize storage"
+                        :title="window.i18n.t('config.button.prune')"
                         class="p-2 bg-orange-600 text-white rounded hover:bg-orange-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 focus:ring-offset-dark-bg">
                         <svg x-show="!pruning" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -104,7 +104,7 @@
                     </button>
                     <template x-if="enabled">
                         <button @click="applyConfig()" :disabled="applying"
-                            title="Apply configuration changes"
+                            :title="window.i18n.t('config.button.apply_changes')"
                             class="ml-auto px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-2 whitespace-nowrap focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-dark-bg">
                             <svg x-show="!applying" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -117,7 +117,7 @@
                                     d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
                                 </path>
                             </svg>
-                            <span x-text="applying ? 'Applying...' : 'Apply'"></span>
+                            <span x-text="applying ? window.i18n.t('config.button.applying') : window.i18n.t('config.button.apply')"></span>
                         </button>
                     </template>
                 </div>
@@ -138,8 +138,8 @@
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
                 </svg>
                 <div class="text-left">
-                    <h2 class="text-xl font-semibold text-dark-text">Radarr Application Settings</h2>
-                    <p class="text-sm text-dark-muted">Configure Radarr's config.xml settings</p>
+                    <h2 class="text-xl font-semibold text-dark-text" data-i18n-key="config.radarr.app_settings.title">Radarr Application Settings</h2>
+                    <p class="text-sm text-dark-muted" data-i18n-key="config.radarr.app_settings.description">Configure Radarr's config.xml settings</p>
                 </div>
             </div>
             <svg class="w-5 h-5 text-dark-muted transition-transform duration-200" 
@@ -453,8 +453,8 @@
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
                 </svg>
                 <div class="text-left">
-                    <h2 class="text-xl font-semibold text-dark-text">Sonarr Application Settings</h2>
-                    <p class="text-sm text-dark-muted">Configure Sonarr's config.xml settings</p>
+                    <h2 class="text-xl font-semibold text-dark-text" data-i18n-key="config.sonarr.app_settings.title">Sonarr Application Settings</h2>
+                    <p class="text-sm text-dark-muted" data-i18n-key="config.sonarr.app_settings.description">Configure Sonarr's config.xml settings</p>
                 </div>
             </div>
             <svg class="w-5 h-5 text-dark-muted transition-transform duration-200" 

@@ -32,9 +32,9 @@
                         <div class="flex items-center gap-2 min-w-0">
                             <h3 class="text-sm font-bold text-dark-text group-hover:text-blue-400 transition-colors" x-text="service.display_name || service.name"></h3>
                             <!-- Status Dot -->
-                            <span x-show="service.status === 'running'" class="w-2 h-2 rounded-full bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.6)] flex-shrink-0" title="Running"></span>
-                            <span x-show="service.status === 'stopped'" class="w-2 h-2 rounded-full bg-gray-500 flex-shrink-0" title="Stopped"></span>
-                            <span x-show="service.status !== 'running' && service.status !== 'stopped'" class="w-2 h-2 rounded-full bg-yellow-500 flex-shrink-0" title="Unknown"></span>
+                            <span x-show="service.status === 'running'" class="w-2 h-2 rounded-full bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.6)] flex-shrink-0" :title="window.i18n.t('config.status.running')"></span>
+                            <span x-show="service.status === 'stopped'" class="w-2 h-2 rounded-full bg-gray-500 flex-shrink-0" :title="window.i18n.t('config.status.stopped')"></span>
+                            <span x-show="service.status !== 'running' && service.status !== 'stopped'" class="w-2 h-2 rounded-full bg-yellow-500 flex-shrink-0" :title="window.i18n.t('config.status.unknown')"></span>
                         </div>
                     </a>
 

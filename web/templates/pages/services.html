@@ -1,14 +1,14 @@
 <div x-data="servicesPage()" x-init="init()" class="space-y-6">
     <!-- Header -->
     <div class="flex justify-between items-center">
-        <h1 class="text-3xl font-bold text-dark-text dark:text-dark-text">Services</h1>
+        <h1 class="text-3xl font-bold text-dark-text dark:text-dark-text"><span data-i18n-key="services.title">Services</span></h1>
         <div class="flex gap-3">
             <button @click="reload()"
                 class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center gap-2">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v6h6M20 20v-6h-6M20 8a8 8 0 10-7.906 7"/>
                 </svg>
-                <span>Reload</span>
+                <span data-i18n-key="services.reload">Reload</span>
             </button>
         </div>
     </div>
@@ -26,8 +26,8 @@
                             <div>
                                 <div class="flex items-center gap-2 mb-1">
                                     <h3 class="font-semibold text-dark-text" x-text="service.label"></h3>
-                                    <span x-show="serviceStatuses[service.id]?.enabled" class="px-2 py-0.5 text-xs rounded-full bg-green-900/30 border border-green-600/50 text-green-300">Active</span>
-                                    <span x-show="!serviceStatuses[service.id]?.enabled" class="px-2 py-0.5 text-xs rounded-full bg-gray-700 text-gray-400">Inactive</span>
+                                    <span x-show="serviceStatuses[service.id]?.enabled" class="px-2 py-0.5 text-xs rounded-full bg-green-900/30 border border-green-600/50 text-green-300" data-i18n-key="services.active">Active</span>
+                                    <span x-show="!serviceStatuses[service.id]?.enabled" class="px-2 py-0.5 text-xs rounded-full bg-gray-700 text-gray-400" data-i18n-key="services.inactive">Inactive</span>
                                 </div>
                                 <p class="text-sm text-dark-muted" x-text="service.description || 'No description available'"></p>
                             </div>
@@ -36,7 +36,7 @@
                             <template x-if="serviceStatuses[service.id]?.config_path_exists">
                                 <button @click="pruneService(service.id)" 
                                         :disabled="pruning[service.id]"
-                                        title="Remove unused files and optimize storage"
+                                        :title="window.i18n.t('services.prune.title')"
                                         class="p-2 bg-orange-600 text-white rounded hover:bg-orange-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 focus:ring-offset-dark-bg">
                                     <svg x-show="!pruning[service.id]" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -83,8 +83,8 @@
                             <div>
                                 <div class="flex items-center gap-2 mb-1">
                                     <h3 class="font-semibold text-dark-text" x-text="service.label"></h3>
-                                    <span x-show="serviceStatuses[service.id]?.enabled" class="px-2 py-0.5 text-xs rounded-full bg-green-900/30 border border-green-600/50 text-green-300">Active</span>
-                                    <span x-show="!serviceStatuses[service.id]?.enabled" class="px-2 py-0.5 text-xs rounded-full bg-gray-700 text-gray-400">Inactive</span>
+                                    <span x-show="serviceStatuses[service.id]?.enabled" class="px-2 py-0.5 text-xs rounded-full bg-green-900/30 border border-green-600/50 text-green-300" data-i18n-key="services.active">Active</span>
+                                    <span x-show="!serviceStatuses[service.id]?.enabled" class="px-2 py-0.5 text-xs rounded-full bg-gray-700 text-gray-400" data-i18n-key="services.inactive">Inactive</span>
                                 </div>
                                 <p class="text-sm text-dark-muted" x-text="service.description || 'No description available'"></p>
                             </div>
@@ -93,7 +93,7 @@
                             <template x-if="serviceStatuses[service.id]?.config_path_exists">
                                 <button @click="pruneService(service.id)" 
                                         :disabled="pruning[service.id]"
-                                        title="Remove unused files and optimize storage"
+                                        :title="window.i18n.t('services.prune.title')"
                                         class="p-2 bg-orange-600 text-white rounded hover:bg-orange-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 focus:ring-offset-dark-bg">
                                     <svg x-show="!pruning[service.id]" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -140,8 +140,8 @@
                             <div>
                                 <div class="flex items-center gap-2 mb-1">
                                     <h3 class="font-semibold text-dark-text" x-text="service.label"></h3>
-                                    <span x-show="serviceStatuses[service.id]?.enabled" class="px-2 py-0.5 text-xs rounded-full bg-green-900/30 border border-green-600/50 text-green-300">Active</span>
-                                    <span x-show="!serviceStatuses[service.id]?.enabled" class="px-2 py-0.5 text-xs rounded-full bg-gray-700 text-gray-400">Inactive</span>
+                                    <span x-show="serviceStatuses[service.id]?.enabled" class="px-2 py-0.5 text-xs rounded-full bg-green-900/30 border border-green-600/50 text-green-300" data-i18n-key="services.active">Active</span>
+                                    <span x-show="!serviceStatuses[service.id]?.enabled" class="px-2 py-0.5 text-xs rounded-full bg-gray-700 text-gray-400" data-i18n-key="services.inactive">Inactive</span>
                                 </div>
                                 <p class="text-sm text-dark-muted" x-text="service.description || 'No description available'"></p>
                             </div>
@@ -150,7 +150,7 @@
                             <template x-if="serviceStatuses[service.id]?.config_path_exists">
                                 <button @click="pruneService(service.id)" 
                                         :disabled="pruning[service.id]"
-                                        title="Remove unused files and optimize storage"
+                                        :title="window.i18n.t('services.prune.title')"
                                         class="p-2 bg-orange-600 text-white rounded hover:bg-orange-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 focus:ring-offset-dark-bg">
                                     <svg x-show="!pruning[service.id]" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
