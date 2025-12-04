@@ -249,6 +249,11 @@ func (sm *ServiceManager) EnableService(ctx context.Context, serviceName string)
 					zap.String("service", serviceName),
 					zap.Int("root_folder_count", len(rootFolders)),
 					zap.Int("attempt", attempt+1))
+
+				// Wait additional time to ensure all config files are fully written to disk
+				sm.logger.Info("Waiting for config files to be fully written...", zap.String("service", serviceName))
+				time.Sleep(1 * time.Second)
+				sm.logger.Info("Service fully ready", zap.String("service", serviceName))
 				break
 			}
 
