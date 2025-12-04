@@ -15,6 +15,8 @@ November 9, 2025
 #### Base Layout (`web/templates/layouts/main.html`)
 
 - **Enhanced Navigation**: Top navigation bar with links to all main pages
+  - **Services Dropdown**: Hover-activated menu showing enabled/disabled services with quick access to configuration pages
+  - Dashboard, Settings, and Logs links
 
 - **Mobile Responsive**: Collapsible mobile menu for small screens
 

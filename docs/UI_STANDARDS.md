@@ -99,34 +99,40 @@ showToast(message, type = 'success') {
 
 ### Navigation
 
-- Services management resides exclusively in `/services` (overview, enable/disable, Configure links).
-- Settings includes only the **Global Variables** tab: PUID, PGID, TZ, paths, network config.
+#### Main Menu Services Dropdown
 
-**DO NOT create separate `/global` route** - Global Variables is a tab within Settings.
+The main navigation menu includes a **Services dropdown** with quick access:
 
- 
+- **Enabled Services section**: Shows all enabled services with green indicators (✅)
+- **Disabled Services section**: Shows all disabled services with gray indicators (⚫)
+- Each service is clickable and navigates to its configuration page (`/services/:name`)
+- Dropdown appears on hover (desktop) with smooth transitions
+- Provides quick access without leaving the current page
+
+#### Services Page (`/services`)
+
+The dedicated Services page provides full service management:
+
+- Overview of all services grouped by category (Media Server, *arr Services, Download Clients, Other Services)
+- Enable/disable toggles for each service
+- Configure buttons (only visible when service is enabled)
+- Prune buttons (only visible when service has config files)
+
+#### Settings Page (`/settings`)
+
+Settings includes only **Global Variables** section: PUID, PGID, TZ, paths, network config.
+
+**Important**: Settings page does NOT use tabs - it displays Global Variables content directly.
+
+**DO NOT create separate `/global` route** - Global Variables is the Settings page itself.
+
 ### Do/Don't (Services vs Settings)
 
 - Do: Keep services management exclusively under `/services` (overview, enable/disable, Configure links).
-- Do: Keep Global Variables as the only tab in `/settings`.
+- Do: Keep Global Variables as the only content in `/settings`.
 - Don't: Add service toggles or configuration forms inside `/settings`.
 - Don't: Use `/services/:name/config` URLs; use `/services/:name`.
-
-### Tabs Structure (Settings)
-
-Settings should only have the Global Variables tab:
-
-
-```html
-<div class="border-b border-dark-border">
-    <nav class="-mb-px flex space-x-8">
-        <button @click="activeTab = 'global'" class="whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors">
-            Global Variables
-        </button>
-    </nav>
-    <!-- Services management moved to /services -->
-</div>
-```
+- Don't: Add tabs to Settings page - it should show Global Variables content directly.
 
 ## Service Configuration
 
@@ -243,15 +249,8 @@ Move to `/docs` instead.
 
 ```html
 <div x-data="settings()">
-    <!-- Tab Navigation (Global only) -->
-    <div class="border-b border-dark-border">
-        <nav class="-mb-px flex space-x-8">
-            <button @click="activeTab = 'global'">Global Variables</button>
-        </nav>
-    </div>
-    
-    <!-- Global Tab -->
-    <div x-show="activeTab === 'global'">
+    <!-- Global Variables Content (No tabs) -->
+    <div class="space-y-6">
         <!-- PUID, PGID, TZ, paths, network -->
     </div>
     
@@ -287,7 +286,8 @@ Move to `/docs` instead.
 - [ ] Correct database path (`mediacheky.db`)
 - [ ] Correct environment variable prefix (`MEDIACHEKY_`)
 - [ ] Service URLs without `/config` suffix
-- [ ] Global Variables in Settings tab (only tab in Settings)
+- [ ] Settings page shows Global Variables directly (no tabs)
+- [ ] Services dropdown in main menu navigation
 - [ ] Documentation in `/docs` folder
 
 ## Related Documents
