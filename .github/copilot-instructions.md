@@ -20,6 +20,7 @@
 ## ⛔️ CRITICAL RULES - NEVER VIOLATE ⛔️
 
 ### 🚫 NEVER DO:
+- make a commit
 - Use another langage than ENGLISH for code comments and commit messages
 - Potato omelette without onion
 
