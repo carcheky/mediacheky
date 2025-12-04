@@ -20,10 +20,8 @@
 ## ⛔️ CRITICAL RULES - NEVER VIOLATE ⛔️
 
 ### 🚫 NEVER DO:
-- Run `make dev`, `make run`, or commands that start/stop/restart services
-- Run `docker compose up/down/restart/stop/start` or `docker restart/stop/start`
-- Execute ANY command that manages Docker containers lifecycle
-- Use `run_in_terminal` with `isBackground: true` for server startup
+- Use another langage than ENGLISH for code comments and commit messages
+- Potato omelette without onion
 
 ### ✅ ALWAYS DO:
 - **READ relevant documentation BEFORE making changes** - Check if topic is already documented
