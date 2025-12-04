@@ -2,8 +2,8 @@
     <!-- Header -->
     <div class="flex justify-between items-center">
         <div>
-            <h1 class="text-3xl font-bold text-dark-text dark:text-dark-text">Global Variables</h1>
-            <p class="text-sm text-dark-muted mt-1">Configuration shared across all services</p>
+            <h1 class="text-3xl font-bold text-dark-text dark:text-dark-text"><span data-i18n-key="global.title">Global Variables</span></h1>
+            <p class="text-sm text-dark-muted mt-1" data-i18n-key="global.subtitle">Configuration shared across all services</p>
         </div>
         <button @click="saveConfig()" :disabled="saving"
             class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2">
@@ -18,14 +18,14 @@
                     d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
                 </path>
             </svg>
-            <span x-text="saving ? 'Saving...' : 'Save Changes'"></span>
+            <span x-text="saving ? window.i18n.t('global.saving') : window.i18n.t('global.save')"></span>
         </button>
     </div>
 
     <!-- User & Group Configuration -->
     <div class="bg-dark-surface dark:bg-dark-surface rounded-lg shadow-lg border border-dark-border p-6">
-        <h2 class="text-xl font-semibold text-dark-text mb-4">User & Group</h2>
-        <p class="text-sm text-dark-muted mb-4">Linux user and group IDs for containers</p>
+        <h2 class="text-xl font-semibold text-dark-text mb-4"><span data-i18n-key="global.user_group.title">User & Group</span></h2>
+        <p class="text-sm text-dark-muted mb-4" data-i18n-key="global.user_group.subtitle">Linux user and group IDs for containers</p>
         
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
@@ -34,24 +34,24 @@
                 </label>
                 <input type="number" x-model.number="config.puid" placeholder="1000"
                     class="w-full px-3 py-2 border border-dark-border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-dark-bg text-dark-text">
-                <p class="text-xs text-dark-muted mt-1">Default: 1000</p>
+                <p class="text-xs text-dark-muted mt-1" data-i18n-key="global.user_group.puid.help">Default: 1000</p>
             </div>
             
             <div>
                 <label class="block text-sm font-medium text-dark-text mb-1">
-                    PGID (Group ID)
+                    <span data-i18n-key="settings.global_vars.pgid">PGID (Group ID)</span>
                 </label>
                 <input type="number" x-model.number="config.pgid" placeholder="1000"
                     class="w-full px-3 py-2 border border-dark-border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-dark-bg text-dark-text">
-                <p class="text-xs text-dark-muted mt-1">Default: 1000</p>
+                <p class="text-xs text-dark-muted mt-1" data-i18n-key="global.user_group.pgid.help">Default: 1000</p>
             </div>
         </div>
     </div>
 
     <!-- System Configuration -->
     <div class="bg-dark-surface dark:bg-dark-surface rounded-lg shadow-lg border border-dark-border p-6">
-        <h2 class="text-xl font-semibold text-dark-text mb-4">System</h2>
-        <p class="text-sm text-dark-muted mb-4">General system settings</p>
+        <h2 class="text-xl font-semibold text-dark-text mb-4"><span data-i18n-key="global.system.title">System</span></h2>
+        <p class="text-sm text-dark-muted mb-4" data-i18n-key="global.system.subtitle">General system settings</p>
         
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
@@ -60,12 +60,12 @@
                 </label>
                 <input type="text" x-model="config.timezone" placeholder="America/New_York"
                     class="w-full px-3 py-2 border border-dark-border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-dark-bg text-dark-text">
-                <p class="text-xs text-dark-muted mt-1">Example: America/New_York, Europe/London</p>
+                <p class="text-xs text-dark-muted mt-1" data-i18n-key="global.system.timezone.help">Example: America/New_York, Europe/London</p>
             </div>
             
             <div>
                 <label class="block text-sm font-medium text-dark-text mb-1">
-                    Language
+                    <span data-i18n-key="global.system.language">Language</span>
                 </label>
                 <select x-model="config.language"
                     class="w-full px-3 py-2 border border-dark-border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-dark-bg text-dark-text">
@@ -80,22 +80,22 @@
 
     <!-- Base Paths Configuration -->
     <div class="bg-dark-surface dark:bg-dark-surface rounded-lg shadow-lg border border-dark-border p-6">
-        <h2 class="text-xl font-semibold text-dark-text mb-4">Base Paths</h2>
-        <p class="text-sm text-dark-muted mb-4">Default paths for media storage</p>
+        <h2 class="text-xl font-semibold text-dark-text mb-4"><span data-i18n-key="global.paths.title">Base Paths</span></h2>
+        <p class="text-sm text-dark-muted mb-4"><span data-i18n-key="global.paths.subtitle">Default paths for media storage</span></p>
         
         <div class="space-y-4">
             <div>
                 <label class="block text-sm font-medium text-dark-text mb-1">
-                    Media Directory
+                    <span data-i18n-key="global.paths.media">Media Directory</span>
                 </label>
                 <input type="text" x-model="config.media_path" placeholder="/data/media"
                     class="w-full px-3 py-2 border border-dark-border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-dark-bg text-dark-text">
-                <p class="text-xs text-dark-muted mt-1">Root path for movies, TV shows, music, etc.</p>
+                <p class="text-xs text-dark-muted mt-1"><span data-i18n-key="global.paths.media.help">Root path for movies, TV shows, music, etc.</span></p>
             </div>
             
             <div>
                 <label class="block text-sm font-medium text-dark-text mb-1">
-                    Downloads Directory
+                    <span data-i18n-key="global.paths.downloads">Downloads Directory</span>
                 </label>
                 <input type="text" x-model="config.downloads_path" placeholder="/data/downloads"
                     class="w-full px-3 py-2 border border-dark-border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-dark-bg text-dark-text">
