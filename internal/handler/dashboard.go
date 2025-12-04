@@ -30,7 +30,7 @@ func NewDashboardHandler(repos *repository.Repositories, logger *logger.Logger, 
 
 func (h *DashboardHandler) Index(c *fiber.Ctx) error {
 	return c.Render("pages/dashboard", fiber.Map{
-		"Title": "Dashboard - KeeperCheky",
+		"Title": "Dashboard - MediaCheky",
 	}, "layouts/main")
 }
 

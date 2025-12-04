@@ -32,7 +32,7 @@ func NewSettingsHandler(repos *repository.Repositories, logger *logger.Logger, c
 
 func (h *SettingsHandler) Index(c *fiber.Ctx) error {
 	return c.Render("pages/settings", fiber.Map{
-		"Title": "Settings - KeeperCheky",
+		"Title": "Settings - MediaCheky",
 	}, "layouts/main")
 }
 
