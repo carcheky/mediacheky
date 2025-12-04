@@ -1216,31 +1216,11 @@ func (h *ServiceHandler) GetRootFolders(c *fiber.Ctx) error {
 		})
 	}
 
-	// Check if service manager is available
-	if h.serviceManager == nil {
-		return c.Status(fiber.StatusServiceUnavailable).JSON(APIResponse{
-			Success: false,
-			Error:   "Service manager is not available",
-		})
-	}
-
-	// First ensure the default root folder exists via API
-	if err := h.serviceManager.EnsureRootFolderViaAPI(c.Context(), name); err != nil {
-		h.logger.Warn("Failed to ensure default root folder via API", "name", name, "error", err)
-		// Don't fail the request, just log the warning and continue
-	}
-
-	rootFolders, err := h.serviceManager.GetRootFolders(c.Context(), name)
-	if err != nil {
-		h.logger.Error("Failed to get root folders", "name", name, "error", err)
-		return c.Status(fiber.StatusInternalServerError).JSON(APIResponse{
-			Success: false,
-			Error:   fmt.Sprintf("Failed to get root folders: %v", err),
-		})
-	}
-
+	// For now, return empty array
+	// Root folder creation happens during EnableService, not here
+	// This endpoint is just a placeholder for future API-based root folder retrieval
 	return c.JSON(APIResponse{
 		Success: true,
-		Data:    rootFolders,
+		Data:    []interface{}{},
 	})
 }
