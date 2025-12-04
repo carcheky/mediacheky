@@ -333,9 +333,12 @@ function servicesPage() {
                         throw new Error('Failed to disable service');
                     }
                     
-                    this.showMessage(`${serviceId} disabled`, 'success');
+                    // Complete ALL operations first
                     await this.loadServiceStatuses();
                     await this.checkConfigPaths();
+                    
+                    // THEN show success message
+                    this.showMessage(`${serviceId} disabled successfully`, 'success');
                 } else {
                     // Enable service
                     const resp = await fetch(`/api/services/${serviceId}/enable`, { 
@@ -349,11 +352,15 @@ function servicesPage() {
                     // Wait for service to start
                     await new Promise(resolve => setTimeout(resolve, 2000));
                     
-                    // Reload data
+                    // Complete ALL operations first
                     await this.loadServiceStatuses();
                     await this.checkConfigPaths();
-                    this.showMessage(`${serviceId} enabled`, 'success');
+                    
+                    // THEN show success message
+                    this.showMessage(`${serviceId} enabled successfully`, 'success');
                 }
+            } catch (error) {
+                this.showMessage(`Failed to ${action.toLowerCase()} ${serviceId}: ${error.message}`, 'error');
             } finally {
                 this.toggling[serviceId] = false;
             }
@@ -393,9 +400,14 @@ function servicesPage() {
             }
         },
         showMessage(msg, type = 'success') {
-            this.message = msg; this.messageType = type;
-            const delay = type === 'success' ? 5000 : 8000;
-            setTimeout(() => { this.message = ''; }, delay);
+            // Use global toast system
+            if (window.showToast) {
+                window.showToast(msg, type);
+            } else {
+                // Fallback if toast manager not ready yet
+                console.warn('Toast manager not ready, queueing message');
+                window.queueToast(msg, type);
+            }
         }
     }
 }
