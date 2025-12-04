@@ -187,7 +187,6 @@
                 <div class="flex items-center justify-between mb-4">
                     <div>
                         <h3 class="text-sm font-semibold text-purple-400 uppercase tracking-wide">Config.xml values</h3>
-                        <p class="text-xs text-dark-muted">MediaCheky reads/writes Radarr's config.xml directly.</p>
                     </div>
                     <button x-show="enabled && status === 'running' && serviceEndpoint" 
                             @click="window.open((proxyConfig.sslEnabled ? 'https://' : 'http://') + serviceEndpoint + '/settings/general', '_blank')"
@@ -211,16 +210,13 @@
 
                 <!-- Login Credentials -->
                 <div class="mt-4 pt-4 border-t border-dark-border">
-                    <div x-show="radarrConfig.Password !== '********'" class="mb-2 text-xs text-blue-300">💡 Auto-generated</div>
-                    <div x-show="radarrConfig.Password === '********'" class="mb-2 text-xs text-green-300">✓ Existing credentials</div>
-
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
                         <div>
-                            <label for="radarr-username" class="block text-sm font-medium text-dark-text mb-1">Username</label>
+                            <label for="radarr-username" class="block text-sm font-medium text-dark-text mb-1">Username <span class="text-xs text-dark-muted italic">(database)</span></label>
                             <input type="text" id="radarr-username" x-model="radarrConfig.Username" class="w-full px-2 py-1.5 text-sm border border-dark-border rounded focus:outline-none focus:ring-1 focus:ring-purple-500 bg-dark-bg text-dark-text" placeholder="Enter username">
                         </div>
                         <div>
-                            <label for="radarr-password" class="block text-sm font-medium text-dark-text mb-1">Password</label>
+                            <label for="radarr-password" class="block text-sm font-medium text-dark-text mb-1">Password <span class="text-xs text-dark-muted italic">(database)</span></label>
                             <input type="password" id="radarr-password" x-model="radarrConfig.Password" x-ref="passwordField" class="w-full px-2 py-1.5 text-sm border border-dark-border rounded focus:outline-none focus:ring-1 focus:ring-purple-500 bg-dark-bg text-dark-text" placeholder="Enter password">
                         </div>
                     </div>
@@ -435,7 +431,6 @@
                 <div class="flex items-center justify-between mb-4">
                     <div>
                         <h3 class="text-sm font-semibold text-purple-400 uppercase tracking-wide">Config.xml values</h3>
-                        <p class="text-xs text-dark-muted">MediaCheky reads/writes Sonarr's config.xml directly.</p>
                     </div>
                     <button x-show="enabled && status === 'running' && serviceEndpoint" 
                             @click="window.open((proxyConfig.sslEnabled ? 'https://' : 'http://') + serviceEndpoint + '/settings/general', '_blank')"
@@ -459,16 +454,13 @@
 
                 <!-- Login Credentials -->
                 <div class="mt-4 pt-4 border-t border-dark-border">
-                    <div x-show="sonarrConfig.Password !== '********'" class="mb-2 text-xs text-blue-300">💡 Auto-generated</div>
-                    <div x-show="sonarrConfig.Password === '********'" class="mb-2 text-xs text-green-300">✓ Existing credentials</div>
-
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
                         <div>
-                            <label for="sonarr-username" class="block text-sm font-medium text-dark-text mb-1">Username</label>
+                            <label for="sonarr-username" class="block text-sm font-medium text-dark-text mb-1">Username <span class="text-xs text-dark-muted italic">(database)</span></label>
                             <input type="text" id="sonarr-username" x-model="sonarrConfig.Username" class="w-full px-2 py-1.5 text-sm border border-dark-border rounded focus:outline-none focus:ring-1 focus:ring-purple-500 bg-dark-bg text-dark-text" placeholder="Enter username">
                         </div>
                         <div>
-                            <label for="sonarr-password" class="block text-sm font-medium text-dark-text mb-1">Password</label>
+                            <label for="sonarr-password" class="block text-sm font-medium text-dark-text mb-1">Password <span class="text-xs text-dark-muted italic">(database)</span></label>
                             <input type="password" id="sonarr-password" x-model="sonarrConfig.Password" x-ref="sonarrPasswordField" class="w-full px-2 py-1.5 text-sm border border-dark-border rounded focus:outline-none focus:ring-1 focus:ring-purple-500 bg-dark-bg text-dark-text" placeholder="Enter password">
                         </div>
                     </div>
@@ -1180,7 +1172,8 @@
                     this.loadProxySettings().catch(() => {}),
                     this.loadServiceEndpoint().catch(() => {}),
                     this.loadRadarrConfig().catch(() => {}),
-                    this.loadSonarrConfig().catch(() => {})
+                    this.loadSonarrConfig().catch(() => {}),
+                    this.loadRootFolders().catch(() => {})
                 ]);
             },
 
