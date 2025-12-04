@@ -360,6 +360,22 @@ func (sm *ServiceManager) StartService(ctx context.Context, serviceName string) 
 	sm.logAction(svc.ID, "start", "success", fmt.Sprintf("Service started: %s", result.Output))
 	sm.logger.Info("Service started successfully", zap.String("service", serviceName))
 
+	// After starting *arr services, ensure root folders exist in their databases
+	if serviceName == "radarr" || serviceName == "sonarr" {
+		go func() {
+			// Use a background context with timeout for this async operation
+			bgCtx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
+			defer cancel()
+
+			sm.logger.Info("Ensuring root folder configuration", zap.String("service", serviceName))
+			if err := sm.ensureRootFoldersInDB(bgCtx, serviceName); err != nil {
+				sm.logger.Warn("Failed to ensure root folder in DB",
+					zap.String("service", serviceName),
+					zap.Error(err))
+			}
+		}()
+	}
+
 	return nil
 }
 
@@ -981,11 +997,6 @@ func (sm *ServiceManager) GetRadarrConfig(ctx context.Context, serviceName strin
 					} else {
 						sm.logger.Info("Generated credentials saved to both databases")
 					}
-
-					// Ensure default root folder exists
-					if err := sm.ensureRootFoldersInDB(ctx, serviceName); err != nil {
-						sm.logger.Warn("Failed to ensure root folders in Radarr DB", zap.String("service", serviceName), zap.Error(err))
-					}
 				}
 			} else {
 				// User exists in Radarr database - migrate to MediaCheky DB
@@ -1261,18 +1272,26 @@ func (sm *ServiceManager) ensureRootFoldersInDB(ctx context.Context, serviceName
 
 	dbPath := filepath.Join(getHostDataPath(), "services-volumes", serviceName, serviceName+".db")
 
-	// Wait for DB file to exist (with timeout)
-	retries := 30 // 30 seconds max wait
-	for i := 0; i < retries; i++ {
+	// Wait for DB file to exist AND for RootFolders table to be created (with extended timeout)
+	maxRetries := 120 // 2 minutes max wait (120 * 1 second)
+	retryInterval := time.Second
+
+	for attempt := 0; attempt < maxRetries; attempt++ {
 		select {
 		case <-ctx.Done():
 			return ctx.Err()
 		default:
 		}
 
+		// Check if DB file exists
 		if _, err := os.Stat(dbPath); err != nil {
 			if os.IsNotExist(err) {
-				time.Sleep(time.Second)
+				if attempt%10 == 0 {
+					sm.logger.Debug("Waiting for database file to be created",
+						zap.String("service", serviceName),
+						zap.Int("attempt", attempt))
+				}
+				time.Sleep(retryInterval)
 				continue
 			}
 			sm.logger.Warn("Error checking DB file for root folder",
@@ -1281,23 +1300,59 @@ func (sm *ServiceManager) ensureRootFoldersInDB(ctx context.Context, serviceName
 			return nil // Non-fatal
 		}
 
-		// DB file exists, try to insert root folder
+		// DB file exists, try to open and check for RootFolders table
 		db, err := sql.Open("sqlite3", dbPath)
 		if err != nil {
-			sm.logger.Warn("Failed to open service DB for root folder",
-				zap.String("dbPath", dbPath),
-				zap.Error(err))
-			return nil // Non-fatal
+			if attempt%10 == 0 {
+				sm.logger.Debug("Failed to open service DB, retrying",
+					zap.String("service", serviceName),
+					zap.Int("attempt", attempt),
+					zap.Error(err))
+			}
+			time.Sleep(retryInterval)
+			continue
 		}
 
-		// Check if RootFolders table exists and if our path is already there
+		// Check if RootFolders table exists
+		var tableExists int
+		err = db.QueryRow("SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='RootFolders'").Scan(&tableExists)
+		if err != nil {
+			_ = db.Close()
+			sm.logger.Debug("Error checking if RootFolders table exists",
+				zap.String("service", serviceName),
+				zap.Int("attempt", attempt),
+				zap.Error(err))
+			time.Sleep(retryInterval)
+			continue
+		}
+		if tableExists == 0 {
+			_ = db.Close()
+			if attempt%10 == 0 {
+				sm.logger.Debug("Waiting for RootFolders table to be created",
+					zap.String("service", serviceName),
+					zap.Int("attempt", attempt))
+			}
+			time.Sleep(retryInterval)
+			continue
+		}
+
+		sm.logger.Info("✅ RootFolders table found, proceeding with insertion",
+			zap.String("service", serviceName),
+			zap.Int("attempt", attempt))
+
+		// Table exists! Check if our path is already there
 		var count int
 		err = db.QueryRow("SELECT COUNT(*) FROM RootFolders WHERE Path = ?", desiredPath).Scan(&count)
 		if err != nil {
 			_ = db.Close()
-			// Table might not exist yet, wait a bit
-			time.Sleep(500 * time.Millisecond)
-			continue
+			if strings.Contains(err.Error(), "database is locked") || strings.Contains(err.Error(), "busy") {
+				time.Sleep(500 * time.Millisecond)
+				continue
+			}
+			sm.logger.Warn("Failed to query root folders",
+				zap.String("dbPath", dbPath),
+				zap.Error(err))
+			return nil // Non-fatal
 		}
 
 		if count == 0 {
@@ -1306,8 +1361,7 @@ func (sm *ServiceManager) ensureRootFoldersInDB(ctx context.Context, serviceName
 			if err != nil {
 				_ = db.Close()
 				if strings.Contains(err.Error(), "database is locked") || strings.Contains(err.Error(), "busy") {
-					// Retry on lock
-					time.Sleep(250 * time.Millisecond)
+					time.Sleep(500 * time.Millisecond)
 					continue
 				}
 				sm.logger.Warn("Failed to insert root folder",
@@ -1315,7 +1369,7 @@ func (sm *ServiceManager) ensureRootFoldersInDB(ctx context.Context, serviceName
 					zap.Error(err))
 				return nil // Non-fatal
 			}
-			sm.logger.Info("Inserted default root folder for service",
+			sm.logger.Info("✅ Successfully inserted default root folder",
 				zap.String("service", serviceName),
 				zap.String("path", desiredPath))
 		} else {
@@ -1328,8 +1382,10 @@ func (sm *ServiceManager) ensureRootFoldersInDB(ctx context.Context, serviceName
 		return nil
 	}
 
-	sm.logger.Warn("Database not ready to ensure root folder",
-		zap.String("dbPath", dbPath))
+	sm.logger.Warn("Timeout waiting for database to be ready for root folder insertion",
+		zap.String("service", serviceName),
+		zap.String("dbPath", dbPath),
+		zap.Duration("timeout", time.Duration(maxRetries)*retryInterval))
 	return nil
 }
 
@@ -1541,6 +1597,14 @@ func (sm *ServiceManager) updateRadarrCredentials(dbPath, username, password str
 			return fmt.Errorf("failed to insert user: %w", err)
 		}
 		sm.logger.Info("Radarr user created in database", zap.String("username", username))
+
+		// Insert default root folder (same time, same DB)
+		_, err = db.Exec("INSERT OR IGNORE INTO RootFolders (Path) VALUES (?)", "/MEDIACHEKY_LIBRARY/library/movies")
+		if err != nil {
+			sm.logger.Warn("Failed to insert root folder", zap.Error(err))
+		} else {
+			sm.logger.Info("✅ Root folder inserted", zap.String("path", "/MEDIACHEKY_LIBRARY/library/movies"))
+		}
 	} else {
 		// Update existing user
 		_, err = db.Exec(
