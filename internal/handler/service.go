@@ -913,6 +913,71 @@ func (h *ServiceHandler) UpdateSonarrConfig(c *fiber.Ctx) error {
 	})
 }
 
+// GetJellyfinConfig handles GET /api/services/:name/jellyfin-config
+func (h *ServiceHandler) GetJellyfinConfig(c *fiber.Ctx) error {
+	name := c.Params("name")
+
+	if name != "jellyfin" {
+		return c.Status(fiber.StatusBadRequest).JSON(APIResponse{
+			Success: false,
+			Error:   "This endpoint is only available for Jellyfin service",
+		})
+	}
+
+	config, err := h.serviceManager.GetJellyfinConfig(c.Context(), name)
+	if err != nil {
+		h.logger.Error("Failed to get Jellyfin config", "error", err)
+		return c.Status(fiber.StatusInternalServerError).JSON(APIResponse{
+			Success: false,
+			Error:   fmt.Sprintf("Failed to get Jellyfin config: %v", err),
+		})
+	}
+
+	return c.JSON(APIResponse{
+		Success: true,
+		Data:    fiber.Map{"config": config},
+	})
+}
+
+// UpdateJellyfinConfig handles PUT /api/services/:name/jellyfin-config
+func (h *ServiceHandler) UpdateJellyfinConfig(c *fiber.Ctx) error {
+	name := c.Params("name")
+
+	if name != "jellyfin" {
+		return c.Status(fiber.StatusBadRequest).JSON(APIResponse{
+			Success: false,
+			Error:   "This endpoint is only available for Jellyfin service",
+		})
+	}
+
+	var config models.JellyfinConfig
+	if err := c.BodyParser(&config); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(APIResponse{
+			Success: false,
+			Error:   "Invalid request body",
+		})
+	}
+
+	h.logger.Info("Received Jellyfin config update",
+		"name", name,
+		"username", config.Username,
+		"has_api_key", config.ApiKey != "")
+
+	if err := h.serviceManager.UpdateJellyfinConfig(c.Context(), name, config); err != nil {
+		h.logger.Error("Failed to update Jellyfin config", "error", err)
+		return c.Status(fiber.StatusInternalServerError).JSON(APIResponse{
+			Success: false,
+			Error:   fmt.Sprintf("Failed to update Jellyfin config: %v", err),
+		})
+	}
+
+	h.logger.Info("Jellyfin config updated successfully", "name", name)
+	return c.JSON(APIResponse{
+		Success: true,
+		Data:    fiber.Map{"message": "Configuration saved successfully. Jellyfin is restarting to apply changes..."},
+	})
+}
+
 // CheckServiceReady handles GET /api/services/:name/ready
 // Performs a lightweight readiness check for a service. Strategy:
 // 1) For radarr: Try Radarr API health endpoint (fastest, most reliable)

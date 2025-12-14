@@ -122,14 +122,54 @@ func (sm *ServiceManager) EnableService(ctx context.Context, serviceName string)
 		if err.Error() == "record not found" || err.Error() == "failed to get service: record not found" {
 			// Create service with default configuration
 			sm.logger.Info("Service not found, creating with defaults", zap.String("service", serviceName))
-			defaultConfig := map[string]interface{}{
-				"Image":         fmt.Sprintf("linuxserver/%s:latest", serviceName),
-				"ContainerName": serviceName,
-				"Paths": map[string]interface{}{
-					"Config": buildServiceConfigPath(serviceName),
-					"Media":  getMediaLibraryPath(),
-				},
-				"RestartPolicy": "unless-stopped",
+
+			// For Jellyfin, use specific configuration structure
+			var defaultConfig map[string]interface{}
+			if serviceName == "jellyfin" {
+				jellyfinConfig := models.JellyfinConfig{
+					Port:             8096,
+					Image:            "linuxserver/jellyfin:latest",
+					PublicUrl:        "http://localhost:8096",
+					DeviceProcessing: false,
+					ApiKey:           "",
+					Username:         "",
+					Password:         "",
+					Libraries: models.JellyfinLibraries{
+						TV:     "/MEDIACHEKY_LIBRARY/library/tv",
+						Movies: "/MEDIACHEKY_LIBRARY/library/movies",
+					},
+				}
+
+				// Convert JellyfinConfig to map[string]interface{}
+				defaultConfig = map[string]interface{}{
+					"Image":            jellyfinConfig.Image,
+					"ContainerName":    serviceName,
+					"Port":             jellyfinConfig.Port,
+					"PublicUrl":        jellyfinConfig.PublicUrl,
+					"Username":         jellyfinConfig.Username,
+					"Password":         jellyfinConfig.Password,
+					"ApiKey":           jellyfinConfig.ApiKey,
+					"DeviceProcessing": jellyfinConfig.DeviceProcessing,
+					"Libraries": map[string]interface{}{
+						"TV":     jellyfinConfig.Libraries.TV,
+						"Movies": jellyfinConfig.Libraries.Movies,
+					},
+					"Paths": map[string]interface{}{
+						"Config": buildServiceConfigPath(serviceName),
+						"Media":  getMediaLibraryPath(),
+					},
+					"RestartPolicy": "unless-stopped",
+				}
+			} else {
+				defaultConfig = map[string]interface{}{
+					"Image":         fmt.Sprintf("linuxserver/%s:latest", serviceName),
+					"ContainerName": serviceName,
+					"Paths": map[string]interface{}{
+						"Config": buildServiceConfigPath(serviceName),
+						"Media":  getMediaLibraryPath(),
+					},
+					"RestartPolicy": "unless-stopped",
+				}
 			}
 
 			svc = &models.Service{
@@ -218,6 +258,25 @@ func (sm *ServiceManager) EnableService(ctx context.Context, serviceName string)
 
 	sm.logAction(svc.ID, "enable", "success", fmt.Sprintf("Service enabled, compose generated at %s", composePath))
 	sm.logger.Info("Service enabled successfully", zap.String("service", serviceName))
+
+	// Pull the Docker image before starting to avoid timeout during compose up
+	if imageName, ok := svc.Config["Image"].(string); ok && imageName != "" {
+		sm.logger.Info("Pulling Docker image before auto-start",
+			zap.String("service", serviceName),
+			zap.String("image", imageName))
+
+		if err := sm.dockerClient.PullImage(ctx, imageName); err != nil {
+			sm.logger.Warn("Failed to pull image, will try to start anyway",
+				zap.String("service", serviceName),
+				zap.String("image", imageName),
+				zap.Error(err))
+			// Continue anyway - image might already exist locally
+		} else {
+			sm.logger.Info("Image pulled successfully",
+				zap.String("service", serviceName),
+				zap.String("image", imageName))
+		}
+	}
 
 	// Start the service automatically with default values
 	sm.logger.Info("Starting service automatically after enable", zap.String("service", serviceName))
@@ -2385,6 +2444,48 @@ func (sm *ServiceManager) EnsureRootFolderViaAPI(ctx context.Context, serviceNam
 
 	if err := sm.CreateRootFolder(ctx, serviceName, desiredPath); err != nil {
 		return fmt.Errorf("failed to create root folder: %w", err)
+	}
+
+	return nil
+}
+
+// GetJellyfinConfig reads and returns Jellyfin's configuration
+func (sm *ServiceManager) GetJellyfinConfig(ctx context.Context, serviceName string) (models.JellyfinConfig, error) {
+	var config models.JellyfinConfig
+
+	// Return default Jellyfin config with TV and Movies library paths
+	config = models.JellyfinConfig{
+		Port:             8096,
+		Image:            "linuxserver/jellyfin:latest",
+		PublicUrl:        "http://localhost:8096",
+		DeviceProcessing: false,
+		ApiKey:           "",
+		Username:         "",
+		Password:         "",
+		Libraries: models.JellyfinLibraries{
+			TV:     "/MEDIACHEKY_LIBRARY/library/tv",
+			Movies: "/MEDIACHEKY_LIBRARY/library/movies",
+		},
+	}
+
+	return config, nil
+}
+
+// UpdateJellyfinConfig updates Jellyfin's configuration and restarts the service
+func (sm *ServiceManager) UpdateJellyfinConfig(ctx context.Context, serviceName string, config models.JellyfinConfig) error {
+	sm.logger.Info("Updating Jellyfin config",
+		zap.String("service", serviceName),
+		zap.String("username", config.Username),
+		zap.String("public_url", config.PublicUrl),
+		zap.String("tv_library", config.Libraries.TV),
+		zap.String("movies_library", config.Libraries.Movies))
+
+	// Restart the service to apply changes
+	if err := sm.RestartService(ctx, serviceName); err != nil {
+		sm.logger.Error("Failed to restart Jellyfin service",
+			zap.String("service", serviceName),
+			zap.Error(err))
+		return fmt.Errorf("failed to restart service: %w", err)
 	}
 
 	return nil

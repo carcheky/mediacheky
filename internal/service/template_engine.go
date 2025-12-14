@@ -159,9 +159,9 @@ func (te *TemplateEngine) generateComposeOld(serviceName string, config models.S
 		return "", fmt.Errorf("failed to build template data: %w", err)
 	}
 
-	// Validate required fields
+	// Validate required fields AFTER buildTemplateData applies defaults
 	if templateData.Image == "" {
-		return "", fmt.Errorf("image is required but not specified in configuration")
+		return "", fmt.Errorf("image is required but not specified in configuration after applying defaults")
 	}
 
 	// Parse and execute template
@@ -361,6 +361,15 @@ func (te *TemplateEngine) buildTemplateData(config models.ServiceConfig, globalC
 	if containerName, ok := config["ContainerName"].(string); ok {
 		data.ContainerName = containerName
 	}
+	// Fallback: if Image is still empty, infer from ContainerName
+	if data.Image == "" && data.ContainerName != "" {
+		// Default to linuxserver/<container>:latest when missing
+		data.Image = fmt.Sprintf("linuxserver/%s:latest", data.ContainerName)
+		te.logger.Warn("Image missing in config; defaulting based on container name",
+			zap.String("container", data.ContainerName),
+			zap.String("inferred_image", data.Image))
+	}
+
 	if port, ok := config["Port"].(float64); ok {
 		data.Port = int(port)
 	} else if port, ok := config["Port"].(int); ok {

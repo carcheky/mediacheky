@@ -2,19 +2,29 @@ version: '3.8'
 
 services:
   jellyfin:
-    image: linuxserver/jellyfin:latest
-    container_name: jellyfin
+    image: {{ .Image }}
+    container_name: {{ .ContainerName }}
+    labels:
+      - "mediacheky.managed=true"
     environment:
-      - PUID=1000
-      - PGID=1000
-      - TZ=Europe/Madrid
+      - PUID={{ .Global.PUID }}
+      - PGID={{ .Global.PGID }}
+      - TZ={{ .Global.Timezone }}
     volumes:
-      - ${CONFIG_BASE_PATH}/services-volumes/jellyfin:/config
-      - ${MEDIACHEKY_MEDIA_PATH}:/MEDIACHEKY_LIBRARY
-    restart: unless-stopped
+      - {{ .Paths.Config }}:/config
+      - {{ .Global.MediaPath }}:/MEDIACHEKY_LIBRARY
+    {{- if and .HostPort (gt .HostPort 0) }}
+    ports:
+      - "{{ .HostPort }}:8096"
+    {{- end }}
+    extra_hosts:
+      - "jellyfin.docker.internal:127.0.0.1"
+      - "radarr.docker.internal:127.0.0.1"
+      - "sonarr.docker.internal:127.0.0.1"
     networks:
-      - mediacheky_mediacheky-net
+      - {{ .Network }}
+    restart: {{ .RestartPolicy }}
 
 networks:
-  mediacheky_mediacheky-net:
+  {{ .Network }}:
     external: true

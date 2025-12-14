@@ -212,6 +212,8 @@ func setupRoutes(app *fiber.App, h *handler.Handlers) {
 		services.Put("/:name/radarr-config", middleware.ValidateServiceName(), h.Service.UpdateRadarrConfig)
 		services.Get("/:name/sonarr-config", middleware.ValidateServiceName(), h.Service.GetSonarrConfig)
 		services.Put("/:name/sonarr-config", middleware.ValidateServiceName(), h.Service.UpdateSonarrConfig)
+		services.Get("/:name/jellyfin-config", middleware.ValidateServiceName(), h.Service.GetJellyfinConfig)
+		services.Put("/:name/jellyfin-config", middleware.ValidateServiceName(), h.Service.UpdateJellyfinConfig)
 		services.Get("/:name/ready", middleware.ValidateServiceName(), h.Service.CheckServiceReady)
 		services.Get("/:name/rootfolders", middleware.ValidateServiceName(), h.Service.GetRootFolders)
 
