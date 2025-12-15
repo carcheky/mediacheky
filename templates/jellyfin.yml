@@ -8,6 +8,11 @@ services:
       - PUID={{ .Global.PUID }}
       - PGID={{ .Global.PGID }}
       - TZ={{ .Global.Timezone }}
+      {{- if .PublicUrl }}
+      - JELLYFIN_PublishedServerUrl={{ .PublicUrl }}
+      {{- else }}
+      - JELLYFIN_PublishedServerUrl=
+      {{- end }}
     volumes:
       - {{ .Paths.Config }}:/config
       - {{ .Global.MediaPath }}:/MEDIACHEKY_LIBRARY
@@ -16,12 +21,13 @@ services:
       - "{{ .HostPort }}:8096"
     {{- end }}
     extra_hosts:
-      - "jellyfin.docker.internal:127.0.0.1"
       - "radarr.docker.internal:127.0.0.1"
       - "sonarr.docker.internal:127.0.0.1"
       - "bazarr.docker.internal:127.0.0.1"
       - "prowlarr.docker.internal:127.0.0.1"
       - "lidarr.docker.internal:127.0.0.1"
+      - "overseerr.docker.internal:127.0.0.1"
+      - "jellyfin.docker.internal:127.0.0.1"
       - "jellyseerr.docker.internal:127.0.0.1"
     networks:
       - {{ .Network }}

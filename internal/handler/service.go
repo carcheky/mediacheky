@@ -291,7 +291,8 @@ func (h *ServiceHandler) EnableService(c *fiber.Ctx) error {
 	}
 
 	// Use service manager to enable service
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	// Use a long timeout for enable operations (pulling images can take minutes)
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Minute)
 	defer cancel()
 
 	if err := h.serviceManager.EnableService(ctx, name); err != nil {

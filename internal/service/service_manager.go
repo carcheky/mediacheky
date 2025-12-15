@@ -228,7 +228,18 @@ func (sm *ServiceManager) EnableService(ctx context.Context, serviceName string)
 
 	// Ensure other required fields
 	if _, ok := svc.Config["Image"]; !ok {
-		svc.Config["Image"] = fmt.Sprintf("linuxserver/%s:latest", serviceName)
+		if serviceName == "jellyfin" {
+			svc.Config["Image"] = "linuxserver/jellyfin:latest"
+			sm.logger.Info("Set default Jellyfin image", zap.String("service", serviceName))
+			// Also ensure Port is set for Jellyfin
+			if _, ok := svc.Config["Port"]; !ok {
+				svc.Config["Port"] = 8096
+				sm.logger.Info("Set default Jellyfin port", zap.String("service", serviceName))
+			}
+		} else {
+			svc.Config["Image"] = fmt.Sprintf("linuxserver/%s:latest", serviceName)
+			sm.logger.Info("Set default image", zap.String("service", serviceName), zap.String("image", svc.Config["Image"].(string)))
+		}
 	}
 	if _, ok := svc.Config["ContainerName"]; !ok {
 		svc.Config["ContainerName"] = serviceName
@@ -237,10 +248,41 @@ func (sm *ServiceManager) EnableService(ctx context.Context, serviceName string)
 		svc.Config["RestartPolicy"] = "unless-stopped"
 	}
 
+	// For Jellyfin, ensure Port is explicitly set (not just in creation)
+	if serviceName == "jellyfin" {
+		if _, ok := svc.Config["Port"]; !ok {
+			svc.Config["Port"] = 8096
+			sm.logger.Info("Set default Jellyfin port (second check)", zap.String("service", serviceName))
+		}
+	}
+
+	sm.logger.Info("Config before Update call",
+		zap.String("service", serviceName),
+		zap.Any("config", svc.Config))
+
 	// Save updated config
 	if err := sm.serviceRepo.Update(svc); err != nil {
 		sm.logger.Error("Failed to update service config", zap.String("service", serviceName), zap.Error(err))
-		// Continue anyway, we'll try to generate compose with what we have
+		return fmt.Errorf("failed to save service configuration: %w", err)
+	}
+
+	sm.logger.Info("Config after Update call",
+		zap.String("service", serviceName),
+		zap.Any("config", svc.Config))
+
+	// Pull the Docker image FIRST before doing anything else
+	if imageName, ok := svc.Config["Image"].(string); ok && imageName != "" {
+		sm.logger.Info("Pulling Docker image before enabling service",
+			zap.String("service", serviceName),
+			zap.String("image", imageName))
+
+		if err := sm.dockerClient.PullImage(ctx, imageName); err != nil {
+			sm.logAction(svc.ID, "enable", "error", fmt.Sprintf("Failed to pull image: %v", err))
+			return fmt.Errorf("failed to pull docker image: %w", err)
+		}
+		sm.logger.Info("Image pulled successfully",
+			zap.String("service", serviceName),
+			zap.String("image", imageName))
 	}
 
 	// Generate docker compose file
@@ -250,33 +292,13 @@ func (sm *ServiceManager) EnableService(ctx context.Context, serviceName string)
 		return fmt.Errorf("failed to generate compose file: %w", err)
 	}
 
-	// Update service state
+	// Update service state to enabled
 	if err := sm.serviceRepo.SetEnabled(svc.ID, true); err != nil {
 		sm.logAction(svc.ID, "enable", "error", fmt.Sprintf("Failed to update state: %v", err))
 		return fmt.Errorf("failed to enable service: %w", err)
 	}
 
-	sm.logAction(svc.ID, "enable", "success", fmt.Sprintf("Service enabled, compose generated at %s", composePath))
 	sm.logger.Info("Service enabled successfully", zap.String("service", serviceName))
-
-	// Pull the Docker image before starting to avoid timeout during compose up
-	if imageName, ok := svc.Config["Image"].(string); ok && imageName != "" {
-		sm.logger.Info("Pulling Docker image before auto-start",
-			zap.String("service", serviceName),
-			zap.String("image", imageName))
-
-		if err := sm.dockerClient.PullImage(ctx, imageName); err != nil {
-			sm.logger.Warn("Failed to pull image, will try to start anyway",
-				zap.String("service", serviceName),
-				zap.String("image", imageName),
-				zap.Error(err))
-			// Continue anyway - image might already exist locally
-		} else {
-			sm.logger.Info("Image pulled successfully",
-				zap.String("service", serviceName),
-				zap.String("image", imageName))
-		}
-	}
 
 	// Start the service automatically with default values
 	sm.logger.Info("Starting service automatically after enable", zap.String("service", serviceName))
@@ -288,6 +310,7 @@ func (sm *ServiceManager) EnableService(ctx context.Context, serviceName string)
 		sm.logAction(svc.ID, "enable", "warning", fmt.Sprintf("Service enabled but failed to start: %v", err))
 	} else {
 		sm.logger.Info("Service auto-started successfully", zap.String("service", serviceName))
+		sm.logAction(svc.ID, "enable", "success", fmt.Sprintf("Service enabled and started, compose at %s", composePath))
 	}
 
 	// For Radarr/Sonarr: Wait until API is ready with root folders

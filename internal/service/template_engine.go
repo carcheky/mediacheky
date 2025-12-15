@@ -46,11 +46,13 @@ type TemplateData struct {
 	Image         string
 	ContainerName string
 	Port          int
-	HostPort      int // Port to expose on host (0 or empty = no exposure, >0 = expose this port)
+	HostPort      int    // Port to expose on host (0 or empty = no exposure, >0 = expose this port)
+	PublicUrl     string // URL for external access (used by some services like Jellyfin)
 	Paths         map[string]string
 	Umask         string
 	Network       string
 	RestartPolicy string
+	ScriptsPath   string // Absolute path to scripts directory
 
 	// Global configuration
 	Global GlobalConfig
@@ -344,8 +346,9 @@ func (te *TemplateEngine) buildTemplateData(config models.ServiceConfig, globalC
 		zap.Any("config_paths", config["Paths"]))
 
 	data := TemplateData{
-		Global: globalConfig,
-		Custom: make(map[string]interface{}),
+		Global:      globalConfig,
+		Custom:      make(map[string]interface{}),
+		ScriptsPath: filepath.Join(filepath.Dir(filepath.Dir(te.servicesDir)), "scripts"), // Get project root /scripts
 	}
 
 	// Extract standard fields from config
@@ -416,6 +419,11 @@ func (te *TemplateEngine) buildTemplateData(config models.ServiceConfig, globalC
 		data.Umask = umask
 	}
 
+	// Extract PublicUrl (used by Jellyfin and similar services)
+	if publicUrl, ok := config["PublicUrl"].(string); ok {
+		data.PublicUrl = publicUrl
+	}
+
 	// Always auto-detect MediaCheky's network (not configurable by user)
 	detectedNetwork := te.detectSelfNetwork()
 	data.Network = detectedNetwork
@@ -433,7 +441,7 @@ func (te *TemplateEngine) buildTemplateData(config models.ServiceConfig, globalC
 	standardFields := map[string]bool{
 		"Image": true, "ContainerName": true, "Port": true, "Paths": true,
 		"Umask": true, "Network": true, "RestartPolicy": true,
-		"ExposePort": true, "HostPort": true,
+		"ExposePort": true, "HostPort": true, "PublicUrl": true,
 	}
 	for k, v := range config {
 		if !standardFields[k] {
