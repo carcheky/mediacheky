@@ -372,8 +372,8 @@ function servicesPage() {
 
             this.pruning[serviceId] = true;
             try {
-                // Call reset endpoint (does all the work)
-                const response = await fetch(`/api/services/${serviceId}/reset`, {
+                // Call prune endpoint (deletes config, volumes, and disables service)
+                const response = await fetch(`/api/services/${serviceId}/prune`, {
                     method: 'POST'
                 });
 

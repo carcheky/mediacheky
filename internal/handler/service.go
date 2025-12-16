@@ -744,8 +744,48 @@ func (h *ServiceHandler) CheckConfigExists(c *fiber.Ctx) error {
 	})
 }
 
-// ResetService handles POST /api/services/:name/reset
+// PruneService handles POST /api/services/:name/prune
 // Prunes service: docker compose down -v, deletes config directories and disables the service
+func (h *ServiceHandler) PruneService(c *fiber.Ctx) error {
+	name := c.Params("name")
+	if name == "" {
+		return c.Status(fiber.StatusBadRequest).JSON(APIResponse{
+			Success: false,
+			Error:   "Service name is required",
+		})
+	}
+
+	// Check if service manager is available
+	if h.serviceManager == nil {
+		return c.Status(fiber.StatusServiceUnavailable).JSON(APIResponse{
+			Success: false,
+			Error:   "Service manager is not available",
+		})
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 90*time.Second)
+	defer cancel()
+
+	h.logger.Info("Pruning service configuration", "name", name)
+
+	// Use service manager to prune service (deletes config, keeps disabled)
+	if err := h.serviceManager.ResetService(ctx, name); err != nil {
+		h.logger.Error("Failed to prune service", "name", name, "error", err)
+		return c.Status(fiber.StatusInternalServerError).JSON(APIResponse{
+			Success: false,
+			Error:   fmt.Sprintf("Failed to prune service: %v", err),
+		})
+	}
+
+	h.logger.Info("Service prune completed", "name", name)
+	return c.JSON(APIResponse{
+		Success: true,
+		Data:    fiber.Map{"message": "Service pruned and disabled successfully"},
+	})
+}
+
+// ResetService handles POST /api/services/:name/reset
+// Prunes service and then re-enables it (ready for fresh start)
 func (h *ServiceHandler) ResetService(c *fiber.Ctx) error {
 	name := c.Params("name")
 	if name == "" {
@@ -766,21 +806,30 @@ func (h *ServiceHandler) ResetService(c *fiber.Ctx) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 90*time.Second)
 	defer cancel()
 
-	h.logger.Info("Resetting service configuration", "name", name)
+	h.logger.Info("Resetting service (prune + re-enable)", "name", name)
 
-	// Use service manager to reset service (deletes config and recreates container)
+	// First, prune the service (deletes config and disables)
 	if err := h.serviceManager.ResetService(ctx, name); err != nil {
-		h.logger.Error("Failed to reset service", "name", name, "error", err)
+		h.logger.Error("Failed to prune service during reset", "name", name, "error", err)
 		return c.Status(fiber.StatusInternalServerError).JSON(APIResponse{
 			Success: false,
 			Error:   fmt.Sprintf("Failed to reset service: %v", err),
 		})
 	}
 
-	h.logger.Info("Service prune completed", "name", name)
+	// Then, re-enable the service
+	if err := h.serviceManager.EnableService(ctx, name); err != nil {
+		h.logger.Error("Failed to re-enable service after reset", "name", name, "error", err)
+		return c.Status(fiber.StatusInternalServerError).JSON(APIResponse{
+			Success: false,
+			Error:   fmt.Sprintf("Service pruned but failed to re-enable: %v", err),
+		})
+	}
+
+	h.logger.Info("Service reset completed (pruned and re-enabled)", "name", name)
 	return c.JSON(APIResponse{
 		Success: true,
-		Data:    fiber.Map{"message": "Service pruned and disabled successfully"},
+		Data:    fiber.Map{"message": "Service reset successfully. Fresh start with new configuration."},
 	})
 }
 

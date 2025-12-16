@@ -1711,11 +1711,11 @@
 
                 this.pruning = true;
                 try {
-                    // Call reset endpoint which will:
+                    // Call prune endpoint which will:
                     // 1. Run docker compose down -v
                     // 2. Delete services/radarr folder
                     // 3. Delete services-volumes/radarr folder
-                    const response = await fetch(`/api/services/${this.serviceName}/reset`, {
+                    const response = await fetch(`/api/services/${this.serviceName}/prune`, {
                         method: 'POST'
                     });
 

@@ -207,6 +207,7 @@ func setupRoutes(app *fiber.App, h *handler.Handlers) {
 		services.Put("/:name/subdomain", middleware.ValidateServiceName(), h.Proxy.UpdateServiceSubdomain)
 		services.Get("/:name/endpoint", middleware.ValidateServiceName(), h.Proxy.GetServiceEndpoint)
 		services.Get("/:name/config-exists", middleware.ValidateServiceName(), h.Service.CheckConfigExists)
+		services.Post("/:name/prune", middleware.ValidateServiceName(), h.Service.PruneService)
 		services.Post("/:name/reset", middleware.ValidateServiceName(), h.Service.ResetService)
 		services.Get("/:name/radarr-config", middleware.ValidateServiceName(), h.Service.GetRadarrConfig)
 		services.Put("/:name/radarr-config", middleware.ValidateServiceName(), h.Service.UpdateRadarrConfig)
