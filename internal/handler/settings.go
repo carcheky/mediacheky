@@ -55,7 +55,7 @@ func (h *SettingsHandler) Get(c *fiber.Ctx) error {
 	globalConfig["puid"] = 1000
 	globalConfig["pgid"] = 1000
 	globalConfig["timezone"] = "UTC"
-	globalConfig["language"] = "en"
+	globalConfig["language"] = "es"
 	globalConfig["media_path"] = "./volumes/library"
 	globalConfig["config_path"] = "./volumes/mediacheky-data/services-volumes"
 
