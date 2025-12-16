@@ -104,6 +104,21 @@
                             </path>
                         </svg>
                     </button>
+                    <button x-show="configPathExists" @click="resetConfig()" :disabled="resetting"
+                        :title="window.i18n.t('config.button.reset')"
+                        class="p-2 bg-red-600 text-white rounded hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 focus:ring-offset-dark-bg">
+                        <svg x-show="!resetting" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15">
+                            </path>
+                        </svg>
+                        <svg x-show="resetting" class="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor"
+                                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
+                            </path>
+                        </svg>
+                    </button>
                     <template x-if="enabled">
                         <button @click="applyConfig()" :disabled="applying"
                             :title="window.i18n.t('config.button.apply_changes')"
@@ -1137,6 +1152,7 @@
             savingAppConfig: false,
             applying: false,
             pruning: false,
+            resetting: false,
             toggling: false,
             configPathExists: false,
             actionInProgress: false,
@@ -1734,6 +1750,36 @@
                     this.showMessage('Error: ' + error.message, 'error');
                 } finally {
                     this.pruning = false;
+                }
+            },
+
+            async resetConfig() {
+                // REQUIRES confirmation before executing
+                if (!confirm('⚠️ WARNING: This will:\n\n1. Stop the service (docker compose down -v)\n2. Remove all volumes\n3. Delete service configuration folders\n4. Re-enable the service (fresh start)\n\nThis action CANNOT be undone.\n\nAre you sure you want to continue?')) {
+                    return;
+                }
+
+                this.resetting = true;
+                try {
+                    const response = await fetch(`/api/services/${this.serviceName}/reset`, {
+                        method: 'POST'
+                    });
+
+                    if (response.ok) {
+                        this.enabled = true; // Service is re-enabled
+                        this.configPathExists = true; // Config will be recreated
+                        this.showMessage('Service reset successfully! Ready for fresh configuration.', 'success');
+                        // Wait for reset to complete, then reload all data
+                        await new Promise(resolve => setTimeout(resolve, 2000));
+                        await this.reloadAllData();
+                    } else {
+                        const data = await response.json();
+                        this.showMessage(data.error || 'Failed to reset service', 'error');
+                    }
+                } catch (error) {
+                    this.showMessage('Error: ' + error.message, 'error');
+                } finally {
+                    this.resetting = false;
                 }
             },
 
