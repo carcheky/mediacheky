@@ -523,7 +523,7 @@ func (te *TemplateEngine) writeComposeFile(serviceName, content string) (string,
 		}
 	}
 
-	composePath := filepath.Join(serviceDir, "docker compose.yml")
+	composePath := filepath.Join(serviceDir, "docker-compose.yml")
 
 	// Backup existing file if it exists
 	if _, err := os.Stat(composePath); err == nil {
@@ -576,10 +576,10 @@ func (te *TemplateEngine) backupComposeFile(composePath string) error {
 	return nil
 }
 
-// GetComposePath returns the path to a service's docker compose.yml file
+// GetComposePath returns the path to a service's docker-compose.yml file
 func (te *TemplateEngine) GetComposePath(serviceName string) string {
 	// Prefer dynamically generated compose if it exists
-	dynamicPath := filepath.Join(te.servicesDir, serviceName, "docker compose.yml")
+	dynamicPath := filepath.Join(te.servicesDir, serviceName, "docker-compose.yml")
 	if _, err := os.Stat(dynamicPath); err == nil {
 		abs, err2 := filepath.Abs(dynamicPath)
 		if err2 == nil {

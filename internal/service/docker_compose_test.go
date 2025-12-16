@@ -52,7 +52,7 @@ services:
     ports:
       - "7878:7878"
 `,
-			filename:    "docker compose.yml",
+			filename:    "docker-compose.yml",
 			expectError: false,
 		},
 		{
@@ -215,7 +215,7 @@ func TestContextHandling(t *testing.T) {
 
 	// Create a temporary compose file
 	tmpDir := t.TempDir()
-	composePath := filepath.Join(tmpDir, "docker compose.yml")
+	composePath := filepath.Join(tmpDir, "docker-compose.yml")
 	content := `version: '3.8'
 services:
   test:
@@ -294,7 +294,7 @@ func TestServiceNameValidation(t *testing.T) {
 	dcc := NewDockerComposeClient(logger)
 	ctx := context.Background()
 	tmpDir := t.TempDir()
-	composePath := filepath.Join(tmpDir, "docker compose.yml")
+	composePath := filepath.Join(tmpDir, "docker-compose.yml")
 
 	// Create a valid compose file
 	content := `version: '3.8'
