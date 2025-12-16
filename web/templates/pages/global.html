@@ -152,7 +152,7 @@
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
                 </svg>
-                <span x-text="proxyEnabled ? 'Enabled' : 'Disabled'"></span>
+                <span x-text="proxyEnabled ? window.i18n.t('settings.proxy.enabled') : window.i18n.t('settings.proxy.disabled')"></span>
             </button>
         </div>
 
@@ -162,7 +162,7 @@
                 Configured Domains
             </label>
             <div x-show="domains.length === 0" class="text-sm text-dark-muted italic">
-                No domains configured. Add a domain to enable proxy routing.
+                <span x-text="window.i18n.t('settings.proxy.no_domains')"></span>
             </div>
             <template x-for="domain in domains" :key="domain.id">
                 <div class="flex items-center justify-between p-3 bg-dark-bg rounded-lg border border-dark-border">
@@ -361,14 +361,14 @@
                     });
 
                     if (response.ok) {
-                        this.showToast('Global configuration saved successfully!', 'success');
+                        this.showToast(window.i18n.t('global.saved_success'), 'success');
                         await this.loadAffectedServices();
                     } else {
                         const data = await response.json();
-                        this.showToast(data.error || 'Failed to save configuration', 'error');
+                        this.showToast(data.error || window.i18n.t('global.save_failed'), 'error');
                     }
                 } catch (error) {
-                    this.showToast('Error: ' + error.message, 'error');
+                    this.showToast(window.i18n.t('global.save_error').replace('{error}', error.message), 'error');
                 } finally {
                     this.saving = false;
                 }
@@ -400,13 +400,14 @@
                     });
 
                     if (response.ok) {
-                        this.showToast(`Proxy ${this.proxyEnabled ? 'enabled' : 'disabled'} successfully!`, 'success');
+                        const stateKey = this.proxyEnabled ? 'global.proxy.activated' : 'global.proxy.deactivated';
+                        this.showToast(window.i18n.t(stateKey), 'success');
                     } else {
                         const data = await response.json();
-                        this.showToast(data.error || 'Failed to update proxy config', 'error');
+                        this.showToast(data.error || window.i18n.t('global.proxy.update_failed'), 'error');
                     }
                 } catch (error) {
-                    this.showToast('Error: ' + error.message, 'error');
+                    this.showToast(window.i18n.t('global.save_error').replace('{error}', error.message), 'error');
                 }
             },
 
@@ -426,7 +427,7 @@
 
             async addDomain() {
                 if (!this.newDomain.trim()) {
-                    this.showToast('Please enter a domain name', 'error');
+                    this.showToast(window.i18n.t('global.domain.enter_name'), 'error');
                     return;
                 }
 
@@ -441,7 +442,7 @@
                     });
 
                     if (response.ok) {
-                        this.showToast('Domain added successfully!', 'success');
+                        this.showToast(window.i18n.t('global.domain.added'), 'success');
                         this.newDomain = '';
                         this.newDomainPrimary = false;
                         await this.loadDomains();
@@ -455,7 +456,7 @@
             },
 
             async deleteDomain(name) {
-                if (!confirm(`Are you sure you want to delete domain "${name}"?`)) {
+                if (!confirm(window.i18n.t('global.domain.delete_confirm').replace('{name}', name))) {
                     return;
                 }
 
@@ -465,11 +466,11 @@
                     });
 
                     if (response.ok) {
-                        this.showToast('Domain deleted successfully!', 'success');
+                        this.showToast(window.i18n.t('global.domain.deleted'), 'success');
                         await this.loadDomains();
                     } else {
                         const data = await response.json();
-                        this.showToast(data.error || 'Failed to delete domain', 'error');
+                        this.showToast(data.error || window.i18n.t('global.domain.delete_failed').replace('{error}', 'Unknown'), 'error');
                     }
                 } catch (error) {
                     this.showToast('Error: ' + error.message, 'error');

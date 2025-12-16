@@ -270,7 +270,7 @@ function servicesPage() {
         async reload() { 
             await this.loadServiceStatuses(); 
             await this.checkConfigPaths();
-            this.showMessage('Services reloaded', 'success'); 
+            this.showMessage(window.i18n.t('services.reloaded'), 'success'); 
         },
         async loadServiceStatuses() {
             try {
@@ -322,7 +322,7 @@ function servicesPage() {
             try {
                 if (enabled) {
                     // Disable service
-                    if (!confirm('Disabling will stop and remove the container. Continue?')) {
+                    if (!confirm(window.i18n.t('services.disable.confirm').replace('{service}', serviceId))) {
                         this.toggling[serviceId] = false;
                         return;
                     }
