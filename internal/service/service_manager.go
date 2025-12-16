@@ -576,7 +576,7 @@ func (sm *ServiceManager) ResetService(ctx context.Context, serviceName string) 
 		return fmt.Errorf("failed to get service: %w", err)
 	}
 
-	// Get compose file path
+	// Get compose file path - only use it if it's a generated docker-compose.yml, not a template
 	composePath := sm.templateEngine.GetComposePath(serviceName)
 
 	// Load global config
@@ -586,17 +586,25 @@ func (sm *ServiceManager) ResetService(ctx context.Context, serviceName string) 
 		return fmt.Errorf("failed to load global config: %w", err)
 	}
 
-	// Stop the service and remove volumes with docker compose down -v
-	sm.logger.Info("Stopping service and removing volumes (docker compose down -v)", zap.String("service", serviceName))
-	downResult, downErr := sm.dockerCompose.ComposeDownWithVolumes(ctx, composePath, globalConfig)
-	if downErr != nil {
-		sm.logger.Warn("Failed to stop service with docker compose down -v, continuing anyway",
+	// Only run docker compose down if we have a generated compose file (not a template)
+	// Templates end with .yml and contain Go template syntax, generated files are named docker-compose.yml
+	if strings.HasSuffix(composePath, "docker-compose.yml") {
+		// Stop the service and remove volumes with docker compose down -v
+		sm.logger.Info("Stopping service and removing volumes (docker compose down -v)", zap.String("service", serviceName))
+		downResult, downErr := sm.dockerCompose.ComposeDownWithVolumes(ctx, composePath, globalConfig)
+		if downErr != nil {
+			sm.logger.Warn("Failed to stop service with docker compose down -v, continuing anyway",
+				zap.String("service", serviceName),
+				zap.Error(downErr))
+		} else if !downResult.Success {
+			sm.logger.Warn("docker compose down -v reported error, continuing anyway",
+				zap.String("service", serviceName),
+				zap.String("error", downResult.Error))
+		}
+	} else {
+		sm.logger.Info("No generated compose file found, skipping docker compose down",
 			zap.String("service", serviceName),
-			zap.Error(downErr))
-	} else if !downResult.Success {
-		sm.logger.Warn("docker compose down -v reported error, continuing anyway",
-			zap.String("service", serviceName),
-			zap.String("error", downResult.Error))
+			zap.String("path", composePath))
 	}
 
 	// Delete both directories: services/radarr and services-volumes/radarr
