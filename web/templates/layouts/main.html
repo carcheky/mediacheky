@@ -359,7 +359,7 @@
         <div class="max-w-7xl mx-auto py-4 px-4 sm:px-6 lg:px-8">
             <div class="flex flex-col sm:flex-row justify-between items-center gap-2">
                 <p class="text-sm text-dark-muted">
-                    MediaCheky v{{.Version}} - Centralized control panel for *arr services
+                    MediaCheky v{{.Version}} - Panel de control centralizado para servicios *arr
                 </p>
                 <div class="flex items-center gap-4 text-sm text-dark-muted">
                     <a href="https://github.com/carcheky/mediacheky" target="_blank" rel="noopener noreferrer" 
@@ -378,14 +378,14 @@ function servicesMenu() {
     return {
         open: false,
         allServices: [
-            { id: 'jellyfin',   label: 'Jellyfin',   icon: '🍿', description: 'Media server for streaming movies, TV shows, and music' },
-            { id: 'radarr',     label: 'Radarr',     icon: '🎬', description: 'Movie collection manager for Usenet and BitTorrent' },
-            { id: 'sonarr',     label: 'Sonarr',     icon: '📺', description: 'TV series collection manager for Usenet and BitTorrent' },
-            { id: 'prowlarr',   label: 'Prowlarr',   icon: '🔍', description: 'Indexer manager/proxy for Radarr, Sonarr, and other services' },
-            { id: 'bazarr',     label: 'Bazarr',     icon: '🗣️', description: 'Subtitle management companion for Radarr and Sonarr' },
-            { id: 'jellyseerr', label: 'Jellyseerr', icon: '🎫', description: 'Media request management for Jellyfin' },
-            { id: 'jellystat',  label: 'Jellystat',  icon: '📊', description: 'Statistics and analytics for Jellyfin' },
-            { id: 'qbittorrent',label: 'qBittorrent',icon: '⬇️', description: 'BitTorrent client for downloading media' }
+            { id: 'jellyfin',   label: 'Jellyfin',   icon: '🍿', description: 'Servidor multimedia para reproducir películas, series y música' },
+            { id: 'radarr',     label: 'Radarr',     icon: '🎬', description: 'Gestor de colecciones de películas para Usenet y BitTorrent' },
+            { id: 'sonarr',     label: 'Sonarr',     icon: '📺', description: 'Gestor de series de TV para Usenet y BitTorrent' },
+            { id: 'prowlarr',   label: 'Prowlarr',   icon: '🔍', description: 'Gestor de indexadores/proxy para Radarr, Sonarr y otros servicios' },
+            { id: 'bazarr',     label: 'Bazarr',     icon: '🗣️', description: 'Gestor de subtítulos para Radarr y Sonarr' },
+            { id: 'jellyseerr', label: 'Jellyseerr', icon: '🎫', description: 'Gestor de solicitudes multimedia para Jellyfin' },
+            { id: 'jellystat',  label: 'Jellystat',  icon: '📊', description: 'Estadísticas y análisis para Jellyfin' },
+            { id: 'qbittorrent',label: 'qBittorrent',icon: '⬇️', description: 'Cliente BitTorrent para descargar medios' }
         ],
         serviceStatuses: {},
         async init() {
@@ -787,8 +787,8 @@ window.i18n = (function() {
         },
         
     };
-    let lang = 'en';
-    function t(key) { return (dict[lang] && dict[lang][key]) || key; }
+    let lang = 'es';
+    function t(key) { return (dict[lang] && dict[lang][key]) || (dict['en'] && dict['en'][key]) || key; }
     async function setLang(l) { lang = l || 'en';
         try {
             await fetch('/api/config', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ global: { language: lang } }) });
