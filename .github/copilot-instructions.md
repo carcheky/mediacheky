@@ -2,43 +2,142 @@
 
 > **MediaCheky** - Centralized control panel for *arr services
 
-**Last Updated**: December 4, 2025  
+**Last Updated**: December 16, 2025  
 **Project Phase**: Active Development
 
 ---
 
-## 📋 Table of Contents
+## 🚨 CRITICAL RULES - VIOLATION = CRITICAL FAILURE 🚨
 
-- [Critical Rules](#-critical-rules---never-violate-)
-- [Quick Reference](#-quick-reference)
-- [Documentation Index](#-documentation-index)
-- [Workflow](#-workflow)
-- [When User Contradicts Documentation](#-when-user-contradicts-documentation)
+### ❌❌❌ ABSOLUTELY FORBIDDEN - NEVER EVER DO ❌❌❌
+
+1. **NEVER restart/stop/start Docker containers manually**
+   - ❌ NO: `docker compose restart`
+   - ❌ NO: `docker compose stop`
+   - ❌ NO: `docker compose up`
+   - ❌ NO: `make stop`, `make dev`, `make restart`
+   - ✅ WHY: Watch mode auto-reloads. Manual restarts break development flow.
+
+2. **NEVER commit code**
+   - ❌ NO: `git commit`
+   - ❌ NO: `git add`
+   - ✅ WHY: User handles commits manually.
+
+3. **NEVER use languages other than ENGLISH in code**
+   - ❌ NO: Spanish comments or commit messages
+   - ✅ ONLY: English for code, comments, commits
 
 ---
 
-## ⛔️ CRITICAL RULES - NEVER VIOLATE ⛔️
+## ✅✅✅ MANDATORY AFTER EVERY CODE EDIT ✅✅✅
 
-### 🚫 NEVER DO:
-- make a commit
-- Use another langage than ENGLISH for code comments and commit messages
-- Potato omelette without onion
+**THIS IS THE COMPLETE WORKFLOW - FOLLOW IT EXACTLY:**
 
-### ✅ ALWAYS DO:
-- **READ relevant documentation BEFORE making changes** - Check if topic is already documented
-- Run `make check-and-fix` after ANY code changes
-- Test UI changes with MCP Playwright (use `http://localhost`, NOT port 7369)
-- Write commits in ENGLISH using Conventional Commits
-- **Update documentation immediately** when changing behavior/features
-- Ask user if their request contradicts documentation
+```bash
+# Step 1: Edit code files
+# → Changes auto-saved
 
-**WHY**: User is running `make dev` with watch mode. Code changes auto-reload.
+# Step 2: IMMEDIATELY run validation (REQUIRED)
+make check-and-fix
 
-**ALLOWED OPERATIONS**:
-- Read logs: `cat`, `tail`, `grep`
-- Execute inside containers: `docker compose exec mediacheky <command>`
-- Make code changes (they auto-reload)
+# Step 3: IMMEDIATELY run Codacy analysis (REQUIRED)
+# Run codacy_cli_analyze with:
+#   - rootPath: /home/user/projects/mediacheky
+#   - file: path/to/edited/file.go
+#   - tool: (leave empty)
+
+# Step 4: WAIT - Watch mode will auto-reload (5-10 seconds)
+# → DO NOT manually restart anything
+# → DO NOT check if it worked yet
+# → TRUST the watch mode
+
+# Step 5: ONLY AFTER waiting, verify via API or logs:
+# → curl http://localhost/api/...
+# → tail logs/mediacheky-dev.log
+```
+
+**FAILURE TO FOLLOW THIS WORKFLOW = CRITICAL ERROR**
+
+---
+
+## 🔒 ENVIRONMENT CONTEXT - ALWAYS REMEMBER
+
+- **Watch Mode**: Air auto-reloads on file changes (5-10s delay)
+- **Port**: Access `http://localhost` (port 80), NOT `localhost:7369`
+- **Database**: SQLite at `volumes/data/mediacheky.db`
+- **Dev Container**: `mediacheky-dev` (DO NOT TOUCH IT)
+
+---
+
+## 📚 Documentation Index
+
+**Read these documents BEFORE making changes:**
+
+### UI & Frontend
+- **[UI Standards](../docs/UI_STANDARDS.md)** - Toast notifications, page structure, data persistence
+- **[UI Implementation](../docs/UI_IMPLEMENTATION.md)** - Alpine.js components, routes, styling
+
+### Architecture & Planning
+- **[Project Plan](../docs/PROJECT_PLAN.md)** - Complete development roadmap, architecture, interfaces
+- **[API Documentation](../docs/API.md)** - REST API endpoints and specifications
+
+### Code Quality
+- **[Codacy Rules](instructions/codacy.instructions.md)** - Automatic code analysis rules
+
+### General Guidelines
+- **[AGENTS.md](../AGENTS.md)** - Additional guidelines for AI agents
+
+---
+
+## 🔄 WORKFLOW DETAILS
+
+### 1. Making Code Changes
+
+```bash
+# BEFORE editing:
+# 1. Read relevant documentation
+# 2. Check for contradictions with standards
+
+# DURING editing:
+# → Edit code files
+# → Save changes (auto-saved)
+
+# AFTER editing (MANDATORY):
+make check-and-fix
+# Run codacy_cli_analyze for edited file
+
+# IF behavior changed:
+# → Update documentation immediately
+```
+
+### 2. Testing Changes
+
+```bash
+# NEVER manually restart containers
+# ALWAYS wait for watch mode to reload (5-10s)
+
+# Then verify via:
+# → API calls: curl http://localhost/api/...
+# → Logs: tail logs/mediacheky-dev.log
+# → Browser: http://localhost (NOT port 7369)
+```
+
+### 3. WHAT YOU CAN DO
+
+✅ **ALLOWED**:
+- Read logs: `cat`, `tail`, `grep` on log files
+- Execute inside running containers: `docker compose exec mediacheky <command>`
+- Edit code files (they auto-reload via watch mode)
 - Run validation: `make check-and-fix`
+- Run Codacy analysis: `codacy_cli_analyze`
+- Query APIs: `curl http://localhost/api/...`
+
+❌ **FORBIDDEN**:
+- Restart containers
+- Stop/start containers  
+- Run `make dev`, `make stop`, etc.
+- Commit code
+- Use Spanish in code
 
 ---
 
@@ -117,6 +216,7 @@ fix(ui): correct toast notification positioning
 docs(readme): update installation guide
 ```
 
+
 ---
 
 ## ⚠️ When User Contradicts Documentation
@@ -139,11 +239,17 @@ docs(readme): update installation guide
 
 3. **DO NOT** make assumptions or proceed without clarification
 
-**Examples of contradictions:**
-- User asks to use inline messages instead of toast notifications
-- User asks to create `/global` route (should be in Settings tab)
-- User asks to expose ports by default (should be optional)
-- User asks to use Spanish in commit messages (must be English)
+---
+
+## 📌 Key Standards
+
+- **Toast notifications**: Floating top-right, auto-dismiss (5s success, 8s error)
+- **URLs**: `/services/:name` (NOT `/services/:name/config`)
+- **Database**: `mediacheky.db`, prefix `MEDIACHEKY_`
+- **Network**: `mediacheky-net` (always connected)
+- **Ports**: Not exposed by default (optional checkbox)
+
+**Full details**: [UI_STANDARDS.md](../docs/UI_STANDARDS.md)
 
 ---
 
@@ -170,16 +276,4 @@ docs(readme): update installation guide
 
 ---
 
-## 📌 Key Standards (See Full Docs)
-
-- **Toast notifications**: Floating top-right, auto-dismiss (5s success, 8s error)
-- **URLs**: `/services/:name` (NOT `/services/:name/config`)
-- **Database**: `mediacheky.db`, prefix `MEDIACHEKY_`
-- **Network**: `mediacheky-net` (always connected)
-- **Ports**: Not exposed by default (optional checkbox)
-
-**Full details**: [UI_STANDARDS.md](../docs/UI_STANDARDS.md)
-
----
-
-**Remember**: When in doubt, consult the documentation index above. Always ask user if their request contradicts documented standards.
+**REMEMBER**: Read documentation BEFORE changes. Follow workflow EXACTLY. NEVER restart containers.
