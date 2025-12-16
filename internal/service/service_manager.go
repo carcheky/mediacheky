@@ -442,7 +442,14 @@ func (sm *ServiceManager) StartService(ctx context.Context, serviceName string) 
 	}
 
 	// Execute docker compose up with config variables
-	result, err := sm.dockerCompose.ComposeUp(ctx, composePath, globalConfig)
+	// For Jellyfin, use force recreate and remove orphans to avoid stale state
+	var result *ComposeResult
+	var err error
+	if serviceName == "jellyfin" {
+		result, err = sm.dockerCompose.ComposeUpForceRecreate(ctx, composePath, globalConfig)
+	} else {
+		result, err = sm.dockerCompose.ComposeUp(ctx, composePath, globalConfig)
+	}
 	if err != nil {
 		sm.logAction(svc.ID, "start", "error", fmt.Sprintf("Failed to start: %v", err))
 		return fmt.Errorf("failed to start service: %w", err)
@@ -587,16 +594,15 @@ func (sm *ServiceManager) ResetService(ctx context.Context, serviceName string) 
 	// Get compose file path - only use it if it's a generated docker-compose.yml, not a template
 	composePath := sm.templateEngine.GetComposePath(serviceName)
 
-	// Load global config
+	// Load global config (best-effort: continue even if it fails)
 	globalConfig, err := sm.templateEngine.LoadGlobalConfigPublic()
 	if err != nil {
-		sm.logAction(svc.ID, "reset", "error", fmt.Sprintf("Failed to load global config: %v", err))
-		return fmt.Errorf("failed to load global config: %w", err)
+		sm.logger.Warn("Failed to load global config during reset, continuing without compose down", zap.String("service", serviceName), zap.Error(err))
 	}
 
 	// Only run docker compose down if we have a generated compose file (not a template)
 	// Templates end with .yml and contain Go template syntax, generated files are named docker-compose.yml
-	if strings.HasSuffix(composePath, "docker-compose.yml") {
+	if strings.HasSuffix(composePath, "docker-compose.yml") && globalConfig != nil {
 		// Stop the service and remove volumes with docker compose down -v
 		sm.logger.Info("Stopping service and removing volumes (docker compose down -v)", zap.String("service", serviceName))
 		downResult, downErr := sm.dockerCompose.ComposeDownWithVolumes(ctx, composePath, globalConfig)
@@ -2022,60 +2028,28 @@ func (sm *ServiceManager) initializeSonarrConfig(ctx context.Context, serviceNam
 	return nil
 }
 
-// initializeJellyfinConfig creates necessary directories for Jellyfin and copies default config files
+// initializeJellyfinConfig creates necessary directories for Jellyfin
+// Note: We do NOT copy any config files because Jellyfin generates its own on first run.
+// Copying XML files can cause SQLite migration errors and conflicts with Jellyfin's initialization.
 func (sm *ServiceManager) initializeJellyfinConfig(ctx context.Context, serviceName string) error {
 	configDir := filepath.Join("/app/data/services-volumes", serviceName)
 
-	// Ensure config directory exists
-	if err := os.MkdirAll(configDir, 0755); err != nil {
-		return fmt.Errorf("failed to create config directory: %w", err)
+	// Ensure all necessary subdirectories exist
+	// Jellyfin expects these directories to be present
+	subdirs := []string{
+		filepath.Join(configDir),          // main config dir
+		filepath.Join(configDir, "data"),  // for sqlite database
+		filepath.Join(configDir, "cache"), // for cache files
+		filepath.Join(configDir, "log"),   // for log files
 	}
 
-	// Check if this is a first run (system.xml doesn't exist)
-	systemXMLPath := filepath.Join(configDir, "system.xml")
-	if _, err := os.Stat(systemXMLPath); err == nil {
-		sm.logger.Debug("Jellyfin config already exists, skipping defaults copy", zap.String("path", configDir))
-		return nil
-	}
-
-	// Copy default config files from templates/jellyfin.defaults/
-	defaultsDir := filepath.Join("/app/templates", "jellyfin.defaults")
-	if _, err := os.Stat(defaultsDir); os.IsNotExist(err) {
-		sm.logger.Debug("Jellyfin defaults directory not found, skipping", zap.String("path", defaultsDir))
-		return nil
-	}
-
-	// Read all files from defaults directory
-	entries, err := os.ReadDir(defaultsDir)
-	if err != nil {
-		return fmt.Errorf("failed to read defaults directory: %w", err)
-	}
-
-	for _, entry := range entries {
-		if entry.IsDir() {
-			continue
+	for _, dir := range subdirs {
+		if err := os.MkdirAll(dir, 0755); err != nil {
+			return fmt.Errorf("failed to create directory %s: %w", dir, err)
 		}
-
-		srcPath := filepath.Join(defaultsDir, entry.Name())
-		dstPath := filepath.Join(configDir, entry.Name())
-
-		// Read source file
-		data, err := os.ReadFile(srcPath)
-		if err != nil {
-			sm.logger.Warn("Failed to read default file", zap.String("file", entry.Name()), zap.Error(err))
-			continue
-		}
-
-		// Write to destination
-		if err := os.WriteFile(dstPath, data, 0644); err != nil {
-			sm.logger.Warn("Failed to write default file", zap.String("file", entry.Name()), zap.Error(err))
-			continue
-		}
-
-		sm.logger.Debug("Copied Jellyfin default file", zap.String("file", entry.Name()))
 	}
 
-	sm.logger.Info("Jellyfin config initialized with default values", zap.String("path", configDir))
+	sm.logger.Info("Jellyfin directories initialized (Jellyfin will generate its own config on first run)", zap.String("path", configDir))
 	return nil
 }
 

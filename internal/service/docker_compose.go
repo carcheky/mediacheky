@@ -142,8 +142,8 @@ func (dcc *DockerComposeClient) ComposeUpRecreate(ctx context.Context, composePa
 			zap.String("container", serviceName))
 	}
 
-	// Build command with --force-recreate flag
-	cmd := exec.CommandContext(ctx, "docker", "compose", "-f", cleanPath, "up", "-d", "--force-recreate")
+	// Build command with --force-recreate and --remove-orphans flags
+	cmd := exec.CommandContext(ctx, "docker", "compose", "-f", cleanPath, "up", "-d", "--force-recreate", "--remove-orphans")
 	cmd.Dir = composeDir // Run from the directory containing the compose file	// Set environment variables from config
 	cmd.Env = os.Environ()
 	for key, value := range configMap {
