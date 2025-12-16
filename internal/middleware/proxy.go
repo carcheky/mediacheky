@@ -127,14 +127,9 @@ func ReverseProxy(repos *repository.Repositories, log *logger.Logger) fiber.Hand
 				}
 
 				// Build container URL using actual container hostname
-				// For Docker networks, use the service/container name as hostname
+				// For Docker networks, use the service name as hostname
 				// Container names are the most reliable way to reach services on Docker networks
 				containerHost := service.Name
-				if service.ContainerName != "" {
-					// Use configured container name if available
-					containerHost = service.ContainerName
-				}
-
 				targetService = &struct {
 					Name          string
 					URL           string

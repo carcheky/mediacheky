@@ -8,14 +8,18 @@ services:
       - PUID={{ .Global.PUID }}
       - PGID={{ .Global.PGID }}
       - TZ={{ .Global.Timezone }}
-      {{- if .PublicUrl }}
-      - JELLYFIN_PublishedServerUrl={{ .PublicUrl }}
-      {{- else }}
-      - JELLYFIN_PublishedServerUrl=
-      {{- end }}
+      - LANG=es_ES.UTF-8
+      - LC_ALL=es_ES.UTF-8
     volumes:
       - {{ .Paths.Config }}:/config
       - {{ .Global.MediaPath }}:/MEDIACHEKY_LIBRARY
+      - {{ .DefaultsPath }}:/defaults:ro
+      {{- if .EntrypointPath }}
+      - {{ .EntrypointPath }}:/jellyfin-entrypoint.sh:ro
+      {{- end }}
+    {{- if .EntrypointPath }}
+    entrypoint: /jellyfin-entrypoint.sh
+    {{- end }}
     {{- if and .HostPort (gt .HostPort 0) }}
     ports:
       - "{{ .HostPort }}:8096"

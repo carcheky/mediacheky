@@ -218,7 +218,7 @@ func TestBuildTemplateData(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			result, err := te.buildTemplateData(tt.config, globalConfig)
+			result, err := te.buildTemplateData(tt.name, tt.config, globalConfig)
 
 			// Override Network in expected result because buildTemplateData auto-detects it
 			// and we can't easily mock the docker client in this unit test without more refactoring
@@ -228,6 +228,11 @@ func TestBuildTemplateData(t *testing.T) {
 			// Wait, buildTemplateData overwrites Network:
 			// data.Network = detectedNetwork
 			tt.expected.Network = result.Network
+
+			// Override paths that are auto-generated based on baseDir
+			tt.expected.ScriptsPath = result.ScriptsPath
+			tt.expected.DefaultsPath = result.DefaultsPath
+			tt.expected.EntrypointPath = result.EntrypointPath
 
 			assert.NoError(t, err)
 			assert.Equal(t, tt.expected, result)

@@ -43,16 +43,18 @@ type TemplateRepository interface {
 // TemplateData represents the data passed to templates
 type TemplateData struct {
 	// Service-specific configuration
-	Image         string
-	ContainerName string
-	Port          int
-	HostPort      int    // Port to expose on host (0 or empty = no exposure, >0 = expose this port)
-	PublicUrl     string // URL for external access (used by some services like Jellyfin)
-	Paths         map[string]string
-	Umask         string
-	Network       string
-	RestartPolicy string
-	ScriptsPath   string // Absolute path to scripts directory
+	Image          string
+	ContainerName  string
+	Port           int
+	HostPort       int    // Port to expose on host (0 or empty = no exposure, >0 = expose this port)
+	PublicUrl      string // URL for external access (used by some services like Jellyfin)
+	Paths          map[string]string
+	Umask          string
+	Network        string
+	RestartPolicy  string
+	ScriptsPath    string // Absolute path to scripts directory
+	DefaultsPath   string // Absolute path to service defaults directory (for first-run initialization)
+	EntrypointPath string // Absolute path to service entrypoint script (for first-run initialization)
 
 	// Global configuration
 	Global GlobalConfig
@@ -156,7 +158,7 @@ func (te *TemplateEngine) generateComposeOld(serviceName string, config models.S
 	}
 
 	// Build template data
-	templateData, err := te.buildTemplateData(config, globalConfig)
+	templateData, err := te.buildTemplateData(serviceName, config, globalConfig)
 	if err != nil {
 		return "", fmt.Errorf("failed to build template data: %w", err)
 	}
@@ -339,7 +341,7 @@ func (te *TemplateEngine) toAbsolutePath(path string) string {
 }
 
 // buildTemplateData builds the template data from service config and global config
-func (te *TemplateEngine) buildTemplateData(config models.ServiceConfig, globalConfig GlobalConfig) (TemplateData, error) {
+func (te *TemplateEngine) buildTemplateData(serviceName string, config models.ServiceConfig, globalConfig GlobalConfig) (TemplateData, error) {
 	// Debug: Log input config
 	te.logger.Info("Building template data",
 		zap.Any("config", config),
@@ -348,7 +350,7 @@ func (te *TemplateEngine) buildTemplateData(config models.ServiceConfig, globalC
 	data := TemplateData{
 		Global:      globalConfig,
 		Custom:      make(map[string]interface{}),
-		ScriptsPath: filepath.Join(filepath.Dir(filepath.Dir(te.servicesDir)), "scripts"), // Get project root /scripts
+		ScriptsPath: filepath.Join(te.baseDir, "scripts"), // Use baseDir (host path) for scripts
 	}
 
 	// Extract standard fields from config
@@ -361,9 +363,18 @@ func (te *TemplateEngine) buildTemplateData(config models.ServiceConfig, globalC
 		// Set empty to detect missing image later
 		data.Image = ""
 	}
-	if containerName, ok := config["ContainerName"].(string); ok {
+	if containerName, ok := config["ContainerName"].(string); ok && containerName != "" {
 		data.ContainerName = containerName
+	} else {
+		// Fallback to serviceName if ContainerName not provided
+		data.ContainerName = serviceName
 	}
+
+	// Set paths for service defaults and entrypoint (for first-run initialization like Jellyfin)
+	// These must be calculated AFTER ContainerName is set
+	// Use baseDir (host path) so Docker can mount them correctly
+	data.DefaultsPath = filepath.Join(te.baseDir, "templates", data.ContainerName+".defaults")
+	data.EntrypointPath = filepath.Join(data.ScriptsPath, data.ContainerName+"-entrypoint.sh")
 	// Fallback: if Image is still empty, infer from ContainerName
 	if data.Image == "" && data.ContainerName != "" {
 		// Default to linuxserver/<container>:latest when missing
