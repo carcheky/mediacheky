@@ -229,11 +229,6 @@ func TestBuildTemplateData(t *testing.T) {
 			// data.Network = detectedNetwork
 			tt.expected.Network = result.Network
 
-			// Override paths that are auto-generated based on baseDir
-			tt.expected.ScriptsPath = result.ScriptsPath
-			tt.expected.DefaultsPath = result.DefaultsPath
-			tt.expected.EntrypointPath = result.EntrypointPath
-
 			assert.NoError(t, err)
 			assert.Equal(t, tt.expected, result)
 		})

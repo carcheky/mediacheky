@@ -433,6 +433,14 @@ func (sm *ServiceManager) StartService(ctx context.Context, serviceName string) 
 		}
 	}
 
+	// Initialize Jellyfin config with defaults if needed
+	if serviceName == "jellyfin" {
+		if err := sm.initializeJellyfinConfig(ctx, serviceName); err != nil {
+			sm.logger.Warn("Failed to initialize Jellyfin config", zap.Error(err))
+			// Don't fail the start, just log the warning
+		}
+	}
+
 	// Execute docker compose up with config variables
 	result, err := sm.dockerCompose.ComposeUp(ctx, composePath, globalConfig)
 	if err != nil {
@@ -2014,16 +2022,60 @@ func (sm *ServiceManager) initializeSonarrConfig(ctx context.Context, serviceNam
 	return nil
 }
 
-// initializeJellyfinConfig creates necessary directories for Jellyfin
+// initializeJellyfinConfig creates necessary directories for Jellyfin and copies default config files
 func (sm *ServiceManager) initializeJellyfinConfig(ctx context.Context, serviceName string) error {
-	// Jellyfin doesn't use a single config file like *arr services, but we should ensure directories exist
 	configDir := filepath.Join("/app/data/services-volumes", serviceName)
 
+	// Ensure config directory exists
 	if err := os.MkdirAll(configDir, 0755); err != nil {
 		return fmt.Errorf("failed to create config directory: %w", err)
 	}
 
-	sm.logger.Info("Jellyfin config directory ensured", zap.String("path", configDir))
+	// Check if this is a first run (system.xml doesn't exist)
+	systemXMLPath := filepath.Join(configDir, "system.xml")
+	if _, err := os.Stat(systemXMLPath); err == nil {
+		sm.logger.Debug("Jellyfin config already exists, skipping defaults copy", zap.String("path", configDir))
+		return nil
+	}
+
+	// Copy default config files from templates/jellyfin.defaults/
+	defaultsDir := filepath.Join("/app/templates", "jellyfin.defaults")
+	if _, err := os.Stat(defaultsDir); os.IsNotExist(err) {
+		sm.logger.Debug("Jellyfin defaults directory not found, skipping", zap.String("path", defaultsDir))
+		return nil
+	}
+
+	// Read all files from defaults directory
+	entries, err := os.ReadDir(defaultsDir)
+	if err != nil {
+		return fmt.Errorf("failed to read defaults directory: %w", err)
+	}
+
+	for _, entry := range entries {
+		if entry.IsDir() {
+			continue
+		}
+
+		srcPath := filepath.Join(defaultsDir, entry.Name())
+		dstPath := filepath.Join(configDir, entry.Name())
+
+		// Read source file
+		data, err := os.ReadFile(srcPath)
+		if err != nil {
+			sm.logger.Warn("Failed to read default file", zap.String("file", entry.Name()), zap.Error(err))
+			continue
+		}
+
+		// Write to destination
+		if err := os.WriteFile(dstPath, data, 0644); err != nil {
+			sm.logger.Warn("Failed to write default file", zap.String("file", entry.Name()), zap.Error(err))
+			continue
+		}
+
+		sm.logger.Debug("Copied Jellyfin default file", zap.String("file", entry.Name()))
+	}
+
+	sm.logger.Info("Jellyfin config initialized with default values", zap.String("path", configDir))
 	return nil
 }
 

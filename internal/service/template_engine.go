@@ -43,18 +43,15 @@ type TemplateRepository interface {
 // TemplateData represents the data passed to templates
 type TemplateData struct {
 	// Service-specific configuration
-	Image          string
-	ContainerName  string
-	Port           int
-	HostPort       int    // Port to expose on host (0 or empty = no exposure, >0 = expose this port)
-	PublicUrl      string // URL for external access (used by some services like Jellyfin)
-	Paths          map[string]string
-	Umask          string
-	Network        string
-	RestartPolicy  string
-	ScriptsPath    string // Absolute path to scripts directory
-	DefaultsPath   string // Absolute path to service defaults directory (for first-run initialization)
-	EntrypointPath string // Absolute path to service entrypoint script (for first-run initialization)
+	Image         string
+	ContainerName string
+	Port          int
+	HostPort      int    // Port to expose on host (0 or empty = no exposure, >0 = expose this port)
+	PublicUrl     string // URL for external access (used by some services like Jellyfin)
+	Paths         map[string]string
+	Umask         string
+	Network       string
+	RestartPolicy string
 
 	// Global configuration
 	Global GlobalConfig
@@ -348,9 +345,8 @@ func (te *TemplateEngine) buildTemplateData(serviceName string, config models.Se
 		zap.Any("config_paths", config["Paths"]))
 
 	data := TemplateData{
-		Global:      globalConfig,
-		Custom:      make(map[string]interface{}),
-		ScriptsPath: filepath.Join(te.baseDir, "scripts"), // Use baseDir (host path) for scripts
+		Global: globalConfig,
+		Custom: make(map[string]interface{}),
 	}
 
 	// Extract standard fields from config
@@ -370,11 +366,6 @@ func (te *TemplateEngine) buildTemplateData(serviceName string, config models.Se
 		data.ContainerName = serviceName
 	}
 
-	// Set paths for service defaults and entrypoint (for first-run initialization like Jellyfin)
-	// These must be calculated AFTER ContainerName is set
-	// Use baseDir (host path) so Docker can mount them correctly
-	data.DefaultsPath = filepath.Join(te.baseDir, "templates", data.ContainerName+".defaults")
-	data.EntrypointPath = filepath.Join(data.ScriptsPath, data.ContainerName+"-entrypoint.sh")
 	// Fallback: if Image is still empty, infer from ContainerName
 	if data.Image == "" && data.ContainerName != "" {
 		// Default to linuxserver/<container>:latest when missing
