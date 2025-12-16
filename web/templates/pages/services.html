@@ -51,7 +51,6 @@
                                     </svg>
                                 </button>
                             </template>
-                            </template>
                             <template x-if="serviceStatuses[service.id]?.config_path_exists">
                                 <button @click="resetService(service.id)" 
                                         :disabled="resetting[service.id]"
@@ -128,7 +127,6 @@
                                     </svg>
                                 </button>
                             </template>
-                            </template>
                             <template x-if="serviceStatuses[service.id]?.config_path_exists">
                                 <button @click="resetService(service.id)" 
                                         :disabled="resetting[service.id]"
@@ -204,7 +202,6 @@
                                         </path>
                                     </svg>
                                 </button>
-                            </template>
                             </template>
                             <template x-if="serviceStatuses[service.id]?.config_path_exists">
                                 <button @click="resetService(service.id)" 
