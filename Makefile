@@ -80,16 +80,24 @@ setup-env:
 	else \
 		echo "✅ .env already exists"; \
 	fi
+# 	@echo "🧹 Cleaning up old volumes and directories..."
+# 	@docker container prune -f >/dev/null 2>&1 || true
+# 	@docker kill $$(docker ps -a -q) &> /dev/null >/dev/null 2>&1 || true
+# 	@docker volume prune -f >/dev/null 2>&1 || true
+# 	@docker network prune -f >/dev/null 2>&1 || true
 	@echo "📁 Creating required directories..."
-	@mkdir -p tmp
-	@mkdir -p volumes/mediacheky-data
+	@rm -fr volumes/mediacheky-data volumes/library logs/* || true
+	@mkdir -p volumes/go-modules-cache
 	@mkdir -p volumes/mediacheky-data
 	@mkdir -p volumes/library/downloads
 	@mkdir -p volumes/library/library/movies
 	@mkdir -p volumes/library/library/tv
 	@mkdir -p logs
-	@mkdir -p data
-	@mkdir -p config
+# 	@mkdir -p data
+# 	@mkdir -p config
+# 	@mkdir -p tmp
+	@chmod 777 volumes/mediacheky-data 
+	@chmod 777 logs -R
 	@echo "✅ All directories created"
 	@if [ -x scripts/log-with-rotation.sh ]; then \
 		echo "✅ Scripts are executable"; \
