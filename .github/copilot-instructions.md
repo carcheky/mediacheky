@@ -40,7 +40,7 @@
 
 ### 1. API Development FIRST
 
-For any important feature (enable, disable, save, update, start, stop, delete, or related functions):
+For any important feature (enable, disable, save, update, start, stop, delete, defaults or related functions):
 
 1. **Check if API exists** in [docs/API.md](../docs/API.md)
 2. **If NO**: Develop the API endpoint FIRST
