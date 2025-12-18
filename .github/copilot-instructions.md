@@ -9,6 +9,10 @@
 
 ## 🚨 CRITICAL RULES - VIOLATION = CRITICAL FAILURE 🚨
 
+### Always follow these rules without exception:
+   - use mcp servers always as possible
+
+
 ### ❌❌❌ ABSOLUTELY FORBIDDEN - NEVER EVER DO ❌❌❌
 
 1. **NEVER restart/stop/start Docker containers manually**
