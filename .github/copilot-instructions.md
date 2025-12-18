@@ -105,7 +105,7 @@ make check-and-fix
 
 # Step 5: ONLY AFTER waiting, verify via API or logs:
 # → curl http://localhost/api/...
-# → tail logs/mediacheky-dev.log
+# → tail logs/mediacheky-dev.json
 ```
 
 **FAILURE TO FOLLOW THIS WORKFLOW = CRITICAL ERROR**
@@ -209,7 +209,7 @@ make check-and-fix
 
 # Then verify via:
 # → API calls: curl http://localhost/api/...
-# → Logs: tail logs/mediacheky-dev.log
+# → Logs: tail logs/mediacheky-dev.json
 # → Browser: http://localhost (NOT port 7369)
 ```
 

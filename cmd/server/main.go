@@ -33,10 +33,10 @@ func main() {
 	}
 
 	// Initialize logger with file output
-	logFilePath := "./logs/mediacheky-dev.log"
-	errorLogFilePath := "./logs/mediacheky-error.log"
+	logFilePath := "./logs/mediacheky-dev.json"
+	errorLogFilePath := "./logs/mediacheky-error.json"
 	if cfg.App.Environment == "production" {
-		logFilePath = "./logs/mediacheky.log"
+		logFilePath = "./logs/mediacheky.json"
 	}
 	appLogger := logger.NewWithErrorFile(cfg.App.LogLevel, logFilePath, errorLogFilePath)
 	defer appLogger.Sync()
