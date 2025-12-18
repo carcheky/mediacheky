@@ -114,7 +114,7 @@ dev: check-deps setup-env
 	@echo ""
 	@echo "📊 Status:"
 	@echo "  • Environment: Development"
-	@echo "  • URL: http://localhost:7369"
+	@echo "  • URL: http://localhost"
 	@echo "  • Hot-reload: Enabled (Air watches file changes)"
 	@echo ""
 	@echo "💡 Tips:"
@@ -125,7 +125,7 @@ dev: check-deps setup-env
 	@echo "  • First start builds image (slow), subsequent starts are instant"
 	@echo ""
 	@echo "Starting containers..."
-	@DOCKER_BUILDKIT=1 docker compose up
+	@DOCKER_BUILDKIT=1 docker compose up --remove-orphans 
 
 # Rebuild development image (only needed after Dockerfile changes)
 dev-rebuild:
