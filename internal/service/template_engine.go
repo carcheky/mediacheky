@@ -742,9 +742,12 @@ func (te *TemplateEngine) setOwnership(path string, uid, gid int) error {
 
 // EnsureDirectoryExists creates a directory if it doesn't exist and sets proper ownership
 func (te *TemplateEngine) EnsureDirectoryExists(path string) error {
-	if _, err := os.Stat(path); os.IsNotExist(err) {
-		te.logger.Debug("Creating volume directory", zap.String("path", path))
-		if err := os.MkdirAll(path, 0755); err != nil {
+	// Translate absolute host paths to container mount points when applicable
+	containerPath := te.translateToContainerPath(path)
+
+	if _, err := os.Stat(containerPath); os.IsNotExist(err) {
+		te.logger.Debug("Creating volume directory", zap.String("path", containerPath))
+		if err := os.MkdirAll(containerPath, 0755); err != nil {
 			return fmt.Errorf("failed to create directory: %w", err)
 		}
 
@@ -755,12 +758,62 @@ func (te *TemplateEngine) EnsureDirectoryExists(path string) error {
 			return nil
 		}
 
-		if err := te.setOwnership(path, uid, gid); err != nil {
+		if err := te.setOwnership(containerPath, uid, gid); err != nil {
 			// Don't fail if we can't set ownership, just warn
-			te.logger.Warn("Could not set directory ownership", zap.String("path", path), zap.Error(err))
+			te.logger.Warn("Could not set directory ownership", zap.String("path", containerPath), zap.Error(err))
 		}
 	}
 	return nil
+}
+
+// translateToContainerPath maps absolute host paths (based on MEDIACHEKY_HOST_PATH)
+// to the corresponding container mount points. This prevents permission errors
+// when MediaCheky tries to create directories using host paths from inside the container.
+func (te *TemplateEngine) translateToContainerPath(path string) string {
+	// If path is already pointing to a container mount, return as-is
+	if strings.HasPrefix(path, "/app/data/") || strings.HasPrefix(path, "/MEDIACHEKY_LIBRARY/") {
+		return path
+	}
+
+	// Resolve baseDir (host root of the project) from the TemplateEngine
+	hostBase := te.baseDir
+	if hostBase == "" {
+		// Fallback to working directory if not set
+		if wd, err := os.Getwd(); err == nil {
+			hostBase = wd
+		}
+	}
+
+	// Normalize for consistent prefix checks
+	hostBase = filepath.Clean(hostBase)
+	path = filepath.Clean(path)
+
+	// Map host app data dir to /app/data
+	hostAppData := filepath.Join(hostBase, "volumes", "mediacheky-data")
+	if strings.HasPrefix(path, hostAppData) {
+		// Remainder after the host app data prefix
+		remainder := strings.TrimPrefix(path, hostAppData)
+		// Ensure leading slash is preserved appropriately
+		remainder = strings.TrimPrefix(remainder, string(os.PathSeparator))
+		return filepath.Join("/app/data", remainder)
+	}
+
+	// Map host media library path to /MEDIACHEKY_LIBRARY
+	mediaPath := os.Getenv("MEDIACHEKY_MEDIA_PATH")
+	if mediaPath == "" {
+		mediaPath = filepath.Join(hostBase, "volumes", "library")
+	} else if !filepath.IsAbs(mediaPath) {
+		mediaPath = filepath.Join(hostBase, mediaPath)
+	}
+	mediaPath = filepath.Clean(mediaPath)
+	if strings.HasPrefix(path, mediaPath) {
+		remainder := strings.TrimPrefix(path, mediaPath)
+		remainder = strings.TrimPrefix(remainder, string(os.PathSeparator))
+		return filepath.Join("/MEDIACHEKY_LIBRARY", remainder)
+	}
+
+	// No translation needed
+	return path
 }
 
 // RemoveDirectory removes a directory and all its contents

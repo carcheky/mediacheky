@@ -444,7 +444,6 @@ func (sm *ServiceManager) StartService(ctx context.Context, serviceName string) 
 	// Execute docker compose up with config variables
 	// For Jellyfin, use force recreate and remove orphans to avoid stale state
 	var result *ComposeResult
-	var err error
 	if serviceName == "jellyfin" {
 		result, err = sm.dockerCompose.ComposeUpForceRecreate(ctx, composePath, globalConfig)
 	} else {
