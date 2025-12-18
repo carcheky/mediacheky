@@ -11,6 +11,7 @@
 
 ### Always follow these rules without exception:
    - use mcp servers always as possible
+   - edit code files directly, not by terminal commands
 
 
 ### ❌❌❌ ABSOLUTELY FORBIDDEN - NEVER EVER DO ❌❌❌
