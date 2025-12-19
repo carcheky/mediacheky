@@ -342,7 +342,7 @@ Expected log entries:
 **Check**:
 1. Template exists: `ls templates/radarr.yml`
 2. Service is in database: Check via API `/api/services/radarr`
-3. Application logs: `tail -f logs/mediacheky-dev.log`
+3. Application logs: `tail -f logs/mediacheky-dev.json`
 
 ### Container status not updating
 
