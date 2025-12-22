@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/carcheky/mediacheky/internal/models"
@@ -810,6 +811,22 @@ func (h *ServiceHandler) ResetService(c *fiber.Ctx) error {
 
 	// First, prune the service (deletes config and disables)
 	if err := h.serviceManager.ResetService(ctx, name); err != nil {
+		// If service doesn't exist, create/enable it instead of failing
+		if strings.Contains(err.Error(), "record not found") {
+			h.logger.Info("Service not found during reset; creating and enabling instead", "name", name)
+			if err := h.serviceManager.EnableService(ctx, name); err != nil {
+				h.logger.Error("Failed to create/enable service during reset fallback", "name", name, "error", err)
+				return c.Status(fiber.StatusInternalServerError).JSON(APIResponse{
+					Success: false,
+					Error:   fmt.Sprintf("Failed to create/enable service: %v", err),
+				})
+			}
+			return c.JSON(APIResponse{
+				Success: true,
+				Data:    fiber.Map{"message": "Service did not exist; created and enabled successfully"},
+			})
+		}
+
 		h.logger.Error("Failed to prune service during reset", "name", name, "error", err)
 		return c.Status(fiber.StatusInternalServerError).JSON(APIResponse{
 			Success: false,

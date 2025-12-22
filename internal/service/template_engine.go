@@ -30,6 +30,12 @@ type TemplateEngine struct {
 	templateRepo TemplateRepository
 }
 
+// GetDefaultsDir returns the path to the defaults directory for a given service.
+// Example: templates/jellyfin.defaults
+func (te *TemplateEngine) GetDefaultsDir(serviceName string) string {
+	return filepath.Join(te.templatesDir, fmt.Sprintf("%s.defaults", serviceName))
+}
+
 // ConfigRepository defines the interface for accessing global configuration
 type ConfigRepository interface {
 	GetAsMap() (map[string]string, error)

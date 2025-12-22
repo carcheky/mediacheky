@@ -8,11 +8,9 @@ services:
       - PUID={{ .Global.PUID }}
       - PGID={{ .Global.PGID }}
       - TZ={{ .Global.Timezone }}
-      - LANG=es_ES.UTF-8
-      - LC_ALL=es_ES.UTF-8
     volumes:
-      - {{ .Paths.Config }}:/config
-      - {{ .Global.MediaPath }}:/MEDIACHEKY_LIBRARY
+      - "{{ .Paths.Config }}:/config"
+      - "{{ .Global.MediaPath }}:/MEDIACHEKY_LIBRARY"
     {{- if and .HostPort (gt .HostPort 0) }}
     ports:
       - "{{ .HostPort }}:8096"
