@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/carcheky/mediacheky/internal/models"
@@ -291,7 +292,8 @@ func (h *ServiceHandler) EnableService(c *fiber.Ctx) error {
 	}
 
 	// Use service manager to enable service
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	// Use a long timeout for enable operations (pulling images can take minutes)
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Minute)
 	defer cancel()
 
 	if err := h.serviceManager.EnableService(ctx, name); err != nil {
@@ -743,8 +745,48 @@ func (h *ServiceHandler) CheckConfigExists(c *fiber.Ctx) error {
 	})
 }
 
-// ResetService handles POST /api/services/:name/reset
+// PruneService handles POST /api/services/:name/prune
 // Prunes service: docker compose down -v, deletes config directories and disables the service
+func (h *ServiceHandler) PruneService(c *fiber.Ctx) error {
+	name := c.Params("name")
+	if name == "" {
+		return c.Status(fiber.StatusBadRequest).JSON(APIResponse{
+			Success: false,
+			Error:   "Service name is required",
+		})
+	}
+
+	// Check if service manager is available
+	if h.serviceManager == nil {
+		return c.Status(fiber.StatusServiceUnavailable).JSON(APIResponse{
+			Success: false,
+			Error:   "Service manager is not available",
+		})
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 90*time.Second)
+	defer cancel()
+
+	h.logger.Info("Pruning service configuration", "name", name)
+
+	// Use service manager to prune service (deletes config, keeps disabled)
+	if err := h.serviceManager.ResetService(ctx, name); err != nil {
+		h.logger.Error("Failed to prune service", "name", name, "error", err)
+		return c.Status(fiber.StatusInternalServerError).JSON(APIResponse{
+			Success: false,
+			Error:   fmt.Sprintf("Failed to prune service: %v", err),
+		})
+	}
+
+	h.logger.Info("Service prune completed", "name", name)
+	return c.JSON(APIResponse{
+		Success: true,
+		Data:    fiber.Map{"message": "Service pruned and disabled successfully"},
+	})
+}
+
+// ResetService handles POST /api/services/:name/reset
+// Prunes service and then re-enables it (ready for fresh start)
 func (h *ServiceHandler) ResetService(c *fiber.Ctx) error {
 	name := c.Params("name")
 	if name == "" {
@@ -765,21 +807,46 @@ func (h *ServiceHandler) ResetService(c *fiber.Ctx) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 90*time.Second)
 	defer cancel()
 
-	h.logger.Info("Resetting service configuration", "name", name)
+	h.logger.Info("Resetting service (prune + re-enable)", "name", name)
 
-	// Use service manager to reset service (deletes config and recreates container)
+	// First, prune the service (deletes config and disables)
 	if err := h.serviceManager.ResetService(ctx, name); err != nil {
-		h.logger.Error("Failed to reset service", "name", name, "error", err)
+		// If service doesn't exist, create/enable it instead of failing
+		if strings.Contains(err.Error(), "record not found") {
+			h.logger.Info("Service not found during reset; creating and enabling instead", "name", name)
+			if err := h.serviceManager.EnableService(ctx, name); err != nil {
+				h.logger.Error("Failed to create/enable service during reset fallback", "name", name, "error", err)
+				return c.Status(fiber.StatusInternalServerError).JSON(APIResponse{
+					Success: false,
+					Error:   fmt.Sprintf("Failed to create/enable service: %v", err),
+				})
+			}
+			return c.JSON(APIResponse{
+				Success: true,
+				Data:    fiber.Map{"message": "Service did not exist; created and enabled successfully"},
+			})
+		}
+
+		h.logger.Error("Failed to prune service during reset", "name", name, "error", err)
 		return c.Status(fiber.StatusInternalServerError).JSON(APIResponse{
 			Success: false,
 			Error:   fmt.Sprintf("Failed to reset service: %v", err),
 		})
 	}
 
-	h.logger.Info("Service prune completed", "name", name)
+	// Then, re-enable the service
+	if err := h.serviceManager.EnableService(ctx, name); err != nil {
+		h.logger.Error("Failed to re-enable service after reset", "name", name, "error", err)
+		return c.Status(fiber.StatusInternalServerError).JSON(APIResponse{
+			Success: false,
+			Error:   fmt.Sprintf("Service pruned but failed to re-enable: %v", err),
+		})
+	}
+
+	h.logger.Info("Service reset completed (pruned and re-enabled)", "name", name)
 	return c.JSON(APIResponse{
 		Success: true,
-		Data:    fiber.Map{"message": "Service pruned and disabled successfully"},
+		Data:    fiber.Map{"message": "Service reset successfully. Fresh start with new configuration."},
 	})
 }
 
@@ -910,6 +977,71 @@ func (h *ServiceHandler) UpdateSonarrConfig(c *fiber.Ctx) error {
 	return c.JSON(APIResponse{
 		Success: true,
 		Data:    fiber.Map{"message": "Configuration saved successfully. Sonarr is restarting to apply changes..."},
+	})
+}
+
+// GetJellyfinConfig handles GET /api/services/:name/jellyfin-config
+func (h *ServiceHandler) GetJellyfinConfig(c *fiber.Ctx) error {
+	name := c.Params("name")
+
+	if name != "jellyfin" {
+		return c.Status(fiber.StatusBadRequest).JSON(APIResponse{
+			Success: false,
+			Error:   "This endpoint is only available for Jellyfin service",
+		})
+	}
+
+	config, err := h.serviceManager.GetJellyfinConfig(c.Context(), name)
+	if err != nil {
+		h.logger.Error("Failed to get Jellyfin config", "error", err)
+		return c.Status(fiber.StatusInternalServerError).JSON(APIResponse{
+			Success: false,
+			Error:   fmt.Sprintf("Failed to get Jellyfin config: %v", err),
+		})
+	}
+
+	return c.JSON(APIResponse{
+		Success: true,
+		Data:    fiber.Map{"config": config},
+	})
+}
+
+// UpdateJellyfinConfig handles PUT /api/services/:name/jellyfin-config
+func (h *ServiceHandler) UpdateJellyfinConfig(c *fiber.Ctx) error {
+	name := c.Params("name")
+
+	if name != "jellyfin" {
+		return c.Status(fiber.StatusBadRequest).JSON(APIResponse{
+			Success: false,
+			Error:   "This endpoint is only available for Jellyfin service",
+		})
+	}
+
+	var config models.JellyfinConfig
+	if err := c.BodyParser(&config); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(APIResponse{
+			Success: false,
+			Error:   "Invalid request body",
+		})
+	}
+
+	h.logger.Info("Received Jellyfin config update",
+		"name", name,
+		"username", config.Username,
+		"has_api_key", config.ApiKey != "")
+
+	if err := h.serviceManager.UpdateJellyfinConfig(c.Context(), name, config); err != nil {
+		h.logger.Error("Failed to update Jellyfin config", "error", err)
+		return c.Status(fiber.StatusInternalServerError).JSON(APIResponse{
+			Success: false,
+			Error:   fmt.Sprintf("Failed to update Jellyfin config: %v", err),
+		})
+	}
+
+	h.logger.Info("Jellyfin config updated successfully", "name", name)
+	return c.JSON(APIResponse{
+		Success: true,
+		Data:    fiber.Map{"message": "Configuration saved successfully. Jellyfin is restarting to apply changes..."},
 	})
 }
 

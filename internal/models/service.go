@@ -127,10 +127,20 @@ type SonarrConfig struct {
 
 // JellyfinConfig represents Jellyfin's configuration
 type JellyfinConfig struct {
-	Port             int    `json:"Port"`
-	Image            string `json:"Image"`
-	PublicUrl        string `json:"PublicUrl"`
-	DeviceProcessing bool   `json:"DeviceProcessing"` // Enable hardware transcoding devices
+	Port             int               `json:"Port"`
+	Image            string            `json:"Image"`
+	PublicUrl        string            `json:"PublicUrl"`
+	DeviceProcessing bool              `json:"DeviceProcessing"` // Enable hardware transcoding devices
+	ApiKey           string            `json:"ApiKey"`
+	Username         string            `json:"Username"`
+	Password         string            `json:"Password"`
+	Libraries        JellyfinLibraries `json:"Libraries"`
+}
+
+// JellyfinLibraries represents Jellyfin's TV and Movies libraries
+type JellyfinLibraries struct {
+	TV     string `json:"TV"`     // Path to TV/Series library
+	Movies string `json:"Movies"` // Path to Movies library
 }
 
 // RootFolder represents a root folder in Radarr/Sonarr

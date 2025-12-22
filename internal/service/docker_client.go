@@ -12,6 +12,7 @@ import (
 	"github.com/docker/docker/api/types"
 	containertypes "github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/api/types/filters"
+	imagetypes "github.com/docker/docker/api/types/image"
 	"github.com/docker/docker/client"
 	"go.uber.org/zap"
 )
@@ -556,5 +557,38 @@ func (dc *DockerClient) ConnectContainerToNetwork(ctx context.Context, container
 		zap.String("container_id", containerID),
 		zap.String("network", networkName))
 
+	return nil
+}
+
+// PullImage pulls a Docker image from the registry
+func (dc *DockerClient) PullImage(ctx context.Context, imageName string) error {
+	if ctx == nil {
+		var cancel context.CancelFunc
+		ctx, cancel = context.WithTimeout(context.Background(), 5*time.Minute)
+		defer cancel()
+	}
+
+	dc.logger.Info("Pulling Docker image", zap.String("image", imageName))
+
+	out, err := dc.client.ImagePull(ctx, imageName, imagetypes.PullOptions{})
+	if err != nil {
+		dc.logger.Error("Failed to pull image",
+			zap.String("image", imageName),
+			zap.Error(err))
+		return fmt.Errorf("failed to pull image %s: %w", imageName, err)
+	}
+	defer out.Close()
+
+	// Read the output to ensure the pull completes
+	// Docker API requires consuming the response body
+	_, err = io.Copy(io.Discard, out)
+	if err != nil {
+		dc.logger.Error("Failed to read pull output",
+			zap.String("image", imageName),
+			zap.Error(err))
+		return fmt.Errorf("failed to read pull output for %s: %w", imageName, err)
+	}
+
+	dc.logger.Info("Image pulled successfully", zap.String("image", imageName))
 	return nil
 }

@@ -30,6 +30,12 @@ type TemplateEngine struct {
 	templateRepo TemplateRepository
 }
 
+// GetDefaultsDir returns the path to the defaults directory for a given service.
+// Example: templates/jellyfin.defaults
+func (te *TemplateEngine) GetDefaultsDir(serviceName string) string {
+	return filepath.Join(te.templatesDir, fmt.Sprintf("%s.defaults", serviceName))
+}
+
 // ConfigRepository defines the interface for accessing global configuration
 type ConfigRepository interface {
 	GetAsMap() (map[string]string, error)
@@ -46,7 +52,8 @@ type TemplateData struct {
 	Image         string
 	ContainerName string
 	Port          int
-	HostPort      int // Port to expose on host (0 or empty = no exposure, >0 = expose this port)
+	HostPort      int    // Port to expose on host (0 or empty = no exposure, >0 = expose this port)
+	PublicUrl     string // URL for external access (used by some services like Jellyfin)
 	Paths         map[string]string
 	Umask         string
 	Network       string
@@ -154,14 +161,14 @@ func (te *TemplateEngine) generateComposeOld(serviceName string, config models.S
 	}
 
 	// Build template data
-	templateData, err := te.buildTemplateData(config, globalConfig)
+	templateData, err := te.buildTemplateData(serviceName, config, globalConfig)
 	if err != nil {
 		return "", fmt.Errorf("failed to build template data: %w", err)
 	}
 
-	// Validate required fields
+	// Validate required fields AFTER buildTemplateData applies defaults
 	if templateData.Image == "" {
-		return "", fmt.Errorf("image is required but not specified in configuration")
+		return "", fmt.Errorf("image is required but not specified in configuration after applying defaults")
 	}
 
 	// Parse and execute template
@@ -337,7 +344,7 @@ func (te *TemplateEngine) toAbsolutePath(path string) string {
 }
 
 // buildTemplateData builds the template data from service config and global config
-func (te *TemplateEngine) buildTemplateData(config models.ServiceConfig, globalConfig GlobalConfig) (TemplateData, error) {
+func (te *TemplateEngine) buildTemplateData(serviceName string, config models.ServiceConfig, globalConfig GlobalConfig) (TemplateData, error) {
 	// Debug: Log input config
 	te.logger.Info("Building template data",
 		zap.Any("config", config),
@@ -358,9 +365,22 @@ func (te *TemplateEngine) buildTemplateData(config models.ServiceConfig, globalC
 		// Set empty to detect missing image later
 		data.Image = ""
 	}
-	if containerName, ok := config["ContainerName"].(string); ok {
+	if containerName, ok := config["ContainerName"].(string); ok && containerName != "" {
 		data.ContainerName = containerName
+	} else {
+		// Fallback to serviceName if ContainerName not provided
+		data.ContainerName = serviceName
 	}
+
+	// Fallback: if Image is still empty, infer from ContainerName
+	if data.Image == "" && data.ContainerName != "" {
+		// Default to linuxserver/<container>:latest when missing
+		data.Image = fmt.Sprintf("linuxserver/%s:latest", data.ContainerName)
+		te.logger.Warn("Image missing in config; defaulting based on container name",
+			zap.String("container", data.ContainerName),
+			zap.String("inferred_image", data.Image))
+	}
+
 	if port, ok := config["Port"].(float64); ok {
 		data.Port = int(port)
 	} else if port, ok := config["Port"].(int); ok {
@@ -407,6 +427,11 @@ func (te *TemplateEngine) buildTemplateData(config models.ServiceConfig, globalC
 		data.Umask = umask
 	}
 
+	// Extract PublicUrl (used by Jellyfin and similar services)
+	if publicUrl, ok := config["PublicUrl"].(string); ok {
+		data.PublicUrl = publicUrl
+	}
+
 	// Always auto-detect MediaCheky's network (not configurable by user)
 	detectedNetwork := te.detectSelfNetwork()
 	data.Network = detectedNetwork
@@ -424,7 +449,7 @@ func (te *TemplateEngine) buildTemplateData(config models.ServiceConfig, globalC
 	standardFields := map[string]bool{
 		"Image": true, "ContainerName": true, "Port": true, "Paths": true,
 		"Umask": true, "Network": true, "RestartPolicy": true,
-		"ExposePort": true, "HostPort": true,
+		"ExposePort": true, "HostPort": true, "PublicUrl": true,
 	}
 	for k, v := range config {
 		if !standardFields[k] {
@@ -495,7 +520,7 @@ func (te *TemplateEngine) writeComposeFile(serviceName, content string) (string,
 		}
 	}
 
-	composePath := filepath.Join(serviceDir, "docker compose.yml")
+	composePath := filepath.Join(serviceDir, "docker-compose.yml")
 
 	// Backup existing file if it exists
 	if _, err := os.Stat(composePath); err == nil {
@@ -548,10 +573,10 @@ func (te *TemplateEngine) backupComposeFile(composePath string) error {
 	return nil
 }
 
-// GetComposePath returns the path to a service's docker compose.yml file
+// GetComposePath returns the path to a service's docker-compose.yml file
 func (te *TemplateEngine) GetComposePath(serviceName string) string {
 	// Prefer dynamically generated compose if it exists
-	dynamicPath := filepath.Join(te.servicesDir, serviceName, "docker compose.yml")
+	dynamicPath := filepath.Join(te.servicesDir, serviceName, "docker-compose.yml")
 	if _, err := os.Stat(dynamicPath); err == nil {
 		abs, err2 := filepath.Abs(dynamicPath)
 		if err2 == nil {
@@ -723,9 +748,12 @@ func (te *TemplateEngine) setOwnership(path string, uid, gid int) error {
 
 // EnsureDirectoryExists creates a directory if it doesn't exist and sets proper ownership
 func (te *TemplateEngine) EnsureDirectoryExists(path string) error {
-	if _, err := os.Stat(path); os.IsNotExist(err) {
-		te.logger.Debug("Creating volume directory", zap.String("path", path))
-		if err := os.MkdirAll(path, 0755); err != nil {
+	// Translate absolute host paths to container mount points when applicable
+	containerPath := te.translateToContainerPath(path)
+
+	if _, err := os.Stat(containerPath); os.IsNotExist(err) {
+		te.logger.Debug("Creating volume directory", zap.String("path", containerPath))
+		if err := os.MkdirAll(containerPath, 0755); err != nil {
 			return fmt.Errorf("failed to create directory: %w", err)
 		}
 
@@ -736,12 +764,62 @@ func (te *TemplateEngine) EnsureDirectoryExists(path string) error {
 			return nil
 		}
 
-		if err := te.setOwnership(path, uid, gid); err != nil {
+		if err := te.setOwnership(containerPath, uid, gid); err != nil {
 			// Don't fail if we can't set ownership, just warn
-			te.logger.Warn("Could not set directory ownership", zap.String("path", path), zap.Error(err))
+			te.logger.Warn("Could not set directory ownership", zap.String("path", containerPath), zap.Error(err))
 		}
 	}
 	return nil
+}
+
+// translateToContainerPath maps absolute host paths (based on MEDIACHEKY_HOST_PATH)
+// to the corresponding container mount points. This prevents permission errors
+// when MediaCheky tries to create directories using host paths from inside the container.
+func (te *TemplateEngine) translateToContainerPath(path string) string {
+	// If path is already pointing to a container mount, return as-is
+	if strings.HasPrefix(path, "/app/data/") || strings.HasPrefix(path, "/MEDIACHEKY_LIBRARY/") {
+		return path
+	}
+
+	// Resolve baseDir (host root of the project) from the TemplateEngine
+	hostBase := te.baseDir
+	if hostBase == "" {
+		// Fallback to working directory if not set
+		if wd, err := os.Getwd(); err == nil {
+			hostBase = wd
+		}
+	}
+
+	// Normalize for consistent prefix checks
+	hostBase = filepath.Clean(hostBase)
+	path = filepath.Clean(path)
+
+	// Map host app data dir to /app/data
+	hostAppData := filepath.Join(hostBase, "volumes", "mediacheky-data")
+	if strings.HasPrefix(path, hostAppData) {
+		// Remainder after the host app data prefix
+		remainder := strings.TrimPrefix(path, hostAppData)
+		// Ensure leading slash is preserved appropriately
+		remainder = strings.TrimPrefix(remainder, string(os.PathSeparator))
+		return filepath.Join("/app/data", remainder)
+	}
+
+	// Map host media library path to /MEDIACHEKY_LIBRARY
+	mediaPath := os.Getenv("MEDIACHEKY_MEDIA_PATH")
+	if mediaPath == "" {
+		mediaPath = filepath.Join(hostBase, "volumes", "library")
+	} else if !filepath.IsAbs(mediaPath) {
+		mediaPath = filepath.Join(hostBase, mediaPath)
+	}
+	mediaPath = filepath.Clean(mediaPath)
+	if strings.HasPrefix(path, mediaPath) {
+		remainder := strings.TrimPrefix(path, mediaPath)
+		remainder = strings.TrimPrefix(remainder, string(os.PathSeparator))
+		return filepath.Join("/MEDIACHEKY_LIBRARY", remainder)
+	}
+
+	// No translation needed
+	return path
 }
 
 // RemoveDirectory removes a directory and all its contents

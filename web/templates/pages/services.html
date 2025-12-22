@@ -51,6 +51,24 @@
                                     </svg>
                                 </button>
                             </template>
+                            <template x-if="serviceStatuses[service.id]?.config_path_exists">
+                                <button @click="resetService(service.id)" 
+                                        :disabled="resetting[service.id]"
+                                        :title="window.i18n.t('services.reset.title')"
+                                        class="p-2 bg-red-600 text-white rounded hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 focus:ring-offset-dark-bg">
+                                    <svg x-show="!resetting[service.id]" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15">
+                                        </path>
+                                    </svg>
+                                    <svg x-show="resetting[service.id]" class="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
+                                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                        <path class="opacity-75" fill="currentColor"
+                                            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
+                                        </path>
+                                    </svg>
+                                </button>
+                            </template>
                             <label class="flex items-center gap-2 cursor-pointer"
                                    :class="{'opacity-50 cursor-not-allowed': toggling[service.id]}"
                                    :title="serviceStatuses[service.id]?.enabled ? window.i18n.t('services.button.disable') : window.i18n.t('services.button.enable')">
@@ -109,6 +127,24 @@
                                     </svg>
                                 </button>
                             </template>
+                            <template x-if="serviceStatuses[service.id]?.config_path_exists">
+                                <button @click="resetService(service.id)" 
+                                        :disabled="resetting[service.id]"
+                                        :title="window.i18n.t('services.reset.title')"
+                                        class="p-2 bg-red-600 text-white rounded hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 focus:ring-offset-dark-bg">
+                                    <svg x-show="!resetting[service.id]" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15">
+                                        </path>
+                                    </svg>
+                                    <svg x-show="resetting[service.id]" class="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
+                                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                        <path class="opacity-75" fill="currentColor"
+                                            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
+                                        </path>
+                                    </svg>
+                                </button>
+                            </template>
                             <label class="flex items-center gap-2 cursor-pointer"
                                    :class="{'opacity-50 cursor-not-allowed': toggling[service.id]}"
                                    :title="serviceStatuses[service.id]?.enabled ? window.i18n.t('services.button.disable') : window.i18n.t('services.button.enable')">
@@ -160,6 +196,24 @@
                                         </path>
                                     </svg>
                                     <svg x-show="pruning[service.id]" class="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
+                                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                        <path class="opacity-75" fill="currentColor"
+                                            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
+                                        </path>
+                                    </svg>
+                                </button>
+                            </template>
+                            <template x-if="serviceStatuses[service.id]?.config_path_exists">
+                                <button @click="resetService(service.id)" 
+                                        :disabled="resetting[service.id]"
+                                        :title="window.i18n.t('services.reset.title')"
+                                        class="p-2 bg-red-600 text-white rounded hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 focus:ring-offset-dark-bg">
+                                    <svg x-show="!resetting[service.id]" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15">
+                                        </path>
+                                    </svg>
+                                    <svg x-show="resetting[service.id]" class="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
                                         <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                                         <path class="opacity-75" fill="currentColor"
                                             d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
@@ -233,6 +287,7 @@ function servicesPage() {
         messageType: 'success',
         serviceStatuses: {},
         pruning: {},
+        resetting: {},
         toggling: {},
         services: [
             { id: 'jellyfin',   label: 'Jellyfin',   icon: '🍿', category: 'media-server', description: 'Media server for streaming movies, TV shows, and music' },
@@ -270,7 +325,7 @@ function servicesPage() {
         async reload() { 
             await this.loadServiceStatuses(); 
             await this.checkConfigPaths();
-            this.showMessage('Services reloaded', 'success'); 
+            this.showMessage(window.i18n.t('services.reloaded'), 'success'); 
         },
         async loadServiceStatuses() {
             try {
@@ -322,7 +377,7 @@ function servicesPage() {
             try {
                 if (enabled) {
                     // Disable service
-                    if (!confirm('Disabling will stop and remove the container. Continue?')) {
+                    if (!confirm(window.i18n.t('services.disable.confirm').replace('{service}', serviceId))) {
                         this.toggling[serviceId] = false;
                         return;
                     }
@@ -372,8 +427,8 @@ function servicesPage() {
 
             this.pruning[serviceId] = true;
             try {
-                // Call reset endpoint (does all the work)
-                const response = await fetch(`/api/services/${serviceId}/reset`, {
+                // Call prune endpoint (deletes config, volumes, and disables service)
+                const response = await fetch(`/api/services/${serviceId}/prune`, {
                     method: 'POST'
                 });
 
@@ -395,6 +450,36 @@ function servicesPage() {
                 this.showMessage('Error: ' + error.message, 'error');
             } finally {
                 this.pruning[serviceId] = false;
+            }
+        },
+        async resetService(serviceId) {
+            console.log('resetService called for:', serviceId);
+            // REQUIRES confirmation before executing
+            if (!confirm(`⚠️ WARNING: This will:\n\n1. Stop the ${serviceId} service (docker compose down -v)\n2. Remove all volumes\n3. Delete service configuration folders\n4. Re-enable the service (fresh start)\n\nThis action CANNOT be undone.\n\nAre you sure you want to continue?`)) {
+                return;
+            }
+
+            this.resetting[serviceId] = true;
+            try {
+                const response = await fetch(`/api/services/${serviceId}/reset`, {
+                    method: 'POST'
+                });
+
+                if (response.ok) {
+                    this.serviceStatuses[serviceId].enabled = true;
+                    this.serviceStatuses[serviceId].config_path_exists = true;
+                    this.showMessage(`${serviceId} reset successfully! Ready for fresh configuration.`, 'success');
+                    await new Promise(resolve => setTimeout(resolve, 2000));
+                    await this.loadServiceStatuses();
+                    await this.checkConfigPaths();
+                } else {
+                    const data = await response.json();
+                    this.showMessage(data.error || `Failed to reset ${serviceId}`, 'error');
+                }
+            } catch (error) {
+                this.showMessage('Error: ' + error.message, 'error');
+            } finally {
+                this.resetting[serviceId] = false;
             }
         },
         showMessage(msg, type = 'success') {

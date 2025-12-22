@@ -33,10 +33,10 @@ func main() {
 	}
 
 	// Initialize logger with file output
-	logFilePath := "./logs/mediacheky-dev.log"
-	errorLogFilePath := "./logs/mediacheky-error.log"
+	logFilePath := "./logs/mediacheky-dev.json"
+	errorLogFilePath := "./logs/mediacheky-error.json"
 	if cfg.App.Environment == "production" {
-		logFilePath = "./logs/mediacheky.log"
+		logFilePath = "./logs/mediacheky.json"
 	}
 	appLogger := logger.NewWithErrorFile(cfg.App.LogLevel, logFilePath, errorLogFilePath)
 	defer appLogger.Sync()
@@ -207,11 +207,14 @@ func setupRoutes(app *fiber.App, h *handler.Handlers) {
 		services.Put("/:name/subdomain", middleware.ValidateServiceName(), h.Proxy.UpdateServiceSubdomain)
 		services.Get("/:name/endpoint", middleware.ValidateServiceName(), h.Proxy.GetServiceEndpoint)
 		services.Get("/:name/config-exists", middleware.ValidateServiceName(), h.Service.CheckConfigExists)
+		services.Post("/:name/prune", middleware.ValidateServiceName(), h.Service.PruneService)
 		services.Post("/:name/reset", middleware.ValidateServiceName(), h.Service.ResetService)
 		services.Get("/:name/radarr-config", middleware.ValidateServiceName(), h.Service.GetRadarrConfig)
 		services.Put("/:name/radarr-config", middleware.ValidateServiceName(), h.Service.UpdateRadarrConfig)
 		services.Get("/:name/sonarr-config", middleware.ValidateServiceName(), h.Service.GetSonarrConfig)
 		services.Put("/:name/sonarr-config", middleware.ValidateServiceName(), h.Service.UpdateSonarrConfig)
+		services.Get("/:name/jellyfin-config", middleware.ValidateServiceName(), h.Service.GetJellyfinConfig)
+		services.Put("/:name/jellyfin-config", middleware.ValidateServiceName(), h.Service.UpdateJellyfinConfig)
 		services.Get("/:name/ready", middleware.ValidateServiceName(), h.Service.CheckServiceReady)
 		services.Get("/:name/rootfolders", middleware.ValidateServiceName(), h.Service.GetRootFolders)
 

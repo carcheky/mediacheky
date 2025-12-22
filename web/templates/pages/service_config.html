@@ -46,10 +46,11 @@
             <div class="flex flex-col sm:flex-row gap-2 w-full lg:w-auto">
                 <!-- Enable/Disable Toggle -->
                 <label class="flex items-center gap-2 cursor-pointer px-3 py-2 bg-dark-bg rounded border border-dark-border hover:border-dark-text transition-colors"
+                       :class="{'opacity-50 cursor-not-allowed': toggling}"
                        :title="enabled ? window.i18n.t('config.button.disable') : window.i18n.t('config.button.enable')">
                     <span class="text-sm text-dark-muted whitespace-nowrap" data-i18n-key="config.enable">Enable</span>
                     <div class="relative flex-shrink-0">
-                        <input type="checkbox" x-model="enabled" @change="toggleService()" class="sr-only peer">
+                        <input type="checkbox" x-model="enabled" @change="toggleService()" :disabled="toggling" class="sr-only peer">
                         <div class="w-11 h-6 bg-gray-700 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-800 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
                     </div>
                 </label>
@@ -97,6 +98,21 @@
                             </path>
                         </svg>
                         <svg x-show="pruning" class="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor"
+                                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
+                            </path>
+                        </svg>
+                    </button>
+                    <button x-show="configPathExists" @click="resetConfig()" :disabled="resetting"
+                        :title="window.i18n.t('config.button.reset')"
+                        class="p-2 bg-red-600 text-white rounded hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 focus:ring-offset-dark-bg">
+                        <svg x-show="!resetting" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15">
+                            </path>
+                        </svg>
+                        <svg x-show="resetting" class="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
                             <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                             <path class="opacity-75" fill="currentColor"
                                 d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
@@ -534,6 +550,153 @@
         </div>
     </div>
 
+    <!-- Jellyfin Application Settings -->
+    <div class="bg-dark-surface dark:bg-dark-surface rounded-lg shadow-lg border border-dark-border"
+         :class="!enabled && 'opacity-50 pointer-events-none'"
+         x-show="serviceName.toLowerCase() === 'jellyfin'">
+        <!-- Header (always visible) -->
+        <button @click="collapsed.appSettings = !collapsed.appSettings" 
+                class="w-full px-6 py-4 flex items-center justify-between hover:bg-dark-bg/30 transition-colors">
+            <div class="flex items-center gap-3">
+                <svg class="w-6 h-6 text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>
+                <div class="text-left">
+                    <h2 class="text-xl font-semibold text-dark-text" data-i18n-key="config.jellyfin.app_settings.title">Jellyfin Configuration</h2>
+                    <p class="text-sm text-dark-muted" data-i18n-key="config.jellyfin.app_settings.description">Configure Jellyfin media libraries and settings</p>
+                </div>
+            </div>
+            <svg class="w-5 h-5 text-dark-muted transition-transform duration-200" 
+                 :class="collapsed.appSettings && 'transform rotate-180'"
+                 fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"></path>
+            </svg>
+        </button>
+        
+        <!-- Content (collapsible) -->
+        <div x-show="!collapsed.appSettings" 
+             x-transition:enter="transition ease-out duration-200"
+             x-transition:enter-start="opacity-0 transform -translate-y-2"
+             x-transition:enter-end="opacity-100 transform translate-y-0"
+             x-transition:leave="transition ease-in duration-150"
+             x-transition:leave-start="opacity-100 transform translate-y-0"
+             x-transition:leave-end="opacity-0 transform -translate-y-2"
+             class="px-6 pb-6">
+            
+            <!-- Tabs Navigation -->
+            <div class="border-b border-dark-border mb-6">
+                <nav class="-mb-px flex space-x-8">
+                    <button @click="jellyfinTab = 'general'"
+                        :class="jellyfinTab === 'general' ? 'border-yellow-500 text-yellow-400' : 'border-transparent text-dark-muted hover:text-dark-text hover:border-slate-600'"
+                        class="whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors">
+                        General
+                    </button>
+                    <button @click="jellyfinTab = 'libraries'"
+                        :class="jellyfinTab === 'libraries' ? 'border-yellow-500 text-yellow-400' : 'border-transparent text-dark-muted hover:text-dark-text hover:border-slate-600'"
+                        class="whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors">
+                        Libraries
+                    </button>
+                </nav>
+            </div>
+
+            <!-- General Tab -->
+            <div x-show="jellyfinTab === 'general'" class="space-y-6">
+                <div class="flex items-center justify-between mb-4">
+                    <div>
+                        <h3 class="text-sm font-semibold text-yellow-400 uppercase tracking-wide">General Settings</h3>
+                    </div>
+                    <button x-show="enabled && status === 'running' && serviceEndpoint" 
+                            @click="window.open((proxyConfig.sslEnabled ? 'https://' : 'http://') + serviceEndpoint, '_blank')"
+                            class="text-blue-400 hover:text-blue-300 transition-colors flex items-center gap-1 text-xs"
+                            title="Open Jellyfin">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path>
+                        </svg>
+                        Open Jellyfin
+                    </button>
+                </div>
+
+                <!-- Port -->
+                <div>
+                    <label class="block text-sm font-medium text-dark-text mb-1">Port <span class="text-xs text-dark-muted italic">(internal)</span></label>
+                    <input type="number" x-model.number="jellyfinConfig.Port" readonly class="w-full px-2 py-1.5 text-sm border border-dark-border rounded bg-dark-surface text-dark-muted cursor-not-allowed">
+                </div>
+
+                <!-- Public URL -->
+                <div>
+                    <label class="block text-sm font-medium text-dark-text mb-1">Public URL <span class="text-xs text-dark-muted italic">(optional)</span></label>
+                    <input type="text" x-model="config.PublicUrl" class="w-full px-2 py-1.5 text-sm border border-dark-border rounded focus:outline-none focus:ring-1 focus:ring-yellow-500 bg-dark-bg text-dark-text" placeholder="http://jellyfin.example.com">
+                    <p class="text-xs text-dark-muted mt-1">Used for external access (leave empty for local only)</p>
+                </div>
+
+                <!-- Authentication -->
+                <div class="mt-4 pt-4 border-t border-dark-border">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-sm font-medium text-dark-text mb-1">Username <span class="text-xs text-dark-muted italic">(optional)</span></label>
+                            <input type="text" x-model="jellyfinConfig.Username" class="w-full px-2 py-1.5 text-sm border border-dark-border rounded focus:outline-none focus:ring-1 focus:ring-yellow-500 bg-dark-bg text-dark-text" placeholder="Admin username">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-dark-text mb-1">Password <span class="text-xs text-dark-muted italic">(optional)</span></label>
+                            <input type="password" x-model="jellyfinConfig.Password" class="w-full px-2 py-1.5 text-sm border border-dark-border rounded focus:outline-none focus:ring-1 focus:ring-yellow-500 bg-dark-bg text-dark-text" placeholder="Admin password">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- API Key -->
+                <div class="mt-4 pt-4 border-t border-dark-border">
+                    <label class="block text-sm font-medium text-dark-text mb-1">API Key <span class="text-xs text-dark-muted italic">(optional)</span></label>
+                    <input type="text" x-model="jellyfinConfig.ApiKey" class="w-full px-2 py-1.5 text-sm border border-dark-border rounded focus:outline-none focus:ring-1 focus:ring-yellow-500 bg-dark-bg text-dark-text" placeholder="Jellyfin API key">
+                    <p class="text-xs text-dark-muted mt-1">Generated in Jellyfin settings</p>
+                </div>
+
+                <!-- Hardware Transcoding -->
+                <div class="mt-4 pt-4 border-t border-dark-border">
+                    <label class="flex items-center gap-2 cursor-pointer">
+                        <input type="checkbox" x-model="jellyfinConfig.DeviceProcessing" class="w-4 h-4 rounded border-dark-border">
+                        <span class="text-sm font-medium text-dark-text">Enable Hardware Transcoding <span class="text-xs text-dark-muted italic">(requires GPU access)</span></span>
+                    </label>
+                </div>
+            </div>
+
+            <!-- Libraries Tab -->
+            <div x-show="jellyfinTab === 'libraries'" class="space-y-6">
+                <div class="mb-4">
+                    <h3 class="text-sm font-semibold text-yellow-400 uppercase tracking-wide">Media Libraries</h3>
+                    <p class="text-xs text-dark-muted mt-1">Configure TV and Movies library paths</p>
+                </div>
+
+                <!-- TV Library -->
+                <div>
+                    <label class="block text-sm font-medium text-dark-text mb-1">TV Series Library Path <span class="text-xs text-dark-muted italic">(same as Sonarr)</span></label>
+                    <input type="text" x-model="jellyfinConfig.Libraries.TV" readonly class="w-full px-2 py-1.5 text-sm border border-dark-border rounded bg-dark-surface text-dark-muted cursor-not-allowed">
+                </div>
+
+                <!-- Movies Library -->
+                <div>
+                    <label class="block text-sm font-medium text-dark-text mb-1">Movies Library Path <span class="text-xs text-dark-muted italic">(same as Radarr)</span></label>
+                    <input type="text" x-model="jellyfinConfig.Libraries.Movies" readonly class="w-full px-2 py-1.5 text-sm border border-dark-border rounded bg-dark-surface text-dark-muted cursor-not-allowed">
+                </div>
+
+                <div class="p-4 bg-dark-bg rounded border border-dark-border">
+                    <p class="text-sm text-dark-muted">
+                        <svg class="w-4 h-4 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                        Library paths are automatically synchronized with Radarr (movies) and Sonarr (TV series). Edit the paths in those services to update Jellyfin libraries.
+                    </p>
+                </div>
+            </div>
+
+            <!-- Apply Changes Section -->
+            <div x-show="serviceName.toLowerCase() === 'jellyfin'" class="mt-6 pt-6 border-t border-dark-border">
+                <div class="flex justify-between items-center">
+                    <p class="text-sm text-dark-muted">Changes to Jellyfin configuration are applied when the service restarts</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Proxy & Domain Configuration -->
     <div class="bg-dark-surface dark:bg-dark-surface rounded-lg shadow-lg border border-dark-border"
          :class="!enabled && 'opacity-50 pointer-events-none'">
@@ -733,9 +896,90 @@
                     ℹ️ Volume paths are automatically configured and cannot be modified
                 </p>
             </div>
-        </div>
-        </div>
-    </div>
+
+            <!-- Jellyfin-specific Docker Options -->
+            <div x-show="serviceName.toLowerCase() === 'jellyfin'" class="mt-4 pt-4 border-t border-dark-border space-y-4">
+                <h3 class="text-sm font-medium text-dark-text">Jellyfin Options</h3>
+
+                <!-- HTTPS Exposure -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <label class="flex items-center gap-2 cursor-pointer">
+                        <input type="checkbox" x-model="config.ExposeHttps" class="w-4 h-4 rounded border-dark-border">
+                        <span class="text-sm text-dark-text">Expose HTTPS (8920)</span>
+                    </label>
+                    <div x-show="config.ExposeHttps">
+                        <label class="block text-sm font-medium text-dark-text mb-1">HTTPS Host Port</label>
+                        <input type="number" x-model.number="config.HostPortHttps" min="1024" max="65535" placeholder="8920"
+                               class="w-full px-3 py-2 border border-dark-border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-dark-bg text-dark-text">
+                    </div>
+                </div>
+
+                <!-- Discovery Ports -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                    <label class="flex items-center gap-2 cursor-pointer">
+                        <input type="checkbox" x-model="config.ExposeDiscovery" class="w-4 h-4 rounded border-dark-border">
+                        <span class="text-sm text-dark-text">Expose Discovery (mDNS/SSDP)</span>
+                    </label>
+                    <div x-show="config.ExposeDiscovery">
+                        <label class="block text-sm font-medium text-dark-text mb-1">mDNS Host Port</label>
+                        <input type="number" x-model.number="config.HostPortMdns" min="1024" max="65535" placeholder="7359"
+                               class="w-full px-3 py-2 border border-dark-border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-dark-bg text-dark-text">
+                    </div>
+                    <div x-show="config.ExposeDiscovery">
+                        <label class="block text-sm font-medium text-dark-text mb-1">SSDP Host Port</label>
+                        <input type="number" x-model.number="config.HostPortSsdp" min="1024" max="65535" placeholder="1900"
+                               class="w-full px-3 py-2 border border-dark-border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-dark-bg text-dark-text">
+                    </div>
+                </div>
+
+                <!-- Hardware Acceleration -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                    <label class="flex items-center gap-2 cursor-pointer">
+                        <input type="checkbox" x-model="config.EnableHardwareAcceleration" class="w-4 h-4 rounded border-dark-border">
+                        <span class="text-sm text-dark-text">Enable Hardware Acceleration</span>
+                    </label>
+                    <div>
+                        <label class="block text-sm font-medium text-dark-text mb-1">DRI Device</label>
+                        <input type="text" x-model="config.DRIDevice" placeholder="/dev/dri"
+                               class="w-full px-3 py-2 border border-dark-border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-dark-bg text-dark-text">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-dark-text mb-1">Render Group (GID)</label>
+                        <input type="number" x-model.number="config.RenderGroup" placeholder="105"
+                               class="w-full px-3 py-2 border border-dark-border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-dark-bg text-dark-text">
+                    </div>
+                </div>
+
+                <!-- Mods & FFmpeg -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <div class="space-y-2">
+                        <label class="flex items-center gap-2 cursor-pointer">
+                            <input type="checkbox" x-model="config.EnableIntelOpenCL" class="w-4 h-4 rounded border-dark-border">
+                            <span class="text-sm text-dark-text">Enable Intel OpenCL Mod</span>
+                        </label>
+                        <div>
+                            <label class="block text-sm font-medium text-dark-text mb-1">Custom DOCKER_MODS</label>
+                            <input type="text" x-model="config.DockerMods" placeholder="e.g. linuxserver/mods:jellyfin-opencl-intel"
+                                   class="w-full px-3 py-2 border border-dark-border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-dark-bg text-dark-text">
+                            <p class="text-xs text-dark-muted mt-1">If set, overrides Intel OpenCL mod toggle.</p>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-sm font-medium text-dark-text mb-1">FFmpeg probesize</label>
+                            <input type="text" x-model="config.FFmpegProbeSize" placeholder="e.g. 10M"
+                                   class="w-full px-3 py-2 border border-dark-border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-dark-bg text-dark-text">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-dark-text mb-1">FFmpeg analyzeduration</label>
+                            <input type="text" x-model="config.FFmpegAnalyzeDuration" placeholder="e.g. 10M"
+                                   class="w-full px-3 py-2 border border-dark-border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-dark-bg text-dark-text">
+                        </div>
+                    </div>
++            </div>
++        </div>
++        </div>
++    </div>
 
     <!-- Connection Test Results -->
     <div x-show="testResult" x-transition class="rounded-lg border p-6"
@@ -889,9 +1133,27 @@
                 UseProxy: false,
                 SendAnonymousUsageData: true
             },
+            // Jellyfin tabs state
+            jellyfinTab: 'general',
+            // Jellyfin Configuration
+            jellyfinConfig: {
+                Port: 8096,
+                Image: 'linuxserver/jellyfin:latest',
+                PublicUrl: 'http://localhost:8096',
+                DeviceProcessing: false,
+                ApiKey: '',
+                Username: '',
+                Password: '',
+                Libraries: {
+                    TV: '/MEDIACHEKY_LIBRARY/library/tv',
+                    Movies: '/MEDIACHEKY_LIBRARY/library/movies'
+                }
+            },
             savingAppConfig: false,
             applying: false,
             pruning: false,
+            resetting: false,
+            toggling: false,
             configPathExists: false,
             actionInProgress: false,
             isReady: false,
@@ -920,6 +1182,7 @@
                 this.loadServiceEndpoint().catch(e => console.error('Failed to load service endpoint:', e));
                 this.loadRadarrConfig().catch(e => console.error('Failed to load Radarr config:', e));
                 this.loadSonarrConfig().catch(e => console.error('Failed to load Sonarr config:', e));
+                this.loadJellyfinConfig().catch(e => console.error('Failed to load Jellyfin config:', e));
                 this.loadRootFolders().catch(e => console.error('Failed to load root folders:', e));
                 this.loadSavedDockerTags().catch(e => console.error('Failed to load saved Docker tags:', e));
                 // Don't load auth settings on init - they require API key which may not be ready yet
@@ -1131,6 +1394,14 @@
                         Paths: {
                             Config: buildConfigPath('sonarr')
                         }
+                    },
+                    jellyfin: {
+                        Image: 'linuxserver/jellyfin:latest',
+                        ContainerName: 'jellyfin',
+                        RestartPolicy: 'unless-stopped',
+                        Paths: {
+                            Config: buildConfigPath('jellyfin')
+                        }
                     }
                 };
 
@@ -1173,11 +1444,15 @@
                     this.loadServiceEndpoint().catch(() => {}),
                     this.loadRadarrConfig().catch(() => {}),
                     this.loadSonarrConfig().catch(() => {}),
+                    this.loadJellyfinConfig().catch(() => {}),
                     this.loadRootFolders().catch(() => {})
                 ]);
             },
 
             async toggleService() {
+                // Mark as toggling to disable checkbox
+                this.toggling = true;
+                
                 if (this.enabled) {
                     // Enable service - apply configuration and start
                     try {
@@ -1233,11 +1508,14 @@
                     } catch (error) {
                         this.showMessage('Error: ' + error.message, 'error');
                         this.enabled = false; // Revert toggle
+                    } finally {
+                        this.toggling = false;
                     }
                 } else {
                     // Disable service (will stop and remove container)
                     if (!confirm('Disabling will stop and remove the container. Continue?')) {
                         this.enabled = true; // Revert toggle
+                        this.toggling = false;
                         return;
                     }
                     
@@ -1258,6 +1536,8 @@
                     } catch (error) {
                         this.showMessage('Error: ' + error.message, 'error');
                         this.enabled = true; // Revert toggle
+                    } finally {
+                        this.toggling = false;
                     }
                 }
             },
@@ -1447,11 +1727,11 @@
 
                 this.pruning = true;
                 try {
-                    // Call reset endpoint which will:
+                    // Call prune endpoint which will:
                     // 1. Run docker compose down -v
                     // 2. Delete services/radarr folder
                     // 3. Delete services-volumes/radarr folder
-                    const response = await fetch(`/api/services/${this.serviceName}/reset`, {
+                    const response = await fetch(`/api/services/${this.serviceName}/prune`, {
                         method: 'POST'
                     });
 
@@ -1470,6 +1750,36 @@
                     this.showMessage('Error: ' + error.message, 'error');
                 } finally {
                     this.pruning = false;
+                }
+            },
+
+            async resetConfig() {
+                // REQUIRES confirmation before executing
+                if (!confirm('⚠️ WARNING: This will:\n\n1. Stop the service (docker compose down -v)\n2. Remove all volumes\n3. Delete service configuration folders\n4. Re-enable the service (fresh start)\n\nThis action CANNOT be undone.\n\nAre you sure you want to continue?')) {
+                    return;
+                }
+
+                this.resetting = true;
+                try {
+                    const response = await fetch(`/api/services/${this.serviceName}/reset`, {
+                        method: 'POST'
+                    });
+
+                    if (response.ok) {
+                        this.enabled = true; // Service is re-enabled
+                        this.configPathExists = true; // Config will be recreated
+                        this.showMessage('Service reset successfully! Ready for fresh configuration.', 'success');
+                        // Wait for reset to complete, then reload all data
+                        await new Promise(resolve => setTimeout(resolve, 2000));
+                        await this.reloadAllData();
+                    } else {
+                        const data = await response.json();
+                        this.showMessage(data.error || 'Failed to reset service', 'error');
+                    }
+                } catch (error) {
+                    this.showMessage('Error: ' + error.message, 'error');
+                } finally {
+                    this.resetting = false;
                 }
             },
 
@@ -1802,6 +2112,25 @@
                     }
                 } catch (error) {
                     console.error('Error loading Sonarr config:', error);
+                }
+            },
+
+            async loadJellyfinConfig() {
+                if (this.serviceName.toLowerCase() !== 'jellyfin') return;
+                
+                try {
+                    const response = await fetch(`/api/services/${this.serviceName}/jellyfin-config`);
+                    if (response.ok) {
+                        const result = await response.json();
+                        const data = result.data || result;
+                        
+                        // Update jellyfinConfig with loaded values
+                        if (data.config) {
+                            Object.assign(this.jellyfinConfig, data.config);
+                        }
+                    }
+                } catch (error) {
+                    console.error('Error loading Jellyfin config:', error);
                 }
             },
 

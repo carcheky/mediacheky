@@ -127,15 +127,9 @@ func ReverseProxy(repos *repository.Repositories, log *logger.Logger) fiber.Hand
 				}
 
 				// Build container URL using actual container hostname
-				// Try multiple hostname options:
-				// 1. Container ID if available (most reliable)
-				// 2. Service name (default Docker Compose behavior)
+				// For Docker networks, use the service name as hostname
+				// Container names are the most reliable way to reach services on Docker networks
 				containerHost := service.Name
-				if service.ContainerID != "" {
-					// Use container ID as hostname (Docker allows this)
-					containerHost = service.ContainerID[:12] // Use short ID
-				}
-
 				targetService = &struct {
 					Name          string
 					URL           string
@@ -188,15 +182,27 @@ func ReverseProxy(repos *repository.Repositories, log *logger.Logger) fiber.Hand
 			})
 		}
 
-		// Preserve the original path and query
-		targetURL.Path = c.Path()
-		targetURL.RawQuery = string(c.Request().URI().QueryString())
+		// Preserve the original path and query WITHOUT decoding
+		// Use the raw path from fasthttp to avoid double-encoding issues with special characters like @
+		rawPath := string(c.Request().URI().Path())
+		rawQuery := string(c.Request().URI().QueryString())
+
+		targetURL.Path = rawPath
+		targetURL.RawPath = rawPath // Preserve original encoding
+		targetURL.RawQuery = rawQuery
 
 		// Set proxy headers to preserve original host and configure URL base
 		c.Request().Header.Set("X-Forwarded-Host", host)
 		c.Request().Header.Set("X-Forwarded-Proto", "http")
 		c.Request().Header.Set("X-Real-IP", c.IP())
 		c.Request().Header.Set("X-Forwarded-For", c.IP())
+
+		// Additional headers for Jellyfin and similar services
+		if targetService.Name == "jellyfin" {
+			// Jellyfin needs the original scheme and host to generate correct asset URLs
+			c.Request().Header.Set("X-Forwarded-Scheme", "http")
+			c.Request().Header.Set("X-Forwarded-Prefix", "") // No prefix, served at root
+		}
 
 		// Set Host header to target service (required for proper routing)
 		c.Request().Header.SetHost(targetURL.Host)

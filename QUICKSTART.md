@@ -165,7 +165,7 @@ mediacheky/
 │   ├── mediacheky-config/  # Archivos de configuración
 │   └── media-library/      # Biblioteca de medios de prueba
 ├── logs/                   # Logs de la aplicación
-│   └── mediacheky-dev.log  # Log principal (auto-rotado)
+│   └── mediacheky-dev.json # Log principal (auto-rotado)
 ├── data/                   # Datos locales
 └── config/                 # Configuración local
 ```

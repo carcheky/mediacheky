@@ -218,7 +218,7 @@ func TestBuildTemplateData(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			result, err := te.buildTemplateData(tt.config, globalConfig)
+			result, err := te.buildTemplateData(tt.name, tt.config, globalConfig)
 
 			// Override Network in expected result because buildTemplateData auto-detects it
 			// and we can't easily mock the docker client in this unit test without more refactoring
@@ -305,7 +305,7 @@ services:
 	// Test writing new file
 	composePath, err := te.writeComposeFile("radarr", content)
 	assert.NoError(t, err)
-	assert.Equal(t, filepath.Join(servicesDir, "radarr", "docker compose.yml"), composePath)
+	assert.Equal(t, filepath.Join(servicesDir, "radarr", "docker-compose.yml"), composePath)
 
 	// Verify file was created
 	assert.FileExists(t, composePath)
@@ -337,7 +337,7 @@ services:
 
 	backupFound := false
 	for _, entry := range entries {
-		if filepath.Ext(entry.Name()) != ".yml" && entry.Name() != "docker compose.yml" {
+		if filepath.Ext(entry.Name()) != ".yml" && entry.Name() != "docker-compose.yml" {
 			backupFound = true
 			break
 		}
@@ -358,7 +358,7 @@ func TestGetComposePath(t *testing.T) {
 	err := os.MkdirAll(radarrDir, 0755)
 	assert.NoError(t, err)
 
-	composeFile := filepath.Join(radarrDir, "docker compose.yml")
+	composeFile := filepath.Join(radarrDir, "docker-compose.yml")
 	err = os.WriteFile(composeFile, []byte("content"), 0644)
 	assert.NoError(t, err)
 

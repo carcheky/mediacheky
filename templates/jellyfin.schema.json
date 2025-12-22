@@ -1,0 +1,57 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "required": ["Image", "ContainerName", "Port", "Paths", "RestartPolicy"],
+  "properties": {
+    "Image": {
+      "type": "string",
+      "enum": ["linuxserver/jellyfin:latest", "linuxserver/jellyfin:develop", "linuxserver/jellyfin:nightly"],
+      "description": "Docker image for Jellyfin"
+    },
+    "ContainerName": {
+      "type": "string",
+      "pattern": "^[a-zA-Z0-9_-]+$",
+      "minLength": 1,
+      "maxLength": 100,
+      "description": "Container name"
+    },
+    "Port": {
+      "type": "integer",
+      "minimum": 1024,
+      "maximum": 65535,
+      "description": "External port for Jellyfin (default 8096)"
+    },
+    "Paths": {
+      "type": "object",
+      "required": ["Config", "TV", "Movies"],
+      "properties": {
+        "Config": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Path to config directory"
+        },
+        "TV": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Path to TV series library directory"
+        },
+        "Movies": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Path to movies library directory"
+        }
+      }
+    },
+    "Network": {
+      "type": "string",
+      "pattern": "^[a-zA-Z0-9_-]+$",
+      "description": "Optional custom network name"
+    },
+    "RestartPolicy": {
+      "type": "string",
+      "enum": ["unless-stopped", "always", "on-failure", "no"],
+      "default": "unless-stopped",
+      "description": "Container restart policy"
+    }
+  }
+}

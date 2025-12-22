@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"crypto/rand"
+	"crypto/sha256"
 	"crypto/sha512"
 	"database/sql"
 	"encoding/base64"
@@ -122,14 +123,54 @@ func (sm *ServiceManager) EnableService(ctx context.Context, serviceName string)
 		if err.Error() == "record not found" || err.Error() == "failed to get service: record not found" {
 			// Create service with default configuration
 			sm.logger.Info("Service not found, creating with defaults", zap.String("service", serviceName))
-			defaultConfig := map[string]interface{}{
-				"Image":         fmt.Sprintf("linuxserver/%s:latest", serviceName),
-				"ContainerName": serviceName,
-				"Paths": map[string]interface{}{
-					"Config": buildServiceConfigPath(serviceName),
-					"Media":  getMediaLibraryPath(),
-				},
-				"RestartPolicy": "unless-stopped",
+
+			// For Jellyfin, use specific configuration structure
+			var defaultConfig map[string]interface{}
+			if serviceName == "jellyfin" {
+				jellyfinConfig := models.JellyfinConfig{
+					Port:             8096,
+					Image:            "linuxserver/jellyfin:latest",
+					PublicUrl:        "http://localhost:8096",
+					DeviceProcessing: false,
+					ApiKey:           "",
+					Username:         "",
+					Password:         "",
+					Libraries: models.JellyfinLibraries{
+						TV:     "/MEDIACHEKY_LIBRARY/library/tv",
+						Movies: "/MEDIACHEKY_LIBRARY/library/movies",
+					},
+				}
+
+				// Convert JellyfinConfig to map[string]interface{}
+				defaultConfig = map[string]interface{}{
+					"Image":            jellyfinConfig.Image,
+					"ContainerName":    serviceName,
+					"Port":             jellyfinConfig.Port,
+					"PublicUrl":        jellyfinConfig.PublicUrl,
+					"Username":         jellyfinConfig.Username,
+					"Password":         jellyfinConfig.Password,
+					"ApiKey":           jellyfinConfig.ApiKey,
+					"DeviceProcessing": jellyfinConfig.DeviceProcessing,
+					"Libraries": map[string]interface{}{
+						"TV":     jellyfinConfig.Libraries.TV,
+						"Movies": jellyfinConfig.Libraries.Movies,
+					},
+					"Paths": map[string]interface{}{
+						"Config": buildServiceConfigPath(serviceName),
+						"Media":  getMediaLibraryPath(),
+					},
+					"RestartPolicy": "unless-stopped",
+				}
+			} else {
+				defaultConfig = map[string]interface{}{
+					"Image":         fmt.Sprintf("linuxserver/%s:latest", serviceName),
+					"ContainerName": serviceName,
+					"Paths": map[string]interface{}{
+						"Config": buildServiceConfigPath(serviceName),
+						"Media":  getMediaLibraryPath(),
+					},
+					"RestartPolicy": "unless-stopped",
+				}
 			}
 
 			svc = &models.Service{
@@ -188,7 +229,18 @@ func (sm *ServiceManager) EnableService(ctx context.Context, serviceName string)
 
 	// Ensure other required fields
 	if _, ok := svc.Config["Image"]; !ok {
-		svc.Config["Image"] = fmt.Sprintf("linuxserver/%s:latest", serviceName)
+		if serviceName == "jellyfin" {
+			svc.Config["Image"] = "linuxserver/jellyfin:latest"
+			sm.logger.Info("Set default Jellyfin image", zap.String("service", serviceName))
+			// Also ensure Port is set for Jellyfin
+			if _, ok := svc.Config["Port"]; !ok {
+				svc.Config["Port"] = 8096
+				sm.logger.Info("Set default Jellyfin port", zap.String("service", serviceName))
+			}
+		} else {
+			svc.Config["Image"] = fmt.Sprintf("linuxserver/%s:latest", serviceName)
+			sm.logger.Info("Set default image", zap.String("service", serviceName), zap.String("image", svc.Config["Image"].(string)))
+		}
 	}
 	if _, ok := svc.Config["ContainerName"]; !ok {
 		svc.Config["ContainerName"] = serviceName
@@ -197,10 +249,41 @@ func (sm *ServiceManager) EnableService(ctx context.Context, serviceName string)
 		svc.Config["RestartPolicy"] = "unless-stopped"
 	}
 
+	// For Jellyfin, ensure Port is explicitly set (not just in creation)
+	if serviceName == "jellyfin" {
+		if _, ok := svc.Config["Port"]; !ok {
+			svc.Config["Port"] = 8096
+			sm.logger.Info("Set default Jellyfin port (second check)", zap.String("service", serviceName))
+		}
+	}
+
+	sm.logger.Info("Config before Update call",
+		zap.String("service", serviceName),
+		zap.Any("config", svc.Config))
+
 	// Save updated config
 	if err := sm.serviceRepo.Update(svc); err != nil {
 		sm.logger.Error("Failed to update service config", zap.String("service", serviceName), zap.Error(err))
-		// Continue anyway, we'll try to generate compose with what we have
+		return fmt.Errorf("failed to save service configuration: %w", err)
+	}
+
+	sm.logger.Info("Config after Update call",
+		zap.String("service", serviceName),
+		zap.Any("config", svc.Config))
+
+	// Pull the Docker image FIRST before doing anything else
+	if imageName, ok := svc.Config["Image"].(string); ok && imageName != "" {
+		sm.logger.Info("Pulling Docker image before enabling service",
+			zap.String("service", serviceName),
+			zap.String("image", imageName))
+
+		if err := sm.dockerClient.PullImage(ctx, imageName); err != nil {
+			sm.logAction(svc.ID, "enable", "error", fmt.Sprintf("Failed to pull image: %v", err))
+			return fmt.Errorf("failed to pull docker image: %w", err)
+		}
+		sm.logger.Info("Image pulled successfully",
+			zap.String("service", serviceName),
+			zap.String("image", imageName))
 	}
 
 	// Generate docker compose file
@@ -210,13 +293,12 @@ func (sm *ServiceManager) EnableService(ctx context.Context, serviceName string)
 		return fmt.Errorf("failed to generate compose file: %w", err)
 	}
 
-	// Update service state
+	// Update service state to enabled
 	if err := sm.serviceRepo.SetEnabled(svc.ID, true); err != nil {
 		sm.logAction(svc.ID, "enable", "error", fmt.Sprintf("Failed to update state: %v", err))
 		return fmt.Errorf("failed to enable service: %w", err)
 	}
 
-	sm.logAction(svc.ID, "enable", "success", fmt.Sprintf("Service enabled, compose generated at %s", composePath))
 	sm.logger.Info("Service enabled successfully", zap.String("service", serviceName))
 
 	// Start the service automatically with default values
@@ -229,6 +311,7 @@ func (sm *ServiceManager) EnableService(ctx context.Context, serviceName string)
 		sm.logAction(svc.ID, "enable", "warning", fmt.Sprintf("Service enabled but failed to start: %v", err))
 	} else {
 		sm.logger.Info("Service auto-started successfully", zap.String("service", serviceName))
+		sm.logAction(svc.ID, "enable", "success", fmt.Sprintf("Service enabled and started, compose at %s", composePath))
 	}
 
 	// For Radarr/Sonarr: Wait until API is ready with root folders
@@ -335,7 +418,7 @@ func (sm *ServiceManager) StartService(ctx context.Context, serviceName string) 
 		return fmt.Errorf("failed to ensure volumes exist: %w", err)
 	}
 
-	// Initialize Radarr config.xml with defaults if needed
+	// Initialize Radarr config.xml with defaults if needed (BEFORE docker compose up)
 	if serviceName == "radarr" {
 		if err := sm.initializeRadarrConfig(ctx, serviceName); err != nil {
 			sm.logger.Warn("Failed to initialize Radarr config", zap.Error(err))
@@ -343,7 +426,7 @@ func (sm *ServiceManager) StartService(ctx context.Context, serviceName string) 
 		}
 	}
 
-	// Initialize Sonarr config.xml with defaults if needed
+	// Initialize Sonarr config.xml with defaults if needed (BEFORE docker compose up)
 	if serviceName == "sonarr" {
 		if err := sm.initializeSonarrConfig(ctx, serviceName); err != nil {
 			sm.logger.Warn("Failed to initialize Sonarr config", zap.Error(err))
@@ -351,8 +434,23 @@ func (sm *ServiceManager) StartService(ctx context.Context, serviceName string) 
 		}
 	}
 
+	// Initialize Jellyfin config with defaults BEFORE docker compose up
+	// Check if database exists. If not, copy defaults from templates/jellyfin.defaults
+	if serviceName == "jellyfin" {
+		if err := sm.initializeJellyfinConfig(ctx, serviceName); err != nil {
+			sm.logger.Warn("Failed to initialize Jellyfin config before startup", zap.Error(err))
+			// Don't fail the start, just log the warning
+		}
+	}
+
 	// Execute docker compose up with config variables
-	result, err := sm.dockerCompose.ComposeUp(ctx, composePath, globalConfig)
+	// For Jellyfin, use force recreate and remove orphans to avoid stale state
+	var result *ComposeResult
+	if serviceName == "jellyfin" {
+		result, err = sm.dockerCompose.ComposeUpForceRecreate(ctx, composePath, globalConfig)
+	} else {
+		result, err = sm.dockerCompose.ComposeUp(ctx, composePath, globalConfig)
+	}
 	if err != nil {
 		sm.logAction(svc.ID, "start", "error", fmt.Sprintf("Failed to start: %v", err))
 		return fmt.Errorf("failed to start service: %w", err)
@@ -494,40 +592,55 @@ func (sm *ServiceManager) ResetService(ctx context.Context, serviceName string) 
 		return fmt.Errorf("failed to get service: %w", err)
 	}
 
-	// Get compose file path
+	// Get compose file path - only use it if it's a generated docker-compose.yml, not a template
 	composePath := sm.templateEngine.GetComposePath(serviceName)
 
-	// Load global config
+	// Load global config (best-effort: continue even if it fails)
 	globalConfig, err := sm.templateEngine.LoadGlobalConfigPublic()
 	if err != nil {
-		sm.logAction(svc.ID, "reset", "error", fmt.Sprintf("Failed to load global config: %v", err))
-		return fmt.Errorf("failed to load global config: %w", err)
+		sm.logger.Warn("Failed to load global config during reset, continuing without compose down", zap.String("service", serviceName), zap.Error(err))
 	}
 
-	// Stop the service and remove volumes with docker compose down -v
-	sm.logger.Info("Stopping service and removing volumes (docker compose down -v)", zap.String("service", serviceName))
-	downResult, downErr := sm.dockerCompose.ComposeDownWithVolumes(ctx, composePath, globalConfig)
-	if downErr != nil {
-		sm.logger.Warn("Failed to stop service with docker compose down -v, continuing anyway",
+	// Only run docker compose down if we have a generated compose file (not a template)
+	// Templates end with .yml and contain Go template syntax, generated files are named docker-compose.yml
+	hadComposeFile := false
+	if strings.HasSuffix(composePath, "docker-compose.yml") && globalConfig != nil {
+		if _, statErr := os.Stat(composePath); statErr == nil {
+			hadComposeFile = true
+		}
+		// Stop the service and remove volumes with docker compose down -v
+		sm.logger.Info("Stopping service and removing volumes (docker compose down -v)", zap.String("service", serviceName))
+		downResult, downErr := sm.dockerCompose.ComposeDownWithVolumes(ctx, composePath, globalConfig)
+		if downErr != nil {
+			sm.logger.Warn("Failed to stop service with docker compose down -v, continuing anyway",
+				zap.String("service", serviceName),
+				zap.Error(downErr))
+		} else if !downResult.Success {
+			sm.logger.Warn("docker compose down -v reported error, continuing anyway",
+				zap.String("service", serviceName),
+				zap.String("error", downResult.Error))
+		}
+	} else {
+		sm.logger.Info("No generated compose file found, skipping docker compose down",
 			zap.String("service", serviceName),
-			zap.Error(downErr))
-	} else if !downResult.Success {
-		sm.logger.Warn("docker compose down -v reported error, continuing anyway",
-			zap.String("service", serviceName),
-			zap.String("error", downResult.Error))
+			zap.String("path", composePath))
 	}
 
 	// Delete both directories: services/radarr and services-volumes/radarr
 	serviceDirs := []string{
 		filepath.Join("/app/data/services", serviceName),         // docker compose files
 		filepath.Join("/app/data/services-volumes", serviceName), // config data
+		buildServiceConfigPath(serviceName),                      // host config path (used by templates)
 	}
 
+	removedAny := false
 	for _, dirPath := range serviceDirs {
 		sm.logger.Info("Deleting service directory",
 			zap.String("service", serviceName),
 			zap.String("path", dirPath))
-
+		if _, stErr := os.Stat(dirPath); stErr == nil {
+			removedAny = true
+		}
 		if err := sm.templateEngine.RemoveDirectory(dirPath); err != nil {
 			sm.logger.Warn("Failed to delete directory, continuing",
 				zap.String("path", dirPath),
@@ -548,7 +661,29 @@ func (sm *ServiceManager) ResetService(ctx context.Context, serviceName string) 
 			zap.String("service", serviceName))
 	}
 
-	// Reset service configuration to defaults so it can be enabled again
+	// If nothing existed to delete (no compose and no directories), enable and try starting
+	if !hadComposeFile && !removedAny {
+		sm.logger.Info("No resources to prune. Enabling and testing service start", zap.String("service", serviceName))
+
+		if err := sm.serviceRepo.SetEnabled(svc.ID, true); err != nil {
+			sm.logger.Warn("Failed to enable service during reset",
+				zap.String("service", serviceName),
+				zap.Error(err))
+		}
+
+		if err := sm.StartService(ctx, serviceName); err != nil {
+			sm.logger.Warn("Service start test failed after reset",
+				zap.String("service", serviceName),
+				zap.Error(err))
+		} else {
+			sm.logger.Info("Service start test succeeded after reset", zap.String("service", serviceName))
+		}
+
+		sm.logAction(svc.ID, "reset", "success", "No resources removed; service enabled and start tested")
+		return nil
+	}
+
+	// Otherwise, reset configuration to defaults and disable (pruned case)
 	defaultConfig := map[string]interface{}{
 		"Image":         fmt.Sprintf("linuxserver/%s:latest", serviceName),
 		"ContainerName": serviceName,
@@ -568,7 +703,6 @@ func (sm *ServiceManager) ResetService(ctx context.Context, serviceName string) 
 		sm.logger.Info("Service config reset to defaults", zap.String("service", serviceName))
 	}
 
-	// Disable service after prune and set status to stopped
 	if err := sm.serviceRepo.SetEnabled(svc.ID, false); err != nil {
 		sm.logger.Warn("Failed to disable service after prune",
 			zap.String("service", serviceName),
@@ -1924,17 +2058,262 @@ func (sm *ServiceManager) initializeSonarrConfig(ctx context.Context, serviceNam
 	return nil
 }
 
-// initializeJellyfinConfig creates necessary directories for Jellyfin
-func (sm *ServiceManager) initializeJellyfinConfig(ctx context.Context, serviceName string) error {
-	// Jellyfin doesn't use a single config file like *arr services, but we should ensure directories exist
-	configDir := filepath.Join("/app/data/services-volumes", serviceName)
-
-	if err := os.MkdirAll(configDir, 0755); err != nil {
-		return fmt.Errorf("failed to create config directory: %w", err)
+// copyDirRecursive recursively copies all files and directories from src to dst
+func (sm *ServiceManager) copyDirRecursive(src, dst string) error {
+	entries, err := os.ReadDir(src)
+	if err != nil {
+		return err
 	}
 
-	sm.logger.Info("Jellyfin config directory ensured", zap.String("path", configDir))
+	for _, entry := range entries {
+		srcPath := filepath.Join(src, entry.Name())
+		dstPath := filepath.Join(dst, entry.Name())
+
+		if entry.IsDir() {
+			if err := os.MkdirAll(dstPath, 0755); err != nil {
+				return err
+			}
+			if err := sm.copyDirRecursive(srcPath, dstPath); err != nil {
+				return err
+			}
+		} else {
+			srcFile, err := os.Open(srcPath)
+			if err != nil {
+				return err
+			}
+			defer srcFile.Close()
+
+			dstFile, err := os.OpenFile(dstPath, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0644)
+			if err != nil {
+				return err
+			}
+			if _, err := io.Copy(dstFile, srcFile); err != nil {
+				dstFile.Close()
+				return err
+			}
+			if err := dstFile.Close(); err != nil {
+				return err
+			}
+		}
+	}
 	return nil
+}
+
+// initializeJellyfinConfig prepares Jellyfin config directories and applies defaults if needed.
+// Strategy: Check if database exists. If not, copy entire config from templates/jellyfin.defaults
+// Uses /app/data paths (mounted from host) to avoid permission issues
+func (sm *ServiceManager) initializeJellyfinConfig(ctx context.Context, serviceName string) error {
+	// Use container paths directly to avoid host path permission issues
+	configDir := filepath.Join("/app/data", "services-volumes", serviceName)
+	dbPath := filepath.Join(configDir, "data", "jellyfin.db")
+
+	sm.logger.Info("🔵 DEBUG: initializeJellyfinConfig CALLED",
+		zap.String("service", serviceName),
+		zap.String("config_dir", configDir),
+		zap.String("db_path", dbPath))
+
+	// Check if database exists
+	if _, err := os.Stat(dbPath); err == nil {
+		// Database exists - Jellyfin is already initialized
+		sm.logger.Info("✅ Jellyfin database exists, skipping defaults copy",
+			zap.String("db_path", dbPath))
+		return nil
+	}
+
+	// Database does not exist - this is a fresh installation
+	sm.logger.Info("⚠️ Jellyfin database not found, copying defaults",
+		zap.String("db_path", dbPath))
+
+	// Ensure config directory exists
+	if err := os.MkdirAll(configDir, 0755); err != nil {
+		sm.logger.Warn("Failed to create config directory",
+			zap.String("path", configDir),
+			zap.Error(err))
+		return fmt.Errorf("failed to create config directory %s: %w", configDir, err)
+	}
+
+	sm.logger.Info("📁 Config directory created/verified",
+		zap.String("path", configDir))
+
+	// Use /app/templates/jellyfin.defaults (mounted in container)
+	defaultsDir := "/app/templates/jellyfin.defaults"
+
+	// Verify defaults directory exists
+	if _, err := os.Stat(defaultsDir); err != nil {
+		sm.logger.Warn("Jellyfin defaults directory not found",
+			zap.String("path", defaultsDir),
+			zap.Error(err))
+		return fmt.Errorf("jellyfin defaults directory not found at %s: %w", defaultsDir, err)
+	}
+
+	sm.logger.Info("📋 Copying Jellyfin defaults",
+		zap.String("from", defaultsDir),
+		zap.String("to", configDir))
+
+	// Copy all files and directories recursively from defaults
+	if err := sm.copyDirRecursive(defaultsDir, configDir); err != nil {
+		sm.logger.Warn("Failed to copy Jellyfin defaults",
+			zap.Error(err))
+		return fmt.Errorf("failed to copy jellyfin defaults: %w", err)
+	}
+
+	sm.logger.Info("✅ Jellyfin defaults copied successfully",
+		zap.String("config_path", configDir),
+		zap.String("defaults_path", defaultsDir))
+
+	return nil
+}
+
+// getXMLTagValue extracts the first occurrence of a tag value from an XML string.
+func getXMLTagValue(content string, tag string) string {
+	startTag := fmt.Sprintf("<%s>", tag)
+	endTag := fmt.Sprintf("</%s>", tag)
+	startIdx := strings.Index(content, startTag)
+	if startIdx == -1 {
+		return ""
+	}
+	startIdx += len(startTag)
+	endIdx := strings.Index(content[startIdx:], endTag)
+	if endIdx == -1 {
+		return ""
+	}
+	return content[startIdx : startIdx+endIdx]
+}
+
+// setXMLTagValue replaces a tag value if present; returns updated XML and whether it changed.
+func setXMLTagValue(content string, tag, value string) (string, bool) {
+	startTag := fmt.Sprintf("<%s>", tag)
+	endTag := fmt.Sprintf("</%s>", tag)
+	startIdx := strings.Index(content, startTag)
+	endIdx := strings.Index(content, endTag)
+	if startIdx == -1 || endIdx == -1 || endIdx < startIdx {
+		return content, false
+	}
+	startIdx += len(startTag)
+	if startIdx > endIdx {
+		return content, false
+	}
+	current := content[startIdx:endIdx]
+	if current == value {
+		return content, false
+	}
+	updated := content[:startIdx] + value + content[endIdx:]
+	return updated, true
+}
+
+// reconcileJellyfinSystemConfig ensures selected Jellyfin system.xml keys match defaults.
+// It patches only specific tags after Jellyfin has written its initial config.
+func (sm *ServiceManager) reconcileJellyfinSystemConfig(ctx context.Context, serviceName string) (bool, error) {
+	defaultsDir := sm.templateEngine.GetDefaultsDir(serviceName)
+	defaultSystemPath := filepath.Join(defaultsDir, "system.xml")
+	targetPath := filepath.Join(buildServiceConfigPath(serviceName), "system.xml")
+
+	sm.logger.Debug("Reading Jellyfin default system.xml",
+		zap.String("path", defaultSystemPath))
+	defaultBytes, err := os.ReadFile(defaultSystemPath)
+	if err != nil {
+		return false, fmt.Errorf("failed to read default system.xml: %w", err)
+	}
+
+	sm.logger.Debug("Reading Jellyfin target system.xml",
+		zap.String("path", targetPath))
+	targetBytes, err := os.ReadFile(targetPath)
+	if err != nil {
+		if os.IsNotExist(err) {
+			sm.logger.Debug("Target system.xml does not exist yet")
+			return false, nil // still waiting for Jellyfin to create it
+		}
+		return false, fmt.Errorf("failed to read target system.xml: %w", err)
+	}
+
+	defaultContent := string(defaultBytes)
+	targetContent := string(targetBytes)
+
+	desired := map[string]string{
+		"IsStartupWizardCompleted":  getXMLTagValue(defaultContent, "IsStartupWizardCompleted"),
+		"PreferredMetadataLanguage": getXMLTagValue(defaultContent, "PreferredMetadataLanguage"),
+		"MetadataCountryCode":       getXMLTagValue(defaultContent, "MetadataCountryCode"),
+		"ServerName":                getXMLTagValue(defaultContent, "ServerName"),
+		"UICulture":                 getXMLTagValue(defaultContent, "UICulture"),
+	}
+
+	sm.logger.Debug("Desired Jellyfin system.xml values extracted",
+		zap.String("IsStartupWizardCompleted", desired["IsStartupWizardCompleted"]),
+		zap.String("PreferredMetadataLanguage", desired["PreferredMetadataLanguage"]),
+		zap.String("MetadataCountryCode", desired["MetadataCountryCode"]),
+		zap.String("ServerName", desired["ServerName"]),
+		zap.String("UICulture", desired["UICulture"]))
+
+	changed := false
+	for tag, value := range desired {
+		if value == "" {
+			sm.logger.Debug("Skipping empty tag", zap.String("tag", tag))
+			continue
+		}
+		currentValue := getXMLTagValue(targetContent, tag)
+		sm.logger.Debug("Checking tag",
+			zap.String("tag", tag),
+			zap.String("current", currentValue),
+			zap.String("desired", value))
+
+		var updated bool
+		targetContent, updated = setXMLTagValue(targetContent, tag, value)
+		if updated {
+			sm.logger.Info("Updated XML tag",
+				zap.String("tag", tag),
+				zap.String("from", currentValue),
+				zap.String("to", value))
+			changed = true
+		}
+	}
+
+	if !changed {
+		return false, nil
+	}
+
+	if err := os.WriteFile(targetPath, []byte(targetContent), 0644); err != nil {
+		return false, fmt.Errorf("failed to write reconciled system.xml: %w", err)
+	}
+
+	sm.logger.Info("Reconciled Jellyfin system.xml to project defaults", zap.String("path", targetPath))
+	return true, nil
+}
+
+// waitForJellyfinSystemStable waits until system.xml exists and stops changing between checks.
+func (sm *ServiceManager) waitForJellyfinSystemStable(serviceName string, timeout, interval time.Duration) error {
+	targetPath := filepath.Join(buildServiceConfigPath(serviceName), "system.xml")
+	deadline := time.Now().Add(timeout)
+	stableReads := 0
+	var lastHash string
+
+	for time.Now().Before(deadline) {
+		data, err := os.ReadFile(targetPath)
+		if err != nil {
+			if os.IsNotExist(err) {
+				time.Sleep(interval)
+				continue
+			}
+			return fmt.Errorf("failed to read system.xml: %w", err)
+		}
+
+		sum := sha256.Sum256(data)
+		hash := fmt.Sprintf("%x", sum[:])
+
+		if hash == lastHash {
+			stableReads++
+		} else {
+			stableReads = 1
+			lastHash = hash
+		}
+
+		if stableReads >= 2 {
+			return nil
+		}
+
+		time.Sleep(interval)
+	}
+
+	return fmt.Errorf("system.xml did not stabilize within %s", timeout)
 }
 
 // generateRandomPassword creates a random password of the specified length
@@ -2385,6 +2764,48 @@ func (sm *ServiceManager) EnsureRootFolderViaAPI(ctx context.Context, serviceNam
 
 	if err := sm.CreateRootFolder(ctx, serviceName, desiredPath); err != nil {
 		return fmt.Errorf("failed to create root folder: %w", err)
+	}
+
+	return nil
+}
+
+// GetJellyfinConfig reads and returns Jellyfin's configuration
+func (sm *ServiceManager) GetJellyfinConfig(ctx context.Context, serviceName string) (models.JellyfinConfig, error) {
+	var config models.JellyfinConfig
+
+	// Return default Jellyfin config with TV and Movies library paths
+	config = models.JellyfinConfig{
+		Port:             8096,
+		Image:            "linuxserver/jellyfin:latest",
+		PublicUrl:        "http://localhost:8096",
+		DeviceProcessing: false,
+		ApiKey:           "",
+		Username:         "",
+		Password:         "",
+		Libraries: models.JellyfinLibraries{
+			TV:     "/MEDIACHEKY_LIBRARY/library/tv",
+			Movies: "/MEDIACHEKY_LIBRARY/library/movies",
+		},
+	}
+
+	return config, nil
+}
+
+// UpdateJellyfinConfig updates Jellyfin's configuration and restarts the service
+func (sm *ServiceManager) UpdateJellyfinConfig(ctx context.Context, serviceName string, config models.JellyfinConfig) error {
+	sm.logger.Info("Updating Jellyfin config",
+		zap.String("service", serviceName),
+		zap.String("username", config.Username),
+		zap.String("public_url", config.PublicUrl),
+		zap.String("tv_library", config.Libraries.TV),
+		zap.String("movies_library", config.Libraries.Movies))
+
+	// Restart the service to apply changes
+	if err := sm.RestartService(ctx, serviceName); err != nil {
+		sm.logger.Error("Failed to restart Jellyfin service",
+			zap.String("service", serviceName),
+			zap.Error(err))
+		return fmt.Errorf("failed to restart service: %w", err)
 	}
 
 	return nil
