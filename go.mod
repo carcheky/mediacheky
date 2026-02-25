@@ -7,7 +7,7 @@ toolchain go1.24.9
 require (
 	github.com/docker/docker v28.5.2+incompatible
 	github.com/go-resty/resty/v2 v2.16.5
-	github.com/gofiber/fiber/v2 v2.52.9
+	github.com/gofiber/fiber/v2 v2.52.12
 	github.com/gofiber/template/html/v2 v2.1.2
 	github.com/google/uuid v1.6.0
 	github.com/mattn/go-sqlite3 v1.14.24
